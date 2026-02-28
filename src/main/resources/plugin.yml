@@ -1,0 +1,8 @@
+name: TreeTumblers
+version: '1.0.0'
+main: xyz.devcmb.tumblers.TreeTumblers
+api-version: '1.21'
+prefix: TreeTumblers
+authors: [ DevCmb ]
+description: An open-source minecraft event
+website: devcmb.xyz
