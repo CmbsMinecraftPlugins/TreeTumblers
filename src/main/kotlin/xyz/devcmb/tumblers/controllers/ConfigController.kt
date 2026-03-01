@@ -11,6 +11,8 @@ import xyz.devcmb.tumblers.util.DebugUtil
 @Controller("configController", priority = Controller.Priority.HIGHEST)
 class ConfigController : IController {
     override fun init() {
+        TreeTumblers.plugin.saveDefaultConfig()
+
         val reflections = Reflections(
             TreeTumblers::class.java.packageName,
             Scanners.FieldsAnnotated
@@ -52,7 +54,7 @@ class ConfigController : IController {
             }
 
             if(value != null) {
-                DebugUtil.info("Updated field ${field.name} to $value from config")
+                DebugUtil.info("Updated field ${field.name} to ${if(annotation.censor) "*".repeat(value.toString().length) else value} from config")
                 field.set(null, value)
             }
         }
