@@ -10,8 +10,7 @@ import xyz.devcmb.tumblers.data.Team
 
 object Format {
     fun formatPlayerName(player: Player): Component {
-        val playerController = ControllerDelegate.getController("playerController") as PlayerController
-        val tumblingPlayer = playerController.players.find { it.player == player }
+        val tumblingPlayer = player.getTumblingPlayer()
         if (tumblingPlayer == null) {
             return Component.empty()
                 .append(

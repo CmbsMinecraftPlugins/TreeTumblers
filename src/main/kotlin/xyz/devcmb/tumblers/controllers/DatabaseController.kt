@@ -1,9 +1,12 @@
 package xyz.devcmb.tumblers.controllers
 
-import org.bukkit.configuration.file.FileConfiguration
-import xyz.devcmb.tumblers.TreeTumblers
+import com.destroystokyo.paper.profile.PlayerProfile
+import org.bukkit.OfflinePlayer
+import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
 import java.sql.Connection
 import java.sql.DriverManager
@@ -14,13 +17,13 @@ import java.sql.SQLException
  *
  * TEAM (tumbling_teams):
  * name - Relational to the Team.teamName field
- * players - A set of all UUIDs of players on the team
  * score - Whole team score
  *
  * PLAYER (tumbling_players):
  * uuid - Player's UUID
  * username - The player's username at the time of being whitelisted
  * score - Player's individual score
+ * team - The name of the team the player is on
  */
 
 @Controller("databaseController", Controller.Priority.HIGH)
@@ -59,19 +62,20 @@ class DatabaseController : IController {
     private fun createTables() {
         val createPlayers = """
             CREATE TABLE IF NOT EXISTS `tumbling_players` (
-              `uuid` TEXT NOT NULL,
-              `score` TEXT NOT NULL,
-              `username` TEXT NOT NULL,
-              PRIMARY KEY (`uuid`)
+                `uuid` VARCHAR(255) NOT NULL,
+                `username` TEXT NOT NULL,
+                `team` TEXT NOT NULL,
+                `score` TEXT NOT NULL,
+                PRIMARY KEY (`uuid`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         """.trimIndent()
 
         val createTeams = """
             CREATE TABLE IF NOT EXISTS `tumbling_teams` (
-                `name` TEXT NOT NULL,
-                `players` TEXT NOT NULL,
-                `score` INT NOT NULL
-            )
+                `name` VARCHAR(255) NOT NULL,
+                `score` INT NOT NULL,
+                PRIMARY KEY (`name`)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         """.trimIndent()
 
         try {
@@ -82,5 +86,55 @@ class DatabaseController : IController {
         } catch (e: SQLException) {
             DebugUtil.severe("Failed to create default tables in the MySQL database: ${e.message}")
         }
+    }
+
+    fun whitelistPlayer(profile: PlayerProfile, team: Team, onSuccess: () -> Unit, onError: (err: String) -> Unit) {
+        val statement = connection.prepareStatement(
+            "INSERT INTO tumbling_players VALUES (?, ?, ?, 0)"
+        )
+        statement.setString(1, profile.id.toString())
+        statement.setString(2, profile.name)
+        statement.setString(3, team.name)
+
+        try {
+            statement.executeUpdate()
+            onSuccess()
+        } catch(e: SQLException) {
+            DebugUtil.severe("Failed to whitelist player ${profile.name}: ${e.message}")
+            onError(e.message ?: "Unknown error")
+        }
+    }
+
+    fun replicatePlayerData(player: TumblingPlayer) {
+        val statement = connection.prepareStatement("""
+            UPDATE tumbling_players
+            SET score = ?, team = ?
+            WHERE uuid = ?
+        """.trimIndent())
+
+        statement.setInt(1, player.score)
+        statement.setString(2, player.team.name)
+        statement.setString(3, player.bukkitPlayer.uniqueId.toString())
+
+        try {
+            statement.executeUpdate()
+        } catch(e: SQLException) {
+            DebugUtil.severe("Failed to replicate player data: ${e.message}")
+        }
+    }
+
+    fun isWhitelisted(uuid: String): Boolean {
+        val statement = connection.prepareStatement("""
+            SELECT COUNT(*) FROM tumbling_players WHERE uuid = ?;
+        """.trimIndent())
+
+        statement.setString(1, uuid)
+
+        val resultSet = statement.executeQuery()
+        if(resultSet.next()) {
+            return resultSet.getInt(1) > 0
+        }
+
+        return false
     }
 }

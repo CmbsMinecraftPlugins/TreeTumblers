@@ -7,30 +7,31 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
+import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
 
-class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogLevel>() {
+class TeamArgument: ArgumentResolver<CommandSender, Team>() {
     override fun parse(
         invocation: Invocation<CommandSender>,
-        context: Argument<DebugUtil.DebugLogLevel>,
+        context: Argument<Team>,
         argument: String
-    ): ParseResult<DebugUtil.DebugLogLevel> {
-        val types = DebugUtil.DebugLogLevel.values()
+    ): ParseResult<Team> {
+        val types = Team.values()
         val enum = types.find { it.name.lowercase() == argument.lowercase() }
 
         if(enum == null) {
-            return ParseResult.failure("That isn't a valid debug log level")
+            return ParseResult.failure("That isn't a valid team")
         }
 
         return ParseResult.success(enum)
     }
 
     override fun suggest(
-        invocation: Invocation<CommandSender?>?,
-        argument: Argument<DebugUtil.DebugLogLevel?>?,
-        context: SuggestionContext?
+        invocation: Invocation<CommandSender>,
+        argument: Argument<Team>,
+        context: SuggestionContext
     ): SuggestionResult? {
-        return DebugUtil.DebugLogLevel.entries
+        return Team.entries
             .stream()
             .map { it.name.lowercase() }
             .collect(SuggestionResult.collector())
