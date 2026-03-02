@@ -8,6 +8,7 @@ import xyz.devcmb.playground.commands.arguments.*
 import xyz.devcmb.playground.commands.dev.*
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.commands.arguments.WhitelistedPlayerArgument
+import xyz.devcmb.tumblers.commands.organizer.TeamCommand
 import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -19,7 +20,8 @@ class CommandController : IController {
         liteCommands = LiteBukkitFactory.builder("tumblers", TreeTumblers.plugin)
             .commands(
                 DebugCommand(),
-                WhitelistCommand()
+                WhitelistCommand(),
+                TeamCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

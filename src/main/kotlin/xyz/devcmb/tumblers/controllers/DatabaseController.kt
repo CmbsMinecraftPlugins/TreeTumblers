@@ -16,14 +16,14 @@ import java.sql.SQLException
  * Database documentation time
  *
  * TEAM (tumbling_teams):
- * name - Relational to the Team.teamName field
+ * name - Relational to the Team enum name to represent its id
  * score - Whole team score
  *
  * PLAYER (tumbling_players):
  * uuid - Player's UUID
  * username - The player's username at the time of being whitelisted
  * score - Player's individual score
- * team - The name of the team the player is on
+ * team - The enum name of the team the player is on
  * whitelisted - If the player is currently whitelisted
  */
 
@@ -209,6 +209,25 @@ class DatabaseController : IController {
         whitelistedPlayersCache.addAll(names)
         hasCached = true
         return names
+    }
+
+    fun setPlayerTeam(profile: PlayerProfile, team: Team, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val statement = connection.prepareStatement("""
+            UPDATE tumbling_players
+            SET team = ?
+            WHERE uuid = ?
+        """.trimIndent())
+
+        statement.setString(1, team.name)
+        statement.setString(2, profile.id.toString())
+
+        try {
+            statement.executeUpdate()
+            onSuccess()
+        } catch(e: SQLException) {
+            DebugUtil.severe("Failed to set player team: ${e.message}")
+            onError(e.message ?: "Unknown error")
+        }
     }
 
     data class WhitelistedPlayer(val name: String)

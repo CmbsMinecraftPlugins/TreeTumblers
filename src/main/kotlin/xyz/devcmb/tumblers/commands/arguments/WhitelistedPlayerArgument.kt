@@ -21,7 +21,7 @@ class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseControl
         val whitelistedPlayerNames = databaseController.getWhitelistedPlayerNames()
 
         if(!whitelistedPlayerNames.contains(argument)) {
-            return ParseResult.failure("That isn't a valid team")
+            return ParseResult.failure("Player not found or not whitelisted!")
         }
 
         return ParseResult.success(DatabaseController.WhitelistedPlayer(argument))
