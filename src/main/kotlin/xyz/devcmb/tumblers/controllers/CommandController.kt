@@ -7,6 +7,7 @@ import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
 import xyz.devcmb.playground.commands.arguments.*
 import xyz.devcmb.playground.commands.dev.*
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.commands.arguments.WhitelistedPlayerArgument
 import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -22,6 +23,7 @@ class CommandController : IController {
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
+            .argument(DatabaseController.WhitelistedPlayer::class.java, WhitelistedPlayerArgument())
             .build()
     }
 }

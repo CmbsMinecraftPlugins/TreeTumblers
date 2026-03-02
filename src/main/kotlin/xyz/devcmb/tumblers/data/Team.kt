@@ -1,7 +1,9 @@
 package xyz.devcmb.tumblers.data
 
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import org.bukkit.NamespacedKey
 
 enum class Team(val teamName: String, val color: TextColor, val icon: String, val playingTeam: Boolean = true) {
     RED("Red Rabbits", NamedTextColor.RED, "\uE000"),
@@ -13,5 +15,10 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
 
     // Non-playing teams
     SPECTATORS("Spectators", NamedTextColor.WHITE, "\uE007", false),
-    DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", false)
+    DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", false);
+
+    val FormattedName: Component =
+        Component.empty()
+            .append(Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons")))
+            .append(Component.text(" $teamName").color(color))
 }

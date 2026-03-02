@@ -24,6 +24,7 @@ import java.sql.SQLException
  * username - The player's username at the time of being whitelisted
  * score - Player's individual score
  * team - The name of the team the player is on
+ * whitelisted - If the player is currently whitelisted
  */
 
 @Controller("databaseController", Controller.Priority.HIGH)
@@ -66,6 +67,7 @@ class DatabaseController : IController {
                 `username` TEXT NOT NULL,
                 `team` TEXT NOT NULL,
                 `score` TEXT NOT NULL,
+                `whitelisted` BOOLEAN NOT NULL,
                 PRIMARY KEY (`uuid`)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         """.trimIndent()
@@ -88,9 +90,17 @@ class DatabaseController : IController {
         }
     }
 
+    val whitelistedPlayersCache: MutableSet<String> = HashSet()
+    var hasCached: Boolean = false
+
     fun whitelistPlayer(profile: PlayerProfile, team: Team, onSuccess: () -> Unit, onError: (err: String) -> Unit) {
         val statement = connection.prepareStatement(
-            "INSERT INTO tumbling_players VALUES (?, ?, ?, 0)"
+            """
+                INSERT INTO tumbling_players (uuid, username, team, score, whitelisted) 
+                    VALUES (?, ?, ?, 0, true)
+                    ON DUPLICATE KEY UPDATE
+                        whitelisted = VALUES(whitelisted)
+            """.trimIndent()
         )
         statement.setString(1, profile.id.toString())
         statement.setString(2, profile.name)
@@ -98,9 +108,31 @@ class DatabaseController : IController {
 
         try {
             statement.executeUpdate()
+            whitelistedPlayersCache.add(profile.name!!)
             onSuccess()
         } catch(e: SQLException) {
             DebugUtil.severe("Failed to whitelist player ${profile.name}: ${e.message}")
+            onError(e.message ?: "Unknown error")
+        }
+    }
+
+    fun unwhitelistPlayer(profile: PlayerProfile, onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val statement = connection.prepareStatement(
+            """
+                UPDATE tumbling_players
+                SET whitelisted = false
+                WHERE uuid = ?
+            """.trimIndent()
+        )
+
+        statement.setString(1, profile.id.toString())
+
+        try {
+            statement.executeUpdate()
+            whitelistedPlayersCache.remove(profile.name)
+            onSuccess()
+        } catch(e: SQLException) {
+            DebugUtil.severe("Failed to remove player ${profile.name} from the whitelist: ${e.message}")
             onError(e.message ?: "Unknown error")
         }
     }
@@ -125,16 +157,59 @@ class DatabaseController : IController {
 
     fun isWhitelisted(uuid: String): Boolean {
         val statement = connection.prepareStatement("""
-            SELECT COUNT(*) FROM tumbling_players WHERE uuid = ?;
+            SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
         """.trimIndent())
 
         statement.setString(1, uuid)
 
         val resultSet = statement.executeQuery()
         if(resultSet.next()) {
-            return resultSet.getInt(1) > 0
+            return resultSet.getBoolean("whitelisted")
         }
 
         return false
     }
+
+    fun getPlayerData(player: Player): TumblingPlayer {
+        val statement = connection.prepareStatement("""
+            SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
+        """.trimIndent())
+
+        statement.setString(1, player.uniqueId.toString())
+
+        val resultSet = statement.executeQuery()
+        if(resultSet.next()) {
+            val teamColumn: String = resultSet.getString("team")
+            val score: Int = resultSet.getInt("score")
+
+            val team = Team.values().find { it.name == teamColumn }
+            if(team == null) {
+                throw IllegalStateException("Could not find a team with value $teamColumn")
+            }
+
+            return TumblingPlayer(player, team, score)
+        } else {
+            throw IllegalStateException("Could not find player data for ${player.name}")
+        }
+    }
+
+    fun getWhitelistedPlayerNames(): Set<String> {
+        if(!whitelistedPlayersCache.isEmpty() && hasCached) return whitelistedPlayersCache
+
+        val statement = connection.prepareStatement("""
+            SELECT * FROM tumbling_players WHERE whitelisted = true;
+        """.trimIndent())
+
+        val names: MutableSet<String> = HashSet()
+        val resultSet = statement.executeQuery()
+        while(resultSet.next()) {
+            names.add(resultSet.getString("username"))
+        }
+
+        whitelistedPlayersCache.addAll(names)
+        hasCached = true
+        return names
+    }
+
+    data class WhitelistedPlayer(val name: String)
 }

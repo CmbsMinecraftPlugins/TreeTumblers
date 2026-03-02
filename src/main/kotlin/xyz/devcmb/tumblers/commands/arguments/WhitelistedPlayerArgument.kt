@@ -1,0 +1,38 @@
+package xyz.devcmb.tumblers.commands.arguments
+
+import dev.rollczi.litecommands.argument.Argument
+import dev.rollczi.litecommands.argument.parser.ParseResult
+import dev.rollczi.litecommands.argument.resolver.ArgumentResolver
+import dev.rollczi.litecommands.invocation.Invocation
+import dev.rollczi.litecommands.suggestion.SuggestionContext
+import dev.rollczi.litecommands.suggestion.SuggestionResult
+import org.bukkit.command.CommandSender
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.data.Team
+
+class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
+    override fun parse(
+        invocation: Invocation<CommandSender>,
+        context: Argument<DatabaseController.WhitelistedPlayer>,
+        argument: String
+    ): ParseResult<DatabaseController.WhitelistedPlayer> {
+        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
+        val whitelistedPlayerNames = databaseController.getWhitelistedPlayerNames()
+
+        if(!whitelistedPlayerNames.contains(argument)) {
+            return ParseResult.failure("That isn't a valid team")
+        }
+
+        return ParseResult.success(DatabaseController.WhitelistedPlayer(argument))
+    }
+
+    override fun suggest(
+        invocation: Invocation<CommandSender>,
+        argument: Argument<DatabaseController.WhitelistedPlayer>,
+        context: SuggestionContext
+    ): SuggestionResult? {
+        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
+        return databaseController.getWhitelistedPlayerNames().stream().collect(SuggestionResult.collector())
+    }
+}

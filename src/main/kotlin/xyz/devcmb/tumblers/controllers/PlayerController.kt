@@ -28,8 +28,17 @@ class PlayerController : IController {
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
-        // TODO: Replace team with the players team and score with their score from db
-        players.add(TumblingPlayer(player, Team.DEVELOPERS, 0))
+        var data: TumblingPlayer;
+        try {
+            val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
+            data = databaseController.getPlayerData(player)
+            players.add(data)
+        } catch(e: Exception) {
+            DebugUtil.severe("Failed to get player data: ${e.message}")
+            return
+        }
+
+        player.playerListName(Format.formatPlayerName(player))
 
         event.joinMessage(
             Component.text("[").color(NamedTextColor.GRAY)
