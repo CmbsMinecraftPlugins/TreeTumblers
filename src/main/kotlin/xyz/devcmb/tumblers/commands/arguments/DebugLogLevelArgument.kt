@@ -1,4 +1,4 @@
-package xyz.devcmb.playground.commands.arguments
+package xyz.devcmb.tumblers.commands.arguments
 
 import dev.rollczi.litecommands.argument.Argument
 import dev.rollczi.litecommands.argument.parser.ParseResult

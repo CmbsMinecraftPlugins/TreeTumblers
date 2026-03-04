@@ -4,12 +4,11 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
-import xyz.devcmb.playground.commands.arguments.*
-import xyz.devcmb.playground.commands.dev.*
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.commands.arguments.WhitelistedPlayerArgument
-import xyz.devcmb.tumblers.commands.organizer.TeamCommand
-import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
+import xyz.devcmb.tumblers.commands.arguments.*
+import xyz.devcmb.tumblers.commands.dev.*
+import xyz.devcmb.tumblers.commands.games.*
+import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
 
@@ -21,11 +20,13 @@ class CommandController : IController {
             .commands(
                 DebugCommand(),
                 WhitelistCommand(),
-                TeamCommand()
+                TeamCommand(),
+                GameCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
             .argument(DatabaseController.WhitelistedPlayer::class.java, WhitelistedPlayerArgument())
+            .argument(GameController.Game::class.java, GameArgument())
             .build()
     }
 }

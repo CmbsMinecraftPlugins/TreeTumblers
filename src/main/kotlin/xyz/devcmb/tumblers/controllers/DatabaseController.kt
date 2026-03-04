@@ -140,13 +140,12 @@ class DatabaseController : IController {
     fun replicatePlayerData(player: TumblingPlayer) {
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
-            SET score = ?, team = ?
+            SET score = ?
             WHERE uuid = ?
         """.trimIndent())
 
         statement.setInt(1, player.score)
-        statement.setString(2, player.team.name)
-        statement.setString(3, player.bukkitPlayer.uniqueId.toString())
+        statement.setString(2, player.bukkitPlayer.uniqueId.toString())
 
         try {
             statement.executeUpdate()

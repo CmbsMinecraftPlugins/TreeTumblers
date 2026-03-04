@@ -1,4 +1,4 @@
-package xyz.devcmb.playground.commands.dev
+package xyz.devcmb.tumblers.commands.dev
 
 import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
