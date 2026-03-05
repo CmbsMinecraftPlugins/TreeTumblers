@@ -15,7 +15,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.getTumblingPlayer
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 @Controller("playerController", Controller.Priority.MEDIUM)
 class PlayerController : IController {
@@ -51,7 +51,7 @@ class PlayerController : IController {
     @EventHandler
     fun playerQuit(event: PlayerQuitEvent) {
         val player = event.player
-        val tumblingPlayer = player.getTumblingPlayer()!!
+        val tumblingPlayer = player.tumblingPlayer ?: return
 
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
@@ -59,14 +59,6 @@ class PlayerController : IController {
                 .append(Component.text("] ").color(NamedTextColor.GRAY))
                 .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
         )
-
-        if(Constants.IS_DEVELOPMENT) {
-            DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
-            player.sendMessage(
-                Component.text("Developer mode is active. You have automatically been subscribed to the warning debug channel.")
-                    .color(NamedTextColor.YELLOW)
-            )
-        }
 
         val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
         databaseController.replicatePlayerData(tumblingPlayer)

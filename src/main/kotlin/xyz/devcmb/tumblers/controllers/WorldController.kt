@@ -1,17 +1,56 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
-import xyz.devcmb.tumblers.WorldCreationError
+import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.runTask
+import xyz.devcmb.tumblers.util.runTaskAsynchronously
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Path
 
 @Controller("worldController", Controller.Priority.MEDIUM)
 class WorldController : IController {
     override fun init() {
+        // do it both on cleanup and start so it cleans up regardless of if the server gracefully shut down
+        cleanupTempWorlds()
+    }
+
+    override fun cleanup() = cleanupTempWorlds()
+
+    fun cleanupTempWorlds() {
+        Bukkit.getWorldContainer().listFiles().forEach { file ->
+            if(file.isDirectory && file.name.contains("temp_")) {
+                if(Bukkit.getWorld(file.name) !== null) {
+                    Bukkit.unloadWorld(file.name, false)
+                }
+
+                // my savior
+                // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
+                fun deleteDir(file2: File) {
+                    val contents = file2.listFiles()
+                    if (contents != null) {
+                        for (f in contents) {
+                            deleteDir(f)
+                        }
+                    }
+                    file2.delete()
+                }
+
+                deleteDir(file)
+            }
+        }
     }
 
     fun createVoidWorld(worldName: String): World {
@@ -23,11 +62,35 @@ class WorldController : IController {
         val file = File(Bukkit.getWorldContainer(), worldName)
         if(!file.exists() || !file.isDirectory) {
             Bukkit.unloadWorld(worldName, false)
-            throw WorldCreationError("World does not have a world folder in the bukkit world container")
+            throw WorldCreationException("World does not have a world folder in the bukkit world container")
         }
 
-
+        Files.write(
+            File(file, "void.txt").toPath(),
+            listOf(""),
+            StandardCharsets.UTF_8
+        )
 
         return world
+    }
+
+    suspend fun loadTemplate(path: Path, name: String): World {
+        val name = "temp_$name"
+        withContext(Dispatchers.IO) {
+            FileUtils.copyDirectory(
+                File(path.toString()),
+                File(Bukkit.getWorldContainer(), name)
+            )
+        }
+
+        return suspendSync {
+            var worldCreator = WorldCreator(name)
+            if(File(path.toString(), "void.txt").exists()) {
+                worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
+            }
+
+            val world = Bukkit.createWorld(worldCreator)!!
+            world
+        }
     }
 }

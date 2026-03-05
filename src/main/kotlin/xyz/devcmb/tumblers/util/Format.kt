@@ -10,7 +10,7 @@ import xyz.devcmb.tumblers.data.Team
 
 object Format {
     fun formatPlayerName(player: Player): Component {
-        val tumblingPlayer = player.getTumblingPlayer()
+        val tumblingPlayer = player.tumblingPlayer
         if (tumblingPlayer == null) {
             return Component.empty()
                 .append(

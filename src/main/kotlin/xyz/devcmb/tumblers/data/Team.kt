@@ -10,8 +10,10 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
     ORANGE("Orange Ocelots", TextColor.fromHexString("#ff9100")!!, "\uE001"),
     YELLOW("Yellow Yaks", NamedTextColor.YELLOW, "\uE002"),
     GREEN("Green Grasshoppers", NamedTextColor.GREEN,  "\uE003"),
+    AQUA("Aqua Alpacas", NamedTextColor.AQUA, "\uE009"),
     BLUE("Blue Boars", NamedTextColor.BLUE, "\uE004"),
-    PURPLE("Purple Parrots", TextColor.fromHexString("#bb00ff")!!, "\uE005"),
+    PURPLE("Purple Pufferfish", TextColor.fromHexString("#bb00ff")!!, "\uE005"),
+    PINK("Pink Parrots", TextColor.fromHexString("#ff5cd9")!!, "\uE00A"),
 
     // Non-playing teams
     SPECTATORS("Spectators", NamedTextColor.WHITE, "\uE007", false),

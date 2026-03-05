@@ -4,6 +4,8 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
+import dev.rollczi.litecommands.message.LiteMessages
+import dev.rollczi.litecommands.message.MessageKey
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.commands.arguments.*
 import xyz.devcmb.tumblers.commands.dev.*
@@ -21,7 +23,8 @@ class CommandController : IController {
                 DebugCommand(),
                 WhitelistCommand(),
                 TeamCommand(),
-                GameCommand()
+                GameCommand(),
+                WorldCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

@@ -1,9 +1,15 @@
 package xyz.devcmb.tumblers.util
 
+import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.coroutines.withTimeout
+import org.bukkit.Bukkit
 import org.bukkit.block.Biome
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
+import xyz.devcmb.tumblers.TreeTumblers
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 object MiscUtils {
     object VoidGenerator : ChunkGenerator() {
@@ -48,4 +54,22 @@ object MiscUtils {
             }
         }
     }
+
+    // Source - https://stackoverflow.com/a/73494554
+    // Posted by SecretX, modified by community. See post 'Timeline' for change history
+    // Retrieved 2026-03-05, License - CC BY-SA 4.0
+    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(10000L) {
+        // Context: The current coroutine context
+        suspendCancellableCoroutine { cont ->
+            // Context: The current coroutine context
+            Bukkit.getScheduler().runTask(TreeTumblers.plugin, Runnable {
+                // Context: Bukkit MAIN thread
+                // runCatching is used to forward any exception that may occur here back to
+                // our coroutine, keeping the exception transparency of Kotlin coroutines
+                runCatching(task).fold({ cont.resume(it) }, cont::resumeWithException)
+            })
+        }
+    }
 }
+
+

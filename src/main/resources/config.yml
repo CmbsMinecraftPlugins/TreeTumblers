@@ -4,3 +4,16 @@ database:
   username:
   password:
   database:
+
+# All games use the same format for their config, aside from the data fields
+# Refer to the comments in the first game for usage in the others
+games:
+  crumble:
+    # The path where all the maps are contained
+    # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
+    worlds_folder: "&/templates/worlds/crumble"
+    maps:
+      warfare:
+        world: "crumble_warfare"
+        data:
+          spawns: []

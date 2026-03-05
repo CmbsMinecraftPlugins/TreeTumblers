@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.launch
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import xyz.devcmb.tumblers.GameOperatorException
@@ -7,6 +8,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.util.DebugUtil
 
 @Controller("gameController", Controller.Priority.MEDIUM)
 class GameController : IController {
@@ -40,9 +42,10 @@ class GameController : IController {
 
         if(game == null) throw GameOperatorException("Cannot start a nonexistent game")
 
-        game.load({
-
-        })
+        TreeTumblers.pluginScope.launch {
+            game.load()
+            DebugUtil.info("Load sequence finished")
+        }
     }
 
     data class Game(val id: String)

@@ -10,5 +10,6 @@ class CrumbleController : GameBase(
     id = "crumble",
     votable = true,
     flags = setOf(Flag.HUNGER_REMOVED),
-    maps = setOf(Map("crumble_warfare", "maps.crumble.warfare"))
+    maps = setOf(Map("warfare")),
+    rounds = 7
 )

@@ -155,6 +155,8 @@ class DatabaseController : IController {
     }
 
     fun isWhitelisted(uuid: String): Boolean {
+        if(!::connection.isInitialized) return false
+
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
         """.trimIndent())
