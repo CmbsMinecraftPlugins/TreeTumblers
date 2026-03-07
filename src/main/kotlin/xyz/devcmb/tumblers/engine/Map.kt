@@ -1,13 +1,10 @@
 package xyz.devcmb.tumblers.engine
 
-import org.bukkit.World
+import org.bukkit.configuration.MemorySection
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.WorldController
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
-import xyz.devcmb.tumblers.util.runTaskAsynchronously
-import kotlin.collections.Map
 import kotlin.io.path.Path
 
 /**
@@ -54,6 +51,15 @@ class Map(
             "${game.id}_${id}-$index"
         )
 
-        return LoadedMap(id, world)
+        val dataPath = "${game.configRoot}.maps.$id.data"
+        val data = config.getConfigurationSection("${game.configRoot}.maps.$id.data")
+            ?.getKeys(false)
+            ?.associateWith { key ->
+                config.get("$dataPath.$key")
+            }
+            ?.toMap(HashMap())
+            ?: HashMap<String, MemorySection>()
+
+        return LoadedMap(id, world, data)
     }
 }

@@ -44,7 +44,8 @@ class GameController : IController {
 
         TreeTumblers.pluginScope.launch {
             game.load()
-            DebugUtil.info("Load sequence finished")
+            game.finishLoading()
+            game.runCutscene()
         }
     }
 
