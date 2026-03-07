@@ -40,6 +40,14 @@ class PlayerController : IController {
 
         player.playerListName(Format.formatPlayerName(player))
 
+        if(Constants.IS_DEVELOPMENT) {
+            DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
+            player.sendMessage(
+                Component.text("Developer mode is active. You have automatically been subscribed to the warning debug channel.")
+                    .color(NamedTextColor.YELLOW)
+            )
+        }
+
         event.joinMessage(
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("+").color(NamedTextColor.GREEN))
@@ -81,11 +89,11 @@ class PlayerController : IController {
 
         if(!databaseController.isWhitelisted(uuid.toString())) {
             event.kickMessage(
-                Component.text("----------------------------------", NamedTextColor.RED)
+                Component.text("———————————————————————————————", NamedTextColor.RED)
                     .append(Component.newline())
                     .append(Component.text("You are not whitelisted!", NamedTextColor.RED))
                     .append(Component.newline())
-                    .append(Component.text("----------------------------------", NamedTextColor.RED))
+                    .append(Component.text("———————————————————————————————", NamedTextColor.RED))
             )
         }
     }

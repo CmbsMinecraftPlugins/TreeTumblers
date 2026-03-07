@@ -18,7 +18,7 @@ class CrumbleController : GameBase(
     rounds = 7,
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.text("Welcome to Crumble", NamedTextColor.YELLOW)) { map ->
-            teleport(0.0,0.0,0.0,0f,0f)
+            teleportConfig("cutscene.start")
             delay(5000)
         },
         CutsceneStep(Component.text("Cutscene step #2", NamedTextColor.GRAY)) { map ->

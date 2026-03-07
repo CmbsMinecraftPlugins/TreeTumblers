@@ -1,6 +1,8 @@
 package xyz.devcmb.tumblers.engine
 
+import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.MemorySection
+import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -52,13 +54,9 @@ class Map(
         )
 
         val dataPath = "${game.configRoot}.maps.$id.data"
-        val data = config.getConfigurationSection("${game.configRoot}.maps.$id.data")
-            ?.getKeys(false)
-            ?.associateWith { key ->
-                config.get("$dataPath.$key")
-            }
-            ?.toMap(HashMap())
-            ?: HashMap<String, MemorySection>()
+        val data: ConfigurationSection =
+            config.getConfigurationSection("${game.configRoot}.maps.$id.data")
+                ?: YamlConfiguration()
 
         return LoadedMap(id, world, data)
     }

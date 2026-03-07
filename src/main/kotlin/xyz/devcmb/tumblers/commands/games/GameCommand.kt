@@ -17,9 +17,17 @@ import xyz.devcmb.tumblers.util.DebugUtil
 @Command(name = "game")
 @Permission("tumbling.games")
 class GameCommand {
+    val gameController: GameController by lazy {
+        ControllerDelegate.getController("gameController") as GameController
+    }
+
     @Execute(name = "start")
     fun executeGame(@Context sender: CommandSender, @Arg game: GameController.Game) {
-        val gameController = ControllerDelegate.getController("gameController") as GameController
+        if(gameController.activeGame != null) {
+            sender.sendMessage(Component.text("A game is already active!", NamedTextColor.RED))
+            return
+        }
+
         try {
             gameController.startGame(game.id)
             sender.sendMessage(Component.text("Started game successfully!", NamedTextColor.GREEN))

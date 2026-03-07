@@ -1,8 +1,10 @@
 package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.launch
+import org.bukkit.Bukkit
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
+import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
@@ -42,6 +44,9 @@ class GameController : IController {
 
         if(game == null) throw GameOperatorException("Cannot start a nonexistent game")
 
+        activeGame = id
+        Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
+
         TreeTumblers.pluginScope.launch {
             game.load()
             game.finishLoading()
@@ -49,7 +54,14 @@ class GameController : IController {
         }
     }
 
-    data class Game(val id: String)
+    class Game(val id: String) {
+        fun get(): GameBase {
+            // this feels so bad
+            val gameController = ControllerDelegate.getController("gameController") as GameController
+            return gameController.games.find { it.id == id }!!
+        }
+    }
+
     enum class State {
         INACTIVE,
         VOTING,

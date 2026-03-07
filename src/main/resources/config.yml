@@ -17,3 +17,6 @@ games:
         world: "crumble_warfare"
         data:
           spawns: []
+          cutscene:
+            # X,Y,Z,pitch,yaw
+            start: [-25.5,86.0,-26.5,134.5,35.4]

@@ -1,10 +1,12 @@
 package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
@@ -91,6 +93,41 @@ class WorldController : IController {
 
             val world = Bukkit.createWorld(worldCreator)!!
             world
+        }
+    }
+
+    suspend fun saveWorld(world: World, game: GameController.Game, name: String? = null) {
+        val name = name ?: world.name
+        val game = game.get()
+        val worldFolder = world.worldFolder
+
+        suspendSync {
+            world.players.forEach {
+                // TODO: teleport to some lobby maybe
+                it.teleport(Location(
+                    Bukkit.getWorld("world")!!,
+                    0.0,
+                    128.0,
+                    0.0
+                ))
+            }
+            Bukkit.unloadWorld(world, true)
+        }
+
+        // Seems to be a good time to wait for all the IO operations to stop, fix if not
+        delay(3000)
+
+        val worldsFolder = TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
+            .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
+
+        withContext(Dispatchers.IO) {
+            val destination = File(worldsFolder, name)
+            FileUtils.copyDirectory(worldFolder, destination)
+
+            val idFile = File(destination, "uid.dat")
+            if(idFile.exists()) {
+                idFile.delete()
+            }
         }
     }
 }
