@@ -12,6 +12,8 @@ import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.engine.map.LoadedMap
+import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 
 /**
@@ -19,7 +21,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
  * @param id The unique identifier of the game
  * @param votable Whether this game is available for voting during the [GameController.State.VOTING] stage
  * @param flags A set containing all the feature flags for this game
- * @param maps A [Set] containing all the [Map] instances
+ * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  *
  * @property currentState The current [State] of the individual game
  * @property currentRound The current round
@@ -30,7 +32,7 @@ abstract class GameBase(
     val flags: Set<Flag>,
     val maps: Set<Map>,
     val rounds: Int,
-    val cutsceneSteps: ArrayList<CutsceneStep>
+    val cutsceneSteps: ArrayList<CutsceneStep>,
 ): Listener {
     init {
         maps.forEach {
@@ -53,11 +55,12 @@ abstract class GameBase(
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
 
-    val cutsceneObservers: MutableSet<Player> = HashSet()
+    val gamePlayers: MutableSet<Player> = HashSet()
 
     open suspend fun load() {
         currentState = State.LOADING
 
+        gamePlayers.addAll(Bukkit.getOnlinePlayers())
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
                 Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
@@ -80,8 +83,6 @@ abstract class GameBase(
         }
     }
 
-    abstract suspend fun spawn()
-
     open suspend fun finishLoading() {
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
@@ -96,11 +97,18 @@ abstract class GameBase(
 
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
-        cutsceneObservers.addAll(Bukkit.getOnlinePlayers())
 
         cutsceneSteps.forEach {
-            it.run(cutsceneObservers, currentMap!!)
+            it.run(gamePlayers, currentMap!!)
         }
+    }
+
+    open suspend fun pregame() {
+        currentState = State.PREGAME
+    }
+
+    open suspend fun spawn() {
+        // TODO: Use the current maps spawn groups to spawn the players for both pregame and in-game
     }
 
     @EventHandler
@@ -120,4 +128,5 @@ abstract class GameBase(
         POST_ROUND,
         POST_GAME
     }
+
 }

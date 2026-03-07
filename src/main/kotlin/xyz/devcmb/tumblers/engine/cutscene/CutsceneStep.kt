@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.engine.cutscene
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.engine.LoadedMap
+import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.UserInterfaceUtility
 
 class CutsceneStep(

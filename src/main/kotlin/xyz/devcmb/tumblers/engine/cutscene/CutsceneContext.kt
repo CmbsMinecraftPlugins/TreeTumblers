@@ -1,10 +1,9 @@
 package xyz.devcmb.tumblers.engine.cutscene
 
-import io.papermc.paper.command.brigadier.argument.ArgumentTypes.world
 import org.bukkit.Location
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.engine.LoadedMap
+import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.unpackCoordinates
 

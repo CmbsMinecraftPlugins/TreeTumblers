@@ -1,12 +1,13 @@
-package xyz.devcmb.tumblers.engine
+package xyz.devcmb.tumblers.engine.map
 
 import org.bukkit.configuration.ConfigurationSection
-import org.bukkit.configuration.MemorySection
 import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.map.spawn.SpawnGroup
 import kotlin.io.path.Path
 
 /**
@@ -29,7 +30,9 @@ import kotlin.io.path.Path
  * @throws MapSetupException Throws if there is no data corresponding to the map
  */
 class Map(
-    val id: String
+    val id: String,
+    val pregameSpawns: List<SpawnGroup>,
+    val inGameSpawns: List<SpawnGroup>
 ) {
     lateinit var game: GameBase
 

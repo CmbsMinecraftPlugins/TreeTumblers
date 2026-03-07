@@ -16,7 +16,27 @@ games:
       warfare:
         world: "crumble_warfare"
         data:
-          spawns: []
+          spawns:
+            pregame:
+              - [-32.5,79.0,-33.5]
+            ingame:
+              arena1:
+                # The first set of spawns for the first team on this map
+                # It looks so bad but who caresssss
+                - [
+                  [ -38.5,79.0,-43.5 ]
+                  [ -38.5,79.0,-41.5 ]
+                  [ -40.5,79.0,-39.5 ]
+                  [ -42.5,79.0,-39.5 ]
+                ]
+                # The second set of spawns for the second team on this map
+                - [
+                  [ -32.5,79.0,-29.5 ],
+                  [ -32.5,79.0,-31.5 ],
+                  [ -30.5,79.0,-33.5 ],
+                  [ -28.5,79.0,-33.5 ]
+                ]
+
           cutscene:
             # X,Y,Z,pitch,yaw
             start: [-25.5,86.0,-26.5,134.5,35.4]
