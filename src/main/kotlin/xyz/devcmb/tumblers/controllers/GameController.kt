@@ -10,13 +10,14 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.util.DebugUtil
 
 @Controller("gameController", Controller.Priority.MEDIUM)
 class GameController : IController {
-    val games: ArrayList<GameBase> = ArrayList()
+    val games: ArrayList<RegisteredGame> = ArrayList()
     var globalState: State = State.INACTIVE
     var activeGame: String? = null
+
+    data class RegisteredGame(val id: String, val game: Class<out GameBase>)
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -28,21 +29,20 @@ class GameController : IController {
         reflections.getTypesAnnotatedWith(EventGame::class.java)
             .filter { GameBase::class.java.isAssignableFrom(it) }
             .forEach { clazz ->
-                val annotation = clazz.getAnnotation(EventGame::class.java)
-                val controllerClass = clazz as Class<out GameBase>
+                val gameClass = clazz as Class<out GameBase>
+                val gameId = gameClass.getDeclaredConstructor().newInstance().id
 
-                val instance: GameBase =
-                    controllerClass.getDeclaredConstructor().newInstance()
-
-                games.add(instance)
+                games.add(RegisteredGame(gameId, gameClass))
             }
     }
 
     fun startGame(id: String) {
         if(activeGame != null) throw GameOperatorException("Cannot start a game while one is currently active")
-        val game = games.find { it.id == id }
 
-        if(game == null) throw GameOperatorException("Cannot start a nonexistent game")
+        val gameClass = games.find { it.id == id }?.game
+            ?: throw GameOperatorException("Cannot start a nonexistent game")
+
+        val game = gameClass.getDeclaredConstructor().newInstance()
 
         activeGame = id
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
@@ -57,9 +57,11 @@ class GameController : IController {
 
     class Game(val id: String) {
         fun get(): GameBase {
-            // this feels so bad
             val gameController = ControllerDelegate.getController("gameController") as GameController
-            return gameController.games.find { it.id == id }!!
+            val gameType = gameController.games.find { it.id == id }?.game
+                ?: throw GameOperatorException("Cannot get a nonexistent game")
+
+            return gameType.getDeclaredConstructor().newInstance()
         }
     }
 
@@ -69,4 +71,3 @@ class GameController : IController {
         GAME_ACTIVE
     }
 }
-

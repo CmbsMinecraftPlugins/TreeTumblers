@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.engine
 
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
@@ -22,16 +23,18 @@ import xyz.devcmb.tumblers.util.DebugUtil
  * @param votable Whether this game is available for voting during the [GameController.State.VOTING] stage
  * @param flags A set containing all the feature flags for this game
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
+ * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
  *
  * @property currentState The current [State] of the individual game
- * @property currentRound The current round
+ * @property loadedMaps An [ArrayList] containing all the [LoadedMap] instances
+ * @property configRoot The root path for the games configuration
+ * @property gamePlayers A [MutableSet] with all the players that were online when the game was started
  */
 abstract class GameBase(
     val id: String,
     val votable: Boolean,
     val flags: Set<Flag>,
     val maps: Set<Map>,
-    val rounds: Int,
     val cutsceneSteps: ArrayList<CutsceneStep>,
 ): Listener {
     init {
@@ -45,19 +48,16 @@ abstract class GameBase(
             DebugUtil.info("Transitioning to GameState ${value.name}")
             field = value
         }
-    var currentRound = 1
-
-    val currentMap: LoadedMap?
-        get() {
-            return loadedMaps[currentRound]
-        }
 
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
 
     val gamePlayers: MutableSet<Player> = HashSet()
 
-    open suspend fun load() {
+    /**
+     * The internal load stage called by the [GameController]
+     */
+    suspend fun load() {
         currentState = State.LOADING
 
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
@@ -71,18 +71,23 @@ abstract class GameBase(
             it.showTitle(title)
         }
 
-        var map = maps.random()
-        for(i in 1..rounds) {
-            if(flags.contains(Flag.RANDOMIZE_MAP_PER_ROUND)) {
-                map = maps.random()
-            }
-
-            val loadedMap = map.load(i)
-            DebugUtil.success("Loaded ${loadedMap.world.name} successfully!")
-            loadedMaps.add(loadedMap)
-        }
+        gameLoad()
     }
 
+    /**
+     * The load sequence that each individual game should do
+     *
+     * This method is responsible for setting up maps, team arrangements, etc
+     *
+     * Anything that needs to be executed before players can access the game should be done here
+     */
+    abstract suspend fun gameLoad()
+
+    /**
+     * The method that is invoked once the coroutine stops yielding
+     *
+     * Can be overridden if necessary, but I doubt it's necessary
+     */
     open suspend fun finishLoading() {
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
@@ -95,21 +100,47 @@ abstract class GameBase(
         }
     }
 
+    /**
+     * A utility method for loading maps into the [loadedMaps] using [Map.load]
+     */
+    suspend fun loadMap(map: Map, index: Int): LoadedMap {
+        val loadedMap = map.load(index)
+        loadedMaps.add(loadedMap)
+
+        DebugUtil.success("Loaded ${loadedMap.world.name} successfully!")
+        return loadedMap
+    }
+
+    /**
+     * The sequence for running [CutsceneStep] instances
+     */
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
 
         cutsceneSteps.forEach {
-            it.run(gamePlayers, currentMap!!)
+            it.run(gamePlayers, loadedMaps.first())
         }
     }
 
+    /**
+     * The main method for the pregame state
+     *
+     * By default, all this does is wait 2 seconds and continue with execution
+     *
+     * This is where any player configurable things should be done (kit selection, settings, etc)
+     */
     open suspend fun pregame() {
         currentState = State.PREGAME
+        spawn(SpawnCycle.PREGAME)
+        delay(2000)
     }
 
-    open suspend fun spawn() {
-        // TODO: Use the current maps spawn groups to spawn the players for both pregame and in-game
-    }
+    /**
+     * The abstract method for spawning players in
+     *
+     * There was going to be some kind of system to do this automatically, but doing it manually seems to be a more flexible option, at least for now.
+     */
+    abstract suspend fun spawn(cycle: SpawnCycle)
 
     @EventHandler
     fun playerMove(event: PlayerMoveEvent) {
@@ -123,10 +154,12 @@ abstract class GameBase(
         LOADING,
         CUTSCENE,
         PREGAME,
-        PRE_ROUND,
-        ROUND_ON,
-        POST_ROUND,
+        GAME_ON,
         POST_GAME
     }
 
+    enum class SpawnCycle {
+        PREGAME,
+        PRE_ROUND
+    }
 }

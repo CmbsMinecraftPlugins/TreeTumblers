@@ -7,7 +7,6 @@ import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.WorldController
 import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.engine.map.spawn.SpawnGroup
 import kotlin.io.path.Path
 
 /**
@@ -31,8 +30,6 @@ import kotlin.io.path.Path
  */
 class Map(
     val id: String,
-    val pregameSpawns: List<SpawnGroup>,
-    val inGameSpawns: List<SpawnGroup>
 ) {
     lateinit var game: GameBase
 
