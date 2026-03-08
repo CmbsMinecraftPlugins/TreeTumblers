@@ -4,6 +4,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -32,5 +33,10 @@ class DebugCommand {
         player.sendMessage(Component.text("Subscribed to the ${loggingLevel.name.lowercase()} logging channel successfully!", NamedTextColor.GREEN))
 
         DebugUtil.log("${player.name} subscribed to ${loggingLevel.name} logging channel", DebugUtil.DebugLogLevel.INFO)
+    }
+
+    @Execute(name = "logging send")
+    fun testLogging(@Arg loggingLevel: DebugUtil.DebugLogLevel, @Join message: String) {
+        DebugUtil.log(message, loggingLevel)
     }
 }

@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.crumble
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
@@ -11,7 +10,6 @@ import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
-import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -37,28 +35,24 @@ class CrumbleController : GameBase(
     )
 ) {
     val rounds = run {
-        Team.values().filter { it.playingTeam }.size - 1
+        Team.entries.filter { it.playingTeam }.size - 1
     }
     val currentRound = 1
-    val currentMap: LoadedMap?
-        get() {
-            return loadedMaps.getOrNull(currentRound)
-        }
     val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
 
     override suspend fun gameLoad() {
         // ChatGPT code because idfk how to do any of this
-        val teams = Team.values().filter { it.playingTeam }.toMutableList()
+        val teams = Team.entries.filter { it.playingTeam }.toMutableList()
         repeat(rounds) {
             val roundMatches = mutableListOf<Pair<Team, Team>>()
 
             for (i in 0 until teams.size / 2) {
                 val a = teams[i]
                 val b = teams[teams.lastIndex - i]
-                roundMatches += a to b
+                roundMatches.add(a to b)
             }
 
-            matchups.add(it, roundMatches)
+            matchups.add(roundMatches)
 
             val last = teams.removeLast()
             teams.add(1, last)
@@ -87,6 +81,7 @@ class CrumbleController : GameBase(
                 suspendSync {
                     gamePlayers.forEach {
                         it.teleport(location.unpackCoordinates(currentMap.world))
+                        DebugUtil.info("Spawned player ${it.name} at $location")
                     }
                 }
             }
@@ -111,11 +106,11 @@ class CrumbleController : GameBase(
                         }
                     } ?: throw GameControllerException("Spawn set not found")
 
+                    var firstOccupiedSpawns = 0
+                    var secondOccupiedSpawns = 0
+
                     gamePlayers.forEach {
                         val tumblingPlayer = it.tumblingPlayer ?: return@forEach
-
-                        var firstOccupiedSpawns = 0
-                        var secondOccupiedSpawns = 0
 
                         when(tumblingPlayer.team) {
                             matchup.first -> {
@@ -126,7 +121,7 @@ class CrumbleController : GameBase(
                                 suspendSync {
                                     it.teleport(location)
                                 }
-                                DebugUtil.info("Spawned ${it.name} at $location")
+                                DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                 firstOccupiedSpawns++
                             }

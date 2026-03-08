@@ -1,11 +1,10 @@
 package xyz.devcmb.tumblers.util
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.TreeTumblers
-
 
 object DebugUtil {
     val ansiColorMap: HashMap<NamedTextColor, String> = hashMapOf(
@@ -35,11 +34,20 @@ object DebugUtil {
 
         Bukkit.getServer().consoleSender.sendMessage("${ansiColorMap[level.color]!!}[TreeTumblers ${level.name.lowercase()}]${reset} $message")
 
+        val stackTrace = Thread.currentThread().stackTrace
+        val caller = stackTrace[2]
         loggingSubscriptions.forEach { player, logLevel ->
             if(logLevel.level >= level.level) {
                 player.sendMessage(
-                    Component.text("[TreeTumblers ${level.name.lowercase()}] ", level.color)
-                        .append(Component.text(message, NamedTextColor.WHITE))
+                    Component.text("[")
+                        .append(Component.text(level.icon, NamedTextColor.WHITE)
+                            .font(UserInterfaceUtility.WARNINGS))
+                        .append(Component.text(" TreeTumblers] "))
+                        .color(level.color)
+                        .hoverEvent(HoverEvent.showText(
+                            Component.text("${caller.className}:${caller.lineNumber}")
+                        ))
+                    .append(Component.text(message, NamedTextColor.WHITE))
                 )
             }
         }
@@ -48,12 +56,12 @@ object DebugUtil {
     enum class DebugLogLevel(
         val level: Int,
         val color: NamedTextColor = NamedTextColor.WHITE,
-        val logFunction: (log: String) -> Unit = TreeTumblers.pluginLogger::info
+        val icon: String = "",
     ) {
         NONE(0),
-        ERROR(1, NamedTextColor.RED, TreeTumblers.pluginLogger::severe),
-        WARNING(2, NamedTextColor.YELLOW, TreeTumblers.pluginLogger::warning),
-        SUCCESS(3, NamedTextColor.GREEN),
-        INFO(4, NamedTextColor.AQUA),
+        ERROR(1, NamedTextColor.RED, "\uE004"),
+        WARNING(2, NamedTextColor.YELLOW, "\uE005"),
+        SUCCESS(3, NamedTextColor.GREEN, "\uE001"),
+        INFO(4, NamedTextColor.AQUA, "\uE000"),
     }
 }

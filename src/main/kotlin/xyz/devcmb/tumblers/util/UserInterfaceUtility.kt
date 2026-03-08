@@ -6,11 +6,12 @@ import org.bukkit.NamespacedKey
 
 object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
+    val WARNINGS = NamespacedKey("tumbling", "warnings")
 
     fun constructLine(length: Int, color: NamedTextColor = NamedTextColor.WHITE): Component {
         var component = Component.empty()
 
-        for(i in 1..length) {
+       repeat(length) {
             component = component.append(
                 Component.text("—", color)
                     .append(
