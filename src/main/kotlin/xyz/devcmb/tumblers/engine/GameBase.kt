@@ -21,7 +21,6 @@ import xyz.devcmb.tumblers.util.DebugUtil
  * Base class for all games
  * @param id The unique identifier of the game
  * @param votable Whether this game is available for voting during the [GameController.State.VOTING] stage
- * @param flags A set containing all the feature flags for this game
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
  *
@@ -33,7 +32,6 @@ import xyz.devcmb.tumblers.util.DebugUtil
 abstract class GameBase(
     val id: String,
     val votable: Boolean,
-    val flags: Set<Flag>,
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,
 ): Listener {
@@ -141,6 +139,13 @@ abstract class GameBase(
      * There was going to be some kind of system to do this automatically, but doing it manually seems to be a more flexible option, at least for now.
      */
     abstract suspend fun spawn(cycle: SpawnCycle)
+
+    /**
+     * The method for the main gameplay loop for an individual game
+     *
+     * This should contain any kind of game-specific logic, and round handling if applicable
+     */
+    abstract suspend fun gameOn()
 
     @EventHandler
     fun playerMove(event: PlayerMoveEvent) {

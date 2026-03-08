@@ -6,6 +6,14 @@ import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.UserInterfaceUtility
 
+/**
+ * A single step of a cutscene.
+ *
+ * These are for explaining the game before it begins
+ *
+ * @param chatMessage The message to send all observers of the cutscene
+ * @param init The function to run with an attached [CutsceneContext]
+ */
 class CutsceneStep(
     val chatMessage: Component,
     val init: suspend CutsceneContext.(map: LoadedMap) -> Unit

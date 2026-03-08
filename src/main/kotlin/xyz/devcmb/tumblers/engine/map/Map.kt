@@ -24,8 +24,7 @@ import kotlin.io.path.Path
  * ```
  *
  * @param id The unique identifier for the map, as seen in the config
- * @property world The playing world, null if the map is not loaded
- * @property data The map data loaded from the config file
+ * @property game The instance of the game which holds this map
  * @throws MapSetupException Throws if there is no data corresponding to the map
  */
 class Map(
@@ -55,7 +54,7 @@ class Map(
 
         val dataPath = "${game.configRoot}.maps.$id.data"
         val data: ConfigurationSection =
-            config.getConfigurationSection("${game.configRoot}.maps.$id.data")
+            config.getConfigurationSection(dataPath)
                 ?: YamlConfiguration()
 
         return LoadedMap(id, world, data)

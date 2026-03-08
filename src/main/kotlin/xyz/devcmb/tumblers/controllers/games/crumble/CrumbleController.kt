@@ -6,7 +6,6 @@ import net.kyori.adventure.text.format.NamedTextColor
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
-import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -19,7 +18,6 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 class CrumbleController : GameBase(
     id = "crumble",
     votable = true,
-    flags = setOf(Flag.HUNGER_REMOVED),
     maps = setOf(
         Map("warfare")
     ),
@@ -95,16 +93,18 @@ class CrumbleController : GameBase(
                 )
 
                 currentMatchups.forEachIndexed { index, matchup ->
-                    val spawns: List<List<List<Double>>> = currentMap.data.getList(spawnSetKeys.getOrNull(index) ?: spawnSetKeys.first())?.map {
-                        if(it !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                        return@map it.map {
-                            if(it !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                            return@map it.map {
-                                if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
-                                it
+                    val spawns: List<List<List<Double>>> = currentMap.data
+                        .getList(spawnSetKeys.getOrNull(index) ?: spawnSetKeys.first())
+                        ?.map { l1 ->
+                            if(l1 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
+                            return@map l1.map { l2 ->
+                                if(l2 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
+                                return@map l2.map {
+                                    if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
+                                    it
+                                }
                             }
-                        }
-                    } ?: throw GameControllerException("Spawn set not found")
+                        } ?: throw GameControllerException("Spawn set not found")
 
                     var firstOccupiedSpawns = 0
                     var secondOccupiedSpawns = 0
@@ -143,6 +143,9 @@ class CrumbleController : GameBase(
                 }
             }
         }
+    }
+
+    override suspend fun gameOn() {
     }
 
     override suspend fun pregame() {
