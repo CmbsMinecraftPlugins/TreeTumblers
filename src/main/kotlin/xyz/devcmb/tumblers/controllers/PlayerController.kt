@@ -2,19 +2,19 @@ package xyz.devcmb.tumblers.controllers
 
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
-import io.papermc.paper.event.connection.configuration.PlayerConnectionReconfigureEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 @Controller("playerController", Controller.Priority.MEDIUM)
@@ -28,7 +28,7 @@ class PlayerController : IController {
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
 
-        var data: TumblingPlayer;
+        var data: TumblingPlayer
         try {
             val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
             data = databaseController.getPlayerData(player)
@@ -73,6 +73,11 @@ class PlayerController : IController {
         players.remove(tumblingPlayer)
     }
 
+    @EventHandler
+    fun playerInteract(event: PlayerInteractEvent) {
+        AdvancedItemRegistry.handleInteract(event)
+    }
+
     /*
      * This uses an unstable api for preventing a player from connecting in the first place
      * If this ever becomes a problem, either update it to a new, supported method
@@ -82,7 +87,7 @@ class PlayerController : IController {
     @Suppress("UnstableApiUsage")
     fun playerLoginEvent(event: PlayerConnectionValidateLoginEvent) {
         val connection = event.connection
-        if(connection !is PlayerLoginConnection) return;
+        if(connection !is PlayerLoginConnection) return
 
         val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
         val uuid = connection.authenticatedProfile?.id

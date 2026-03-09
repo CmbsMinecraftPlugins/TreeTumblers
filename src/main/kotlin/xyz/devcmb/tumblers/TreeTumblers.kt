@@ -5,6 +5,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
 import org.bukkit.plugin.java.JavaPlugin
+import xyz.devcmb.invcontrol.InvControlManager
 import java.util.logging.Logger
 
 class TreeTumblers : JavaPlugin() {
@@ -19,7 +20,7 @@ class TreeTumblers : JavaPlugin() {
         plugin = this
         pluginLogger = logger
 
-
+        InvControlManager.setPlugin(this)
         ControllerDelegate.registerAllControllers()
     }
 

@@ -52,6 +52,7 @@ class GameController : IController {
             game.finishLoading()
             game.runCutscene()
             game.pregame()
+            game.gameMain()
         }
     }
 

@@ -16,6 +16,7 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 /**
  * Base class for all games
@@ -51,6 +52,7 @@ abstract class GameBase(
     val configRoot = "games.$id"
 
     val gamePlayers: MutableSet<Player> = HashSet()
+    val gameParticipants: MutableSet<Player> = HashSet()
 
     /**
      * The internal load stage called by the [GameController]
@@ -59,6 +61,8 @@ abstract class GameBase(
         currentState = State.LOADING
 
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
+        gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer?.team?.playingTeam == true })
+
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
                 Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
@@ -121,15 +125,22 @@ abstract class GameBase(
     }
 
     /**
+     * The internal method for pre-pregame invoked by the [GameController]
+     */
+    suspend fun pregame() {
+        currentState = State.PREGAME
+        spawn(SpawnCycle.PREGAME)
+        gamePregame()
+    }
+
+    /**
      * The main method for the pregame state
      *
      * By default, all this does is wait 2 seconds and continue with execution
      *
-     * This is where any player configurable things should be done (kit selection, settings, etc)
+     * This is where any player configurable things should be done (kit selection, settings, etc.)
      */
-    open suspend fun pregame() {
-        currentState = State.PREGAME
-        spawn(SpawnCycle.PREGAME)
+    open suspend fun gamePregame() {
         delay(2000)
     }
 
@@ -139,6 +150,14 @@ abstract class GameBase(
      * There was going to be some kind of system to do this automatically, but doing it manually seems to be a more flexible option, at least for now.
      */
     abstract suspend fun spawn(cycle: SpawnCycle)
+
+    /**
+     * Internal function for starting the game
+     */
+    suspend fun gameMain() {
+        currentState = State.GAME_ON
+        gameOn()
+    }
 
     /**
      * The method for the main gameplay loop for an individual game

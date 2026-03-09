@@ -12,7 +12,7 @@ import xyz.devcmb.tumblers.util.UserInterfaceUtility
  * These are for explaining the game before it begins
  *
  * @param chatMessage The message to send all observers of the cutscene
- * @param init The function to run with an attached [CutsceneContext]
+ * @param init The function to run with a [LoadedMap] param and an attached [CutsceneContext]
  */
 class CutsceneStep(
     val chatMessage: Component,
