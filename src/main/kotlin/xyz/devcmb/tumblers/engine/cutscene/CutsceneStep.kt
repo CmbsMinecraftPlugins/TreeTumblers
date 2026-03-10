@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.engine.map.LoadedMap
-import xyz.devcmb.tumblers.util.UserInterfaceUtility
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 /**
  * A single step of a cutscene.

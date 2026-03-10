@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.util
+package xyz.devcmb.tumblers.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor

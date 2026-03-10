@@ -25,7 +25,7 @@ dependencies {
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
-    implementation("com.github.29cmb.InvControl:invcontrol-core:53b0357194")
+    implementation("com.github.29cmb.InvControl:invcontrol-core:v0.2.2")
     implementation("commons-io:commons-io:2.14.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }

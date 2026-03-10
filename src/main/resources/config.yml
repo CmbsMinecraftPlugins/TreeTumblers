@@ -12,6 +12,7 @@ games:
     # The path where all the maps are contained
     # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
     worlds_folder: "&/templates/worlds/crumble"
+    max_kit_players: 2
     maps:
       warfare:
         world: "crumble_warfare"

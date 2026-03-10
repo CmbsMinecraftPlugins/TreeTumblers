@@ -6,11 +6,8 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import xyz.devcmb.invcontrol.chest.ChestInventoryPage
-import xyz.devcmb.invcontrol.chest.ChestInventoryUI
-import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
-import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.data.Team
@@ -20,6 +17,7 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
@@ -41,8 +39,13 @@ class CrumbleController : GameBase(
         }
     )
 ) {
+    companion object {
+        @Configurable("games.crumble.max_kit_players")
+        var maxPlayersPerKit = 2
+    }
+
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
-    val currentRound = 1
+    var currentRound = 1
     val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
 
     val registeredKits: ArrayList<Kit> = ArrayList()
@@ -51,47 +54,7 @@ class CrumbleController : GameBase(
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS, "crumble_kit_selector") {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
         rightClick { player ->
-            // TODO: Set the title to a glyph to override the window
-            ChestInventoryUI(player, Component.text("Kit Selector")).apply {
-                val page = ChestInventoryPage()
-                addPage("main", page)
-                setPage("main")
-
-                val itemMap = InventoryItemMap(
-                    getInventoryItems = { page, ui ->
-                        val items: ArrayList<InventoryMappedItem> = ArrayList()
-                        registeredKits.forEach {
-                            items.add(InventoryMappedItem(
-                                getItemStack = { _,_ ->
-                                    var stack = ItemStack.of(Material.PAPER).apply {
-                                        itemMeta = itemMeta.also { meta ->
-                                            meta.itemName(Component.text(it.name))
-                                            if(playerKits[player] != it) meta.itemModel = it.inventoryModel
-                                        }
-                                    }
-
-                                    if(playerKits[player] == it) {
-                                        stack = stack.withType(Material.GREEN_STAINED_GLASS_PANE)
-                                    }
-
-                                    stack
-                                },
-                                onClick = { page, item ->
-                                    playerKits.put(player, it)
-                                    reload()
-                                }
-                            ))
-                        }
-                        items
-                    },
-                    startSlot = 0,
-                    itemPage = 1,
-                    maxItems = 27
-                )
-
-                page.addItemMap(itemMap)
-                show()
-            }
+            player.openHandledInventory("crumbleKitSelector")
         }
     }.build()
 
@@ -212,9 +175,6 @@ class CrumbleController : GameBase(
         }
     }
 
-    override suspend fun gameOn() {
-    }
-
     override suspend fun gamePregame() {
         gameParticipants.forEach {
             it.inventory.addItem(kitSelector.clone())
@@ -223,8 +183,21 @@ class CrumbleController : GameBase(
         // TODO: Add some kind of countdown instead that yields
         delay(20 * 1000)
 
-        gameParticipants.forEach {
-            it.inventory.clear()
+        suspendSync {
+            gameParticipants.forEach {
+                it.closeInventory()
+                it.inventory.clear()
+            }
+        }
+    }
+
+    override suspend fun gameOn() {
+        repeat(rounds) {
+            spawn(SpawnCycle.PRE_ROUND)
+            // TODO: give kits
+            delay(20000) // prep stage
+            // TODO: Drop walls
+            currentRound++
         }
     }
 }

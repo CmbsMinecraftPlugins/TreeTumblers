@@ -5,6 +5,7 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object DebugUtil {
     val ansiColorMap: HashMap<NamedTextColor, String> = hashMapOf(

@@ -9,11 +9,18 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 
+val playerController: PlayerController by lazy {
+    ControllerDelegate.getController("playerController") as PlayerController
+}
+
 val Player.tumblingPlayer: TumblingPlayer?
     get() {
-        val playerController = ControllerDelegate.getController("playerController") as PlayerController
         return playerController.players.find { it.bukkitPlayer == this }
     }
+
+fun Player.openHandledInventory(id: String) {
+    playerController.playerUIControllers[this]!!.openInventory(id)
+}
 
 fun runTask(runnable: Runnable) =
     Bukkit.getScheduler().runTask(TreeTumblers.plugin, runnable)

@@ -11,11 +11,11 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.engine.GameBase
 
-@Controller("gameController", Controller.Priority.MEDIUM)
+@Controller("gameController", Controller.Priority.HIGH)
 class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var globalState: State = State.INACTIVE
-    var activeGame: String? = null
+    var activeGame: GameBase? = null
 
     data class RegisteredGame(val id: String, val game: Class<out GameBase>)
 
@@ -44,7 +44,7 @@ class GameController : IController {
 
         val game = gameClass.getDeclaredConstructor().newInstance()
 
-        activeGame = id
+        activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
         TreeTumblers.pluginScope.launch {
