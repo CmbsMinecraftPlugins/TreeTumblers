@@ -2,9 +2,9 @@ package xyz.devcmb.tumblers.util
 
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Bukkit
-import org.bukkit.Location
-import org.bukkit.World
 import org.bukkit.block.Biome
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -15,27 +15,27 @@ import kotlin.coroutines.resumeWithException
 
 object MiscUtils {
     object VoidGenerator : ChunkGenerator() {
-        public override fun shouldGenerateNoise(): Boolean {
+        override fun shouldGenerateNoise(): Boolean {
             return false
         }
 
-        public override fun shouldGenerateSurface(): Boolean {
+        override fun shouldGenerateSurface(): Boolean {
             return false
         }
 
-        public override fun shouldGenerateCaves(): Boolean {
+        override fun shouldGenerateCaves(): Boolean {
             return false
         }
 
-        public override fun shouldGenerateDecorations(): Boolean {
+        override fun shouldGenerateDecorations(): Boolean {
             return false
         }
 
-        public override fun shouldGenerateMobs(): Boolean {
+        override fun shouldGenerateMobs(): Boolean {
             return false
         }
 
-        public override fun shouldGenerateStructures(): Boolean {
+        override fun shouldGenerateStructures(): Boolean {
             return false
         }
 
@@ -55,6 +55,63 @@ object MiscUtils {
                 }
             }
         }
+    }
+
+    private val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
+    private val symbols = listOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
+
+    fun intToRoman(num: Int): String {
+        var result = ""
+        var n = num
+        for (i in values.indices) {
+            while (n >= values[i]) {
+                n -= values[i]
+                result += symbols[i]
+            }
+        }
+        return result
+    }
+
+    fun wrapString(string: String, length: Int): String {
+        var wrapCheck = 0
+        val wrappedString = StringBuilder()
+        for (i in 0..<string.length) {
+            if (wrapCheck >= length && string[i] == ' ') {
+                wrappedString.append("\n")
+                wrapCheck = 0
+            } else {
+                wrappedString.append(string[i])
+            }
+            wrapCheck++
+        }
+
+        return wrappedString.toString()
+    }
+
+    fun wrapComponent(component: Component, width: Int): List<Component> {
+        val text = PlainTextComponentSerializer.plainText().serialize(component)
+        val style = component.style()
+
+        val words = text.split(" ")
+        val lines = mutableListOf<Component>()
+
+        var current = StringBuilder()
+
+        for (word in words) {
+            if (current.length + word.length + 1 > width) {
+                lines += Component.text(current.toString()).style(style)
+                current = StringBuilder(word)
+            } else {
+                if (current.isNotEmpty()) current.append(" ")
+                current.append(word)
+            }
+        }
+
+        if (current.isNotEmpty()) {
+            lines += Component.text(current.toString()).style(style)
+        }
+
+        return lines
     }
 
     // Source - https://stackoverflow.com/a/73494554

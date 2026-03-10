@@ -2,12 +2,14 @@ package xyz.devcmb.tumblers.util
 
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import kotlin.math.roundToInt
 
 val playerController: PlayerController by lazy {
     ControllerDelegate.getController("playerController") as PlayerController
@@ -40,4 +42,17 @@ fun List<Double>.unpackCoordinates(world: World): Location {
         getOrNull(3)?.toFloat() ?: 0f,
         getOrNull(4)?.toFloat() ?: 0f
     )
+}
+
+val Long.seconds: Double
+    get() {
+        return ((this / 20.0) * 10.0).roundToInt() / 10.0
+    }
+
+fun Player.buttonClickSound() {
+    player!!.playSound(player!!.location, Sound.UI_BUTTON_CLICK, 10f, 1f)
+}
+
+fun Player.sound(sound: Sound) {
+    player!!.playSound(player!!.location, sound, 10f, 1f)
 }

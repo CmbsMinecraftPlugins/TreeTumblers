@@ -5,11 +5,12 @@ import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import java.util.UUID
 
 class AdvancedItemStackContext(
-    material: Material,
-    val id: String
+    material: Material
 ) {
+    val id = UUID.randomUUID().toString()
     private val item = ItemStack(material)
 
     var rightClick: ((Player) -> Unit)? = null

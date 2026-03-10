@@ -3,6 +3,8 @@ package xyz.devcmb.tumblers.ui
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.NamespacedKey
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.PlayerController
 
 object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
@@ -22,5 +24,14 @@ object UserInterfaceUtility {
         }
 
         return component
+    }
+
+    fun refreshAll(id: String) {
+        val playerController = ControllerDelegate.getController("playerController") as PlayerController
+        playerController.playerUIControllers.forEach { player, controller ->
+            val inv = controller.inventories.find { it.id == id }
+            require(inv != null) { "Inventory with an id of $id was not found for ${player.name}" }
+            inv.inventory.reload()
+        }
     }
 }

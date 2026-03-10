@@ -30,6 +30,7 @@ class PlayerController : IController {
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
+        player.inventory.clear()
 
         playerUIControllers.put(player, PlayerUIController(player))
 

@@ -3,10 +3,15 @@ package xyz.devcmb.tumblers.controllers.games.crumble
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
@@ -40,18 +45,21 @@ class CrumbleController : GameBase(
     )
 ) {
     companion object {
-        @Configurable("games.crumble.max_kit_players")
-        var maxPlayersPerKit = 2
+        @field:Configurable("games.crumble.max_kit_players")
+        var maxPlayersPerKit: Int = 2
     }
 
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
     var currentRound = 1
     val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
 
-    val registeredKits: ArrayList<Kit> = ArrayList()
+    val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
+    val kitTemplates: HashMap<String, Kit> = HashMap()
     val playerKits: HashMap<Player, Kit> = HashMap()
 
-    val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS, "crumble_kit_selector") {
+    val kitItems: ArrayList<ItemStack> = arrayListOf()
+
+    val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
         rightClick { player ->
             player.openHandledInventory("crumbleKitSelector")
@@ -85,11 +93,12 @@ class CrumbleController : GameBase(
     }
 
     fun registerKits() {
-        registerKit(ArcherKit())
+        registerKit("archer", ArcherKit::class.java)
     }
 
-    fun registerKit(kit: Kit) {
-        registeredKits.add(kit)
+    fun registerKit(id: String, kit: Class<out Kit>) {
+        kitTemplates.put(id, kit.getConstructor(Player::class.java).newInstance(null))
+        registeredKits.put(id, kit)
     }
 
     override suspend fun spawn(cycle: SpawnCycle) {
@@ -194,10 +203,45 @@ class CrumbleController : GameBase(
     override suspend fun gameOn() {
         repeat(rounds) {
             spawn(SpawnCycle.PRE_ROUND)
-            // TODO: give kits
+            giveKits()
             delay(20000) // prep stage
             // TODO: Drop walls
             currentRound++
         }
+    }
+
+    fun giveKits() {
+        playerKits.forEach { player, kit ->
+            player.inventory.clear()
+
+            kit.items.forEach {
+                val item = it.clone()
+                kitItems.add(item)
+                player.inventory.addItem(item)
+            }
+        }
+    }
+
+    fun selectKit(player: Player, id: String) {
+        deselectKit(player)
+        require(registeredKits.get(id) != null) { "Kit with id $id does not exist" }
+
+        val kit = registeredKits[id]!!
+            .getDeclaredConstructor(Player::class.java)
+            .newInstance(player)
+        playerKits.put(player, kit)
+        Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
+    }
+
+    fun deselectKit(player: Player) {
+        if(!playerKits.containsKey(player)) return
+        HandlerList.unregisterAll(playerKits[player]!!)
+        playerKits.remove(player)
+    }
+
+    @EventHandler
+    fun playerDropItemEvent(event: PlayerDropItemEvent) {
+        if(kitItems.find { it.isSimilar(event.itemDrop.itemStack) } != null)
+            event.isCancelled = true
     }
 }

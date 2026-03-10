@@ -13,6 +13,11 @@ games:
     # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
     worlds_folder: "&/templates/worlds/crumble"
     max_kit_players: 2
+    kits:
+      archer:
+        punch_level: 2
+        power_level: 3
+        swiftness_ticks: 30
     maps:
       warfare:
         world: "crumble_warfare"
