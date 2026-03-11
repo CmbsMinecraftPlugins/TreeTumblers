@@ -243,7 +243,7 @@ class CrumbleController : GameBase(
             spawn(SpawnCycle.PRE_ROUND)
             giveKits()
             abilitiesUsed.clear()
-            delay(20000) // prep stage
+            delay(7000) // prep stage
             // TODO: Drop walls
             currentRound++
         }
@@ -290,6 +290,9 @@ class CrumbleController : GameBase(
             // Make sure never to have over 7 items in a kit
             player.inventory.setItem(7, killItem)
             player.inventory.setItem(8, abilityItem)
+
+            kitItems.add(killItem)
+            kitItems.add(abilityItem)
         }
     }
 
