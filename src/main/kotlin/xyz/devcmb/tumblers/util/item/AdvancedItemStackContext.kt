@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.util.item
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -11,7 +12,7 @@ class AdvancedItemStackContext(
     material: Material
 ) {
     val id = UUID.randomUUID().toString()
-    private val item = ItemStack(material)
+    val item = ItemStack(material)
 
     var rightClick: ((Player) -> Unit)? = null
     var leftClick: ((Player) -> Unit)? = null
@@ -25,6 +26,12 @@ class AdvancedItemStackContext(
     fun lore(list: List<Component>) {
         item.itemMeta = item.itemMeta.also {
             it.lore(list)
+        }
+    }
+
+    fun model(key: NamespacedKey) {
+        item.itemMeta = item.itemMeta.also {
+            it.itemModel = key
         }
     }
 

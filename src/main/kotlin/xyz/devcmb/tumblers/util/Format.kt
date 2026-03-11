@@ -4,9 +4,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
-import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object Format {
     fun formatPlayerName(player: Player): Component {
@@ -29,5 +28,11 @@ object Format {
             )
             .append(Component.text(" "))
             .append(Component.text(player.name, team.color))
+    }
+
+    fun error(text: String): Component {
+        return Component.empty()
+            .append(Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS))
+            .append(Component.text(" $text", NamedTextColor.RED))
     }
 }

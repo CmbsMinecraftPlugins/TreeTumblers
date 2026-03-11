@@ -3,6 +3,8 @@ package xyz.devcmb.tumblers.controllers.games.crumble
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.ShadowColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -23,6 +25,8 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -60,6 +64,7 @@ class CrumbleController : GameBase(
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
     val kitTemplates: HashMap<String, Kit> = HashMap()
     val playerKits: HashMap<Player, Kit> = HashMap()
+    val abilitiesUsed: ArrayList<Player> = ArrayList()
 
     val kitItems: ArrayList<ItemStack> = ArrayList()
     val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
@@ -72,6 +77,7 @@ class CrumbleController : GameBase(
     }.build()
 
     val font = NamespacedKey("tumbling", "games/crumble")
+    val killModel = NamespacedKey("tumbling", "crumble/kill")
 
     override suspend fun gameLoad() {
         registerKits()
@@ -211,6 +217,7 @@ class CrumbleController : GameBase(
                             .append(UserInterfaceUtility.negativeSpace(bgOffset))
                             .append(Component.text(kit.kitIcon).font(font))
                             .append(Component.text(" ${kit.name}"))
+                            .shadowColor(ShadowColor.shadowColor(0))
                     }
 
                     it.sendActionBar(component)
@@ -235,6 +242,7 @@ class CrumbleController : GameBase(
         repeat(rounds) {
             spawn(SpawnCycle.PRE_ROUND)
             giveKits()
+            abilitiesUsed.clear()
             delay(20000) // prep stage
             // TODO: Drop walls
             currentRound++
@@ -250,6 +258,38 @@ class CrumbleController : GameBase(
                 kitItems.add(item)
                 player.inventory.addItem(item)
             }
+
+            val abilityItem = AdvancedItemStack(Material.PAPER) {
+                name(Component.text("${kit.name} Ability: ${kit.abilityName}", NamedTextColor.AQUA))
+                lore(
+                    MiscUtils.wrapComponent(
+                        Component.text(kit.abilityDescription, NamedTextColor.WHITE),
+                        40
+                    ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
+                )
+                model(kit.inventoryModel)
+
+                rightClick {
+                    useAbility(it)
+                }
+            }.build()
+
+            val killItem = ItemStack(Material.PAPER).apply {
+                itemMeta = itemMeta.also { meta ->
+                    meta.itemName(Component.text("Kill power: ${kit.killPowerName}", NamedTextColor.YELLOW))
+                    meta.itemModel = killModel
+                    meta.lore(
+                        MiscUtils.wrapComponent(
+                            Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
+                            40
+                        ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
+                    )
+                }
+            }
+
+            // Make sure never to have over 7 items in a kit
+            player.inventory.setItem(7, killItem)
+            player.inventory.setItem(8, abilityItem)
         }
     }
 
@@ -268,6 +308,16 @@ class CrumbleController : GameBase(
         if(!playerKits.containsKey(player)) return
         HandlerList.unregisterAll(playerKits[player]!!)
         playerKits.remove(player)
+    }
+
+    fun useAbility(player: Player) {
+        if(abilitiesUsed.contains(player)) {
+            player.sendMessage(Format.error("You've already used your ability!"))
+            return
+        }
+
+        playerKits[player]!!.onAbility()
+        abilitiesUsed.add(player)
     }
 
     @EventHandler
