@@ -18,6 +18,9 @@ interface Kit : Listener {
     val killPowerName: String
     val killPowerDescription: String
 
+    val kitIcon: String
+    val kitDisplayTextLength: Int
+
     fun onKill(killed: Player)
     fun onAbility()
 

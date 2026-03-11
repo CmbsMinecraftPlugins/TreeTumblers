@@ -5,11 +5,13 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -19,10 +21,12 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
@@ -57,7 +61,8 @@ class CrumbleController : GameBase(
     val kitTemplates: HashMap<String, Kit> = HashMap()
     val playerKits: HashMap<Player, Kit> = HashMap()
 
-    val kitItems: ArrayList<ItemStack> = arrayListOf()
+    val kitItems: ArrayList<ItemStack> = ArrayList()
+    val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
@@ -65,6 +70,8 @@ class CrumbleController : GameBase(
             player.openHandledInventory("crumbleKitSelector")
         }
     }.build()
+
+    val font = NamespacedKey("tumbling", "games/crumble")
 
     override suspend fun gameLoad() {
         registerKits()
@@ -187,6 +194,30 @@ class CrumbleController : GameBase(
     override suspend fun gamePregame() {
         gameParticipants.forEach {
             it.inventory.addItem(kitSelector.clone())
+            val task = object : BukkitRunnable() {
+                override fun run() {
+                    var component = Component.empty()
+                    val kit = playerKits.get(it)
+                    if(kit != null) {
+                        // a link to the research I did to get these numbers
+                        // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
+                        val bgSize = 69.5
+                        val bgOffset = (kit.kitDisplayTextLength+((bgSize - kit.kitDisplayTextLength)/2)).toInt()
+                        val fullOffset = ((bgSize - kit.kitDisplayTextLength) / 2).toInt()
+
+                        component = Component.empty()
+                            .append(UserInterfaceUtility.negativeSpace(fullOffset))
+                            .append(Component.text("\uEF00").font(font))
+                            .append(UserInterfaceUtility.negativeSpace(bgOffset))
+                            .append(Component.text(kit.kitIcon).font(font))
+                            .append(Component.text(" ${kit.name}"))
+                    }
+
+                    it.sendActionBar(component)
+                }
+            }
+            runTaskTimer(task, 0, 5)
+            actionBarTasks.add(task)
         }
 
         // TODO: Add some kind of countdown instead that yields

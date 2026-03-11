@@ -10,6 +10,70 @@ object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
     val WARNINGS = NamespacedKey("tumbling", "warnings")
 
+    val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
+        -1 to "\uF000",
+        -5 to "\uF001",
+        -10 to "\uF002",
+        -15 to "\uF003",
+        -20 to "\uF004",
+        -25 to "\uF005",
+        -30 to "\uF006",
+        -35 to "\uF007",
+        -40 to "\uF008",
+        -45 to "\uF009",
+        -50 to "\uF00A",
+        -55 to "\uF00B",
+        -60 to "\uF00C",
+        -65 to "\uF00D",
+        -70 to "\uF00E",
+        -75 to "\uF00F",
+        -80 to "\uF010",
+        -85 to "\uF011",
+        -90 to "\uF012",
+        -95 to "\uF013",
+        -100 to "\uF014",
+        -105 to "\uF015",
+        -110 to "\uF016",
+        -115 to "\uF017",
+        -120 to "\uF018",
+        -125 to "\uF019",
+        -130 to "\uF01A",
+        -135 to "\uF01B",
+        -140 to "\uF01C",
+        -145 to "\uF01D",
+        -150 to "\uF01E",
+        -155 to "\uF01F",
+        -160 to "\uF020",
+        -165 to "\uF021",
+        -170 to "\uF022",
+        -175 to "\uF023",
+        -180 to "\uF024",
+        -185 to "\uF025",
+        -190 to "\uF026",
+        -195 to "\uF027",
+        -200 to "\uF028",
+        -205 to "\uF029",
+        -210 to "\uF02A",
+        -215 to "\uF02B",
+        -220 to "\uF02C",
+        -225 to "\uF02D",
+        -230 to "\uF02E",
+        -235 to "\uF02F",
+        -240 to "\uF030",
+        -245 to "\uF031",
+        -250 to "\uF032",
+        -255 to "\uF033",
+        -260 to "\uF034",
+        -265 to "\uF035",
+        -270 to "\uF036",
+        -275 to "\uF037",
+        -280 to "\uF038",
+        -285 to "\uF039",
+        -290 to "\uF03A",
+        -295 to "\uF03B",
+        -300 to "\uF03C"
+    )
+
     fun constructLine(length: Int, color: NamedTextColor = NamedTextColor.WHITE): Component {
         var component = Component.empty()
 
@@ -24,6 +88,32 @@ object UserInterfaceUtility {
         }
 
         return component
+    }
+
+    fun negativeSpace(targetPixels: Int): Component {
+        var remaining = targetPixels
+        val result = StringBuilder()
+        val sorted = NEGATIVE_ADVANCES.keys.sortedBy { it }
+
+        while (remaining > 0) {
+            var matched = false
+
+            for (value in sorted) {
+                val abs = -value
+                if (remaining >= abs) {
+                    result.append(NEGATIVE_ADVANCES[value])
+                    remaining -= abs
+                    matched = true
+                    break
+                }
+            }
+
+            if (!matched) {
+                throw IllegalArgumentException("Cannot perfectly match spacing for $targetPixels px")
+            }
+        }
+
+        return Component.text(result.toString()).font(SPACES)
     }
 
     fun refreshAll(id: String) {
