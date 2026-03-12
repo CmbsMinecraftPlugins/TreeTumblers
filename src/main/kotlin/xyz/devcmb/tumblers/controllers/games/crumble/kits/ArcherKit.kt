@@ -92,11 +92,7 @@ class ArcherKit(
             || !abilityActive
         ) return
 
-        val bow =
-            if(player.inventory.itemInMainHand.type == Material.BOW) player.inventory.itemInMainHand
-            else if(player.inventory.itemInOffHand.type == Material.ARROW) player.inventory.itemInOffHand
-            else return
-
+        val bow = player.inventory.first { it.type == Material.BOW } ?: return
         bow.removeEnchantments()
     }
 }

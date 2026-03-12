@@ -1,11 +1,13 @@
 package xyz.devcmb.tumblers.engine.map
 
+import org.bukkit.GameRules
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import kotlin.io.path.Path
 
@@ -51,6 +53,15 @@ class Map(
             Path(rootPath, worldName),
             "${game.id}_${id}-$index"
         )
+
+        world.setGameRule(GameRules.SPAWN_MOBS, false)
+        world.setGameRule(GameRules.ADVANCE_TIME, false)
+        world.setGameRule(GameRules.ADVANCE_WEATHER, false)
+
+        when {
+            game.flags.contains(Flag.DISABLE_FALL_DAMAGE) -> world.setGameRule(GameRules.FALL_DAMAGE, false)
+            game.flags.contains(Flag.DISABLE_PVP) -> world.setGameRule(GameRules.PVP, false)
+        }
 
         val dataPath = "${game.configRoot}.maps.$id.data"
         val data: ConfigurationSection =

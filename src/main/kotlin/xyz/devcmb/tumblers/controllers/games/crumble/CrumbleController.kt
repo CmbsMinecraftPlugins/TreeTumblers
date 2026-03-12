@@ -50,7 +50,8 @@ class CrumbleController : GameBase(
             teleport(0.0,128.0,0.0,0f,0f)
             delay(2000)
         }
-    )
+    ),
+    flags = setOf()
 ) {
     companion object {
         @field:Configurable("games.crumble.max_kit_players")
@@ -232,6 +233,15 @@ class CrumbleController : GameBase(
 
         suspendSync {
             gameParticipants.forEach {
+                if(!playerKits.containsKey(it)) {
+                    selectKit(
+                        it,
+                        registeredKits.keys.filter { registeredKit ->
+                            playerKits.filter { kit -> kit.value.id == registeredKit }.size < maxPlayersPerKit
+                        }.random()
+                    )
+                }
+
                 it.closeInventory()
                 it.inventory.clear()
             }

@@ -35,6 +35,7 @@ abstract class GameBase(
     val votable: Boolean,
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,
+    val flags: Set<Flag>
 ): Listener {
     init {
         maps.forEach {

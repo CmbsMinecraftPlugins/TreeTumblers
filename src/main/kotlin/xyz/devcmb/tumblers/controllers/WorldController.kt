@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
@@ -15,8 +14,6 @@ import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
-import xyz.devcmb.tumblers.util.runTask
-import xyz.devcmb.tumblers.util.runTaskAsynchronously
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -91,8 +88,7 @@ class WorldController : IController {
                 worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
             }
 
-            val world = Bukkit.createWorld(worldCreator)!!
-            world
+            Bukkit.createWorld(worldCreator)!!
         }
     }
 
