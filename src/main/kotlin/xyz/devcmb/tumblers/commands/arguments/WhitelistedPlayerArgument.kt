@@ -9,7 +9,6 @@ import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.DatabaseController
-import xyz.devcmb.tumblers.data.Team
 
 class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
     override fun parse(

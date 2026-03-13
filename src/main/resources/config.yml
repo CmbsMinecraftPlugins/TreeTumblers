@@ -5,13 +5,18 @@ database:
   password:
   database:
 
+templates:
+  # The path where all the template worlds are contained
+  # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
+  world_root: "&/templates/worlds"
+
 # All games use the same format for their config, aside from the data fields
 # Refer to the comments in the first game for usage in the others
 games:
   crumble:
     # The path where all the maps are contained
-    # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
-    worlds_folder: "&/templates/worlds/crumble"
+    # This path is relative to the `world_root` config value
+    worlds_folder: "crumble"
     max_kit_players: 2
     kits:
       archer:
@@ -40,6 +45,19 @@ games:
                   [ -32.5,79.0,-31.5 ],
                   [ -30.5,79.0,-33.5 ],
                   [ -28.5,79.0,-33.5 ]
+                ]
+              arena2:
+                - [
+                    [-538.5, 100.0, 456.5],
+                    [-538.5, 100.0, 458.5],
+                    [-540.5, 100.0, 460.5],
+                    [-542.5, 100.0, 460.5]
+                ]
+                - [
+                    [-532.5, 100.0, 470.5],
+                    [-532.5, 100.0, 468.5],
+                    [-530.5, 100.0, 466.5],
+                    [-528.5, 100.0, 466.5]
                 ]
 
           cutscene:

@@ -15,7 +15,7 @@ class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogL
         context: Argument<DebugUtil.DebugLogLevel>,
         argument: String
     ): ParseResult<DebugUtil.DebugLogLevel> {
-        val types = DebugUtil.DebugLogLevel.values()
+        val types = DebugUtil.DebugLogLevel.entries
         val enum = types.find { it.name.lowercase() == argument.lowercase() }
 
         if(enum == null) {

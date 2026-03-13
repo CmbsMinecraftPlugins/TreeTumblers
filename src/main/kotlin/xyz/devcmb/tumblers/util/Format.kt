@@ -31,8 +31,27 @@ object Format {
     }
 
     fun error(text: String): Component {
+        return log(text, DebugUtil.DebugLogLevel.ERROR)
+    }
+
+    // consistency sake
+    fun severe(text: String) = error(text)
+
+    fun success(text: String): Component {
+        return log(text, DebugUtil.DebugLogLevel.SUCCESS)
+    }
+
+    fun warning(text: String): Component {
+        return log(text, DebugUtil.DebugLogLevel.WARNING)
+    }
+
+    fun info(text: String): Component {
+        return log(text, DebugUtil.DebugLogLevel.INFO)
+    }
+
+    fun log(text: String, level: DebugUtil.DebugLogLevel) : Component {
         return Component.empty()
-            .append(Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS))
-            .append(Component.text(" $text", NamedTextColor.RED))
+            .append(Component.text(level.icon).font(UserInterfaceUtility.WARNINGS))
+            .append(Component.text(" $text", level.color))
     }
 }

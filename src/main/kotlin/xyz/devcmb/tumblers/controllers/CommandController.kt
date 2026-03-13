@@ -28,6 +28,7 @@ class CommandController : IController {
             .argument(Team::class.java, TeamArgument())
             .argument(DatabaseController.WhitelistedPlayer::class.java, WhitelistedPlayerArgument())
             .argument(GameController.Game::class.java, GameArgument())
+            .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .build()
     }
 }

@@ -11,6 +11,7 @@ import org.bukkit.World
 import org.bukkit.WorldCreator
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -21,6 +22,15 @@ import java.nio.file.Path
 
 @Controller("worldController", Controller.Priority.MEDIUM)
 class WorldController : IController {
+    companion object {
+        @field:Configurable("templates.world_root")
+        var worldRoot: String = "&/templates/worlds"
+            get() {
+                return field
+                    .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
+            }
+    }
+
     override fun init() {
         // do it both on cleanup and start so it cleans up regardless of if the server gracefully shut down
         cleanupTempWorlds()
@@ -113,11 +123,13 @@ class WorldController : IController {
         // Seems to be a good time to wait for all the IO operations to stop, fix if not
         delay(3000)
 
-        val worldsFolder = TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
-            .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
+        val worldsFolder = Path.of(
+            worldRoot,
+            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
+        )
 
         withContext(Dispatchers.IO) {
-            val destination = File(worldsFolder, name)
+            val destination = File(worldsFolder.toString(), name)
             FileUtils.copyDirectory(worldFolder, destination)
 
             val idFile = File(destination, "uid.dat")
@@ -126,4 +138,6 @@ class WorldController : IController {
             }
         }
     }
+
+    data class LoadableTemplate(val file: File)
 }
