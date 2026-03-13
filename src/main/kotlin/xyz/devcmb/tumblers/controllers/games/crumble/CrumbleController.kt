@@ -1,10 +1,12 @@
 package xyz.devcmb.tumblers.controllers.games.crumble
 
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -253,6 +255,29 @@ class CrumbleController : GameBase(
             spawn(SpawnCycle.PRE_ROUND)
             giveKits()
             abilitiesUsed.clear()
+            delay(1500)
+
+            val roundMatchup = matchups[currentRound - 1]
+            roundMatchup.forEach { matchup ->
+                val players = setOf(
+                    *matchup.first.getOnlinePlayers().toTypedArray(),
+                    *matchup.second.getOnlinePlayers().toTypedArray()
+                )
+
+                val title = Title.title(
+                    Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
+                    Component.empty()
+                        .append(matchup.first.FormattedName)
+                        .append(Component.text(" vs ", NamedTextColor.WHITE))
+                        .append(matchup.second.FormattedName),
+                    Title.Times.times(Tick.of(3), Tick.of(60), Tick.of(3))
+                )
+
+                players.forEach { player ->
+                    player.showTitle(title)
+                }
+            }
+
             delay(7000) // prep stage
             // TODO: Drop walls
             currentRound++

@@ -16,9 +16,8 @@ class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: 
         suspendSync {
             observers.forEach {
                 val location = Location(map.world, x, y, z, pitch, yaw)
-                it.teleport(location)
-
                 createPassengerPig(it, location)
+                it.setRotation(location.yaw, location.pitch)
             }
         }
     }

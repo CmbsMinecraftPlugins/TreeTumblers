@@ -10,6 +10,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -173,6 +174,12 @@ abstract class GameBase(
         if(player !is Player || currentState != State.CUTSCENE) return
 
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerDeathEvent(event: PlayerDeathEvent){
+        if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
+        event.drops.clear()
     }
 
     enum class State {
