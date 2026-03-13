@@ -6,10 +6,9 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
@@ -21,17 +20,13 @@ class DebugCommand {
         val loggingLevel = loggingLevel.getOrNull()
         if(loggingLevel == null) {
             player.sendMessage(
-                Component.text(
-                    "You are currently in the ${DebugUtil.loggingSubscriptions.getOrElse(player, { DebugUtil.DebugLogLevel.NONE })} logging group",
-                    NamedTextColor.YELLOW
-                )
+                Format.info("You are currently in the ${DebugUtil.loggingSubscriptions.getOrElse(player, { DebugUtil.DebugLogLevel.NONE })} logging group")
             )
             return
         }
 
         DebugUtil.subscribe(player, loggingLevel)
-        player.sendMessage(Component.text("Subscribed to the ${loggingLevel.name.lowercase()} logging channel successfully!", NamedTextColor.GREEN))
-
+        player.sendMessage(Format.success("Subscribed to the ${loggingLevel.name.lowercase()} logging channel successfully!"))
         DebugUtil.log("${player.name} subscribed to ${loggingLevel.name} logging channel", DebugUtil.DebugLogLevel.INFO)
     }
 

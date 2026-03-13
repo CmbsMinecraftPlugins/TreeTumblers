@@ -8,7 +8,6 @@ import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -29,15 +28,14 @@ class WhitelistCommand {
     fun executeWhitelistAdd(@Context executor: CommandSender, @Arg name: String, @Arg team: Team, @Flag("--confirm") confirm: Boolean) {
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
-                Component.text("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
-                    .color(NamedTextColor.YELLOW)
+                Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
             )
 
             return
         }
 
         if(name.length > 16) {
-            executor.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED))
+            executor.sendMessage(Format.error("Player does not exist!"))
             return
         }
 
@@ -47,20 +45,21 @@ class WhitelistCommand {
 
             if (profile.isComplete) {
                 if(databaseController.isWhitelisted(profile.id.toString())) {
-                    executor.sendMessage(Component.text("Nothing changed. Player is already whitelisted.", NamedTextColor.YELLOW))
+                    executor.sendMessage(Format.warning("Nothing changed. Player is already whitelisted."))
                     return@launch
                 }
 
                 databaseController.whitelistPlayer(profile, team)
 
                 executor.sendMessage(
-                    Component.text("Whitelisted $name on the ")
-                        .append(team.FormattedName)
-                        .append(Component.text(" team successfully!"))
-                        .color(NamedTextColor.GREEN)
+                    Format.success(
+                        Component.text("Whitelisted $name on the ")
+                            .append(team.FormattedName)
+                            .append(Component.text(" team successfully!"))
+                    )
                 )
             } else {
-                executor.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED))
+                executor.sendMessage(Format.error("Player does not exist!"))
             }
         }
     }
@@ -70,7 +69,7 @@ class WhitelistCommand {
         val name = whitelistedPlayer.name
 
         if(name.length > 16) {
-            executor.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED))
+            executor.sendMessage(Format.error("Player does not exist!"))
             return
         }
 
@@ -79,12 +78,12 @@ class WhitelistCommand {
             profile.complete()
 
             if (profile.isComplete) {
-                if(!databaseController.isWhitelisted(profile.id.toString())) {
-                    executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
-                    return@launch
-                }
-
                 try {
+                    if(!databaseController.isWhitelisted(profile.id.toString())) {
+                        executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
+                        return@launch
+                    }
+
                     databaseController.unwhitelistPlayer(profile)
                     executor.sendMessage(Format.success("Unwhitelisted $name successfully!"))
                 } catch (e: Exception) {

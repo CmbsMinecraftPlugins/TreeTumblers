@@ -87,9 +87,10 @@ class WorldCommand {
             return
         }
 
-        try {
-            executor.sendMessage(Format.info("Loading template..."))
-            TreeTumblers.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
+            try {
+                executor.sendMessage(Format.info("Loading template..."))
+
                 val world = worldController.loadTemplate(Path(template.file.path), name)
                 executor.sendMessage(Format.success("Loaded template world $name successfully!"))
 
@@ -103,10 +104,10 @@ class WorldCommand {
                 suspendSync {
                     executor.teleport(Location(world, 0.0, 64.0, 0.0))
                 }
+            } catch(e: Exception) {
+                executor.sendMessage(Format.error("An error occurred while trying to load the world."))
+                DebugUtil.severe("Failed to load world: ${e.message ?: "Unknown Error"}")
             }
-        } catch(e: Exception) {
-            executor.sendMessage(Format.error("An error occurred while trying to load the world."))
-            DebugUtil.severe("Failed to load world: ${e.message ?: "Unknown Error"}")
         }
     }
 

@@ -36,20 +36,20 @@ object Format {
     fun error(text: String): Component = log(text, DebugUtil.DebugLogLevel.ERROR)
     fun info(text: String) = log(text, DebugUtil.DebugLogLevel.INFO)
 
-    fun success(text: Component) = log(text, DebugUtil.DebugLogLevel.INFO)
+    fun success(text: Component) = log(text, DebugUtil.DebugLogLevel.SUCCESS)
     fun warning(text: Component) = log(text, DebugUtil.DebugLogLevel.WARNING)
     fun error(text: Component) = log(text, DebugUtil.DebugLogLevel.ERROR)
     fun info(text: Component) = log(text, DebugUtil.DebugLogLevel.INFO)
 
     fun log(text: String, level: DebugUtil.DebugLogLevel) : Component {
         return Component.empty()
-            .append(Component.text(level.icon).font(UserInterfaceUtility.WARNINGS))
+            .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
             .append(Component.text(" $text", level.color))
     }
 
     fun log(text: Component, level: DebugUtil.DebugLogLevel) : Component {
         return Component.empty()
-            .append(Component.text(level.icon).font(UserInterfaceUtility.WARNINGS))
+            .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
             .append(Component.text(" "))
             .append(text).color(level.color)
     }

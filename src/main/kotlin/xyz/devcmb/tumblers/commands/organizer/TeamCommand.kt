@@ -8,7 +8,6 @@ import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -32,8 +31,7 @@ class TeamCommand {
         val name = whitelistedPlayer.name
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
-                Component.text("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
-                    .color(NamedTextColor.YELLOW)
+                Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
             )
 
             return
@@ -48,10 +46,11 @@ class TeamCommand {
                 databaseController.setPlayerTeam(profile, team)
 
                 executor.sendMessage(
-                    Component.text("Assigned $name to the ")
-                        .append(team.FormattedName)
-                        .append(Component.text(" team successfully!"))
-                        .color(NamedTextColor.GREEN)
+                    Format.success(
+                        Component.text("Assigned $name to the ")
+                            .append(team.FormattedName)
+                            .append(Component.text(" team successfully!"))
+                    )
                 )
 
                 val onlinePlayer = Bukkit.getPlayer(name)
