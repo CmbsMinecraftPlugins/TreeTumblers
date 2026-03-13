@@ -10,7 +10,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -168,10 +168,11 @@ abstract class GameBase(
     abstract suspend fun gameOn()
 
     @EventHandler
-    fun playerMove(event: PlayerMoveEvent) {
-        if(currentState == State.CUTSCENE) {
-            event.isCancelled = true
-        }
+    fun playerDismountEvent(event: VehicleExitEvent) {
+        val player = event.exited
+        if(player !is Player || currentState != State.CUTSCENE) return
+
+        event.isCancelled = true
     }
 
     enum class State {

@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.engine.cutscene
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -18,6 +19,7 @@ class CutsceneStep(
     val chatMessage: Component,
     val init: suspend CutsceneContext.(map: LoadedMap) -> Unit
 ) {
+    val pigs: HashMap<Player, Entity> = HashMap()
     suspend fun run(observers: Set<Player>, map: LoadedMap) {
         observers.forEach {
             it.sendMessage(Component.empty()
@@ -29,7 +31,13 @@ class CutsceneStep(
             )
         }
 
-        val context = CutsceneContext(observers, map)
+        val context = CutsceneContext(observers, map, this)
         context.init(map)
+    }
+
+    fun cleanup() {
+        pigs.forEach {
+            it.value.remove()
+        }
     }
 }

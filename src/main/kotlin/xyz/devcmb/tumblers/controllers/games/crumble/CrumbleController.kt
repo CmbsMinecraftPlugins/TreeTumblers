@@ -186,7 +186,7 @@ class CrumbleController : GameBase(
                                 suspendSync {
                                     it.teleport(location)
                                 }
-                                DebugUtil.info("Spawned ${it.name} at $location")
+                                DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                 secondOccupiedSpawns++
                             }
