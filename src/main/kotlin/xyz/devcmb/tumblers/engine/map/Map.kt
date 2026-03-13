@@ -43,7 +43,7 @@ class Map(
         val worldController = ControllerDelegate.getController("worldController") as WorldController
 
         val config = TreeTumblers.plugin.config
-        val rootPath = config.getString("${game.configRoot}.worlds_folder")
+        val gameWorlds = config.getString("${game.configRoot}.worlds_folder")
             ?.replace("&", TreeTumblers.plugin.dataFolder.path.toString())
             ?: throw MapSetupException("Parent worlds folder could not be found")
 
@@ -51,7 +51,7 @@ class Map(
             ?: throw MapSetupException("Map world name could not be found")
 
         val world = worldController.loadTemplate(
-            Path(rootPath, worldName),
+            Path(WorldController.worldRoot, gameWorlds, worldName),
             "${game.id}_${id}-$index"
         )
 

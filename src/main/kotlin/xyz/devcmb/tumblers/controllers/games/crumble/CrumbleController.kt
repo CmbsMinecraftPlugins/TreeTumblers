@@ -141,9 +141,9 @@ class CrumbleController : GameBase(
                 if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
 
                 val currentMatchups = matchups[currentRound - 1]
-                val spawnSetKeys = mutableListOf(
-                    "spawns.ingame.arena1"
-                )
+                val spawnSetKeys = (1..7).map {
+                    "spawns.ingame.arena$it"
+                }.toMutableList()
 
                 currentMatchups.forEachIndexed { index, matchup ->
                     val spawns: List<List<List<Double>>> = currentMap.data

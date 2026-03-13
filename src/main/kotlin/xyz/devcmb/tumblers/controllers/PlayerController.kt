@@ -4,6 +4,7 @@ import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerInteractEvent
@@ -11,6 +12,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.ui.PlayerUIController
@@ -18,11 +20,20 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.unpackCoordinates
 
 @Controller("playerController", Controller.Priority.MEDIUM)
 class PlayerController : IController {
     val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
+
+    companion object {
+        @field:Configurable("lobby.world")
+        var lobbyWorld = "world"
+
+        @field:Configurable("lobby.position")
+        var lobbySpawn: List<Double> = listOf(0.0, 127.0, 0.0)
+    }
 
     override fun init() {
     }
@@ -31,6 +42,8 @@ class PlayerController : IController {
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
+
+        player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
 
         playerUIControllers.put(player, PlayerUIController(player))
 
