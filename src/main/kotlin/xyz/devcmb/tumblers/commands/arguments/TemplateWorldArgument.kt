@@ -50,7 +50,10 @@ class TemplateWorldArgument: ArgumentResolver<CommandSender, WorldController.Loa
             }
         }
 
-        scanWorldsFolder(File(WorldController.worldRoot), "")
+        scanWorldsFolder(
+            File(WorldController.worldRoot),
+            ""
+        )
 
         return suggestions
     }

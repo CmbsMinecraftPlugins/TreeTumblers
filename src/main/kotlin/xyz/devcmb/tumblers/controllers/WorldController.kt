@@ -139,5 +139,15 @@ class WorldController : IController {
         }
     }
 
+    fun worldFileExists(game: GameController.Game, name: String): Boolean {
+        val game = game.get()
+        val worldsFolder = File(
+            worldRoot,
+            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
+        )
+
+        return File(worldsFolder, name).exists()
+    }
+
     data class LoadableTemplate(val file: File)
 }

@@ -23,6 +23,4 @@ interface Kit : Listener {
 
     fun onKill(killed: Player)
     fun onAbility()
-
-    fun reset()
 }

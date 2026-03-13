@@ -76,10 +76,6 @@ class ArcherKit(
         abilityActive = true
     }
 
-    override fun reset() {
-
-    }
-
     @EventHandler
     fun shootEvent(event: ProjectileLaunchEvent) {
         val entity = event.entity

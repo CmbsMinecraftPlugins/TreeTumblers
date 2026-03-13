@@ -6,8 +6,7 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
 import kotlinx.coroutines.launch
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.command.CommandSender
@@ -51,12 +50,23 @@ class WorldCommand {
     }
 
     @Execute(name = "template save")
-    fun templateSave(@Context executor: CommandSender, @Arg world: World, @Arg game: GameController.Game, @Arg name: Optional<String>) {
+    fun templateSave(
+        @Context executor: CommandSender,
+        @Arg world: World,
+        @Arg game: GameController.Game,
+        @Arg name: Optional<String>,
+        @Flag("--confirm","-c") confirm: Boolean
+    ) {
         try {
+            if(worldController.worldFileExists(game, name.getOrElse { world.name }) && !confirm) {
+                executor.sendMessage(Format.warning("A world with this name already exists! Re-run the command with the --confirm flag to override the existing world!"))
+                return
+            }
+
             executor.sendMessage(Format.info("Starting save job..."))
             TreeTumblers.pluginScope.launch {
                 worldController.saveWorld(world, game, name.getOrNull())
-                executor.sendMessage(Component.text("World saved successfully!", NamedTextColor.GREEN))
+                executor.sendMessage(Format.success("World saved successfully!"))
             }
         } catch(e: Exception) {
             executor.sendMessage(Format.error("An error occurred while trying to save the world."))
@@ -72,6 +82,11 @@ class WorldCommand {
         @Flag("--teleport","-t") teleport: Boolean
     ) {
         val name = name.getOrElse { template.file.name }
+        if(Bukkit.getWorld("temp_$name") != null) {
+            executor.sendMessage(Format.error("A temporary world with the name $name already exists!"))
+            return
+        }
+
         try {
             executor.sendMessage(Format.info("Loading template..."))
             TreeTumblers.pluginScope.launch {
