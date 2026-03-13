@@ -11,13 +11,16 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.DatabaseController
 
 class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
+    val databaseController: DatabaseController by lazy {
+        ControllerDelegate.getController("databaseController") as DatabaseController
+    }
+
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<DatabaseController.WhitelistedPlayer>,
         argument: String
     ): ParseResult<DatabaseController.WhitelistedPlayer> {
-        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
-        val whitelistedPlayerNames = databaseController.getWhitelistedPlayerNames()
+        val whitelistedPlayerNames = databaseController.whitelistedPlayersCache
 
         if(!whitelistedPlayerNames.contains(argument)) {
             return ParseResult.failure("Player not found or not whitelisted!")
@@ -31,7 +34,6 @@ class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseControl
         argument: Argument<DatabaseController.WhitelistedPlayer>,
         context: SuggestionContext
     ): SuggestionResult? {
-        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
-        return databaseController.getWhitelistedPlayerNames().stream().collect(SuggestionResult.collector())
+        return databaseController.whitelistedPlayersCache.stream().collect(SuggestionResult.collector())
     }
 }

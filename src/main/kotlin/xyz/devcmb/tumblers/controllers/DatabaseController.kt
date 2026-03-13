@@ -1,8 +1,11 @@
 package xyz.devcmb.tumblers.controllers
 
 import com.destroystokyo.paper.profile.PlayerProfile
-import org.bukkit.OfflinePlayer
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -50,17 +53,23 @@ class DatabaseController : IController {
     override fun init() {
         val url = "jdbc:mysql://$host:$port/$database?useSSL=false"
 
-        try {
-            connection = DriverManager.getConnection(url, username, password)
-            DebugUtil.success("Successfully connected to the MySQL database.")
+        TreeTumblers.pluginScope.launch {
+            try {
+                // apparently this is needed to force the driver to load
+                Class.forName("com.mysql.jdbc.Driver")
 
-            createTables()
-        } catch (e: SQLException) {
-            DebugUtil.severe("Failed to connect to the MySQL database: ${e.message}")
+                connection = DriverManager.getConnection(url, username, password)
+                DebugUtil.success("Successfully connected to the MySQL database.")
+
+                createTables()
+                getWhitelistedPlayerNames()
+            } catch (e: SQLException) {
+                DebugUtil.severe("Failed to connect to the MySQL database: ${e.message}")
+            }
         }
     }
 
-    private fun createTables() {
+    private suspend fun createTables() = withContext(Dispatchers.IO) {
         val createPlayers = """
             CREATE TABLE IF NOT EXISTS `tumbling_players` (
                 `uuid` VARCHAR(255) NOT NULL,
@@ -93,30 +102,25 @@ class DatabaseController : IController {
     val whitelistedPlayersCache: MutableSet<String> = HashSet()
     var hasCached: Boolean = false
 
-    fun whitelistPlayer(profile: PlayerProfile, team: Team, onSuccess: () -> Unit, onError: (err: String) -> Unit) {
+    suspend fun whitelistPlayer(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(
             """
                 INSERT INTO tumbling_players (uuid, username, team, score, whitelisted) 
                     VALUES (?, ?, ?, 0, true)
                     ON DUPLICATE KEY UPDATE
-                        whitelisted = VALUES(whitelisted)
+                        whitelisted = VALUES(whitelisted),
+                        team = VALUES(team)
             """.trimIndent()
         )
         statement.setString(1, profile.id.toString())
         statement.setString(2, profile.name)
         statement.setString(3, team.name)
 
-        try {
-            statement.executeUpdate()
-            whitelistedPlayersCache.add(profile.name!!)
-            onSuccess()
-        } catch(e: SQLException) {
-            DebugUtil.severe("Failed to whitelist player ${profile.name}: ${e.message}")
-            onError(e.message ?: "Unknown error")
-        }
+        statement.executeUpdate()
+        whitelistedPlayersCache.add(profile.name!!)
     }
 
-    fun unwhitelistPlayer(profile: PlayerProfile, onSuccess: () -> Unit, onError: (String) -> Unit) {
+    suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(
             """
                 UPDATE tumbling_players
@@ -127,17 +131,11 @@ class DatabaseController : IController {
 
         statement.setString(1, profile.id.toString())
 
-        try {
-            statement.executeUpdate()
-            whitelistedPlayersCache.remove(profile.name)
-            onSuccess()
-        } catch(e: SQLException) {
-            DebugUtil.severe("Failed to remove player ${profile.name} from the whitelist: ${e.message}")
-            onError(e.message ?: "Unknown error")
-        }
+        statement.executeUpdate()
+        whitelistedPlayersCache.remove(profile.name)
     }
 
-    fun replicatePlayerData(player: TumblingPlayer) {
+    suspend fun replicatePlayerData(player: TumblingPlayer) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
             SET score = ?
@@ -147,31 +145,32 @@ class DatabaseController : IController {
         statement.setInt(1, player.score)
         statement.setString(2, player.bukkitPlayer.uniqueId.toString())
 
+        statement.executeUpdate()
+    }
+
+    suspend fun isWhitelisted(uuid: String): Boolean = withContext(Dispatchers.IO) {
+        if(!::connection.isInitialized) return@withContext false
+
         try {
-            statement.executeUpdate()
-        } catch(e: SQLException) {
-            DebugUtil.severe("Failed to replicate player data: ${e.message}")
+            val statement = connection.prepareStatement("""
+                SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
+            """.trimIndent())
+
+            statement.setString(1, uuid)
+
+            val resultSet = statement.executeQuery()
+            if(resultSet.next()) {
+                return@withContext resultSet.getBoolean("whitelisted")
+            }
+
+            false
+        } catch(e: Exception) {
+            DebugUtil.severe("Failed to check if player is whitelisted. Failing closed for $uuid")
+            false
         }
     }
 
-    fun isWhitelisted(uuid: String): Boolean {
-        if(!::connection.isInitialized) return false
-
-        val statement = connection.prepareStatement("""
-            SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
-        """.trimIndent())
-
-        statement.setString(1, uuid)
-
-        val resultSet = statement.executeQuery()
-        if(resultSet.next()) {
-            return resultSet.getBoolean("whitelisted")
-        }
-
-        return false
-    }
-
-    fun getPlayerData(player: Player): TumblingPlayer {
+    suspend fun getPlayerData(player: Player): TumblingPlayer = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
         """.trimIndent())
@@ -183,19 +182,19 @@ class DatabaseController : IController {
             val teamColumn: String = resultSet.getString("team")
             val score: Int = resultSet.getInt("score")
 
-            val team = Team.values().find { it.name == teamColumn }
+            val team = Team.entries.find { it.name == teamColumn }
             if(team == null) {
                 throw IllegalStateException("Could not find a team with value $teamColumn")
             }
 
-            return TumblingPlayer(player, team, score)
+            TumblingPlayer(player, team, score)
         } else {
             throw IllegalStateException("Could not find player data for ${player.name}")
         }
     }
 
-    fun getWhitelistedPlayerNames(): Set<String> {
-        if(!whitelistedPlayersCache.isEmpty() && hasCached) return whitelistedPlayersCache
+    suspend fun getWhitelistedPlayerNames(): Set<String> = withContext(Dispatchers.IO) {
+        if(!whitelistedPlayersCache.isEmpty() && hasCached) return@withContext whitelistedPlayersCache
 
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_players WHERE whitelisted = true;
@@ -209,10 +208,11 @@ class DatabaseController : IController {
 
         whitelistedPlayersCache.addAll(names)
         hasCached = true
-        return names
+
+        names
     }
 
-    fun setPlayerTeam(profile: PlayerProfile, team: Team, onSuccess: () -> Unit, onError: (String) -> Unit) {
+     suspend fun setPlayerTeam(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
             SET team = ?
@@ -224,10 +224,8 @@ class DatabaseController : IController {
 
         try {
             statement.executeUpdate()
-            onSuccess()
         } catch(e: SQLException) {
             DebugUtil.severe("Failed to set player team: ${e.message}")
-            onError(e.message ?: "Unknown error")
         }
     }
 

@@ -2,6 +2,8 @@ package xyz.devcmb.tumblers.controllers
 
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -12,6 +14,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
@@ -26,6 +29,10 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 class PlayerController : IController {
     val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
+
+    val databaseController: DatabaseController by lazy {
+        ControllerDelegate.getController("databaseController") as DatabaseController
+    }
 
     companion object {
         @field:Configurable("lobby.world")
@@ -42,22 +49,10 @@ class PlayerController : IController {
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
-
         player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
 
+        event.joinMessage(Component.empty())
         playerUIControllers.put(player, PlayerUIController(player))
-
-        var data: TumblingPlayer
-        try {
-            val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
-            data = databaseController.getPlayerData(player)
-            players.add(data)
-        } catch(e: Exception) {
-            DebugUtil.severe("Failed to get player data: ${e.message}")
-            return
-        }
-
-        player.playerListName(Format.formatPlayerName(player))
 
         if(Constants.IS_DEVELOPMENT) {
             DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
@@ -67,12 +62,25 @@ class PlayerController : IController {
             )
         }
 
-        event.joinMessage(
-            Component.text("[").color(NamedTextColor.GRAY)
-                .append(Component.text("+").color(NamedTextColor.GREEN))
-                .append(Component.text("] ").color(NamedTextColor.GRAY))
-                .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
-        )
+        TreeTumblers.pluginScope.launch {
+            var data: TumblingPlayer
+            try {
+                data = databaseController.getPlayerData(player)
+                players.add(data)
+            } catch(e: Exception) {
+                DebugUtil.severe("Failed to get player data for ${player.name}: ${e.message}")
+                player.kick(Component.text("Data failed to load. Please try again or contact an admin.", NamedTextColor.RED))
+            }
+
+            player.playerListName(Format.formatPlayerName(player))
+            Bukkit.broadcast(
+                Component.text("[").color(NamedTextColor.GRAY)
+                    .append(Component.text("+").color(NamedTextColor.GREEN))
+                    .append(Component.text("] ").color(NamedTextColor.GRAY))
+                    .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
+            )
+
+        }
     }
 
     @EventHandler
@@ -87,9 +95,14 @@ class PlayerController : IController {
                 .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
         )
 
-        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
-        databaseController.replicatePlayerData(tumblingPlayer)
-        players.remove(tumblingPlayer)
+        TreeTumblers.pluginScope.launch {
+            try {
+                databaseController.replicatePlayerData(tumblingPlayer)
+                players.remove(tumblingPlayer)
+            } catch(e: Exception) {
+                DebugUtil.severe("Failed to replicate player data for ${player.name}: ${e.message}")
+            }
+        }
     }
 
     @EventHandler
@@ -108,17 +121,18 @@ class PlayerController : IController {
         val connection = event.connection
         if(connection !is PlayerLoginConnection) return
 
-        val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
         val uuid = connection.authenticatedProfile?.id
 
-        if(!databaseController.isWhitelisted(uuid.toString())) {
-            event.kickMessage(
-                Component.text("———————————————————————————————", NamedTextColor.RED)
-                    .append(Component.newline())
-                    .append(Component.text("You are not whitelisted!", NamedTextColor.RED))
-                    .append(Component.newline())
-                    .append(Component.text("———————————————————————————————", NamedTextColor.RED))
-            )
+        runBlocking {
+            if(!databaseController.isWhitelisted(uuid.toString())) {
+                event.kickMessage(
+                    Component.text("———————————————————————————————", NamedTextColor.RED)
+                        .append(Component.newline())
+                        .append(Component.text("You are not whitelisted!", NamedTextColor.RED))
+                        .append(Component.newline())
+                        .append(Component.text("———————————————————————————————", NamedTextColor.RED))
+                )
+            }
         }
     }
 }

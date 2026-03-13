@@ -2,7 +2,7 @@ package xyz.devcmb.tumblers
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import org.bukkit.plugin.java.JavaPlugin
 import xyz.devcmb.invcontrol.InvControlManager
@@ -12,9 +12,8 @@ class TreeTumblers : JavaPlugin() {
     companion object {
         lateinit var plugin: JavaPlugin
         lateinit var pluginLogger: Logger
-        val pluginScope = CoroutineScope(Dispatchers.Default + Job())
+        val pluginScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     }
-
 
     override fun onEnable() {
         plugin = this

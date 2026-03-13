@@ -6,6 +6,7 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
+import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
@@ -14,6 +15,8 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 
 @Command(name = "team")
 @Permission("tumbling.organizer")
@@ -36,31 +39,31 @@ class TeamCommand {
             return
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(TreeTumblers.plugin, Runnable {
+        TreeTumblers.pluginScope.launch {
             val profile = Bukkit.createProfile(name)
             profile.complete()
 
             if (profile.isComplete) {
                 val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
-                databaseController.setPlayerTeam(profile, team, {
-                    executor.sendMessage(
-                        Component.text("Assigned $name to the ")
-                            .append(team.FormattedName)
-                            .append(Component.text(" team successfully!"))
-                            .color(NamedTextColor.GREEN)
-                    )
+                databaseController.setPlayerTeam(profile, team)
 
-                    val onlinePlayer = Bukkit.getPlayer(name)
-                    if(onlinePlayer?.isOnline == true) {
-                        // anti-edge-case-o-matic-9000
+                executor.sendMessage(
+                    Component.text("Assigned $name to the ")
+                        .append(team.FormattedName)
+                        .append(Component.text(" team successfully!"))
+                        .color(NamedTextColor.GREEN)
+                )
+
+                val onlinePlayer = Bukkit.getPlayer(name)
+                if(onlinePlayer?.isOnline == true) {
+                    // anti-edge-case-o-matic-9000
+                    suspendSync {
                         onlinePlayer.kick(Component.text("Your team has been changed and requires you to rejoin"))
                     }
-                }, {
-                    executor.sendMessage(Component.text("An error occurred trying to set the team of $name", NamedTextColor.RED))
-                })
+                }
             } else {
-                executor.sendMessage(Component.text("Player does not exist!", NamedTextColor.RED))
+                executor.sendMessage(Format.error("Player does not exist!"))
             }
-        })
+        }
     }
 }
