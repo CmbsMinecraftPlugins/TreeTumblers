@@ -30,7 +30,7 @@ class PlayerController : IController {
     val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
 
-    val databaseController: DatabaseController by lazy {
+    private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
     }
 

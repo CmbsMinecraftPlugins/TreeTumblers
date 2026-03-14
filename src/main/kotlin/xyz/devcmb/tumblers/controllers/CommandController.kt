@@ -22,7 +22,8 @@ class CommandController : IController {
                 WhitelistCommand(),
                 TeamCommand(),
                 GameCommand(),
-                WorldCommand()
+                WorldCommand(),
+                ScoreCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

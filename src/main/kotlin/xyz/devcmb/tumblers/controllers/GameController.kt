@@ -11,10 +11,9 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.engine.GameBase
 
-@Controller("gameController", Controller.Priority.HIGH)
+@Controller("gameController", Controller.Priority.MEDIUM)
 class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
-    var globalState: State = State.INACTIVE
     var activeGame: GameBase? = null
 
     data class RegisteredGame(val id: String, val game: Class<out GameBase>)
@@ -64,11 +63,5 @@ class GameController : IController {
 
             return gameType.getDeclaredConstructor().newInstance()
         }
-    }
-
-    enum class State {
-        INACTIVE,
-        VOTING,
-        GAME_ACTIVE
     }
 }

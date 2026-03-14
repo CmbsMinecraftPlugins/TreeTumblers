@@ -23,6 +23,7 @@ import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.ScoreSource
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -53,7 +54,14 @@ class CrumbleController : GameBase(
             delay(2000)
         }
     ),
-    flags = setOf()
+    flags = setOf(),
+    scores = hashMapOf(
+        ScoreSource.KILL to 45,
+        ScoreSource.ROUND_WIN to 100,
+        ScoreSource.ROUND_LOSE to 10,
+        ScoreSource.GAME_WIN to 250,
+        ScoreSource.GAME_LOSE to 30
+    )
 ) {
     companion object {
         @field:Configurable("games.crumble.max_kit_players")

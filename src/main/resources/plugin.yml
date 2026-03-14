@@ -6,3 +6,4 @@ prefix: TreeTumblers
 authors: [ DevCmb ]
 description: An open-source minecraft event
 website: devcmb.xyz
+load: STARTUP

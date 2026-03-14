@@ -2,10 +2,10 @@ package xyz.devcmb.tumblers.controllers
 
 import com.destroystokyo.paper.profile.PlayerProfile
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -50,10 +50,15 @@ class DatabaseController : IController {
     }
 
     lateinit var connection: Connection
+    private val eventController: EventController by lazy {
+        ControllerDelegate.getController("eventController") as EventController
+    }
+
     override fun init() {
         val url = "jdbc:mysql://$host:$port/$database?useSSL=false"
 
-        TreeTumblers.pluginScope.launch {
+        // we can block here because it's before the server loads
+        runBlocking {
             try {
                 // apparently this is needed to force the driver to load
                 Class.forName("com.mysql.jdbc.Driver")
@@ -62,6 +67,7 @@ class DatabaseController : IController {
                 DebugUtil.success("Successfully connected to the MySQL database.")
 
                 createTables()
+                setupTeams()
                 getWhitelistedPlayerNames()
             } catch (e: SQLException) {
                 DebugUtil.severe("Failed to connect to the MySQL database: ${e.message}")
@@ -97,6 +103,20 @@ class DatabaseController : IController {
         } catch (e: SQLException) {
             DebugUtil.severe("Failed to create default tables in the MySQL database: ${e.message}")
         }
+    }
+
+    private suspend fun setupTeams() = withContext(Dispatchers.IO) {
+        val statement = connection.prepareStatement("""
+            INSERT IGNORE INTO tumbling_teams (name, score)
+            VALUES (?, 0)
+        """.trimIndent())
+
+        Team.entries.filter { it.playingTeam }.forEach { entry ->
+            statement.setString(1, entry.name.lowercase())
+            statement.addBatch()
+        }
+
+        statement.executeBatch()
     }
 
     val whitelistedPlayersCache: MutableSet<String> = HashSet()
@@ -212,7 +232,7 @@ class DatabaseController : IController {
         names
     }
 
-     suspend fun setPlayerTeam(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
+    suspend fun setPlayerTeam(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
             SET team = ?
@@ -227,6 +247,38 @@ class DatabaseController : IController {
         } catch(e: SQLException) {
             DebugUtil.severe("Failed to set player team: ${e.message}")
         }
+    }
+
+    suspend fun getTeamScores(): HashMap<Team, Int> = withContext(Dispatchers.IO) {
+        val statement = connection.prepareStatement("""
+            SELECT * FROM tumbling_teams
+        """.trimIndent())
+
+        val resultSet = statement.executeQuery()
+        val map: HashMap<Team, Int> = HashMap()
+        while(resultSet.next()) {
+            val name = resultSet.getString("name")
+            val score = resultSet.getInt("score")
+            map.put(Team.entries.find { it.name == name.uppercase() }!!, score)
+        }
+
+        map
+    }
+
+    suspend fun replicateTeamData(scores: HashMap<Team, Int>): Unit = withContext(Dispatchers.IO) {
+        val statement = connection.prepareStatement("""
+            UPDATE tumbling_teams
+            SET score = ?
+            WHERE name = ?
+        """.trimIndent())
+
+        Team.entries.filter { it.playingTeam }.forEach { entry ->
+            statement.setInt(1, scores[entry]!!)
+            statement.setString(2, entry.name.lowercase())
+            statement.addBatch()
+        }
+
+        statement.executeBatch()
     }
 
     data class WhitelistedPlayer(val name: String)

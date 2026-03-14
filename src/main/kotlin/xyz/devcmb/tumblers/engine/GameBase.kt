@@ -12,17 +12,20 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 /**
  * Base class for all games
  * @param id The unique identifier of the game
- * @param votable Whether this game is available for voting during the [GameController.State.VOTING] stage
+ * @param votable Whether this game is available for voting during the voting stage
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
  *
@@ -36,7 +39,8 @@ abstract class GameBase(
     val votable: Boolean,
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,
-    val flags: Set<Flag>
+    val flags: Set<Flag>,
+    val scores: HashMap<ScoreSource, Int>
 ): Listener {
     init {
         maps.forEach {
@@ -55,6 +59,10 @@ abstract class GameBase(
 
     val gamePlayers: MutableSet<Player> = HashSet()
     val gameParticipants: MutableSet<Player> = HashSet()
+
+    val eventController: EventController by lazy {
+        ControllerDelegate.getController("eventController") as EventController
+    }
 
     /**
      * The internal load stage called by the [GameController]
@@ -180,6 +188,39 @@ abstract class GameBase(
     fun playerDeathEvent(event: PlayerDeathEvent){
         if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
         event.drops.clear()
+    }
+
+    @EventHandler
+    fun playerScoreEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        if(killer == null || flags.contains(Flag.DISABLE_PVP)) return
+
+        event.showDeathMessages = false
+        playerKill(killer, killed)
+    }
+
+    fun playerKill(killer: Player?, killed: Player?) {
+        require(killed != null || killer != null) { "Both killer and killed cannot be null" }
+
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(Format.formatKillMessage(it, getScoreSource(ScoreSource.KILL), killer, killed))
+        }
+
+        if(killer != null) {
+            grantScore(killer, ScoreSource.KILL)
+        }
+    }
+
+    private fun getScoreSource(source: ScoreSource): Int {
+        return scores[source] ?: 0
+    }
+
+    fun grantScore(player: Player, source: ScoreSource) {
+        val amount = getScoreSource(source)
+        DebugUtil.info("Granting $amount score to ${player.name} with source $source")
+        eventController.grantScore(player, amount)
     }
 
     enum class State {
