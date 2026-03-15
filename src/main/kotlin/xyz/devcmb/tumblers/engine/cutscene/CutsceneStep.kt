@@ -6,6 +6,7 @@ import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 
 /**
  * A single step of a cutscene.
@@ -35,9 +36,11 @@ class CutsceneStep(
         context.init(map)
     }
 
-    fun cleanup() {
-        pigs.forEach {
-            it.value.remove()
+    suspend fun cleanup() {
+        suspendSync {
+            pigs.forEach {
+                it.value.remove()
+            }
         }
     }
 }

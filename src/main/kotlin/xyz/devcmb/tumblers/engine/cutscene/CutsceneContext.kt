@@ -4,8 +4,6 @@ import org.bukkit.Location
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Pig
 import org.bukkit.entity.Player
-import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -46,15 +44,9 @@ class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: 
     private fun createPassengerPig(player: Player, location: Location) {
         val pig = map.world.spawnEntity(location, EntityType.PIG) as Pig
         pig.setAI(false)
+        pig.isInvulnerable = true
+        pig.isInvisible = true
         pig.addPassenger(player)
-
-        pig.addPotionEffect(PotionEffect(
-            PotionEffectType.INVISIBILITY,
-            Integer.MAX_VALUE,
-            255,
-            true,
-            false
-        ))
 
         step.pigs.put(player, pig)
     }

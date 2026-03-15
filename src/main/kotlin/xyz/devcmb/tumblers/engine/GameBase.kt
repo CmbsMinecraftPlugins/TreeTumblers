@@ -137,6 +137,7 @@ abstract class GameBase(
 
         cutsceneSteps.forEach {
             it.run(gamePlayers, loadedMaps.first())
+            it.cleanup()
         }
     }
 
