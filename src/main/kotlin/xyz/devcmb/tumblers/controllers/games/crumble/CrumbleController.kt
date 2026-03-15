@@ -1,5 +1,9 @@
 package xyz.devcmb.tumblers.controllers.games.crumble
 
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.math.BlockVector3
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
@@ -8,8 +12,10 @@ import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Particle
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -39,6 +45,8 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import kotlin.math.max
+import kotlin.math.min
 
 @EventGame
 class CrumbleController : GameBase(
@@ -104,6 +112,45 @@ class CrumbleController : GameBase(
 
                 sender.inventory.addItem(kitSelector.clone())
                 sender.sendMessage(Format.success("Gave the kit selector successfully!"))
+            },
+            "setup_warfare" to { sender ->
+                if(sender !is Player) {
+                    sender.sendMessage(Format.error("Only players can trigger this event!"))
+                    return@to
+                }
+
+                val worldEdit = WorldEdit.getInstance()
+                val sessionManager = worldEdit.sessionManager
+
+                val playerSession = sessionManager.get(BukkitAdapter.adapt(sender))
+                var clipboard: Clipboard
+                try {
+                    clipboard = playerSession.clipboard.clipboards.lastOrNull()
+                        ?: throw IllegalStateException("No clipboard loaded for this session")
+                } catch(e: Exception) {
+                    sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
+                    return@to
+                }
+
+                if(clipboard.region.volume == 0L) {
+                    sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
+                    return@to
+                }
+
+                val positions: ArrayList<BlockVector3> = arrayListOf(
+                    BlockVector3.at(0, 86, 0),
+                    BlockVector3.at(-500, 86, 500),
+                    BlockVector3.at(500, 86, -500),
+                    BlockVector3.at(-500, 86, -500),
+                    BlockVector3.at(500, 86, 500),
+                    BlockVector3.at(0, 86, 500),
+                    BlockVector3.at(500, 86, 0)
+                )
+
+                positions.forEach {
+                    clipboard.paste(BukkitAdapter.adapt(sender.world), it)
+                    sender.sendMessage(Format.success("Pasted at ${it.x()}, ${it.y()}, ${it.z()} successfully!"))
+                }
             }
         )
 
@@ -181,9 +228,9 @@ class CrumbleController : GameBase(
                         .getList(spawnSetKeys.getOrNull(index) ?: spawnSetKeys.first())
                         ?.map { l1 ->
                             if(l1 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                            return@map l1.map { l2 ->
+                            l1.map { l2 ->
                                 if(l2 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                                return@map l2.map {
+                                l2.map {
                                     if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
                                     it
                                 }
@@ -285,31 +332,73 @@ class CrumbleController : GameBase(
             giveKits()
             abilitiesUsed.clear()
             delay(1500)
+            announceMatchup()
+            delay(7000) // prep stage
+            dropWalls()
+            // TODO: Yield until all matchups have ended
+            delay(2000)
+            currentRound++
+        }
+    }
 
-            val roundMatchup = matchups[currentRound - 1]
-            roundMatchup.forEach { matchup ->
-                val players = setOf(
-                    *matchup.first.getOnlinePlayers().toTypedArray(),
-                    *matchup.second.getOnlinePlayers().toTypedArray()
-                )
+    fun announceMatchup() {
+        val roundMatchup = matchups[currentRound - 1]
+        roundMatchup.forEach { matchup ->
+            val players = setOf(
+                *matchup.first.getOnlinePlayers().toTypedArray(),
+                *matchup.second.getOnlinePlayers().toTypedArray()
+            )
 
-                val title = Title.title(
-                    Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                    Component.empty()
-                        .append(matchup.first.FormattedName)
-                        .append(Component.text(" vs ", NamedTextColor.WHITE))
-                        .append(matchup.second.FormattedName),
-                    Title.Times.times(Tick.of(3), Tick.of(60), Tick.of(3))
-                )
+            val title = Title.title(
+                Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
+                Component.empty()
+                    .append(matchup.first.FormattedName)
+                    .append(Component.text(" vs ", NamedTextColor.WHITE))
+                    .append(matchup.second.FormattedName),
+                Title.Times.times(Tick.of(3), Tick.of(60), Tick.of(3))
+            )
 
-                players.forEach { player ->
-                    player.showTitle(title)
+            players.forEach { player ->
+                player.showTitle(title)
+            }
+        }
+    }
+
+    suspend fun dropWalls() {
+        val currentMap = loadedMaps.getOrNull(currentRound - 1)
+        if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
+
+        val walls = currentMap.data.getList("walls")
+            ?.map { wall ->
+                if(wall !is List<*>) throw GameControllerException("Walls list is not a 2d list")
+                wall.map {
+                    if(it !is Int && it !is Double) throw GameControllerException("Walls list element does not contain exclusively integers or doubles.")
+                    it.toDouble()
                 }
             }
+            ?: throw GameControllerException("Wall list not specified for ${currentMap.id}")
 
-            delay(7000) // prep stage
-            // TODO: Drop walls
-            currentRound++
+        walls.forEach {
+            val start = it.slice(0..2).unpackCoordinates(currentMap.world)
+            val end = it.slice(3..5).unpackCoordinates(currentMap.world)
+
+            suspendSync {
+                for(x in min(start.x, end.x).toInt()..max(start.x, end.x).toInt())
+                for(y in min(start.y, end.y).toInt()..max(start.y, end.y).toInt())
+                for(z in min(start.z, end.z).toInt()..max(start.z, end.z).toInt()) {
+                    val location = Location(currentMap.world, x.toDouble(), y.toDouble(), z.toDouble())
+                    currentMap.world.spawnParticle(
+                        Particle.BLOCK,
+                        location,
+                        20,
+                        0.0,
+                        0.0,
+                        0.0,
+                        location.block.blockData
+                    )
+                    location.block.type = Material.AIR
+                }
+            }
         }
     }
 
