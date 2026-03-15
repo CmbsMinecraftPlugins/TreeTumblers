@@ -10,6 +10,7 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
@@ -94,6 +95,18 @@ class CrumbleController : GameBase(
     val killModel = NamespacedKey("tumbling", "crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {
+        override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
+            "selector" to { sender ->
+                if(sender !is Player) {
+                    sender.sendMessage(Format.error("Only players can trigger this event!"))
+                    return@to
+                }
+
+                sender.inventory.addItem(kitSelector.clone())
+                sender.sendMessage(Format.success("Gave the kit selector successfully!"))
+            }
+        )
+
         override fun killEvent(killer: Player?, killed: Player?) = playerKill(killer, killed)
         override fun deathEvent(killed: Player?) = playerDeath(killed)
     }

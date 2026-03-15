@@ -10,6 +10,7 @@ import xyz.devcmb.tumblers.commands.dev.*
 import xyz.devcmb.tumblers.commands.games.*
 import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.util.DebugUtil
 
 @Controller("commandController", Controller.Priority.LOWEST)
@@ -30,6 +31,7 @@ class CommandController : IController {
             .argument(DatabaseController.WhitelistedPlayer::class.java, WhitelistedPlayerArgument())
             .argument(GameController.Game::class.java, GameArgument())
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
+            .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
             .build()
     }
 }
