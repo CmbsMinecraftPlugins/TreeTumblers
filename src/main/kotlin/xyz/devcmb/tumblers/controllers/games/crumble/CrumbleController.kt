@@ -13,6 +13,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
@@ -22,6 +23,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.ScoreSource
 import xyz.devcmb.tumblers.engine.map.Map
@@ -70,6 +72,7 @@ class CrumbleController : GameBase(
 
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
     var currentRound = 1
+
     val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
 
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
@@ -89,6 +92,11 @@ class CrumbleController : GameBase(
 
     val font = NamespacedKey("tumbling", "games/crumble")
     val killModel = NamespacedKey("tumbling", "crumble/kill")
+
+    override val debugToolkit = object : DebugToolkit() {
+        override fun killEvent(killer: Player?, killed: Player?) = playerKill(killer, killed)
+        override fun deathEvent(killed: Player?) = playerDeath(killed)
+    }
 
     override suspend fun gameLoad() {
         registerKits()
@@ -290,6 +298,40 @@ class CrumbleController : GameBase(
             // TODO: Drop walls
             currentRound++
         }
+    }
+
+    fun playerKill(killer: Player?, killed: Player?) {
+        // TODO: Only send this message to players in the current matchup
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(Format.formatKillMessage(it, getScoreSource(ScoreSource.KILL), killer, killed))
+        }
+
+        if(killer != null) {
+            grantScore(killer, ScoreSource.KILL)
+        }
+    }
+
+    fun playerDeath(killed: Player?) {
+        // TODO: Only send this message to players in the current matchup
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(Format.formatDeathMessage(it, false, getScoreSource(ScoreSource.KILL), killed))
+        }
+
+        // Natural death in this minigame does not give score
+    }
+
+    @EventHandler
+    fun playerScoreEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        if(killer == null) {
+            playerDeath(killed)
+            return
+        }
+
+        event.showDeathMessages = false
+        playerKill(killer, killed)
     }
 
     fun giveKits() {

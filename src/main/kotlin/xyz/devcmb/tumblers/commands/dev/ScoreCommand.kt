@@ -30,7 +30,13 @@ class ScoreCommand {
             return
         }
 
-        activeGame.playerKill(player, null)
+        val debugToolkit = activeGame.debugToolkit
+        if(debugToolkit == null){
+            player.sendMessage(Format.error("Cannot invoke a debug action on a game without a debug toolkit!"))
+            return
+        }
+
+        debugToolkit.killEvent(player, null)
         player.sendMessage(Format.success("Sent a kill signal successfully!"))
     }
 
@@ -42,7 +48,13 @@ class ScoreCommand {
             return
         }
 
-        activeGame.playerKill(null, player)
+        val debugToolkit = activeGame.debugToolkit
+        if(debugToolkit == null){
+            player.sendMessage(Format.error("Cannot invoke a debug action on a game without a debug toolkit!"))
+            return
+        }
+
+        debugToolkit.deathEvent(player)
         player.sendMessage(Format.success("Sent a death signal successfully!"))
     }
 

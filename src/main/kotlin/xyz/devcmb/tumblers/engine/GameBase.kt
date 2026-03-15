@@ -19,8 +19,8 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
-import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.data.Team
 
 /**
  * Base class for all games
@@ -28,11 +28,15 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
  * @param votable Whether this game is available for voting during the voting stage
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
+ * @param flags A [Set] of [Flag] enums to determine certain shared behaviors
+ * @param scores A [HashMap] of [ScoreSource]s to the amount of score they give
  *
  * @property currentState The current [State] of the individual game
  * @property loadedMaps An [ArrayList] containing all the [LoadedMap] instances
  * @property configRoot The root path for the games configuration
  * @property gamePlayers A [MutableSet] with all the players that were online when the game was started
+ * @property gameParticipants a [MutableSet] with all the players that were online when the game was started that are on a team labeled [Team.playingTeam]
+ * @property debugToolkit An optional instance of a [DebugToolkit] for certain developer commands (you really should fill this out, but you can be lazy if you really don't want to)
  */
 abstract class GameBase(
     val id: String,
@@ -60,9 +64,11 @@ abstract class GameBase(
     val gamePlayers: MutableSet<Player> = HashSet()
     val gameParticipants: MutableSet<Player> = HashSet()
 
-    val eventController: EventController by lazy {
+    private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
+
+    open val debugToolkit: DebugToolkit? = null
 
     /**
      * The internal load stage called by the [GameController]
@@ -190,30 +196,7 @@ abstract class GameBase(
         event.drops.clear()
     }
 
-    @EventHandler
-    fun playerScoreEvent(event: PlayerDeathEvent) {
-        val killed = event.player
-        val killer = killed.killer
-
-        if(killer == null || flags.contains(Flag.DISABLE_PVP)) return
-
-        event.showDeathMessages = false
-        playerKill(killer, killed)
-    }
-
-    fun playerKill(killer: Player?, killed: Player?) {
-        require(killed != null || killer != null) { "Both killer and killed cannot be null" }
-
-        Bukkit.getOnlinePlayers().forEach {
-            it.sendMessage(Format.formatKillMessage(it, getScoreSource(ScoreSource.KILL), killer, killed))
-        }
-
-        if(killer != null) {
-            grantScore(killer, ScoreSource.KILL)
-        }
-    }
-
-    private fun getScoreSource(source: ScoreSource): Int {
+    fun getScoreSource(source: ScoreSource): Int {
         return scores[source] ?: 0
     }
 

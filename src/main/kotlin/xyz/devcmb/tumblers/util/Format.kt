@@ -9,6 +9,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object Format {
     val randomizedKillMessages: ArrayList<String> = arrayListOf(
+        "{player} was killed by {killer}",
         "{player} got destroyed by {killer}",
         "{player} got smoked by {killer}",
         "{player} got obliterated by {killer}",
@@ -20,11 +21,23 @@ object Format {
         "{player} was outmatched by {killer}",
         "{player} was outperformed by {killer}",
         "{player} was outdone by {killer}",
-        "{player} was forced to watch skibidi toilet by {killer}",
-        "{player} was banned from discord by {killer}",
         "{player} was rejected by {killer}",
         "{player} was forgotten by {killer}",
         "{player} was disrespected by {killer}"
+    )
+
+    val randomizedDeathMessages: MutableList<String> = mutableListOf(
+        "{player} tripped",
+        "{player} didn't try hard enough",
+        "{player} thought they could speed bridge",
+        "{player} had a skill issue",
+        "{player} became a pork chop",
+        "{player} went kaboom",
+        "{player} was caught playing fortnite",
+        "{player} should get their eyes checked",
+        "{player} should buy a better pc",
+        "{player} got banned from discord",
+        "{player} got rejected"
     )
 
     fun formatPlayerName(player: Player): Component {
@@ -94,6 +107,45 @@ object Format {
         }
 
         if(receiver == killer) {
+            result = result.append(Component.text(" [+$score]"))
+        }
+        result = result.color(NamedTextColor.GRAY)
+
+        return result.color(NamedTextColor.GRAY)
+    }
+
+    fun formatDeathMessage(receiver: Player, grantScore: Boolean, score: Int, killed: Player?): Component {
+        val killedName =
+            if(killed == null) Component.empty()
+                .append(
+                    Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
+                        .font(NamespacedKey("tumbling", "icons"))
+                )
+                .append(Component.text(" "))
+                .append(Component.text("Player", NamedTextColor.WHITE))
+            else formatPlayerName(killed)
+
+        val template = randomizedDeathMessages.random()
+
+        // chatgpt regex magic (what is this)
+        val parts = template.split(Regex("(\\{player}|\\{killer})"))
+        val matches = Regex("(\\{player}|\\{killer})").findAll(template).map { it.value }.toList()
+
+        var result = Component.empty()
+        parts.indices.forEach {
+            result = result.append(Component.text(parts[it]))
+
+            if (it < matches.size) {
+                result = result.append(
+                    when (matches[it]) {
+                        "{player}" -> killedName
+                        else -> Component.empty()
+                    }
+                )
+            }
+        }
+
+        if(grantScore) {
             result = result.append(Component.text(" [+$score]"))
         }
         result = result.color(NamedTextColor.GRAY)
