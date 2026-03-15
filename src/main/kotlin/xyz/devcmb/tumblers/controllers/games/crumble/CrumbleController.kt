@@ -314,9 +314,8 @@ class CrumbleController : GameBase(
     }
 
     fun playerKill(killer: Player?, killed: Player?) {
-        // TODO: Only send this message to players in the current matchup
-        Bukkit.getOnlinePlayers().forEach {
-            it.sendMessage(Format.formatKillMessage(it, getScoreSource(ScoreSource.KILL), killer, killed))
+        sendTeamMessage(killed) {
+            Format.formatKillMessage(killer, killed, it, getScoreSource(ScoreSource.KILL))
         }
 
         if(killer != null) {
@@ -325,12 +324,31 @@ class CrumbleController : GameBase(
     }
 
     fun playerDeath(killed: Player?) {
-        // TODO: Only send this message to players in the current matchup
-        Bukkit.getOnlinePlayers().forEach {
-            it.sendMessage(Format.formatDeathMessage(it, false, getScoreSource(ScoreSource.KILL), killed))
+        sendTeamMessage(killed) {
+            Format.formatDeathMessage(killed, it)
         }
 
-        // Natural death in this minigame does not give score
+        // Natural death in this game does not give score
+    }
+
+    fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
+        if(player == null) {
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(message(it))
+            }
+            return
+        }
+
+        val roundMatchup = matchups[currentRound - 1]
+
+        val matchup = roundMatchup.firstOrNull { (team1, team2) ->
+            player in team1.getOnlinePlayers() || player in team2.getOnlinePlayers()
+        } ?: return
+
+        val (team1, team2) = matchup
+
+        team1.getOnlinePlayers().forEach { it.sendMessage(message(it)) }
+        team2.getOnlinePlayers().forEach { it.sendMessage(message(it)) }
     }
 
     @EventHandler

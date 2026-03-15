@@ -62,7 +62,7 @@ object Format {
             .append(Component.text(player.name, team.color))
     }
 
-    fun formatKillMessage(receiver: Player, score: Int, killer: Player?, killed: Player?): Component {
+    fun formatKillMessage(killer: Player?, killed: Player?, receiver: Player, score: Int): Component {
         require(killer != null || killed != null) { "Both killer and killed cannot be null" }
 
         val killerName =
@@ -114,7 +114,7 @@ object Format {
         return result.color(NamedTextColor.GRAY)
     }
 
-    fun formatDeathMessage(receiver: Player, grantScore: Boolean, score: Int, killed: Player?): Component {
+    fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
         val killedName =
             if(killed == null) Component.empty()
                 .append(
