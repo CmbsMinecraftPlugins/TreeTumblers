@@ -9,6 +9,8 @@ import org.bukkit.block.Biome
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
+import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -112,6 +114,16 @@ object MiscUtils {
         }
 
         return lines
+    }
+
+    fun isArmor(item: ItemStack): Boolean {
+        return when (item.type.equipmentSlot) {
+            EquipmentSlot.HEAD,
+            EquipmentSlot.CHEST,
+            EquipmentSlot.LEGS,
+            EquipmentSlot.FEET -> true
+            else -> false
+        }
     }
 
     // Source - https://stackoverflow.com/a/73494554

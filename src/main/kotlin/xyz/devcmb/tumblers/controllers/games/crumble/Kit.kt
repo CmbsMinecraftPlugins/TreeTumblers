@@ -7,6 +7,8 @@ import org.bukkit.inventory.ItemStack
 
 interface Kit : Listener {
     val player: Player?
+    val crumble: CrumbleController
+
     val id: String
     val name: String
     val inventoryModel: NamespacedKey

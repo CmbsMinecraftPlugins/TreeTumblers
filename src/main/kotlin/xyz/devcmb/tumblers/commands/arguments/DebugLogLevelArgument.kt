@@ -18,7 +18,7 @@ class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogL
         val types = DebugUtil.DebugLogLevel.entries
         val enum = types.find { it.name.lowercase() == argument.lowercase() }
 
-        if(enum == null) {
+        if(enum == null || enum.name == "none") {
             return ParseResult.failure("That isn't a valid debug log level")
         }
 
@@ -33,6 +33,7 @@ class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogL
         return DebugUtil.DebugLogLevel.entries
             .stream()
             .map { it.name.lowercase() }
+            .filter { it != "none" }
             .collect(SuggestionResult.collector())
     }
 }

@@ -27,11 +27,17 @@ class DebugCommand {
 
         DebugUtil.subscribe(player, loggingLevel)
         player.sendMessage(Format.success("Subscribed to the ${loggingLevel.name.lowercase()} logging channel successfully!"))
-        DebugUtil.log("${player.name} subscribed to ${loggingLevel.name} logging channel", DebugUtil.DebugLogLevel.INFO)
+        DebugUtil.info("${player.name} subscribed to ${loggingLevel.name} logging channel")
     }
 
     @Execute(name = "logging send")
     fun testLogging(@Arg loggingLevel: DebugUtil.DebugLogLevel, @Join message: String) {
-        DebugUtil.log(message, loggingLevel)
+        when(loggingLevel) {
+            DebugUtil.DebugLogLevel.INFO -> DebugUtil.info(message)
+            DebugUtil.DebugLogLevel.ERROR -> DebugUtil.severe(message)
+            DebugUtil.DebugLogLevel.SUCCESS -> DebugUtil.success(message)
+            DebugUtil.DebugLogLevel.WARNING -> DebugUtil.warning(message)
+            else -> return
+        }
     }
 }

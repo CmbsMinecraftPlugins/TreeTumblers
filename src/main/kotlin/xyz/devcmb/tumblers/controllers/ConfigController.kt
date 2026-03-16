@@ -25,7 +25,7 @@ class ConfigController : IController {
             val config = TreeTumblers.plugin.config
 
             val path = annotation.path
-            val value = if(!config.contains(path)) null else when(field.type) {
+            val value = if(!config.isSet(path)) null else when(field.type) {
                 Int::class.java,
                 Int::class.javaPrimitiveType -> config.getInt(path)
 
@@ -56,6 +56,8 @@ class ConfigController : IController {
             if(value != null) {
                 DebugUtil.info("Updated field ${field.name} to ${if(annotation.censor) "*".repeat(value.toString().length) else value} from config")
                 field.set(null, value)
+            } else {
+                DebugUtil.warning("Path ${annotation.path} not found in config for field ${field.name}, using default value of ${field.get(null)}")
             }
         }
     }

@@ -23,11 +23,17 @@ games:
     # This path is relative to the `world_root` config value
     worlds_folder: "crumble"
     max_kit_players: 2
+    tnt_detonation_time: 80
     kits:
       archer:
         punch_level: 2
         power_level: 3
         swiftness_ticks: 30
+      bomber:
+        nuke_explosion_ticks: 5
+        nuke_radius: 7.0
+        nuke_damage: 7
+        blast_protection_level: 2
     maps:
       warfare:
         world: "crumble_warfare"

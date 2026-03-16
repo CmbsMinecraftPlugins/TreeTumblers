@@ -30,13 +30,13 @@ object DebugUtil {
     fun warning(message: String) = log(message, DebugLogLevel.WARNING)
     fun severe(message: String) = log(message, DebugLogLevel.ERROR)
 
-    fun log(message: String, level: DebugLogLevel) {
+    private fun log(message: String, level: DebugLogLevel) {
         assert(level != DebugLogLevel.NONE)
 
         Bukkit.getServer().consoleSender.sendMessage("${ansiColorMap[level.color]!!}[TreeTumblers ${level.name.lowercase()}]${reset} $message")
 
         val stackTrace = Thread.currentThread().stackTrace
-        val caller = stackTrace[2]
+        val caller = stackTrace[3]
         loggingSubscriptions.forEach { player, logLevel ->
             if(logLevel.level >= level.level) {
                 player.sendMessage(

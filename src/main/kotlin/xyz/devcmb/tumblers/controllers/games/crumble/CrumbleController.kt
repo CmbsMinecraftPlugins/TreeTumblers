@@ -12,24 +12,33 @@ import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
+import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
+import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.LeatherArmorMeta
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -46,6 +55,7 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
 
@@ -78,10 +88,14 @@ class CrumbleController : GameBase(
     companion object {
         @field:Configurable("games.crumble.max_kit_players")
         var maxPlayersPerKit: Int = 2
+
+        @field:Configurable("games.crumble.tnt_detonation_time")
+        var tntDetonationTime: Int = 80
     }
 
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
     var currentRound = 1
+    var roundActive = false
 
     var preRoundFreeze = false
 
@@ -182,6 +196,7 @@ class CrumbleController : GameBase(
             }
 
             matchups.add(roundMatches)
+            matchResults.add(hashMapOf())
 
             val last = teams.removeLast()
             teams.add(1, last)
@@ -195,10 +210,11 @@ class CrumbleController : GameBase(
 
     fun registerKits() {
         registerKit("archer", ArcherKit::class.java)
+        registerKit("bomber", BomberKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
-        kitTemplates.put(id, kit.getConstructor(Player::class.java).newInstance(null))
+        kitTemplates.put(id, kit.getConstructor(Player::class.java, CrumbleController::class.java).newInstance(null, this))
         registeredKits.put(id, kit)
     }
 
@@ -349,6 +365,7 @@ class CrumbleController : GameBase(
             announceMatchup()
             delay(7000) // prep stage
             dropWalls()
+            roundActive = true
 
             while(true) {
                 val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
@@ -356,6 +373,7 @@ class CrumbleController : GameBase(
                 delay(200)
             }
 
+            roundActive = false
             delay(2000)
             currentRound++
         }
@@ -421,7 +439,6 @@ class CrumbleController : GameBase(
             }
         }
     }
-
 
     fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
         if(player == null) {
@@ -489,6 +506,8 @@ class CrumbleController : GameBase(
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
         }
+
+        matchResults[currentRound].put(team, RoundResult.WIN)
     }
 
     fun roundLoss(team: Team) {
@@ -501,6 +520,8 @@ class CrumbleController : GameBase(
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
         }
+
+        matchResults[currentRound].put(team, RoundResult.LOSS)
     }
 
     fun roundDraw(team: Team) {
@@ -513,6 +534,8 @@ class CrumbleController : GameBase(
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
         }
+
+        matchResults[currentRound].put(team, RoundResult.DRAW)
     }
 
     fun playerKillAnnouncement(killer: Player?, killed: Player?) {
@@ -544,51 +567,69 @@ class CrumbleController : GameBase(
         }
     }
 
-    fun giveKits() {
-        playerKits.forEach { player, kit ->
-            player.inventory.clear()
+    fun giveKits() = playerKits.keys.forEach(this::givePlayerKit)
 
-            kit.items.forEach {
-                val item = it.clone()
-                kitItems.add(item)
+    fun givePlayerKit(player: Player, pregame: Boolean = false) {
+        val kit = playerKits[player]!!
+        player.inventory.clear()
+
+        kit.items.forEach {
+            val item = it.clone()
+            kitItems.add(item)
+
+            if(MiscUtils.isArmor(item)) {
+                if(item.type.name.contains("LEATHER")) {
+                    item.itemMeta = item.itemMeta.also { meta ->
+                        val meta = meta as LeatherArmorMeta
+                        val playerTeam = player.tumblingPlayer!!.team
+                        meta.setColor(Color.fromRGB(playerTeam.color.value()))
+                    }
+                }
+
+                player.inventory.setItem(item.type.equipmentSlot, item)
+            } else {
                 player.inventory.addItem(item)
             }
+        }
 
-            val abilityItem = AdvancedItemStack(Material.PAPER) {
-                name(Component.text("${kit.name} Ability: ${kit.abilityName}", NamedTextColor.AQUA))
-                lore(
+        val abilityItem = AdvancedItemStack(Material.PAPER) {
+            name(Component.text("${kit.name} Ability: ${kit.abilityName}", NamedTextColor.AQUA))
+            lore(
+                MiscUtils.wrapComponent(
+                    Component.text(kit.abilityDescription, NamedTextColor.WHITE),
+                    40
+                ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
+            )
+            model(kit.inventoryModel)
+
+            rightClick {
+                useAbility(it)
+            }
+        }.build()
+
+        val killItem = ItemStack(Material.PAPER).apply {
+            itemMeta = itemMeta.also { meta ->
+                meta.itemName(Component.text("Kill power: ${kit.killPowerName}", NamedTextColor.YELLOW))
+                meta.itemModel = killModel
+                meta.lore(
                     MiscUtils.wrapComponent(
-                        Component.text(kit.abilityDescription, NamedTextColor.WHITE),
+                        Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
                         40
                     ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
                 )
-                model(kit.inventoryModel)
-
-                rightClick {
-                    useAbility(it)
-                }
-            }.build()
-
-            val killItem = ItemStack(Material.PAPER).apply {
-                itemMeta = itemMeta.also { meta ->
-                    meta.itemName(Component.text("Kill power: ${kit.killPowerName}", NamedTextColor.YELLOW))
-                    meta.itemModel = killModel
-                    meta.lore(
-                        MiscUtils.wrapComponent(
-                            Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
-                            40
-                        ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
-                    )
-                }
             }
-
-            // Make sure never to have over 7 items in a kit
-            player.inventory.setItem(7, killItem)
-            player.inventory.setItem(8, abilityItem)
-
-            kitItems.add(killItem)
-            kitItems.add(abilityItem)
         }
+
+        // Make sure never to have over 7 items in a kit
+        player.inventory.setItem(7, killItem)
+        player.inventory.setItem(8, abilityItem)
+
+        if(pregame) {
+            player.inventory.addItem(kitSelector)
+        }
+
+        kitItems.add(killItem)
+        kitItems.add(abilityItem)
     }
 
     fun selectKit(player: Player, id: String) {
@@ -596,9 +637,10 @@ class CrumbleController : GameBase(
         require(registeredKits.get(id) != null) { "Kit with id $id does not exist" }
 
         val kit = registeredKits[id]!!
-            .getDeclaredConstructor(Player::class.java)
-            .newInstance(player)
+            .getDeclaredConstructor(Player::class.java, CrumbleController::class.java)
+            .newInstance(player, this)
         playerKits.put(player, kit)
+        givePlayerKit(player, true)
         Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
     }
 
@@ -614,6 +656,11 @@ class CrumbleController : GameBase(
             return
         }
 
+        if(!roundActive) {
+            player.sendMessage(Format.error("You cannot use your ability until the round starts!"))
+            return
+        }
+
         playerKits[player]!!.onAbility()
         abilitiesUsed.add(player)
     }
@@ -622,6 +669,67 @@ class CrumbleController : GameBase(
     fun playerDropItemEvent(event: PlayerDropItemEvent) {
         if(kitItems.find { it.isSimilar(event.itemDrop.itemStack) } != null)
             event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerTntEvent(event: BlockPlaceEvent) {
+        val player = event.player
+        val block = event.block
+        if(block.type != Material.TNT) return
+
+        val item = event.itemInHand
+
+        val location = block.location
+        location.block.type = Material.AIR
+
+        val tnt = location.world.spawnEntity(location, EntityType.TNT) as TNTPrimed
+        tnt.persistentDataContainer.set(
+            NamespacedKey("tumbling", "tnt_owner"),
+            PersistentDataType.STRING,
+            player.uniqueId.toString()
+        )
+
+        if(item.itemMeta?.persistentDataContainer?.get(BomberKit.nukeKey, PersistentDataType.BOOLEAN) == true) {
+            // maybe un-hardcode this
+            tnt.fuseTicks = BomberKit.nukeExplosionTicks
+            tnt.persistentDataContainer.set(
+                BomberKit.nukeKey,
+                PersistentDataType.BOOLEAN,
+                true
+            )
+        } else {
+            tnt.fuseTicks = tntDetonationTime
+        }
+    }
+
+    @EventHandler
+    fun playerDamageEvent(event: EntityDamageEvent) {
+        if(event !is Player) return
+        if(!roundActive) event.isCancelled = true
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun tntDamageEvent(event: EntityDamageEvent) {
+        val player = event.entity
+        if(player !is Player) return
+
+        val causingEntity = event.damageSource.directEntity
+        if(causingEntity == null || causingEntity !is TNTPrimed) return
+
+        val dataContainer = causingEntity.persistentDataContainer
+        val causingPlayerUUID = dataContainer.get(NamespacedKey("tumbling", "tnt_owner"), PersistentDataType.STRING)
+        val causingPlayer = Bukkit.getPlayer(UUID.fromString(causingPlayerUUID))
+
+        if(causingPlayerUUID == null || causingPlayer == null) {
+            DebugUtil.severe("Could not find a causing player on an exploding tnt")
+            event.isCancelled = true
+            return
+        }
+
+        val causingTeam = causingPlayer.tumblingPlayer!!.team
+        if(causingTeam.getOnlinePlayers().contains(player) && player != causingPlayer) {
+            event.isCancelled = true
+        }
     }
 
     enum class RoundResult {

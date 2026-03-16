@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.buttonClickSound
 
@@ -86,6 +87,16 @@ class CrumbleKitSelector(
                             stack
                         },
                         onClick = { page, item ->
+                            if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
+                                player.sendMessage(Format.error("This kit has too many players!"))
+                                return@InventoryMappedItem
+                            }
+
+                            if(crumble.playerKits[player]?.id == template.id) {
+                                player.sendMessage(Format.error("You've already selected this kit!"))
+                                return@InventoryMappedItem
+                            }
+
                             crumble.selectKit(player, template.id)
                             player.buttonClickSound()
                             UserInterfaceUtility.refreshAll(id)

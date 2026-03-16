@@ -120,6 +120,9 @@ abstract class GameBase(
 
     /**
      * A utility method for loading maps into the [loadedMaps] using [Map.load]
+     * @param map The map instance to load
+     * @param index The index of the map to be formated as `world_name-index`
+     * @return A [LoadedMap] created from the [map]
      */
     suspend fun loadMap(map: Map, index: Int): LoadedMap {
         val loadedMap = map.load(index)
@@ -165,6 +168,8 @@ abstract class GameBase(
      * The abstract method for spawning players in
      *
      * There was going to be some kind of system to do this automatically, but doing it manually seems to be a more flexible option, at least for now.
+     *
+     * @param cycle The stage where the players are spawned
      */
     abstract suspend fun spawn(cycle: SpawnCycle)
 
@@ -197,16 +202,29 @@ abstract class GameBase(
         event.drops.clear()
     }
 
+    /**
+     * Gets a score amount from the provided [scores] table
+     * @param source The source to get
+     * @return The amount of score a source gives (or 0 if not specified)
+     */
     fun getScoreSource(source: ScoreSource): Int {
         return scores[source] ?: 0
     }
 
+    /**
+     * Grants score to a [Player] and their team
+     * @param player The player to give score to
+     * @param source The source of score
+     */
     fun grantScore(player: Player, source: ScoreSource) {
         val amount = getScoreSource(source)
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
         eventController.grantScore(player, amount)
     }
 
+    /**
+     * The current state of the active game
+     */
     enum class State {
         UNLOADED,
         LOADING,

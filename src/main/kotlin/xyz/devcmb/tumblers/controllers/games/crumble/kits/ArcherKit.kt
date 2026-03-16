@@ -11,16 +11,18 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.annotations.Configurable
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.seconds
 
 class ArcherKit(
     override val player: Player?,
+    override val crumble: CrumbleController,
 ) : Kit {
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/archer")
     override val id: String = "archer"
     override val name: String = "Archer"
+    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/archer")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)
@@ -30,7 +32,8 @@ class ArcherKit(
                 it.isUnbreakable = true
             }
         },
-        ItemStack(Material.ARROW, 2)
+        ItemStack(Material.ARROW, 2),
+        ItemStack(Material.LEATHER_HELMET)
     )
 
     override val abilityName: String = "Sniper"
@@ -40,7 +43,7 @@ class ArcherKit(
     override val killPowerDescription: String = "Gives swiftness for ${swiftnessTicks.seconds}s"
 
     override val kitIcon: String = "\uE000"
-    override val kitDisplayTextLength: Int = 50
+    override val kitDisplayTextLength: Int = 49
 
     companion object {
         @field:Configurable("games.crumble.kits.archer.power_level")
