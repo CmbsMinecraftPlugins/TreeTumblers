@@ -18,6 +18,7 @@ repositories {
     }
     maven("https://repo.panda-lang.org/releases")
     maven { url = uri("https://jitpack.io") }
+    maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
