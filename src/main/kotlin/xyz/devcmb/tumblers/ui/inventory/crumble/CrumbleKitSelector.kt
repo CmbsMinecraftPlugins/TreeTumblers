@@ -37,7 +37,8 @@ class CrumbleKitSelector(
                 val crumble = gameController.activeGame as CrumbleController
 
                 val items: ArrayList<InventoryMappedItem> = ArrayList()
-                crumble.kitTemplates.forEach { _,template ->
+                val templates = crumble.kitTemplates.toSortedMap(compareBy { it })
+                templates.forEach { _,template ->
                     items.add(InventoryMappedItem(
                         getItemStack = { _,_ ->
                             val currentPlayerKits = crumble.playerKits.filter { item -> item.value.id == template.id }

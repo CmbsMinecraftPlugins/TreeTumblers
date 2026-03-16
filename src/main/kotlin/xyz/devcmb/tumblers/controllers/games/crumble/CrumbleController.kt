@@ -39,6 +39,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -58,6 +59,7 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 @EventGame
 class CrumbleController : GameBase(
@@ -211,6 +213,7 @@ class CrumbleController : GameBase(
     fun registerKits() {
         registerKit("archer", ArcherKit::class.java)
         registerKit("bomber", BomberKit::class.java)
+        registerKit("fisher", FisherKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
@@ -311,8 +314,9 @@ class CrumbleController : GameBase(
                         // a link to the research I did to get these numbers
                         // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
                         val bgSize = 69.5
-                        val bgOffset = (kit.kitDisplayTextLength+((bgSize - kit.kitDisplayTextLength)/2)).toInt()
-                        val fullOffset = ((bgSize - kit.kitDisplayTextLength) / 2).toInt()
+                        // very important: if these are not roundToInt, it could be offset (I found this out the hard way)
+                        val bgOffset = (kit.kitDisplayTextLength+((bgSize - kit.kitDisplayTextLength)/2)).roundToInt()
+                        val fullOffset = ((bgSize - kit.kitDisplayTextLength) / 2).roundToInt()
 
                         component = Component.empty()
                             .append(UserInterfaceUtility.negativeSpace(fullOffset))
@@ -571,6 +575,7 @@ class CrumbleController : GameBase(
 
     fun givePlayerKit(player: Player, pregame: Boolean = false) {
         val kit = playerKits[player]!!
+        kit.cleanup()
         player.inventory.clear()
 
         kit.items.forEach {
@@ -662,6 +667,7 @@ class CrumbleController : GameBase(
         }
 
         playerKits[player]!!.onAbility()
+        player.sendMessage(Format.success("Activated ability!"))
         abilitiesUsed.add(player)
     }
 

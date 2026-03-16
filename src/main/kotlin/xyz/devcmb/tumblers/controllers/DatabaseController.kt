@@ -55,7 +55,7 @@ class DatabaseController : IController {
     }
 
     override fun init() {
-        val url = "jdbc:mysql://$host:$port/$database?useSSL=false"
+        val url = "jdbc:mysql://$host:$port/$database?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
 
         // we can block here because it's before the server loads
         runBlocking {
