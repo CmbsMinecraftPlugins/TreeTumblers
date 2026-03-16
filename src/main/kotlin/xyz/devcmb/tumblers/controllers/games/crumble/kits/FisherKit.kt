@@ -107,6 +107,7 @@ class FisherKit(
 
     override fun cleanup() {
         knockbackLevel = 1
+        abilityActive = false
     }
 
     @EventHandler

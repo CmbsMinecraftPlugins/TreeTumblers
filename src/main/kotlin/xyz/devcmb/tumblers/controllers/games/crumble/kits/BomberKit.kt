@@ -28,6 +28,7 @@ class BomberKit(
     override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/bomber")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD),
+        ItemStack(Material.TNT, 2),
         ItemStack(Material.LEATHER_HELMET).apply {
             addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
         },
@@ -139,5 +140,10 @@ class BomberKit(
             hitPlayers.putIfAbsent(causingEntity.uniqueId, arrayListOf())
             hitPlayers[causingEntity.uniqueId]!!.add(player)
         }
+    }
+
+    override fun cleanup() {
+        hitPlayers.clear()
+        nukeId = null
     }
 }

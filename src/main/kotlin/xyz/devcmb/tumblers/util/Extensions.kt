@@ -26,9 +26,9 @@ fun Player.openHandledInventory(id: String) {
 
 fun runTask(runnable: Runnable) =
     Bukkit.getScheduler().runTask(TreeTumblers.plugin, runnable)
-fun runTaskLater(runnable: Runnable, delay: Long) =
+fun runTaskLater(delay: Long, runnable: Runnable) =
     Bukkit.getScheduler().runTaskLater(TreeTumblers.plugin, runnable, delay)
-fun runTaskTimer(runnable: Runnable, delay: Long, period: Long) =
+fun runTaskTimer(delay: Long, period: Long, runnable: Runnable) =
     Bukkit.getScheduler().runTaskTimer(TreeTumblers.plugin, runnable, delay, period)
 fun runTaskAsynchronously(runnable: Runnable) =
     Bukkit.getScheduler().runTaskAsynchronously(TreeTumblers.plugin, runnable)

@@ -40,6 +40,7 @@ import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.HunterKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -172,6 +173,22 @@ class CrumbleController : GameBase(
                     clipboard.paste(BukkitAdapter.adapt(sender.world), it)
                     sender.sendMessage(Format.success("Pasted at ${it.x()}, ${it.y()}, ${it.z()} successfully!"))
                 }
+            },
+            "kit_kill" to { sender ->
+                if(sender !is Player) {
+                    sender.sendMessage(Format.error("Only players can trigger this event!"))
+                    return@to
+                }
+
+                val kit = playerKits[sender]
+                if(kit == null) {
+                    sender.sendMessage(Format.error("You do not have a kit selected!"))
+                    return@to
+                }
+
+                // maybe change the `killed` field to be optional
+                kit.onKill(sender)
+                sender.sendMessage(Format.success("Kill event sent successfully!"))
             }
         )
 
@@ -214,6 +231,7 @@ class CrumbleController : GameBase(
         registerKit("archer", ArcherKit::class.java)
         registerKit("bomber", BomberKit::class.java)
         registerKit("fisher", FisherKit::class.java)
+        registerKit("hunter", HunterKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
@@ -330,7 +348,7 @@ class CrumbleController : GameBase(
                     it.sendActionBar(component)
                 }
             }
-            runTaskTimer(task, 0, 5)
+            runTaskTimer(0, 5, task)
             actionBarTasks.add(task)
         }
 
@@ -710,7 +728,7 @@ class CrumbleController : GameBase(
 
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
-        if(event !is Player) return
+        if(event.entity !is Player) return
         if(!roundActive) event.isCancelled = true
     }
 

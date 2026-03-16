@@ -6,7 +6,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
-import org.bukkit.event.entity.ProjectileLaunchEvent
+import org.bukkit.event.entity.EntityShootBowEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -32,7 +32,7 @@ class ArcherKit(
                 it.isUnbreakable = true
             }
         },
-        ItemStack(Material.ARROW, 2),
+        ItemStack(Material.ARROW, 4),
         ItemStack(Material.LEATHER_HELMET)
     )
 
@@ -80,7 +80,7 @@ class ArcherKit(
     }
 
     @EventHandler
-    fun shootEvent(event: ProjectileLaunchEvent) {
+    fun shootEvent(event: EntityShootBowEvent) {
         val entity = event.entity
         if(entity !is Arrow) return
 
@@ -93,5 +93,10 @@ class ArcherKit(
 
         val bow = player.inventory.first { it.type == Material.BOW } ?: return
         bow.removeEnchantments()
+        abilityActive = false
+    }
+
+    override fun cleanup() {
+        abilityActive = false
     }
 }

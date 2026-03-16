@@ -2,5 +2,5 @@ package xyz.devcmb.tumblers
 
 data object Constants {
     val IS_DEVELOPMENT = true
-    const val VERSION: String = "1.0.0-00010c"
+    const val VERSION: String = "1.0.0-000116"
 }
