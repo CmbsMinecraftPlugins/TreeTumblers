@@ -17,13 +17,17 @@ repositories {
         name = "papermc-repo"
     }
     maven("https://repo.panda-lang.org/releases")
-    maven { url = uri("https://jitpack.io") }
+    maven("https://jitpack.io")
     maven("https://maven.enginehub.org/repo/")
+    maven("https://mvn.lib.co.nz/public")
+    maven("https://repo.codemc.io/repository/maven-releases/")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.11.2")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
+    compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")

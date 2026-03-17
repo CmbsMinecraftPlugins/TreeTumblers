@@ -14,7 +14,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.seconds
+import xyz.devcmb.tumblers.util.tickSeconds
 
 class ArcherKit(
     override val player: Player?,
@@ -40,10 +40,10 @@ class ArcherKit(
     override val abilityDescription: String =
         "Enchants your bow with power ${MiscUtils.intToRoman(powerLevel)} and punch ${MiscUtils.intToRoman(punchLevel)}! Can only be fired once."
     override val killPowerName: String = "Robin Hood"
-    override val killPowerDescription: String = "Gives swiftness for ${swiftnessTicks.seconds}s"
+    override val killPowerDescription: String = "Gives swiftness for ${swiftnessTicks.tickSeconds}s"
 
     override val kitIcon: String = "\uE000"
-    override val kitDisplayTextLength: Int = 49
+    override val kitDisplayTextLength: Double = 48.5
 
     companion object {
         @field:Configurable("games.crumble.kits.archer.power_level")

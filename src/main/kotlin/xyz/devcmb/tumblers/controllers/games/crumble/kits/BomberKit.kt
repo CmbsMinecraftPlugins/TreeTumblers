@@ -49,7 +49,7 @@ class BomberKit(
     override val killPowerDescription: String = "Gives you a creeper spawn egg"
 
     override val kitIcon: String = "\uE001"
-    override val kitDisplayTextLength: Int = 49
+    override val kitDisplayTextLength: Double = 48.5
 
     companion object {
         val nukeKey = NamespacedKey("tumbling", "nuke")

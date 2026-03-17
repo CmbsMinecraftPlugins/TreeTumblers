@@ -70,7 +70,7 @@ class FisherKit(
     override val killPowerDescription: String = "Increases your knockback fish's knockback level by 1"
 
     override val kitIcon: String = "\uE002"
-    override val kitDisplayTextLength: Int = 46
+    override val kitDisplayTextLength: Double = 45.5
 
     companion object {
         @field:Configurable("games.crumble.kits.fisher.trident_loyalty_level")

@@ -38,6 +38,10 @@ games:
         trident_loyalty_level: 2
         trident_damage: 5.0
         trident_attack_speed: 1.1
+      ninja:
+        invisibility_duration: 80
+        smoke_duration: 100
+        smoke_size: 2.5
     maps:
       warfare:
         world: "crumble_warfare"

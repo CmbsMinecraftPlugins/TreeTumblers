@@ -41,12 +41,14 @@ import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.HunterKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.NinjaKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.ScoreSource
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -98,6 +100,12 @@ class CrumbleController : GameBase(
 
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
     var currentRound = 1
+
+    val currentMap: LoadedMap
+        get() {
+            return loadedMaps[currentRound - 1]
+        }
+
     var roundActive = false
 
     var preRoundFreeze = false
@@ -232,6 +240,7 @@ class CrumbleController : GameBase(
         registerKit("bomber", BomberKit::class.java)
         registerKit("fisher", FisherKit::class.java)
         registerKit("hunter", HunterKit::class.java)
+        registerKit("ninja", NinjaKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
@@ -289,6 +298,7 @@ class CrumbleController : GameBase(
                     suspendSync {
                         gamePlayers.forEach {
                             it.spigot().respawn()
+                            it.fireTicks = 0
                             val tumblingPlayer = it.tumblingPlayer ?: return@forEach
 
                             when(tumblingPlayer.team) {
@@ -379,7 +389,7 @@ class CrumbleController : GameBase(
                 val tumblingPlayer = it.tumblingPlayer!!
                 alivePlayers[tumblingPlayer.team]!!.add(it)
             }
-            giveKits()
+            suspendSync(this::giveKits)
             abilitiesUsed.clear()
             preRoundFreeze = true
             delay(1000)

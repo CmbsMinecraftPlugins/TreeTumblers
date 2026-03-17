@@ -44,7 +44,7 @@ fun List<Double>.unpackCoordinates(world: World): Location {
     )
 }
 
-val Long.seconds: Double
+val Long.tickSeconds: Double
     get() {
         return ((this / 20.0) * 10.0).roundToInt() / 10.0
     }
