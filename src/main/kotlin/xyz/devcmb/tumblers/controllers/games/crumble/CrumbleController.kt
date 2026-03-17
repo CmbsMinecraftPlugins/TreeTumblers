@@ -42,6 +42,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.HunterKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.NinjaKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.SorcererKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -241,6 +242,7 @@ class CrumbleController : GameBase(
         registerKit("fisher", FisherKit::class.java)
         registerKit("hunter", HunterKit::class.java)
         registerKit("ninja", NinjaKit::class.java)
+        registerKit("sorcerer", SorcererKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {

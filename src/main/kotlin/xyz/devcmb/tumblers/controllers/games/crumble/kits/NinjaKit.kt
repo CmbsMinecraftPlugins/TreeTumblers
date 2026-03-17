@@ -38,8 +38,8 @@ class NinjaKit(
     override val name: String = "Ninja"
     override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/ninja")
     override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.WOODEN_SWORD),
-        ItemStack(Material.LEATHER_HELMET)
+        ItemStack(Material.STONE_SWORD),
+        ItemStack(Material.LEATHER_BOOTS)
     )
 
     override val abilityName: String = "Stealth"

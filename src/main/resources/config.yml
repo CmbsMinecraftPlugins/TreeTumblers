@@ -42,6 +42,10 @@ games:
         invisibility_duration: 80
         smoke_duration: 100
         smoke_size: 2.5
+      sorcerer:
+        poison_duration: 70
+        heal_hearts: 2
+        heal_duration: 60
     maps:
       warfare:
         world: "crumble_warfare"

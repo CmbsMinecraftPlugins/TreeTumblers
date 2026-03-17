@@ -28,7 +28,7 @@ class HunterKit(
         },
         ItemStack(Material.CROSSBOW),
         ItemStack(Material.ARROW, 4),
-        ItemStack(Material.LEATHER_HELMET),
+        ItemStack(Material.LEATHER_BOOTS),
     )
 
     override val abilityName: String = "Multishot"
