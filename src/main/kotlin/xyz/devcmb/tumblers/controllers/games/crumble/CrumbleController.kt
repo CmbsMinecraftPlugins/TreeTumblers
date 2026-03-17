@@ -25,6 +25,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -32,6 +33,7 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -43,6 +45,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.HunterKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.NinjaKit
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.SorcererKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.WarriorKit
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -243,6 +246,7 @@ class CrumbleController : GameBase(
         registerKit("hunter", HunterKit::class.java)
         registerKit("ninja", NinjaKit::class.java)
         registerKit("sorcerer", SorcererKit::class.java)
+        registerKit("warrior", WarriorKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
@@ -765,6 +769,18 @@ class CrumbleController : GameBase(
         val causingTeam = causingPlayer.tumblingPlayer!!.team
         if(causingTeam.getOnlinePlayers().contains(player) && player != causingPlayer) {
             event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerHitEvent(event: EntityDamageByEntityEvent) {
+        val damaged = event.entity
+        val damager = event.damager
+
+        if(damaged !is Player || damager !is Player) return
+
+        if(damager.hasPotionEffect(PotionEffectType.BLINDNESS)) {
+            damager.removePotionEffect(PotionEffectType.BLINDNESS)
         }
     }
 

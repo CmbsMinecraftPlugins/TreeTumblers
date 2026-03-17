@@ -5,63 +5,46 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.tickSeconds
 
-class SorcererKit(
+class WarriorKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
-    override val id: String = "sorcerer"
-    override val name: String = "Sorcerer"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/sorcerer")
+    override val id: String = "warrior"
+    override val name: String = "Warrior"
+    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/warrior")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.LEATHER_BOOTS)
     )
 
-    override val abilityName: String = "Poison Haze"
-    override val abilityDescription: String = "Turns your sword into a nail of poison. Hitting anyone will give them the poison effect for ${poisonDuration.tickSeconds}s"
-    override val killPowerName: String = "Kill With Kindness"
-    override val killPowerDescription: String = "Heals you $healHearts hearts over ${healDuration.tickSeconds}s"
+    override val abilityName: String = "Eyelid Exterminator"
+    override val abilityDescription: String = "Revoke your opponents ability to see. Gives blindness to the next person you hit for ${blindnessTicks.tickSeconds}s or until they're hit"
+    override val killPowerName: String = "Strength"
+    override val killPowerDescription: String = "Enchants your sword with sharpness for 1 hit"
 
-    override val kitIcon: String = "\uE005"
-    override val kitDisplayTextLength: Double = 59.75
+    override val kitIcon: String = "\uE006"
+    override val kitDisplayTextLength: Double = 50.5
 
     companion object {
-        @field:Configurable("games.crumble.kits.sorcerer.poison_duration")
-        var poisonDuration: Long = 70
-
-        @field:Configurable("games.crumble.kits.sorcerer.heal_hearts")
-        var healHearts: Int = 2
-
-        @field:Configurable("games.crumble.kits.sorcerer.heal_duration")
-        var healDuration: Long = 60
+        var blindnessTicks: Long = 50
     }
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        object : BukkitRunnable() {
-            var heals: Int = 0
-            override fun run() {
-                player.heal(healHearts / 20.0)
-                heals++
 
-                if(heals > healDuration) {
-                    cancel()
-                }
-            }
-        }.runTaskTimer(TreeTumblers.plugin, 0, 1)
+        val sword = player.inventory.first { it.type == items[0].type }
+        sword.addEnchantment(Enchantment.SHARPNESS, 1)
     }
 
     var abilityActive = false
@@ -70,17 +53,15 @@ class SorcererKit(
         val sword = player.inventory.first { it.type == items[0].type }
         sword.itemMeta = sword.itemMeta.also {
             it.setEnchantmentGlintOverride(true)
-            it.lore(arrayListOf(Component.text("Poison Haze", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)))
+            it.lore(arrayListOf(
+                Component.text("Eyelid Exterminator", NamedTextColor.LIGHT_PURPLE).decoration(TextDecoration.ITALIC, false)
+            ))
         }
         abilityActive = true
     }
 
-    override fun cleanup() {
-        abilityActive = false
-    }
-
     @EventHandler
-    fun playerAttackEvent(event: EntityDamageByEntityEvent) {
+    fun playerAbilityEvent(event: EntityDamageByEntityEvent) {
         val damager = event.damager
         val damaged = event.entity
 
@@ -88,18 +69,22 @@ class SorcererKit(
             damager !is Player
             || damaged !is Player
             || damager != player
-            || !abilityActive
         ) return
 
         val sword = damager.inventory.itemInMainHand
         if(sword.type != items[0].type) return
+
+        sword.removeEnchantment(Enchantment.SHARPNESS)
+
+        if(!abilityActive) return
+
         sword.itemMeta = sword.itemMeta.also {
             it.setEnchantmentGlintOverride(null)
             it.lore(arrayListOf())
         }
         damaged.addPotionEffect(PotionEffect(
-            PotionEffectType.POISON,
-            poisonDuration.toInt(),
+            PotionEffectType.BLINDNESS,
+            blindnessTicks.toInt(),
             1,
             false,
             true,
