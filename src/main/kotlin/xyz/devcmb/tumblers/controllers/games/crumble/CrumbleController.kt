@@ -769,6 +769,8 @@ class CrumbleController : GameBase(
 
     @EventHandler
     fun playerTntEvent(event: BlockPlaceEvent) {
+        if(!roundActive) event.isCancelled = true
+
         val player = event.player
         val block = event.block
         if(block.type != Material.TNT) return
