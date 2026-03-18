@@ -46,6 +46,11 @@ games:
         poison_duration: 70
         heal_hearts: 2
         heal_duration: 60
+      warrior:
+        blindness_ticks: 50
+      worker:
+        megamine_duration: 150
+        efficiency_duration: 200
     maps:
       warfare:
         world: "crumble_warfare"

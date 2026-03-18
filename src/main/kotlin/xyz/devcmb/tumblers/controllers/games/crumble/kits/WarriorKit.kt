@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.tickSeconds
@@ -37,6 +38,7 @@ class WarriorKit(
     override val kitDisplayTextLength: Double = 50.5
 
     companion object {
+        @field:Configurable("games.crumble.kits.warrior.blindness_ticks")
         var blindnessTicks: Long = 50
     }
 

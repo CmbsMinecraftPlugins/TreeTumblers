@@ -24,6 +24,7 @@ import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
@@ -39,13 +40,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.ArcherKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.BomberKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.FisherKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.HunterKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.NinjaKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.SorcererKit
-import xyz.devcmb.tumblers.controllers.games.crumble.kits.WarriorKit
+import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -247,6 +242,7 @@ class CrumbleController : GameBase(
         registerKit("ninja", NinjaKit::class.java)
         registerKit("sorcerer", SorcererKit::class.java)
         registerKit("warrior", WarriorKit::class.java)
+        registerKit("worker", WorkerKit::class.java)
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
@@ -782,6 +778,11 @@ class CrumbleController : GameBase(
         if(damager.hasPotionEffect(PotionEffectType.BLINDNESS)) {
             damager.removePotionEffect(PotionEffectType.BLINDNESS)
         }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(!roundActive) event.isCancelled = true
     }
 
     enum class RoundResult {
