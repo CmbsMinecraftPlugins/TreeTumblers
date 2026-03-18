@@ -26,6 +26,7 @@ class HunterKit(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)
         },
+        ItemStack(Material.STONE_PICKAXE),
         ItemStack(Material.CROSSBOW),
         ItemStack(Material.ARROW, 4),
         ItemStack(Material.LEATHER_BOOTS),

@@ -1,7 +1,9 @@
 package xyz.devcmb.tumblers.engine
 
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
@@ -13,6 +15,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -69,6 +72,8 @@ abstract class GameBase(
     }
 
     open val debugToolkit: DebugToolkit? = null
+
+    var countdownTime: Int = 0
 
     /**
      * The internal load stage called by the [GameController]
@@ -187,6 +192,28 @@ abstract class GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     abstract suspend fun gameOn()
+
+    private var countdownJob: Job? = null
+
+    suspend fun countdown(time: Int) {
+        countdownJob?.cancel()
+        countdownJob = TreeTumblers.pluginScope.launch {
+            countdownTime = time
+            repeat(time) {
+                delay(1000)
+                if (countdownTime <= 0) return@launch
+                countdownTime--
+            }
+        }
+        countdownJob?.join()
+    }
+
+    fun asyncCountdown(time: Int, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
+        countdown(time)
+        if(onComplete != null) onComplete()
+    }
+
+    fun cancelCountdown() = countdownJob?.cancel()
 
     @EventHandler
     fun playerDismountEvent(event: VehicleExitEvent) {

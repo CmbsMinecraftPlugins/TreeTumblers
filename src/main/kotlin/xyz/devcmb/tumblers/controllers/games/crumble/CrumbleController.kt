@@ -53,6 +53,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskTimer
@@ -339,7 +340,7 @@ class CrumbleController : GameBase(
             val task = object : BukkitRunnable() {
                 override fun run() {
                     var component = Component.empty()
-                    val kit = playerKits.get(it)
+                    val kit = playerKits[it]
                     if(kit != null) {
                         // a link to the research I did to get these numbers
                         // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
@@ -362,10 +363,11 @@ class CrumbleController : GameBase(
             }
             runTaskTimer(0, 5, task)
             actionBarTasks.add(task)
+
+            it.enableBossBar("countdownBossbar")
         }
 
-        // TODO: Add some kind of countdown instead that yields
-        delay(20 * 1000)
+        countdown(20)
 
         suspendSync {
             gameParticipants.forEach {
@@ -384,36 +386,66 @@ class CrumbleController : GameBase(
         }
     }
 
+    var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
             spawn(SpawnCycle.PRE_ROUND)
-            gameParticipants.forEach {
-                val tumblingPlayer = it.tumblingPlayer!!
-                alivePlayers[tumblingPlayer.team]!!.add(it)
+            gameParticipants.forEach { player ->
+                val tumblingPlayer = player.tumblingPlayer!!
+                alivePlayers[tumblingPlayer.team]!!.add(player)
             }
             suspendSync(this::giveKits)
             abilitiesUsed.clear()
             preRoundFreeze = true
-            delay(1000)
+            delay(500)
             preRoundFreeze = false
-            announceMatchup()
-            delay(7000) // prep stage
-            dropWalls()
-            roundActive = true
-
-            while(true) {
-                val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
-                if(currentAlivePlayers == 0) break
-                delay(200)
+            asyncCountdown(7) {
+                dropWalls()
             }
-
-            roundActive = false
-            delay(2000)
-            currentRound++
+            announceMatchup()
+            roundActive = true
+            asyncCountdown(120) {
+                gameTimeoutEnd = true
+            }
+            awaitEnd()
+            endRound()
         }
     }
 
-    fun announceMatchup() {
+    suspend fun awaitEnd() {
+        while(true) {
+            val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
+            if(currentAlivePlayers == 0 || gameTimeoutEnd) break
+            delay(200)
+        }
+        gameTimeoutEnd = false
+        cancelCountdown()
+    }
+
+    suspend fun endRound() {
+        roundActive = false
+        if(!alivePlayers.isEmpty()) {
+            Team.entries.filter { it.playingTeam }.forEach {
+                val result = matchResults[currentRound][it]
+                if(result == null) {
+                    roundDraw(it)
+                }
+            }
+        }
+
+        delay(1000)
+        gamePlayers.forEach {
+            it.showTitle(Title.title(
+                Component.text("Round Over", NamedTextColor.RED).decoration(TextDecoration.BOLD, true),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(0))
+            ))
+        }
+        delay(2500)
+        currentRound++
+    }
+
+    suspend fun announceMatchup() {
         val roundMatchup = matchups[currentRound - 1]
         roundMatchup.forEach { matchup ->
             val players = setOf(
@@ -427,12 +459,40 @@ class CrumbleController : GameBase(
                     .append(matchup.first.FormattedName)
                     .append(Component.text(" vs ", NamedTextColor.WHITE))
                     .append(matchup.second.FormattedName),
-                Title.Times.times(Tick.of(3), Tick.of(60), Tick.of(3))
+                Title.Times.times(Tick.of(3), Tick.of(70), Tick.of(3))
             )
 
             players.forEach { player ->
                 player.showTitle(title)
             }
+        }
+
+        delay(4000)
+        repeat(3) {
+            roundMatchup.forEach { matchup ->
+                val players = setOf(
+                    *matchup.first.getOnlinePlayers().toTypedArray(),
+                    *matchup.second.getOnlinePlayers().toTypedArray()
+                )
+
+                val color = when(it) {
+                    0 -> NamedTextColor.GREEN
+                    1 -> NamedTextColor.YELLOW
+                    2 -> NamedTextColor.RED
+                    else -> NamedTextColor.WHITE
+                }
+
+                val title = Title.title(
+                    Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
+                    Component.text(3 - it, color).decoration(TextDecoration.BOLD, true),
+                    Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+                )
+
+                players.forEach { player ->
+                    player.showTitle(title)
+                }
+            }
+            delay(1000)
         }
     }
 

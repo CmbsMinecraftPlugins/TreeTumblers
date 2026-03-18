@@ -12,6 +12,7 @@ import org.bukkit.generator.WorldInfo
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
+import java.time.Duration
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 
@@ -124,6 +125,14 @@ object MiscUtils {
             EquipmentSlot.FEET -> true
             else -> false
         }
+    }
+
+    fun formatToMSS(seconds: Int): String {
+        val duration = Duration.ofSeconds(seconds.toLong())
+        val totalSeconds = duration.seconds
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        return String.format("%d:%02d", minutes, seconds)
     }
 
     // Source - https://stackoverflow.com/a/73494554

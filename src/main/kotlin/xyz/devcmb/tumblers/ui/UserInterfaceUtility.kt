@@ -9,6 +9,7 @@ import xyz.devcmb.tumblers.controllers.PlayerController
 object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
     val WARNINGS = NamespacedKey("tumbling", "warnings")
+    val HUD = NamespacedKey("tumbling", "hud")
 
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",

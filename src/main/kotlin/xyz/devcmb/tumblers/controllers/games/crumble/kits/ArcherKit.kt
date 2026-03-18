@@ -27,6 +27,7 @@ class ArcherKit(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)
         },
+        ItemStack(Material.STONE_PICKAXE),
         ItemStack(Material.BOW).apply {
             itemMeta = itemMeta.also {
                 it.isUnbreakable = true

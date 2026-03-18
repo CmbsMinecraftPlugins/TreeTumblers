@@ -24,6 +24,14 @@ fun Player.openHandledInventory(id: String) {
     playerController.playerUIControllers[this]!!.openInventory(id)
 }
 
+fun Player.enableBossBar(id: String) {
+    playerController.playerUIControllers[this]!!.enableBossBar(id)
+}
+
+fun Player.disableBossBar(id: String) {
+    playerController.playerUIControllers[this]!!.disableBossBar(id)
+}
+
 fun runTask(runnable: Runnable) =
     Bukkit.getScheduler().runTask(TreeTumblers.plugin, runnable)
 fun runTaskLater(delay: Long, runnable: Runnable) =

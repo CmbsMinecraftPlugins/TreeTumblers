@@ -26,6 +26,7 @@ class WarriorKit(
     override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/warrior")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
+        ItemStack(Material.STONE_PICKAXE),
         ItemStack(Material.LEATHER_BOOTS)
     )
 

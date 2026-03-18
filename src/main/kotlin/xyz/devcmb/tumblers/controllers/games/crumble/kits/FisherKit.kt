@@ -59,6 +59,7 @@ class FisherKit(
 
             addUnsafeEnchantment(Enchantment.KNOCKBACK, 1)
         },
+        ItemStack(Material.STONE_PICKAXE),
         ItemStack(Material.LEATHER_HELMET),
         ItemStack(Material.LEATHER_BOOTS),
         ItemStack(Material.LEATHER_LEGGINGS)
