@@ -12,6 +12,8 @@ import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import java.util.Optional
+import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "game")
 @Permission("tumbling.games")
@@ -56,5 +58,23 @@ class GameCommand {
         } catch(e: Exception) {
             sender.sendMessage(Format.error("An error occurred while trying to execute this event!"))
         }
+    }
+
+    @Execute(name = "timer")
+    fun executeGameTimer(@Context sender: CommandSender, @Arg value: Optional<Int>) {
+        val activeGame = gameController.activeGame
+        if(activeGame == null) {
+            sender.sendMessage(Format.error("Timers can only be retrieved or set when a game is active!"))
+            return
+        }
+
+        val value = value.getOrNull()
+        if(value == null) {
+            sender.sendMessage(Format.info("The current game timer is ${activeGame.countdownTime}"))
+            return
+        }
+
+        activeGame.countdownTime = value
+        sender.sendMessage(Format.success("Timer set successfully!"))
     }
 }

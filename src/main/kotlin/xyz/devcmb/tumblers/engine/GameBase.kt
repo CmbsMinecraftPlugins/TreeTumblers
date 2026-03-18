@@ -194,26 +194,33 @@ abstract class GameBase(
     abstract suspend fun gameOn()
 
     private var countdownJob: Job? = null
+    private var countdownCancelled: Boolean = false
 
-    suspend fun countdown(time: Int) {
+    suspend fun countdown(time: Int): Boolean {
         countdownJob?.cancel()
         countdownJob = TreeTumblers.pluginScope.launch {
             countdownTime = time
-            repeat(time) {
+            while(true) {
                 delay(1000)
                 if (countdownTime <= 0) return@launch
                 countdownTime--
             }
         }
-        countdownJob?.join()
+        countdownJob!!.join()
+        val result = !countdownCancelled
+        countdownCancelled = false
+        return result
     }
 
     fun asyncCountdown(time: Int, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
-        countdown(time)
-        if(onComplete != null) onComplete()
+        val success = countdown(time)
+        if(onComplete != null && success) onComplete()
     }
 
-    fun cancelCountdown() = countdownJob?.cancel()
+    fun cancelCountdown() {
+        countdownCancelled = true
+        countdownJob?.cancel()
+    }
 
     @EventHandler
     fun playerDismountEvent(event: VehicleExitEvent) {

@@ -31,6 +31,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
@@ -56,6 +57,8 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTask
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
@@ -100,18 +103,21 @@ class CrumbleController : GameBase(
 
     val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
     var currentRound = 1
+    val roundIndex: Int
+        get() { return currentRound - 1 }
 
     val currentMap: LoadedMap
         get() {
-            return loadedMaps[currentRound - 1]
+            return loadedMaps[roundIndex]
         }
 
     var roundActive = false
-
     var preRoundFreeze = false
 
     val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
+    val teamArenaSpawns: HashMap<Team, String> = HashMap()
     val alivePlayers: HashMap<Team, ArrayList<Player>> = HashMap()
+    val spectatingPlayers: ArrayList<Player> = ArrayList()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
@@ -273,11 +279,10 @@ class CrumbleController : GameBase(
                 }
             }
             SpawnCycle.PRE_ROUND -> {
-                val currentMap = loadedMaps.getOrNull(currentRound - 1)
-                if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
+                teamArenaSpawns.clear()
 
-                val currentMatchups = matchups[currentRound - 1]
-                val spawnSetKeys = (1..7).map {
+                val currentMatchups = matchups[roundIndex]
+                val spawnSetKeys = (1..4).map {
                     "spawns.ingame.arena$it"
                 }.toMutableList()
 
@@ -298,6 +303,9 @@ class CrumbleController : GameBase(
                     var firstOccupiedSpawns = 0
                     var secondOccupiedSpawns = 0
 
+                    teamArenaSpawns.put(matchup.first, spawnSetKeys[index].split(".")[2])
+                    teamArenaSpawns.put(matchup.second, spawnSetKeys[index].split(".")[2])
+
                     suspendSync {
                         gamePlayers.forEach {
                             it.spigot().respawn()
@@ -311,6 +319,8 @@ class CrumbleController : GameBase(
                                     val location = playerSpawn.unpackCoordinates(currentMap.world)
 
                                     it.teleport(location)
+                                    it.isFlying = false
+                                    it.allowFlight = false
                                     DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                     firstOccupiedSpawns++
@@ -321,6 +331,8 @@ class CrumbleController : GameBase(
                                     val location = playerSpawn.unpackCoordinates(currentMap.world)
 
                                     it.teleport(location)
+                                    it.isFlying = false
+                                    it.allowFlight = false
                                     DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                     secondOccupiedSpawns++
@@ -389,13 +401,15 @@ class CrumbleController : GameBase(
     var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
+            unhideSpectators()
             spawn(SpawnCycle.PRE_ROUND)
+            alivePlayers.values.forEach { it.clear() }
             gameParticipants.forEach { player ->
                 val tumblingPlayer = player.tumblingPlayer!!
                 alivePlayers[tumblingPlayer.team]!!.add(player)
             }
-            suspendSync(this::giveKits)
             abilitiesUsed.clear()
+            suspendSync(this::giveKits)
             preRoundFreeze = true
             delay(500)
             preRoundFreeze = false
@@ -412,27 +426,35 @@ class CrumbleController : GameBase(
         }
     }
 
+    fun unhideSpectators() {
+        Bukkit.getOnlinePlayers().forEach {
+            spectatingPlayers.forEach { plr ->
+                it.showPlayer(TreeTumblers.plugin, plr)
+            }
+        }
+        spectatingPlayers.clear()
+    }
+
     suspend fun awaitEnd() {
         while(true) {
             val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
             if(currentAlivePlayers == 0 || gameTimeoutEnd) break
             delay(200)
         }
-        gameTimeoutEnd = false
         cancelCountdown()
     }
 
     suspend fun endRound() {
         roundActive = false
-        if(!alivePlayers.isEmpty()) {
+        if(gameTimeoutEnd) {
             Team.entries.filter { it.playingTeam }.forEach {
-                val result = matchResults[currentRound][it]
+                val result = matchResults[roundIndex][it]
                 if(result == null) {
                     roundDraw(it)
                 }
             }
         }
-
+        gameTimeoutEnd = false
         delay(1000)
         gamePlayers.forEach {
             it.showTitle(Title.title(
@@ -446,7 +468,7 @@ class CrumbleController : GameBase(
     }
 
     suspend fun announceMatchup() {
-        val roundMatchup = matchups[currentRound - 1]
+        val roundMatchup = matchups[roundIndex]
         roundMatchup.forEach { matchup ->
             val players = setOf(
                 *matchup.first.getOnlinePlayers().toTypedArray(),
@@ -497,7 +519,7 @@ class CrumbleController : GameBase(
     }
 
     suspend fun dropWalls() {
-        val currentMap = loadedMaps.getOrNull(currentRound - 1)
+        val currentMap = loadedMaps.getOrNull(roundIndex)
         if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
 
         val walls = currentMap.data.getList("walls")
@@ -552,33 +574,44 @@ class CrumbleController : GameBase(
     fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer!!.team)
 
     fun getCurrentMatchup(team: Team): Pair<Team, Team>? {
-        val roundMatchup = matchups[currentRound - 1]
+        val roundMatchup = matchups[roundIndex]
         return roundMatchup.find { it.first == team || it.second == team }
     }
 
     @EventHandler
-    fun playerScoreEvent(event: PlayerDeathEvent) {
+    fun playerKillEvent(event: PlayerDeathEvent) {
         val killed = event.player
         val killer = killed.killer
 
+        Bukkit.getOnlinePlayers().forEach {
+            it.hidePlayer(TreeTumblers.plugin, killed)
+        }
+        spectatingPlayers.add(killed)
+        runTaskLater(60) {
+            killed.spigot().respawn()
+        }
+
         val tumblingPlayer = killed.tumblingPlayer!!
-        val yourTeam = tumblingPlayer.team
-        if(!yourTeam.playingTeam) return
+        val killedTeam = tumblingPlayer.team
+        if(!killedTeam.playingTeam) return
 
         alivePlayers[tumblingPlayer.team]!!.remove(killed)
         val currentPlayerMatchup = getCurrentMatchup(killed)!!
-        val enemyTeam =
-            if(currentPlayerMatchup.first == yourTeam) currentPlayerMatchup.second
+        val killerTeam =
+            if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
             else currentPlayerMatchup.first
 
-        // this should only really happen if they die same-tick (or if there's only one person), but im not even sure if that'd be the case
-        if(alivePlayers[enemyTeam]!!.isEmpty()) {
-            roundDraw(yourTeam)
-            roundDraw(enemyTeam)
-        } else {
-            alivePlayers[enemyTeam]!!.clear()
-            roundLoss(yourTeam)
-            roundWin(enemyTeam)
+        if(alivePlayers[killedTeam]!!.isEmpty()) {
+            // this should only really happen if they die same-tick (or if there's only one person), but im not even sure if that'd be the case
+            if(alivePlayers[killerTeam]!!.isEmpty()) {
+                roundDraw(killedTeam)
+                roundDraw(killerTeam)
+            } else {
+                spectatingPlayers.addAll(alivePlayers[killerTeam]!!)
+                alivePlayers[killerTeam]!!.clear()
+                roundLoss(killedTeam)
+                roundWin(killerTeam)
+            }
         }
 
         if(killer == null) {
@@ -601,7 +634,7 @@ class CrumbleController : GameBase(
             it.showTitle(title)
         }
 
-        matchResults[currentRound].put(team, RoundResult.WIN)
+        matchResults[roundIndex].put(team, RoundResult.WIN)
     }
 
     fun roundLoss(team: Team) {
@@ -615,7 +648,7 @@ class CrumbleController : GameBase(
             it.showTitle(title)
         }
 
-        matchResults[currentRound].put(team, RoundResult.LOSS)
+        matchResults[roundIndex].put(team, RoundResult.LOSS)
     }
 
     fun roundDraw(team: Team) {
@@ -629,7 +662,7 @@ class CrumbleController : GameBase(
             it.showTitle(title)
         }
 
-        matchResults[currentRound].put(team, RoundResult.DRAW)
+        matchResults[roundIndex].put(team, RoundResult.DRAW)
     }
 
     fun playerKillAnnouncement(killer: Player?, killed: Player?) {
@@ -769,7 +802,10 @@ class CrumbleController : GameBase(
 
     @EventHandler
     fun playerTntEvent(event: BlockPlaceEvent) {
-        if(!roundActive) event.isCancelled = true
+        if(!roundActive) {
+            event.isCancelled = true
+            return
+        }
 
         val player = event.player
         val block = event.block
@@ -845,6 +881,31 @@ class CrumbleController : GameBase(
     @EventHandler
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(!roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerRespawnEvent(event: PlayerRespawnEvent) {
+        val player = event.player
+        val tumblingPlayer = player.tumblingPlayer!!
+
+        val arena: String =
+            if(!tumblingPlayer.team.playingTeam) "arena1"
+            else teamArenaSpawns[tumblingPlayer.team]!!
+
+        val position: List<Double> = currentMap.data.getList("centers.$arena")
+            ?.map {
+                if(it !is Double) throw GameControllerException("Center for $arena does not contain exclusively doubles")
+                it
+            }
+            ?: throw GameControllerException("Map does not have a center specified for $arena")
+
+        val location = position.unpackCoordinates(currentMap.world)
+        event.respawnLocation = location
+
+        runTask {
+            player.allowFlight = true
+            player.isFlying = true
+        }
     }
 
     enum class RoundResult {
