@@ -15,9 +15,9 @@ val playerController: PlayerController by lazy {
     ControllerDelegate.getController("playerController") as PlayerController
 }
 
-val Player.tumblingPlayer: TumblingPlayer?
+val Player.tumblingPlayer: TumblingPlayer
     get() {
-        return playerController.players.find { it.bukkitPlayer == this }
+        return playerController.players.find { it.bukkitPlayer == this }!!
     }
 
 fun Player.openHandledInventory(id: String) {

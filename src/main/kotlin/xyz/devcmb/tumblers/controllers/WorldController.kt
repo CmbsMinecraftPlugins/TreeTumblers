@@ -149,5 +149,29 @@ class WorldController : IController {
         return File(worldsFolder, name).exists()
     }
 
+    suspend fun cleanupWorld(world: World) = withContext(Dispatchers.IO) {
+        val file = File(Bukkit.getWorldContainer(), world.name)
+        suspendSync {
+            Bukkit.unloadWorld(world, false)
+        }
+
+        // io halt
+        delay(3000)
+
+        // my savior
+        // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
+        fun deleteDir(file2: File) {
+            val contents = file2.listFiles()
+            if (contents != null) {
+                for (f in contents) {
+                    deleteDir(f)
+                }
+            }
+            file2.delete()
+        }
+
+        deleteDir(file)
+    }
+
     data class LoadableTemplate(val file: File)
 }

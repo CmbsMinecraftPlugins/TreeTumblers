@@ -86,7 +86,7 @@ class PlayerController : IController {
     @EventHandler
     fun playerQuit(event: PlayerQuitEvent) {
         val player = event.player
-        val tumblingPlayer = player.tumblingPlayer ?: return
+        val tumblingPlayer = player.tumblingPlayer
 
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)

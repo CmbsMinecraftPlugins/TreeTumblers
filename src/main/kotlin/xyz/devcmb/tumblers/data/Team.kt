@@ -22,7 +22,7 @@ enum class Team(teamName: String, val color: TextColor, val icon: String, val pl
     SPECTATORS("Spectators", NamedTextColor.WHITE, "\uE007", false),
     DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", false);
 
-    val FormattedName: Component =
+    val formattedName: Component =
         Component.empty()
             .append(Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons")))
             .append(Component.text(" $teamName").color(color))
@@ -30,7 +30,7 @@ enum class Team(teamName: String, val color: TextColor, val icon: String, val pl
     fun getOnlinePlayers(): Set<Player> {
         val players = HashSet<Player>()
         Bukkit.getOnlinePlayers().forEach {
-            if(it.tumblingPlayer?.team == this) {
+            if(it.tumblingPlayer.team == this) {
                 players.add(it)
             }
         }

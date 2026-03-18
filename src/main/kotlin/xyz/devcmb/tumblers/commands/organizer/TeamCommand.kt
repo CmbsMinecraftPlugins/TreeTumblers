@@ -48,7 +48,7 @@ class TeamCommand {
                 executor.sendMessage(
                     Format.success(
                         Component.text("Assigned $name to the ")
-                            .append(team.FormattedName)
+                            .append(team.formattedName)
                             .append(Component.text(" team successfully!"))
                     )
                 )

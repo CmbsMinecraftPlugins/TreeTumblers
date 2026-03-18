@@ -107,7 +107,7 @@ class NinjaKit(
         equipment.setItemInMainHand(ItemStack(Material.WOODEN_SWORD))
         equipment.helmet = ItemStack(Material.LEATHER_HELMET).apply {
             itemMeta = (itemMeta as LeatherArmorMeta).also {
-                it.setColor(Color.fromRGB(player.tumblingPlayer!!.team.color.value()))
+                it.setColor(Color.fromRGB(player.tumblingPlayer.team.color.value()))
             }
         }
         abilityZombie = zombie
@@ -131,8 +131,8 @@ class NinjaKit(
         val entity = event.entity
         if(entity.uniqueId != abilityZombie?.uniqueId) return
 
-        val targetTeam = target.tumblingPlayer?.team ?: return
-        if(targetTeam == player!!.tumblingPlayer?.team) event.isCancelled = true
+        val targetTeam = target.tumblingPlayer.team
+        if(targetTeam == player!!.tumblingPlayer.team) event.isCancelled = true
     }
 
     @EventHandler

@@ -16,6 +16,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -24,6 +25,8 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.unpackCoordinates
 
 /**
  * Base class for all games
@@ -67,6 +70,9 @@ abstract class GameBase(
     val gamePlayers: MutableSet<Player> = HashSet()
     val gameParticipants: MutableSet<Player> = HashSet()
 
+    val teamScores: HashMap<Team, Int> = HashMap()
+    val playerScores: HashMap<Player, Int> = HashMap()
+
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
@@ -75,6 +81,14 @@ abstract class GameBase(
 
     var countdownTime: Int = 0
 
+    companion object {
+        @Configurable("lobby.world")
+        var lobbyWorld: String = "world"
+
+        @Configurable("lobby.position")
+        var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
+    }
+
     /**
      * The internal load stage called by the [GameController]
      */
@@ -82,7 +96,13 @@ abstract class GameBase(
         currentState = State.LOADING
 
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
-        gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer?.team?.playingTeam == true })
+        gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
+        gameParticipants.forEach {
+            playerScores.put(it, 0)
+        }
+        Team.entries.filter { it.playingTeam }.forEach {
+            teamScores.put(it, 0)
+        }
 
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
@@ -193,9 +213,37 @@ abstract class GameBase(
      */
     abstract suspend fun gameOn()
 
+    /**
+     * The method to invoke after the game has ended
+     */
+    abstract suspend fun postGame()
+
+    /**
+     * The method for cleaning up anything created during the game
+     *
+     * This should be expanded upon if the game has any listeners registered not in the main class.
+     */
+    open suspend fun cleanup() {
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                it.inventory.clear()
+                it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+            }
+        }
+
+        loadedMaps.forEach {
+            it.cleanup()
+        }
+    }
+
     private var countdownJob: Job? = null
     private var countdownCancelled: Boolean = false
 
+    /**
+     * Perform a countdown synchronously, stored in the [countdownTime] field
+     * @param time How long to run the countdown for
+     * @return Whether the timer fully completed or was abruptly ended
+     */
     suspend fun countdown(time: Int): Boolean {
         countdownJob?.cancel()
         countdownJob = TreeTumblers.pluginScope.launch {
@@ -212,28 +260,24 @@ abstract class GameBase(
         return result
     }
 
+    /**
+     * Runs the [countdown] method asynchronously
+     * @param time How long to run the countdown for
+     * @param onComplete The function to invoke when/if the countdown fully finishes
+     */
     fun asyncCountdown(time: Int, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         val success = countdown(time)
         if(onComplete != null && success) onComplete()
     }
 
+    /**
+     * Cancel a countdown if one is active
+     */
     fun cancelCountdown() {
+        if(countdownJob == null) return
+
         countdownCancelled = true
-        countdownJob?.cancel()
-    }
-
-    @EventHandler
-    fun playerDismountEvent(event: VehicleExitEvent) {
-        val player = event.exited
-        if(player !is Player || currentState != State.CUTSCENE) return
-
-        event.isCancelled = true
-    }
-
-    @EventHandler
-    fun playerDeathEvent(event: PlayerDeathEvent){
-        if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
-        event.drops.clear()
+        countdownJob!!.cancel()
     }
 
     /**
@@ -252,8 +296,53 @@ abstract class GameBase(
      */
     fun grantScore(player: Player, source: ScoreSource) {
         val amount = getScoreSource(source)
+        val team = player.tumblingPlayer.team
+        teamScores.put(team, teamScores[team]!! + amount)
+        playerScores.put(player, (playerScores[player] ?: 0) + amount)
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
         eventController.grantScore(player, amount)
+    }
+
+    /**
+     * Get the current placements for all playing teams
+     * @return An ArrayList of teams in order of placement
+     */
+    fun getTeamPlacements(): Set<Pair<Team, Int>> {
+        // ChatGPT generated code
+        val sorted = teamScores.entries.sortedByDescending { it.value }
+
+        val rankedWithTies = mutableSetOf<Pair<Team, Int>>()
+
+        var currentPlace = 0
+        var lastScore: Int? = null
+        var index = 0
+
+        for ((team, score) in sorted) {
+            index++
+
+            if (score != lastScore) {
+                currentPlace = index
+                lastScore = score
+            }
+
+            rankedWithTies.add(team to currentPlace)
+        }
+
+        return rankedWithTies
+    }
+
+    @EventHandler
+    fun playerDismountEvent(event: VehicleExitEvent) {
+        val player = event.exited
+        if(player !is Player || currentState != State.CUTSCENE) return
+
+        event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerDeathEvent(event: PlayerDeathEvent){
+        if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
+        event.drops.clear()
     }
 
     /**

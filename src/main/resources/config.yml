@@ -33,7 +33,7 @@ games:
         nuke_explosion_ticks: 5
         nuke_radius: 7.0
         nuke_damage: 7
-        blast_protection_level: 2
+        blast_protection_level: 1
       fisher:
         trident_loyalty_level: 2
         trident_damage: 5.0

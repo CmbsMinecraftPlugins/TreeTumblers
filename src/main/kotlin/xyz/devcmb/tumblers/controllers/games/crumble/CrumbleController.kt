@@ -9,6 +9,7 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
@@ -54,12 +55,12 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
-import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
@@ -87,10 +88,10 @@ class CrumbleController : GameBase(
     flags = setOf(),
     scores = hashMapOf(
         ScoreSource.KILL to 45,
-        ScoreSource.ROUND_WIN to 100,
-        ScoreSource.ROUND_LOSE to 10,
-        ScoreSource.GAME_WIN to 250,
-        ScoreSource.GAME_LOSE to 30
+        ScoreSource.ROUND_WIN to 150,
+        ScoreSource.ROUND_LOSE to 35,
+        ScoreSource.TEAM_PLACEMENT to 80,
+        ScoreSource.INDIVIDUAL_PLACEMENT to 4,
     )
 ) {
     companion object {
@@ -101,7 +102,7 @@ class CrumbleController : GameBase(
         var tntDetonationTime: Int = 80
     }
 
-    val rounds = run { Team.entries.filter { it.playingTeam }.size - 1 }
+    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }
@@ -203,6 +204,10 @@ class CrumbleController : GameBase(
                 // maybe change the `killed` field to be optional
                 kit.onKill(sender)
                 sender.sendMessage(Format.success("Kill event sent successfully!"))
+            },
+            "end_round" to { sender ->
+                gameTimeoutEnd = true
+                sender.sendMessage(Format.success("Ended round successfully!"))
             }
         )
 
@@ -310,7 +315,7 @@ class CrumbleController : GameBase(
                         gamePlayers.forEach {
                             it.spigot().respawn()
                             it.fireTicks = 0
-                            val tumblingPlayer = it.tumblingPlayer ?: return@forEach
+                            val tumblingPlayer = it.tumblingPlayer
 
                             when(tumblingPlayer.team) {
                                 matchup.first -> {
@@ -373,7 +378,7 @@ class CrumbleController : GameBase(
                     it.sendActionBar(component)
                 }
             }
-            runTaskTimer(0, 5, task)
+            task.runTaskTimer(TreeTumblers.plugin, 0, 5)
             actionBarTasks.add(task)
 
             it.enableBossBar("countdownBossbar")
@@ -401,11 +406,12 @@ class CrumbleController : GameBase(
     var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
+            gameTimeoutEnd = false
             unhideSpectators()
             spawn(SpawnCycle.PRE_ROUND)
             alivePlayers.values.forEach { it.clear() }
             gameParticipants.forEach { player ->
-                val tumblingPlayer = player.tumblingPlayer!!
+                val tumblingPlayer = player.tumblingPlayer
                 alivePlayers[tumblingPlayer.team]!!.add(player)
             }
             abilitiesUsed.clear()
@@ -424,6 +430,46 @@ class CrumbleController : GameBase(
             awaitEnd()
             endRound()
         }
+    }
+
+    override suspend fun postGame() {
+        val placements = getTeamPlacements()
+        gameParticipants.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+        }
+
+        delay(5000)
+
+        // TODO: Show indiv scores
+        // TODO: Show team scores
+    }
+
+    override suspend fun cleanup() {
+        playerKits.forEach {
+            HandlerList.unregisterAll(it.value)
+        }
+        actionBarTasks.forEach {
+            try {
+                it.cancel()
+            } catch(e: Exception) {}
+        }
+        Bukkit.getOnlinePlayers().forEach {
+            it.disableBossBar("countdownBossbar")
+        }
+        super.cleanup()
     }
 
     fun unhideSpectators() {
@@ -478,10 +524,10 @@ class CrumbleController : GameBase(
             val title = Title.title(
                 Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
                 Component.empty()
-                    .append(matchup.first.FormattedName)
+                    .append(matchup.first.formattedName)
                     .append(Component.text(" vs ", NamedTextColor.WHITE))
-                    .append(matchup.second.FormattedName),
-                Title.Times.times(Tick.of(3), Tick.of(70), Tick.of(3))
+                    .append(matchup.second.formattedName),
+                Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
             )
 
             players.forEach { player ->
@@ -506,7 +552,7 @@ class CrumbleController : GameBase(
 
                 val title = Title.title(
                     Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                    Component.text(3 - it, color).decoration(TextDecoration.BOLD, true),
+                    Component.text("> ${3 - it} <", color).decoration(TextDecoration.BOLD, true),
                     Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
                 )
 
@@ -571,56 +617,11 @@ class CrumbleController : GameBase(
         team2.getOnlinePlayers().forEach { it.sendMessage(message(it)) }
     }
 
-    fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer!!.team)
+    fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer.team)
 
     fun getCurrentMatchup(team: Team): Pair<Team, Team>? {
         val roundMatchup = matchups[roundIndex]
         return roundMatchup.find { it.first == team || it.second == team }
-    }
-
-    @EventHandler
-    fun playerKillEvent(event: PlayerDeathEvent) {
-        val killed = event.player
-        val killer = killed.killer
-
-        Bukkit.getOnlinePlayers().forEach {
-            it.hidePlayer(TreeTumblers.plugin, killed)
-        }
-        spectatingPlayers.add(killed)
-        runTaskLater(60) {
-            killed.spigot().respawn()
-        }
-
-        val tumblingPlayer = killed.tumblingPlayer!!
-        val killedTeam = tumblingPlayer.team
-        if(!killedTeam.playingTeam) return
-
-        alivePlayers[tumblingPlayer.team]!!.remove(killed)
-        val currentPlayerMatchup = getCurrentMatchup(killed)!!
-        val killerTeam =
-            if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
-            else currentPlayerMatchup.first
-
-        if(alivePlayers[killedTeam]!!.isEmpty()) {
-            // this should only really happen if they die same-tick (or if there's only one person), but im not even sure if that'd be the case
-            if(alivePlayers[killerTeam]!!.isEmpty()) {
-                roundDraw(killedTeam)
-                roundDraw(killerTeam)
-            } else {
-                spectatingPlayers.addAll(alivePlayers[killerTeam]!!)
-                alivePlayers[killerTeam]!!.clear()
-                roundLoss(killedTeam)
-                roundWin(killerTeam)
-            }
-        }
-
-        if(killer == null) {
-            playerDeathAnnouncement(killed)
-            return
-        }
-
-        event.showDeathMessages = false
-        playerKillAnnouncement(killer, killed)
     }
 
     fun roundWin(team: Team) {
@@ -683,17 +684,6 @@ class CrumbleController : GameBase(
         // Natural death in this game does not give score
     }
 
-    // Some maps have the spawn point right next to lava, so if you move immediately after spawning you'd just run right in
-    @EventHandler
-    fun playerMoveEvent(event: PlayerMoveEvent) {
-        if(
-            preRoundFreeze
-            && (event.to.x != event.from.x || event.to.y != event.from.y || event.to.z != event.from.z)
-        ) {
-            event.isCancelled = true
-        }
-    }
-
     fun giveKits() = playerKits.keys.forEach(this::givePlayerKit)
 
     fun givePlayerKit(player: Player, pregame: Boolean = false) {
@@ -709,7 +699,7 @@ class CrumbleController : GameBase(
                 if(item.type.name.contains("LEATHER")) {
                     item.itemMeta = item.itemMeta.also { meta ->
                         val meta = meta as LeatherArmorMeta
-                        val playerTeam = player.tumblingPlayer!!.team
+                        val playerTeam = player.tumblingPlayer.team
                         meta.setColor(Color.fromRGB(playerTeam.color.value()))
                     }
                 }
@@ -795,6 +785,62 @@ class CrumbleController : GameBase(
     }
 
     @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        Bukkit.getOnlinePlayers().forEach {
+            it.hidePlayer(TreeTumblers.plugin, killed)
+        }
+        spectatingPlayers.add(killed)
+        runTaskLater(60) {
+            killed.spigot().respawn()
+        }
+
+        val tumblingPlayer = killed.tumblingPlayer
+        val killedTeam = tumblingPlayer.team
+        if(!killedTeam.playingTeam) return
+
+        alivePlayers[tumblingPlayer.team]!!.remove(killed)
+        val currentPlayerMatchup = getCurrentMatchup(killed)!!
+        val killerTeam =
+            if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
+            else currentPlayerMatchup.first
+
+        if(alivePlayers[killedTeam]!!.isEmpty()) {
+            // this should only really happen if they die same-tick (or if there's only one person), but im not even sure if that'd be the case
+            if(alivePlayers[killerTeam]!!.isEmpty()) {
+                roundDraw(killedTeam)
+                roundDraw(killerTeam)
+            } else {
+                spectatingPlayers.addAll(alivePlayers[killerTeam]!!)
+                alivePlayers[killerTeam]!!.clear()
+                roundLoss(killedTeam)
+                roundWin(killerTeam)
+            }
+        }
+
+        if(killer == null) {
+            playerDeathAnnouncement(killed)
+            return
+        }
+
+        event.showDeathMessages = false
+        playerKillAnnouncement(killer, killed)
+    }
+
+    // Some maps have the spawn point right next to lava, so if you move immediately after spawning you'd just run right in
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        if(
+            preRoundFreeze
+            && (event.to.x != event.from.x || event.to.y != event.from.y || event.to.z != event.from.z)
+        ) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
     fun playerDropItemEvent(event: PlayerDropItemEvent) {
         if(kitItems.find { it.isSimilar(event.itemDrop.itemStack) } != null)
             event.isCancelled = true
@@ -839,7 +885,7 @@ class CrumbleController : GameBase(
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         if(event.entity !is Player) return
-        if(!roundActive) event.isCancelled = true
+        if(!roundActive || spectatingPlayers.contains(event.entity)) event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.HIGH)
@@ -860,7 +906,7 @@ class CrumbleController : GameBase(
             return
         }
 
-        val causingTeam = causingPlayer.tumblingPlayer!!.team
+        val causingTeam = causingPlayer.tumblingPlayer.team
         if(causingTeam.getOnlinePlayers().contains(player) && player != causingPlayer) {
             event.isCancelled = true
         }
@@ -886,7 +932,7 @@ class CrumbleController : GameBase(
     @EventHandler
     fun playerRespawnEvent(event: PlayerRespawnEvent) {
         val player = event.player
-        val tumblingPlayer = player.tumblingPlayer!!
+        val tumblingPlayer = player.tumblingPlayer
 
         val arena: String =
             if(!tumblingPlayer.team.playingTeam) "arena1"

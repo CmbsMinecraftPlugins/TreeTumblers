@@ -66,7 +66,7 @@ class BomberKit(
         var nukeDamage: Int = 7
 
         @field:Configurable("games.crumble.kits.bomber.blast_protection_level")
-        var blastProtectionLevel: Int = 2
+        var blastProtectionLevel: Int = 1
     }
 
     override fun onKill(killed: Player) {

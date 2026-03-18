@@ -54,7 +54,7 @@ class WhitelistCommand {
                 executor.sendMessage(
                     Format.success(
                         Component.text("Whitelisted $name on the ")
-                            .append(team.FormattedName)
+                            .append(team.formattedName)
                             .append(Component.text(" team successfully!"))
                     )
                 )

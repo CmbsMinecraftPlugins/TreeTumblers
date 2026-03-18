@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
+import org.bukkit.event.HandlerList
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -52,6 +53,11 @@ class GameController : IController {
             game.runCutscene()
             game.pregame()
             game.gameMain()
+            game.postGame()
+            game.cleanup()
+
+            HandlerList.unregisterAll(game)
+            activeGame = null
         }
     }
 

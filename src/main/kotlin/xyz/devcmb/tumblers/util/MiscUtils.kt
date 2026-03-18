@@ -135,6 +135,18 @@ object MiscUtils {
         return String.format("%d:%02d", minutes, seconds)
     }
 
+    fun getOrdinalSuffix(num: Int): String {
+        if (num % 100 >= 11 && num % 100 <= 13) {
+            return "th"
+        }
+        return when (num % 10) {
+            1 -> "st"
+            2 -> "nd"
+            3 -> "rd"
+            else -> "th"
+        }
+    }
+
     // Source - https://stackoverflow.com/a/73494554
     // Posted by SecretX, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-03-05, License - CC BY-SA 4.0

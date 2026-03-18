@@ -4,7 +4,6 @@ import kotlinx.coroutines.launch
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -24,7 +23,6 @@ class EventController : IController {
 
     fun grantScore(player: Player, amount: Int) {
         val tumblingPlayer = player.tumblingPlayer
-        if(tumblingPlayer == null) throw TumblingEventException("Cannot grant score to a player without a tumbling player instance")
 
         tumblingPlayer.score += amount
         teamScores.put(tumblingPlayer.team, (teamScores[tumblingPlayer.team] ?: 0) + amount)

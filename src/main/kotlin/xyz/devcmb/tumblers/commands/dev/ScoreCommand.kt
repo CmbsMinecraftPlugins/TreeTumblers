@@ -61,11 +61,6 @@ class ScoreCommand {
     @Execute(name = "view")
     fun view(@Context sender: CommandSender, @Arg player: Player) {
         val tumblingPlayer = player.tumblingPlayer
-        if(tumblingPlayer == null) {
-            sender.sendMessage(Format.error("Player does not have a tumbling player instance!"))
-            return
-        }
-
         sender.sendMessage(
             Component.empty()
                 .append(Format.formatPlayerName(player))

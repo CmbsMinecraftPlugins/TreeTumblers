@@ -42,16 +42,6 @@ object Format {
 
     fun formatPlayerName(player: Player): Component {
         val tumblingPlayer = player.tumblingPlayer
-        if (tumblingPlayer == null) {
-            return Component.empty()
-                .append(
-                    Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey("tumbling", "icons"))
-                )
-                .append(Component.text(" "))
-                .append(Component.text(player.name, NamedTextColor.WHITE))
-        }
-
         val team = tumblingPlayer.team
         return Component.empty()
             .append(
