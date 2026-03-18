@@ -102,7 +102,7 @@ class CrumbleController : GameBase(
         var tntDetonationTime: Int = 80
     }
 
-    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
+    val rounds = Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }
@@ -455,6 +455,7 @@ class CrumbleController : GameBase(
 
         // TODO: Show indiv scores
         // TODO: Show team scores
+        // TODO: Give placement scores
     }
 
     override suspend fun cleanup() {
