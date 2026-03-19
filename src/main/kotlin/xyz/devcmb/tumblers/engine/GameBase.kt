@@ -27,6 +27,8 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import kotlin.collections.component1
+import kotlin.collections.component2
 
 /**
  * Base class for all games
@@ -50,7 +52,8 @@ abstract class GameBase(
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,
     val flags: Set<Flag>,
-    val scores: HashMap<ScoreSource, Int>
+    val scores: HashMap<ScoreSource, Int>,
+    val icon: Component
 ): Listener {
     init {
         maps.forEach {
@@ -72,6 +75,8 @@ abstract class GameBase(
 
     val teamScores: HashMap<Team, Int> = HashMap()
     val playerScores: HashMap<Player, Int> = HashMap()
+
+    open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
@@ -297,35 +302,80 @@ abstract class GameBase(
     fun grantScore(player: Player, source: ScoreSource) {
         val amount = getScoreSource(source)
         val team = player.tumblingPlayer.team
+
         teamScores.put(team, teamScores[team]!! + amount)
         playerScores.put(player, (playerScores[player] ?: 0) + amount)
+
+        if(scoreMessages.contains(source))
+            player.sendMessage(scoreMessages[source]!!(amount))
+
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
         eventController.grantScore(player, amount)
     }
 
     /**
+     * Grants score to only a team
+     *
+     * This does not affect individual placements
+     * @param team The team to give score to
+     * @param source The source of score
+     */
+    fun grantTeamScore(team: Team, source: ScoreSource) {
+        val amount = getScoreSource(source)
+        teamScores.put(team, teamScores[team]!! + amount)
+        DebugUtil.info("Granting $amount score to $team with source $source")
+        eventController.grantTeamScore(team, amount)
+    }
+
+    /**
+     * Gets a message formatted with the icon of the game
+     */
+    fun gameMessage(text: Component): Component {
+        return Component.empty()
+            .append(Component.text("[", NamedTextColor.YELLOW))
+            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+            .append(Component.text("] ", NamedTextColor.YELLOW))
+            .append(text)
+    }
+
+    /**
      * Get the current placements for all playing teams
-     * @return An ArrayList of teams in order of placement
+     * @return A Set of teams containing a [Pair] from [Team] to that team's placement
      */
     fun getTeamPlacements(): Set<Pair<Team, Int>> {
-        // ChatGPT generated code
         val sorted = teamScores.entries.sortedByDescending { it.value }
+        return calculatePlacements(sorted)
+    }
 
-        val rankedWithTies = mutableSetOf<Pair<Team, Int>>()
+    /**
+     * Get the current individual placements for all playing players
+     * @return A set of players containing a [Pair] from [Player] to that player's score
+     */
+    fun getIndividualPlacements(): Set<Pair<Player, Int>> {
+        val sorted = playerScores.entries.sortedByDescending { it.value }
+        return calculatePlacements(sorted)
+    }
+
+    /**
+     * Internal method for formulating teams based on an input sorted map
+     */
+    private fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): Set<Pair<T, Int>> {
+        // semi-ChatGPT generated code
+        val rankedWithTies = mutableSetOf<Pair<T, Int>>()
 
         var currentPlace = 0
-        var lastScore: Int? = null
+        var lastValue: Int? = null
         var index = 0
 
-        for ((team, score) in sorted) {
+        for ((key, value) in sortedList) {
             index++
 
-            if (score != lastScore) {
+            if (value != lastValue) {
                 currentPlace = index
-                lastScore = score
+                lastValue = value
             }
 
-            rankedWithTies.add(team to currentPlace)
+            rankedWithTies.add(key to currentPlace)
         }
 
         return rankedWithTies
@@ -354,7 +404,6 @@ abstract class GameBase(
         CUTSCENE,
         PREGAME,
         GAME_ON,
-        POST_GAME
     }
 
     enum class SpawnCycle {

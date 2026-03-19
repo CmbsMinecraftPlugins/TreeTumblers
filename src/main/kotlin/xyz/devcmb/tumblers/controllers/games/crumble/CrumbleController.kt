@@ -76,7 +76,12 @@ class CrumbleController : GameBase(
         Map("warfare")
     ),
     cutsceneSteps = arrayListOf(
-        CutsceneStep(Component.text("Welcome to Crumble", NamedTextColor.YELLOW)) { map ->
+        CutsceneStep(
+            Component.empty()
+                .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
+                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+                .append(Component.text(" Crumble"))
+        ) { map ->
             teleportConfig("cutscene.start")
             delay(5000)
         },
@@ -88,11 +93,16 @@ class CrumbleController : GameBase(
     flags = setOf(),
     scores = hashMapOf(
         ScoreSource.KILL to 45,
-        ScoreSource.ROUND_WIN to 150,
-        ScoreSource.ROUND_LOSE to 35,
+        ScoreSource.INDIV_ROUND_WIN to 120,
+        ScoreSource.INDIV_ROUND_DRAW to 50,
+        ScoreSource.INDIV_ROUND_LOSE to 25,
+        ScoreSource.TEAM_ROUND_WIN to 250,
+        ScoreSource.TEAM_ROUND_DRAW to 140,
+        ScoreSource.TEAM_ROUND_LOSE to 50,
         ScoreSource.TEAM_PLACEMENT to 80,
         ScoreSource.INDIVIDUAL_PLACEMENT to 4,
-    )
+    ),
+    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble"))
 ) {
     companion object {
         @field:Configurable("games.crumble.max_kit_players")
@@ -102,7 +112,34 @@ class CrumbleController : GameBase(
         var tntDetonationTime: Int = 80
     }
 
-    val rounds = Team.entries.filter { it.playingTeam }.size - 1
+    override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+        ScoreSource.INDIV_ROUND_WIN to { amount ->
+            gameMessage(
+                Component.text("Round Won! ", NamedTextColor.WHITE)
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        },
+        ScoreSource.INDIV_ROUND_DRAW to { amount ->
+            gameMessage(
+                Component.text("Round Drawn! ", NamedTextColor.WHITE)
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        },
+        ScoreSource.INDIV_ROUND_LOSE to { amount ->
+            gameMessage(
+                Component.text("Round Lost! ", NamedTextColor.WHITE)
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        },
+        ScoreSource.INDIVIDUAL_PLACEMENT to { amount ->
+            gameMessage(
+                Component.text("Placement Score ")
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        }
+    )
+
+    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }
@@ -453,8 +490,40 @@ class CrumbleController : GameBase(
 
         delay(5000)
 
-        // TODO: Show indiv scores
-        // TODO: Show team scores
+        var teamScoresComponent = Component.empty()
+            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val teamPlacements = getTeamPlacements()
+        teamPlacements.forEach {
+            teamScoresComponent = teamScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.GOLD))
+            )
+        }
+        Bukkit.broadcast(teamScoresComponent)
+
+        delay(5000)
+        var individualScoresComponent = Component.empty()
+            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val indivPlacements = getIndividualPlacements()
+        indivPlacements.forEach {
+            individualScoresComponent = individualScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(Format.formatPlayerName(it.first))
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.GOLD))
+            )
+        }
+        Bukkit.broadcast(individualScoresComponent)
         // TODO: Give placement scores
     }
 
@@ -634,8 +703,10 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
+            grantScore(it, ScoreSource.INDIV_ROUND_WIN)
         }
 
+        grantTeamScore(team, ScoreSource.TEAM_ROUND_WIN)
         matchResults[roundIndex].put(team, RoundResult.WIN)
     }
 
@@ -648,8 +719,10 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
+            grantScore(it, ScoreSource.INDIV_ROUND_LOSE)
         }
 
+        grantTeamScore(team, ScoreSource.TEAM_ROUND_LOSE)
         matchResults[roundIndex].put(team, RoundResult.LOSS)
     }
 
@@ -662,8 +735,10 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
+            grantScore(it, ScoreSource.INDIV_ROUND_DRAW)
         }
 
+        grantTeamScore(team, ScoreSource.TEAM_ROUND_DRAW)
         matchResults[roundIndex].put(team, RoundResult.DRAW)
     }
 

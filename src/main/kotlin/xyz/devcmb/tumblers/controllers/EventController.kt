@@ -28,6 +28,10 @@ class EventController : IController {
         teamScores.put(tumblingPlayer.team, (teamScores[tumblingPlayer.team] ?: 0) + amount)
     }
 
+    fun grantTeamScore(team: Team, amount: Int) {
+        teamScores.put(team, (teamScores[team] ?: 0) + amount)
+    }
+
     override fun cleanup() {
         TreeTumblers.pluginScope.launch {
             databaseController.replicateTeamData(teamScores)
