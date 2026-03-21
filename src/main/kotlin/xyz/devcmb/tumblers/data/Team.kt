@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.data
 
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -26,6 +27,11 @@ enum class Team(teamName: String, val color: TextColor, val icon: String, val pl
         Component.empty()
             .append(Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons")))
             .append(Component.text(" $teamName").color(color))
+
+    val audience: Audience
+        get() {
+            return Audience.audience(getOnlinePlayers())
+        }
 
     fun getOnlinePlayers(): Set<Player> {
         val players = HashSet<Player>()

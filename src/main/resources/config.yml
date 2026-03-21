@@ -5,6 +5,9 @@ database:
   password:
   database:
 
+event:
+  event_mode: false
+
 templates:
   # The path where all the template worlds are contained
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)

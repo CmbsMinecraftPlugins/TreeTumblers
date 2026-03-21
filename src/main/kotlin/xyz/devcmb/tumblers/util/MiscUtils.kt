@@ -147,6 +147,28 @@ object MiscUtils {
         }
     }
 
+    fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): Set<Pair<T, Int>> {
+        // semi-ChatGPT generated code
+        val rankedWithTies = mutableSetOf<Pair<T, Int>>()
+
+        var currentPlace = 0
+        var lastValue: Int? = null
+        var index = 0
+
+        for ((key, value) in sortedList) {
+            index++
+
+            if (value != lastValue) {
+                currentPlace = index
+                lastValue = value
+            }
+
+            rankedWithTies.add(key to currentPlace)
+        }
+
+        return rankedWithTies
+    }
+
     // Source - https://stackoverflow.com/a/73494554
     // Posted by SecretX, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-03-05, License - CC BY-SA 4.0

@@ -25,10 +25,9 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.unpackCoordinates
-import kotlin.collections.component1
-import kotlin.collections.component2
 
 /**
  * Base class for all games
@@ -299,8 +298,8 @@ abstract class GameBase(
      * @param player The player to give score to
      * @param source The source of score
      */
-    fun grantScore(player: Player, source: ScoreSource) {
-        val amount = getScoreSource(source)
+    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) {
+        val amount = amountOverride ?: getScoreSource(source)
         val team = player.tumblingPlayer.team
 
         teamScores.put(team, teamScores[team]!! + amount)
@@ -320,8 +319,8 @@ abstract class GameBase(
      * @param team The team to give score to
      * @param source The source of score
      */
-    fun grantTeamScore(team: Team, source: ScoreSource) {
-        val amount = getScoreSource(source)
+    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
+        val amount = amountOverride ?: getScoreSource(source)
         teamScores.put(team, teamScores[team]!! + amount)
         DebugUtil.info("Granting $amount score to $team with source $source")
         eventController.grantTeamScore(team, amount)
@@ -344,7 +343,7 @@ abstract class GameBase(
      */
     fun getTeamPlacements(): Set<Pair<Team, Int>> {
         val sorted = teamScores.entries.sortedByDescending { it.value }
-        return calculatePlacements(sorted)
+        return MiscUtils.calculatePlacements(sorted)
     }
 
     /**
@@ -353,32 +352,7 @@ abstract class GameBase(
      */
     fun getIndividualPlacements(): Set<Pair<Player, Int>> {
         val sorted = playerScores.entries.sortedByDescending { it.value }
-        return calculatePlacements(sorted)
-    }
-
-    /**
-     * Internal method for formulating teams based on an input sorted map
-     */
-    private fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): Set<Pair<T, Int>> {
-        // semi-ChatGPT generated code
-        val rankedWithTies = mutableSetOf<Pair<T, Int>>()
-
-        var currentPlace = 0
-        var lastValue: Int? = null
-        var index = 0
-
-        for ((key, value) in sortedList) {
-            index++
-
-            if (value != lastValue) {
-                currentPlace = index
-                lastValue = value
-            }
-
-            rankedWithTies.add(key to currentPlace)
-        }
-
-        return rankedWithTies
+        return MiscUtils.calculatePlacements(sorted)
     }
 
     @EventHandler

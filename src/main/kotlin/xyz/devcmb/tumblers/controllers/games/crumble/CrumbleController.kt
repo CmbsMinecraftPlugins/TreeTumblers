@@ -6,6 +6,7 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
@@ -38,10 +39,12 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
+import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -152,7 +155,7 @@ class CrumbleController : GameBase(
     var roundActive = false
     var preRoundFreeze = false
 
-    val matchups: ArrayList<MutableList<Pair<Team, Team>>> = ArrayList()
+    val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
     val teamArenaSpawns: HashMap<Team, String> = HashMap()
     val alivePlayers: HashMap<Team, ArrayList<Player>> = HashMap()
     val spectatingPlayers: ArrayList<Player> = ArrayList()
@@ -172,6 +175,10 @@ class CrumbleController : GameBase(
             player.openHandledInventory("crumbleKitSelector")
         }
     }.build()
+
+    val eventController: EventController by lazy {
+        ControllerDelegate.getController("eventController") as EventController
+    }
 
     val font = NamespacedKey("tumbling", "games/crumble")
     val killModel = NamespacedKey("tumbling", "crumble/kill")
@@ -260,14 +267,10 @@ class CrumbleController : GameBase(
             alivePlayers.put(it, arrayListOf())
         }
 
-        // ChatGPT code because idfk how to do any of this
         repeat(rounds) {
-            val roundMatches = mutableListOf<Pair<Team, Team>>()
-
-            for (i in 0 until teams.size / 2) {
-                val a = teams[i]
-                val b = teams[teams.lastIndex - i]
-                roundMatches.add(a to b)
+            // thank you LichtHund for doing my job for me 👍
+            val roundMatches = (0..<(teams.size/2)).map { i ->
+                teams[i] to teams[teams.lastIndex - i]
             }
 
             matchups.add(roundMatches)
@@ -496,16 +499,25 @@ class CrumbleController : GameBase(
 
         val teamPlacements = getTeamPlacements()
         teamPlacements.forEach {
+            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
+            grantTeamScore(
+                it.first,
+                ScoreSource.TEAM_PLACEMENT,
+                score
+            )
+
             teamScoresComponent = teamScoresComponent.append(
                 Component.empty()
                     .appendNewline()
                     .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
                     .append(it.first.formattedName)
                     .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.GOLD))
+                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
+                    .append(Component.text(" [+${score}]", NamedTextColor.GOLD))
             )
         }
-        Bukkit.broadcast(teamScoresComponent)
+        teamScoresComponent = teamScoresComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(teamScoresComponent)
 
         delay(5000)
         var individualScoresComponent = Component.empty()
@@ -514,17 +526,49 @@ class CrumbleController : GameBase(
 
         val indivPlacements = getIndividualPlacements()
         indivPlacements.forEach {
+            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
             individualScoresComponent = individualScoresComponent.append(
                 Component.empty()
                     .appendNewline()
                     .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
                     .append(Format.formatPlayerName(it.first))
                     .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.GOLD))
+                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
+                    .append(Component.text(" [+${placementScore}]", NamedTextColor.GOLD))
             )
         }
-        Bukkit.broadcast(individualScoresComponent)
-        // TODO: Give placement scores
+
+        individualScoresComponent = individualScoresComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
+
+        indivPlacements.forEach {
+            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
+            grantScore(
+                it.first,
+                ScoreSource.INDIVIDUAL_PLACEMENT,
+                placementScore
+            )
+        }
+
+        delay(5000)
+        var eventPlacementsComponent = Component.empty()
+            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val eventPlacements = eventController.getEventTeamPlacements()
+        eventPlacements.forEach {
+            eventPlacementsComponent = eventPlacementsComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+
+        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
     }
 
     override suspend fun cleanup() {
@@ -683,8 +727,7 @@ class CrumbleController : GameBase(
         val matchup = getCurrentMatchup(player)!!
         val (team1, team2) = matchup
 
-        team1.getOnlinePlayers().forEach { it.sendMessage(message(it)) }
-        team2.getOnlinePlayers().forEach { it.sendMessage(message(it)) }
+        (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach { it.sendMessage(message(it)) }
     }
 
     fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer.team)
