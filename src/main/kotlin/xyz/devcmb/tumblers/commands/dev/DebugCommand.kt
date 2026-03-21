@@ -16,7 +16,7 @@ import kotlin.jvm.optionals.getOrNull
 @Permission("tumbling.dev")
 class DebugCommand {
     @Execute(name = "logging subscribe")
-    fun executeDebug(@Context player: Player, @Arg loggingLevel: Optional<DebugUtil.DebugLogLevel>) {
+    fun executeDebug(@Context player: Player, @Arg("logging level") loggingLevel: Optional<DebugUtil.DebugLogLevel>) {
         val loggingLevel = loggingLevel.getOrNull()
         if(loggingLevel == null) {
             player.sendMessage(
@@ -31,7 +31,7 @@ class DebugCommand {
     }
 
     @Execute(name = "logging send")
-    fun testLogging(@Arg loggingLevel: DebugUtil.DebugLogLevel, @Join message: String) {
+    fun testLogging(@Arg("log level") loggingLevel: DebugUtil.DebugLogLevel, @Join("message") message: String) {
         when(loggingLevel) {
             DebugUtil.DebugLogLevel.INFO -> DebugUtil.info(message)
             DebugUtil.DebugLogLevel.ERROR -> DebugUtil.severe(message)

@@ -25,7 +25,7 @@ class WhitelistCommand {
     }
 
     @Execute(name = "add")
-    fun executeWhitelistAdd(@Context executor: CommandSender, @Arg name: String, @Arg team: Team, @Flag("--confirm") confirm: Boolean) {
+    fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
                 Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")

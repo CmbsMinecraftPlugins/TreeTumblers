@@ -30,7 +30,7 @@ class WorldCommand {
     }
 
     @Execute(name = "create void")
-    fun executeWorld(@Context executor: CommandSender, @Arg worldName: String, @Flag("--teleport","-t") teleport: Boolean) {
+    fun executeWorld(@Context executor: CommandSender, @Arg("world name") worldName: String, @Flag("--teleport","-t") teleport: Boolean) {
         try {
             val world = worldController.createVoidWorld(worldName)
             executor.sendMessage(Format.success("Created void world $worldName successfully!"))
@@ -52,9 +52,9 @@ class WorldCommand {
     @Execute(name = "template save")
     fun templateSave(
         @Context executor: CommandSender,
-        @Arg world: World,
-        @Arg game: GameController.Game,
-        @Arg name: Optional<String>,
+        @Arg("world") world: World,
+        @Arg("game") game: GameController.Game,
+        @Arg("name") name: Optional<String>,
         @Flag("--confirm","-c") confirm: Boolean
     ) {
         try {

@@ -24,8 +24,8 @@ class TeamCommand {
     @Execute(name = "set")
     fun executeTeamSet(
         @Context executor: CommandSender,
-        @Arg whitelistedPlayer: DatabaseController.WhitelistedPlayer,
-        @Arg team: Team,
+        @Arg("whitelisted player") whitelistedPlayer: DatabaseController.WhitelistedPlayer,
+        @Arg("team") team: Team,
         @Flag("--confirm") confirm: Boolean
     ) {
         val name = whitelistedPlayer.name

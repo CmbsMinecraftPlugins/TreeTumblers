@@ -149,7 +149,7 @@ class CrumbleController : GameBase(
         }
     )
 
-    val rounds = Team.entries.filter { it.playingTeam }.size - 1
+    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }

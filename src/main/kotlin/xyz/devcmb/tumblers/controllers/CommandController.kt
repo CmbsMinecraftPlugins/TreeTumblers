@@ -5,6 +5,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.commands.InvalidUsageHandler
 import xyz.devcmb.tumblers.commands.arguments.*
 import xyz.devcmb.tumblers.commands.dev.*
 import xyz.devcmb.tumblers.commands.games.*
@@ -32,6 +33,7 @@ class CommandController : IController {
             .argument(GameController.Game::class.java, GameArgument())
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
+            .invalidUsage(InvalidUsageHandler())
             .build()
     }
 }

@@ -23,7 +23,7 @@ class GameCommand {
     }
 
     @Execute(name = "start")
-    fun executeGame(@Context sender: CommandSender, @Arg game: GameController.Game) {
+    fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.Game) {
         if(gameController.activeGame != null) {
             sender.sendMessage(Format.error("A game is already active!"))
             return
@@ -39,7 +39,7 @@ class GameCommand {
     }
 
     @Execute(name = "event")
-    fun executeGameEvent(@Context sender: CommandSender, @Arg event: DebugToolkit.DebuggingEvent) {
+    fun executeGameEvent(@Context sender: CommandSender, @Arg("event") event: DebugToolkit.DebuggingEvent) {
         val activeGame = gameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Events can only be executed when a game is active!"))
@@ -61,7 +61,7 @@ class GameCommand {
     }
 
     @Execute(name = "timer")
-    fun executeGameTimer(@Context sender: CommandSender, @Arg value: Optional<Int>) {
+    fun executeGameTimer(@Context sender: CommandSender, @Arg("value") value: Optional<Int>) {
         val activeGame = gameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Timers can only be retrieved or set when a game is active!"))

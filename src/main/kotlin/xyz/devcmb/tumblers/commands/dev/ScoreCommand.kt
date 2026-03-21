@@ -14,6 +14,8 @@ import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.Optional
+import kotlin.jvm.optionals.getOrElse
+import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "score")
 @Permission("tumbling.dev")
@@ -23,7 +25,7 @@ class ScoreCommand {
     }
 
     @Execute(name = "event kill")
-    fun kill(@Context player: Player, @Arg killed: Optional<Player>) {
+    fun kill(@Context player: Player, @Arg("killed") killed: Optional<Player>) {
         val activeGame = gameController.activeGame
         if(activeGame == null) {
             player.sendMessage(Format.error("This command can only be used when a game is active!"))
@@ -36,12 +38,12 @@ class ScoreCommand {
             return
         }
 
-        debugToolkit.killEvent(player, null)
+        debugToolkit.killEvent(player, killed.getOrNull())
         player.sendMessage(Format.success("Sent a kill signal successfully!"))
     }
 
     @Execute(name = "event death")
-    fun death(@Context player: Player, @Arg killed: Optional<Player>) {
+    fun death(@Context player: Player, @Arg("killed") killed: Optional<Player>) {
         val activeGame = gameController.activeGame
         if(activeGame == null) {
             player.sendMessage(Format.error("This command can only be used when a game is active!"))
@@ -54,12 +56,12 @@ class ScoreCommand {
             return
         }
 
-        debugToolkit.deathEvent(player)
+        debugToolkit.deathEvent(killed.getOrElse { player })
         player.sendMessage(Format.success("Sent a death signal successfully!"))
     }
 
     @Execute(name = "view")
-    fun view(@Context sender: CommandSender, @Arg player: Player) {
+    fun view(@Context sender: CommandSender, @Arg("player") player: Player) {
         val tumblingPlayer = player.tumblingPlayer
         sender.sendMessage(
             Component.empty()
