@@ -5,6 +5,8 @@ import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.entity.Player
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
@@ -30,6 +32,10 @@ fun Player.enableBossBar(id: String) {
 
 fun Player.disableBossBar(id: String) {
     playerController.playerUIControllers[this]!!.disableBossBar(id)
+}
+
+fun Player.hunger() {
+    addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
 }
 
 fun runTask(runnable: Runnable) =

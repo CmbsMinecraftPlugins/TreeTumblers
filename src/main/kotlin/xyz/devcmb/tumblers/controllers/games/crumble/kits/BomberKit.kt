@@ -94,9 +94,14 @@ class BomberKit(
                     PersistentDataType.STRING,
                     id.toString()
                 )
+
+                it.persistentDataContainer.set(
+                    CrumbleController.kitItemsKey,
+                    PersistentDataType.BOOLEAN,
+                    true
+                )
             }
         }
-        crumble.kitItems.add(item)
         player.inventory.addItem(item)
     }
 

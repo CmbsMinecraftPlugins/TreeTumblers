@@ -8,12 +8,15 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.NamespacedKey
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
+import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -27,6 +30,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 /**
@@ -115,6 +119,14 @@ abstract class GameBase(
                 Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
             )
 
+            it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+            it.foodLevel = 20
+            it.saturation = 0f
+
+            if(flags.contains(Flag.ENABLE_HUNGER)) {
+                it.removePotionEffect(PotionEffectType.HUNGER)
+            }
+
             it.showTitle(title)
         }
 
@@ -169,7 +181,7 @@ abstract class GameBase(
 
         cutsceneSteps.forEach {
             it.run(gamePlayers, loadedMaps.first())
-            it.cleanup()
+            it.cleanup(gamePlayers)
         }
     }
 
@@ -232,6 +244,18 @@ abstract class GameBase(
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
                 it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+                it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                it.foodLevel = 20
+
+                if(it.gameMode != GameMode.CREATIVE) {
+                    it.gameMode = GameMode.SURVIVAL
+                    it.isFlying = false
+                    it.allowFlight = false
+                }
+
+                if(!it.hasPotionEffect(PotionEffectType.HUNGER)) {
+                    it.hunger()
+                }
             }
         }
 
@@ -332,7 +356,7 @@ abstract class GameBase(
     fun gameMessage(text: Component): Component {
         return Component.empty()
             .append(Component.text("[", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+            .append(icon)
             .append(Component.text("] ", NamedTextColor.YELLOW))
             .append(text)
     }

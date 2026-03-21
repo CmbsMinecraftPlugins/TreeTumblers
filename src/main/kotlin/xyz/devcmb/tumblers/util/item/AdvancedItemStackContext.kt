@@ -5,6 +5,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataContainer
 import org.bukkit.persistence.PersistentDataType
 import java.util.UUID
 
@@ -41,6 +42,12 @@ class AdvancedItemStackContext(
 
     fun leftClick(action: (Player) -> Unit) {
         leftClick = action
+    }
+
+    fun persistentDataContainer(action: PersistentDataContainer.() -> Unit) {
+        item.itemMeta = item.itemMeta.also {
+            action(it.persistentDataContainer)
+        }
     }
 
     fun build(): ItemStack {

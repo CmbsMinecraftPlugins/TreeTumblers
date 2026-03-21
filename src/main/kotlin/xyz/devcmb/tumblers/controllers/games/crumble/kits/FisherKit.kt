@@ -10,6 +10,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.Trident
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.ProjectileHitEvent
+import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.EquipmentSlotGroup
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -126,5 +127,12 @@ class FisherKit(
         val strike = trident.world.strikeLightning(trident.location)
         strike.causingPlayer = player
         abilityActive = false
+    }
+
+    @EventHandler
+    fun onItemConsume(event: PlayerItemConsumeEvent) {
+        val item = event.item
+        if (item.type != items[1].type) return
+        event.isCancelled = true
     }
 }

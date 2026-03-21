@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -22,21 +23,37 @@ class CutsceneStep(
 ) {
     val pigs: HashMap<Player, Entity> = HashMap()
     suspend fun run(observers: Set<Player>, map: LoadedMap) {
-        observers.forEach {
-            it.sendMessage(Component.empty()
-                .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
-                .append(Component.newline())
-                .append(chatMessage)
-                .append(Component.newline())
-                .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
-            )
+        suspendSync {
+            observers.forEach {
+                observers.forEach { other ->
+                    if(other == it) return@forEach
+                    it.hidePlayer(TreeTumblers.plugin, other)
+                }
+
+                it.sendMessage(Component.empty()
+                    .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
+                    .append(Component.newline())
+                    .append(chatMessage)
+                    .append(Component.newline())
+                    .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
+                )
+            }
         }
 
         val context = CutsceneContext(observers, map, this)
         context.init(map)
     }
 
-    suspend fun cleanup() {
+    suspend fun cleanup(observers: Set<Player>) {
+        suspendSync {
+            observers.forEach {
+                observers.forEach { other ->
+                    if(other == it) return@forEach
+                    it.showPlayer(TreeTumblers.plugin, other)
+                }
+            }
+        }
+
         suspendSync {
             pigs.forEach {
                 it.value.remove()

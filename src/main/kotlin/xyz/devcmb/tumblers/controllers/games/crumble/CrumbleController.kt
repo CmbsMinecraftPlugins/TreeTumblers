@@ -110,6 +110,7 @@ class CrumbleController : GameBase(
 ) {
     companion object {
         val font = NamespacedKey("tumbling", "games/crumble")
+        val kitItemsKey = NamespacedKey("tumbling", "kit_item")
 
         @field:Configurable("games.crumble.max_kit_players")
         var maxPlayersPerKit: Int = 2
@@ -175,7 +176,6 @@ class CrumbleController : GameBase(
     val playerKits: HashMap<Player, Kit> = HashMap()
     val abilitiesUsed: ArrayList<Player> = ArrayList()
 
-    val kitItems: ArrayList<ItemStack> = ArrayList()
     val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
 
     var currentCrumbleRadius: Double = 0.0
@@ -185,6 +185,9 @@ class CrumbleController : GameBase(
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
+        persistentDataContainer {
+            set(kitItemsKey, PersistentDataType.BOOLEAN, true)
+        }
         rightClick { player ->
             player.openHandledInventory("crumbleKitSelector")
         }
@@ -481,6 +484,8 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun postGame() {
+        suspendSync(this::unhideSpectators)
+
         val placements = getTeamPlacements()
         gameParticipants.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
@@ -697,10 +702,13 @@ class CrumbleController : GameBase(
     }
 
     fun unhideSpectators() {
-        Bukkit.getOnlinePlayers().forEach {
-            spectatingPlayers.forEach { plr ->
+        spectatingPlayers.forEach { plr ->
+            Bukkit.getOnlinePlayers().forEach {
                 it.showPlayer(TreeTumblers.plugin, plr)
             }
+
+            plr.isFlying = false
+            plr.allowFlight = false
         }
         spectatingPlayers.clear()
     }
@@ -921,7 +929,9 @@ class CrumbleController : GameBase(
 
         kit.items.forEach {
             val item = it.clone()
-            kitItems.add(item)
+            item.itemMeta = item.itemMeta.also { meta ->
+                meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
+            }
 
             if(MiscUtils.isArmor(item)) {
                 if(item.type.name.contains("LEATHER")) {
@@ -947,6 +957,9 @@ class CrumbleController : GameBase(
                 ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
             )
             model(kit.inventoryModel)
+            persistentDataContainer {
+                set(kitItemsKey, PersistentDataType.BOOLEAN, true)
+            }
 
             rightClick {
                 useAbility(it)
@@ -957,6 +970,7 @@ class CrumbleController : GameBase(
             itemMeta = itemMeta.also { meta ->
                 meta.itemName(Component.text("Kill power: ${kit.killPowerName}", NamedTextColor.YELLOW))
                 meta.itemModel = killModel
+                meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
                 meta.lore(
                     MiscUtils.wrapComponent(
                         Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
@@ -973,9 +987,6 @@ class CrumbleController : GameBase(
         if(pregame) {
             player.inventory.addItem(kitSelector)
         }
-
-        kitItems.add(killItem)
-        kitItems.add(abilityItem)
     }
 
     fun selectKit(player: Player, id: String) {
@@ -1070,8 +1081,10 @@ class CrumbleController : GameBase(
 
     @EventHandler
     fun playerDropItemEvent(event: PlayerDropItemEvent) {
-        if(kitItems.find { it.isSimilar(event.itemDrop.itemStack) } != null)
+        val item = event.itemDrop
+        if(item.itemStack.persistentDataContainer.get(kitItemsKey, PersistentDataType.BOOLEAN) == true) {
             event.isCancelled = true
+        }
     }
 
     @EventHandler
