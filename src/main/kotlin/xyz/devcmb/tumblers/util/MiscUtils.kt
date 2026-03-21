@@ -5,6 +5,7 @@ import kotlinx.coroutines.withTimeout
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.block.Biome
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -15,6 +16,8 @@ import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
+import kotlin.math.cos
+import kotlin.math.sin
 
 object MiscUtils {
     object VoidGenerator : ChunkGenerator() {
@@ -167,6 +170,17 @@ object MiscUtils {
         }
 
         return rankedWithTies
+    }
+
+    // ai code
+    // this is magic
+    fun getEquidistantPoints(center: Location, radius: Double, count: Int): List<Location> {
+        return (0 until count).map { i ->
+            val angle = (2 * Math.PI * i) / count  // evenly spaced radians
+            val x = center.x + radius * cos(angle)
+            val z = center.z + radius * sin(angle)
+            Location(center.world, x, center.y, z)
+        }
     }
 
     // Source - https://stackoverflow.com/a/73494554

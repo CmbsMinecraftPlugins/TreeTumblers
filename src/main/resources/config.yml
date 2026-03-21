@@ -27,6 +27,8 @@ games:
     worlds_folder: "crumble"
     max_kit_players: 2
     tnt_detonation_time: 80
+    crumble_speed: 0.6
+    round_length: 75
     kits:
       archer:
         punch_level: 2
@@ -58,6 +60,7 @@ games:
       warfare:
         world: "crumble_warfare"
         data:
+          map_size: 70
           spawns:
             pregame: [-32.5,100.0,-33.5]
             ingame:
@@ -120,7 +123,7 @@ games:
             arena1: [-35.5,103.0,-36.5]
             arena2: [-535.5,103.0,-463.5]
             arena3: [464.5,103.0,-536.5]
-            arena4: [-535,103.0,-536.5]
+            arena4: [-535.0,103.0,-536.5]
           cutscene:
             # X,Y,Z,pitch,yaw
             start: [-35.5,110.0,-6.5,180.0,24.0]

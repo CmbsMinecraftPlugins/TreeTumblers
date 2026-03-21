@@ -70,6 +70,7 @@ import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.math.sqrt
 
 @EventGame
 class CrumbleController : GameBase(
@@ -113,6 +114,12 @@ class CrumbleController : GameBase(
 
         @field:Configurable("games.crumble.tnt_detonation_time")
         var tntDetonationTime: Int = 80
+
+        @field:Configurable("games.crumble.crumble_speed")
+        var crumbleSpeed: Double = 0.6
+
+        @field:Configurable("games.crumble.round_length")
+        var roundLength: Int = 75
     }
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
@@ -142,7 +149,7 @@ class CrumbleController : GameBase(
         }
     )
 
-    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
+    val rounds = Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }
@@ -168,6 +175,11 @@ class CrumbleController : GameBase(
 
     val kitItems: ArrayList<ItemStack> = ArrayList()
     val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
+
+    var currentCrumbleRadius: Double = 0.0
+    var crumbleEvent: BukkitRunnable? = null
+
+    var borderEvent: BukkitRunnable? = null
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
@@ -462,9 +474,11 @@ class CrumbleController : GameBase(
             asyncCountdown(7) {
                 dropWalls()
             }
+            setupCrumble()
+            setupBorder()
             announceMatchup()
             roundActive = true
-            asyncCountdown(120) {
+            asyncCountdown(roundLength) {
                 gameTimeoutEnd = true
             }
             awaitEnd()
@@ -588,6 +602,92 @@ class CrumbleController : GameBase(
         super.cleanup()
     }
 
+    fun setupCrumble() {
+        val currentMapSize = currentMap.data.getInt("map_size")
+        // basically the size is the sidelength of a square
+        // so half of the diagonal is the radius to a circumscribed circle
+        // and a +1 for inaccuracies in rounding
+        currentCrumbleRadius = ((currentMapSize * sqrt(2.0) * 0.5) + 1)
+
+        // This logic is human written, then optimized by AI because of how expensive these operations are
+        val arenaCenters: List<Location> = (1..4).map { arena ->
+            val list = currentMap.data.getList("centers.arena$arena")
+                ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
+                ?: throw GameControllerException("Map does not have a center specified for $arena")
+            list.unpackCoordinates(currentMap.world)
+        }
+
+        crumbleEvent = object : BukkitRunnable() {
+            override fun run() {
+                if (currentCrumbleRadius <= 0) {
+                    cancel()
+                    return
+                }
+
+                val radiusSquared = currentCrumbleRadius * currentCrumbleRadius
+
+                for (center in arenaCenters) {
+                    val halfMap = currentMapSize / 2
+                    val xStart = (center.x - halfMap).toInt()
+                    val xEnd = (center.x + halfMap).toInt()
+                    val zStart = (center.z - halfMap).toInt()
+                    val zEnd = (center.z + halfMap).toInt()
+                    val yStart = (center.y - 50).toInt()
+                    val yEnd = (center.y + 10).toInt()
+
+                    for (x in xStart..xEnd) {
+                        val dx = x + 0.5 - center.x
+                        for (z in zStart..zEnd) {
+                            val dz = z + 0.5 - center.z
+                            val distSq = dx*dx + dz*dz
+                            if (distSq < radiusSquared) continue
+
+                            for (y in yStart..yEnd) {
+                                val block = center.world.getBlockAt(x, y, z)
+                                if (!block.type.isAir) {
+                                    block.type = Material.AIR
+                                }
+                            }
+                        }
+                    }
+                }
+
+                currentCrumbleRadius -= crumbleSpeed / 20.0
+            }
+        }
+        crumbleEvent!!.runTaskTimer(TreeTumblers.plugin, 0, 1)
+    }
+
+    fun setupBorder() {
+        val arenaCenters: List<Location> = (1..4).map { arena ->
+            val list = currentMap.data.getList("centers.arena$arena")
+                ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
+                ?: throw GameControllerException("Map does not have a center specified for $arena")
+            list.unpackCoordinates(currentMap.world)
+        }
+
+        borderEvent = object : BukkitRunnable() {
+            override fun run() {
+                arenaCenters.forEach { center ->
+                    val points = MiscUtils.getEquidistantPoints(center, currentCrumbleRadius, 30)
+                    points.forEach {
+                        for(y in -5..5) {
+                            currentMap.world.spawnParticle(
+                                Particle.DUST,
+                                it.x,
+                                it.y + y,
+                                it.z,
+                                3,
+                                Particle.DustOptions(Color.RED, 3.0f)
+                            )
+                        }
+                    }
+                }
+            }
+        }
+        borderEvent!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
+    }
+
     fun unhideSpectators() {
         Bukkit.getOnlinePlayers().forEach {
             spectatingPlayers.forEach { plr ->
@@ -608,6 +708,10 @@ class CrumbleController : GameBase(
 
     suspend fun endRound() {
         roundActive = false
+        crumbleEvent!!.cancel()
+        crumbleEvent = null
+        borderEvent!!.cancel()
+        borderEvent = null
         if(gameTimeoutEnd) {
             Team.entries.filter { it.playingTeam }.forEach {
                 val result = matchResults[roundIndex][it]
@@ -644,7 +748,7 @@ class CrumbleController : GameBase(
                 Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
             )
 
-            audience.sendMessage(gameMessage(subtitle))
+            audience.sendMessage(gameMessage(Component.text("Round $currentRound: ", NamedTextColor.WHITE).append(subtitle)))
             audience.showTitle(title)
         }
 
@@ -710,7 +814,7 @@ class CrumbleController : GameBase(
             }
         }
 
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(gameMessage(Component.text("Game started!")))
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(gameMessage(Component.text("Round started!")))
     }
 
     fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
