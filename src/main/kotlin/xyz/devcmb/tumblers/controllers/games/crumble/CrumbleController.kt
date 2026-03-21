@@ -489,6 +489,7 @@ class CrumbleController : GameBase(
                 Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
         }
 
         delay(5000)
@@ -499,12 +500,7 @@ class CrumbleController : GameBase(
 
         val teamPlacements = getTeamPlacements()
         teamPlacements.forEach {
-            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
-            grantTeamScore(
-                it.first,
-                ScoreSource.TEAM_PLACEMENT,
-                score
-            )
+            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.TEAM_PLACEMENT)
 
             teamScoresComponent = teamScoresComponent.append(
                 Component.empty()
@@ -514,6 +510,12 @@ class CrumbleController : GameBase(
                     .append(Component.text(" - ", NamedTextColor.GRAY))
                     .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
                     .append(Component.text(" [+${score}]", NamedTextColor.GOLD))
+            )
+
+            grantTeamScore(
+                it.first,
+                ScoreSource.TEAM_PLACEMENT,
+                score
             )
         }
         teamScoresComponent = teamScoresComponent.appendNewline()
@@ -630,32 +632,26 @@ class CrumbleController : GameBase(
     suspend fun announceMatchup() {
         val roundMatchup = matchups[roundIndex]
         roundMatchup.forEach { matchup ->
-            val players = setOf(
-                *matchup.first.getOnlinePlayers().toTypedArray(),
-                *matchup.second.getOnlinePlayers().toTypedArray()
-            )
+            val audience = Audience.audience(matchup.first.audience, matchup.second.audience)
 
+            val subtitle = Component.empty()
+                .append(matchup.first.formattedName)
+                .append(Component.text(" vs ", NamedTextColor.WHITE))
+                .append(matchup.second.formattedName)
             val title = Title.title(
                 Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                Component.empty()
-                    .append(matchup.first.formattedName)
-                    .append(Component.text(" vs ", NamedTextColor.WHITE))
-                    .append(matchup.second.formattedName),
+                subtitle,
                 Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
             )
 
-            players.forEach { player ->
-                player.showTitle(title)
-            }
+            audience.sendMessage(gameMessage(subtitle))
+            audience.showTitle(title)
         }
 
         delay(4000)
         repeat(3) {
             roundMatchup.forEach { matchup ->
-                val players = setOf(
-                    *matchup.first.getOnlinePlayers().toTypedArray(),
-                    *matchup.second.getOnlinePlayers().toTypedArray()
-                )
+                val audience = Audience.audience(matchup.first.audience, matchup.second.audience)
 
                 val color = when(it) {
                     0 -> NamedTextColor.GREEN
@@ -670,9 +666,8 @@ class CrumbleController : GameBase(
                     Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
                 )
 
-                players.forEach { player ->
-                    player.showTitle(title)
-                }
+
+                audience.showTitle(title)
             }
             delay(1000)
         }
@@ -714,6 +709,8 @@ class CrumbleController : GameBase(
                 }
             }
         }
+
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(gameMessage(Component.text("Game started!")))
     }
 
     fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
