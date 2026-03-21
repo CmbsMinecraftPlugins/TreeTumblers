@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.ui.bossbar
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.ShadowColor
+import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -40,7 +41,7 @@ class CountdownBossbar(
             .append(UserInterfaceUtility.negativeSpace(fullOffset))
             .append(Component.text("\uEF01").font(UserInterfaceUtility.HUD))
             .append(UserInterfaceUtility.negativeSpace(bgOffset))
-            .append(Component.text(MiscUtils.formatToMSS(currentGame.countdownTime)))
+            .append(Component.text(text).font(NamespacedKey("tumbling", "default_shift/ascent_5")))
             .shadowColor(ShadowColor.shadowColor(0))
     }
 }

@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
+import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.util.runTaskTimer
@@ -21,6 +22,8 @@ class PlayerUIController(val player: Player) {
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
+
+        registerBossBar(AliveTeamsBossbar(gameController))
         registerBossBar(CountdownBossbar(gameController))
 
         runTaskTimer(0, 5) {

@@ -109,6 +109,8 @@ class CrumbleController : GameBase(
     icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble"))
 ) {
     companion object {
+        val font = NamespacedKey("tumbling", "games/crumble")
+
         @field:Configurable("games.crumble.max_kit_players")
         var maxPlayersPerKit: Int = 2
 
@@ -191,8 +193,6 @@ class CrumbleController : GameBase(
     val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
-
-    val font = NamespacedKey("tumbling", "games/crumble")
     val killModel = NamespacedKey("tumbling", "crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {
@@ -460,13 +460,7 @@ class CrumbleController : GameBase(
         repeat(rounds) {
             gameTimeoutEnd = false
             unhideSpectators()
-            spawn(SpawnCycle.PRE_ROUND)
-            alivePlayers.values.forEach { it.clear() }
-            gameParticipants.forEach { player ->
-                val tumblingPlayer = player.tumblingPlayer
-                alivePlayers[tumblingPlayer.team]!!.add(player)
-            }
-            abilitiesUsed.clear()
+            preRound()
             suspendSync(this::giveKits)
             preRoundFreeze = true
             delay(500)
@@ -598,8 +592,22 @@ class CrumbleController : GameBase(
         }
         Bukkit.getOnlinePlayers().forEach {
             it.disableBossBar("countdownBossbar")
+            it.disableBossBar("crumbleAliveTeamsBossbar")
         }
         super.cleanup()
+    }
+
+    suspend fun preRound() {
+        spawn(SpawnCycle.PRE_ROUND)
+        alivePlayers.values.forEach { it.clear() }
+        gameParticipants.forEach { player ->
+            val tumblingPlayer = player.tumblingPlayer
+            alivePlayers[tumblingPlayer.team]!!.add(player)
+        }
+        gamePlayers.forEach {
+            it.enableBossBar("crumbleAliveTeamsBossbar")
+        }
+        abilitiesUsed.clear()
     }
 
     fun setupCrumble() {

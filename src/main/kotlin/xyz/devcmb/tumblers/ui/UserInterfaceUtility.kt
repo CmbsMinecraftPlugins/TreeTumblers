@@ -10,6 +10,7 @@ object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
     val WARNINGS = NamespacedKey("tumbling", "warnings")
     val HUD = NamespacedKey("tumbling", "hud")
+    val ICONS = NamespacedKey("tumbling", "icons")
 
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",
