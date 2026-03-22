@@ -6,9 +6,11 @@ import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.Objective
+import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
+import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
@@ -36,6 +38,11 @@ class PlayerUIController(val player: Player) {
 
         registerBossBar(AliveTeamsBossbar(gameController))
         registerBossBar(CountdownBossbar(gameController))
+        registerBossBar(DebugBossbar())
+
+        if(Constants.IS_DEVELOPMENT) {
+            enableBossBar("debugBossbar")
+        }
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
 

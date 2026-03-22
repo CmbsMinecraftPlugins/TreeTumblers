@@ -35,12 +35,12 @@ class CrumbleScoreboard(
         repeat(activeGame.rounds) {
             val result = activeGame.matchResults[it][player.tumblingPlayer.team]
             val append = when(result) {
-                CrumbleController.RoundResult.WIN -> Format.mm(" <white>[<green>W</green>]</white>")
-                CrumbleController.RoundResult.DRAW -> Format.mm(" <white>[<yellow>D</yellow>]</white>")
-                CrumbleController.RoundResult.LOSS -> Format.mm(" <white>[<red>L</red>]</white>")
-                null -> Format.mm(" <white>[ ]</white>")
+                CrumbleController.RoundResult.WIN -> "<white>[<green>W</green>]</white>"
+                CrumbleController.RoundResult.DRAW -> "<white>[<yellow>D</yellow>]</white>"
+                CrumbleController.RoundResult.LOSS -> "<white>[<red>L</red>]</white>"
+                null -> "<white>[ ]</white>"
             }
-            rounds = rounds.append(append)
+            rounds = rounds.append(Format.mm("${if(it != 0) " " else ""}$append"))
         }
 
         val leaderboard: ArrayList<Component> = arrayListOf()

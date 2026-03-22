@@ -26,9 +26,8 @@ class CountdownBossbar(
 
         return Component.empty()
             .append(UserInterfaceUtility.negativeSpace(fullOffset))
-            .append(Component.text("\uEF01").font(UserInterfaceUtility.HUD))
+            .append(Component.text("\uEF01").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)))
             .append(UserInterfaceUtility.negativeSpace(bgOffset))
             .append(Component.text(text).font(NamespacedKey("tumbling", "default_shift/ascent_5")))
-            .shadowColor(ShadowColor.shadowColor(0))
     }
 }
