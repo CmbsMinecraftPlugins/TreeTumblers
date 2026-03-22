@@ -30,6 +30,8 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.activateScoreboard
+import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
@@ -41,6 +43,8 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
  * @param flags A [Set] of [Flag] enums to determine certain shared behaviors
  * @param scores A [HashMap] of [ScoreSource]s to the amount of score they give
+ * @param icon The component icon of the game
+ * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
  *
  * @property currentState The current [State] of the individual game
  * @property loadedMaps An [ArrayList] containing all the [LoadedMap] instances
@@ -56,7 +60,8 @@ abstract class GameBase(
     val cutsceneSteps: ArrayList<CutsceneStep>,
     val flags: Set<Flag>,
     val scores: HashMap<ScoreSource, Int>,
-    val icon: Component
+    val icon: Component,
+    val scoreboard: String
 ): Listener {
     init {
         maps.forEach {
@@ -191,6 +196,11 @@ abstract class GameBase(
     suspend fun pregame() {
         currentState = State.PREGAME
         spawn(SpawnCycle.PREGAME)
+
+        gamePlayers.forEach {
+            it.activateScoreboard(scoreboard)
+        }
+
         gamePregame()
     }
 
@@ -246,6 +256,8 @@ abstract class GameBase(
                 it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
                 it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                 it.foodLevel = 20
+
+                it.deactivateScoreboard(scoreboard)
 
                 if(it.gameMode != GameMode.CREATIVE) {
                     it.gameMode = GameMode.SURVIVAL
@@ -363,19 +375,23 @@ abstract class GameBase(
 
     /**
      * Get the current placements for all playing teams
-     * @return A Set of teams containing a [Pair] from [Team] to that team's placement
+     * @return An ArrayList of teams sorted by score (descending) with ties broken by team priority (ascending)
      */
-    fun getTeamPlacements(): Set<Pair<Team, Int>> {
-        val sorted = teamScores.entries.sortedByDescending { it.value }
+    fun getTeamPlacements(): ArrayList<Pair<Team, Int>> {
+        val sorted = teamScores.entries
+            .sortedWith(compareBy({ -it.value }, { it.key.priority }))
+
         return MiscUtils.calculatePlacements(sorted)
     }
 
     /**
      * Get the current individual placements for all playing players
-     * @return A set of players containing a [Pair] from [Player] to that player's score
+     * @return An ArrayList of players sorted by score (descending) with ties broken by team priority (ascending)
      */
-    fun getIndividualPlacements(): Set<Pair<Player, Int>> {
-        val sorted = playerScores.entries.sortedByDescending { it.value }
+    fun getIndividualPlacements(): ArrayList<Pair<Player, Int>> {
+        val sorted = playerScores.entries
+            .sortedWith(compareBy({ -it.value }, { it.key.tumblingPlayer.team.priority }))
+        
         return MiscUtils.calculatePlacements(sorted)
     }
 

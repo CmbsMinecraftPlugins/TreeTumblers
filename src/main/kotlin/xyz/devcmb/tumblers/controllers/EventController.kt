@@ -41,7 +41,7 @@ class EventController : IController {
         teamScores.put(team, (teamScores[team] ?: 0) + amount)
     }
 
-    fun getEventTeamPlacements(): Set<Pair<Team, Int>> {
+    fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
         val sorted = teamScores.entries.sortedByDescending { it.value }
         return MiscUtils.calculatePlacements(sorted)
     }

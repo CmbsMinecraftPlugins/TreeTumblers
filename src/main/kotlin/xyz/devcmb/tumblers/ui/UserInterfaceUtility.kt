@@ -118,6 +118,10 @@ object UserInterfaceUtility {
         return Component.text(result.toString()).font(SPACES)
     }
 
+    fun getPixelWidth(text: String): Int {
+        return text.sumOf { ch -> DefaultFontGlyphs.entries.find { it.char == ch }?.width ?: 0 }
+    }
+
     fun refreshAll(id: String) {
         val playerController = ControllerDelegate.getController("playerController") as PlayerController
         playerController.playerUIControllers.forEach { player, controller ->
@@ -126,4 +130,6 @@ object UserInterfaceUtility {
             inv.inventory.reload()
         }
     }
+
+
 }

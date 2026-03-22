@@ -3,7 +3,9 @@ package xyz.devcmb.tumblers.ui
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
@@ -11,14 +13,23 @@ import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
+import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
 import xyz.devcmb.tumblers.util.runTaskTimer
 
 class PlayerUIController(val player: Player) {
     val inventories: ArrayList<HandledInventory> = ArrayList()
     val bossBars: ArrayList<HandledBossbar> = ArrayList()
+    val scoreboards: ArrayList<HandledScoreboard> = ArrayList()
+
+    var activeScoreboards: ArrayList<String> = ArrayList()
+    var activeScoreboardObjectives: HashMap<String, Set<Objective>> = HashMap()
+
     val activeBossBars: HashMap<String, BossBar> = HashMap()
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
     val gameController = ControllerDelegate.getController("gameController") as GameController
+
+    val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
@@ -26,12 +37,25 @@ class PlayerUIController(val player: Player) {
         registerBossBar(AliveTeamsBossbar(gameController))
         registerBossBar(CountdownBossbar(gameController))
 
+        registerScoreboard(CrumbleScoreboard(gameController, player))
+
+        player.scoreboard = playerScoreboard
+
         runTaskTimer(0, 5) {
             bossBars.forEach {
                 if(activeBossBars.containsKey(it.id)) {
                     val bar = activeBossBars[it.id]!!
                     bar.name(it.getComponent())
                 }
+            }
+
+            playerScoreboard.objectives.forEach {
+                it.unregister()
+            }
+
+            activeScoreboards.forEach { id ->
+                val scoreboard = scoreboards.find { it.id == id }!!
+                scoreboard.getObjectives(playerScoreboard)
             }
         }
     }
@@ -42,6 +66,10 @@ class PlayerUIController(val player: Player) {
 
     fun registerBossBar(bar: HandledBossbar) {
         bossBars.add(bar)
+    }
+
+    fun registerScoreboard(board: HandledScoreboard) {
+        scoreboards.add(board)
     }
 
     fun openInventory(id: String) {
@@ -101,5 +129,27 @@ class PlayerUIController(val player: Player) {
 
         activeBossBars.remove(id)
         paddingBossBars.remove(id)
+    }
+
+    fun activateScoreboard(id: String) {
+        val scoreboard = scoreboards.find { it.id == id }
+        if(scoreboard == null) throw IllegalArgumentException("Unknown Scoreboard ID: $id")
+
+        if(activeScoreboards.contains(id)) return
+
+        activeScoreboards.add(id)
+    }
+
+    fun deactivateScoreboard(id: String) {
+        val scoreboard = scoreboards.find { it.id == id }
+        if(scoreboard == null) throw IllegalArgumentException("Unknown Scoreboard ID: $id")
+
+        if(!activeScoreboards.contains(id)) return
+        activeScoreboards.remove(id)
+
+        val activeObjectives = activeScoreboardObjectives[id] ?: arrayListOf()
+        activeObjectives.forEach {
+            it.unregister()
+        }
     }
 }

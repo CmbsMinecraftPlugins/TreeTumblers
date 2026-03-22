@@ -133,7 +133,7 @@ class CrumbleController : GameBase(
             delay(4000)
             runnable.cancel()
         },
-        CutsceneStep(Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><light_purple><u>Cob</u></light_purple></click>!")) { map ->
+        CutsceneStep(Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><color:#ff701e><u>GDCob</u></color></click>!")) { map ->
             teleportConfig("cutscene.credit")
             delay(4000)
         },
@@ -151,7 +151,8 @@ class CrumbleController : GameBase(
         ScoreSource.TEAM_PLACEMENT to 80,
         ScoreSource.INDIVIDUAL_PLACEMENT to 4,
     ),
-    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble"))
+    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")),
+    scoreboard = "crumbleScoreboard"
 ) {
     companion object {
         val font = NamespacedKey("tumbling", "games/crumble")
@@ -197,7 +198,7 @@ class CrumbleController : GameBase(
         }
     )
 
-    val rounds = 1//Team.entries.filter { it.playingTeam }.size - 1
+    val rounds = Team.entries.filter { it.playingTeam }.size - 1
     var currentRound = 1
     val roundIndex: Int
         get() { return currentRound - 1 }

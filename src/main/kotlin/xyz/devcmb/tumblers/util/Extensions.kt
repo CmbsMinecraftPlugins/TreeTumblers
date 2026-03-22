@@ -34,6 +34,16 @@ fun Player.disableBossBar(id: String) {
     playerController.playerUIControllers[this]!!.disableBossBar(id)
 }
 
+fun Player.activateScoreboard(id: String) {
+    DebugUtil.info("Activating score board $id for $name")
+    playerController.playerUIControllers[this]!!.activateScoreboard(id)
+}
+
+fun Player.deactivateScoreboard(id: String) {
+    DebugUtil.info("Deactivating score board $id for $name")
+    playerController.playerUIControllers[this]!!.deactivateScoreboard(id)
+}
+
 fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
 }

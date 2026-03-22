@@ -12,8 +12,11 @@ import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
+import kotlin.collections.component1
+import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.cos
@@ -134,26 +137,20 @@ object MiscUtils {
         }
     }
 
-    fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): Set<Pair<T, Int>> {
-        // semi-ChatGPT generated code
-        val rankedWithTies = mutableSetOf<Pair<T, Int>>()
+    fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): ArrayList<Pair<T, Int>> {
+        val placements = ArrayList<Pair<T, Int>>()
+        var placement = 1
+        var lastScore: Int? = null
 
-        var currentPlace = 0
-        var lastValue: Int? = null
-        var index = 0
-
-        for ((key, value) in sortedList) {
-            index++
-
-            if (value != lastValue) {
-                currentPlace = index
-                lastValue = value
+        sortedList.forEachIndexed { index, (player, score) ->
+            if (lastScore != null && score != lastScore) {
+                placement = index + 1
             }
-
-            rankedWithTies.add(key to currentPlace)
+            placements.add(player to placement)
+            lastScore = score
         }
 
-        return rankedWithTies
+        return placements
     }
 
     // ai code
@@ -164,6 +161,14 @@ object MiscUtils {
             val x = center.x + radius * cos(angle)
             val z = center.z + radius * sin(angle)
             Location(center.world, x, center.y, z)
+        }
+    }
+
+    fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>) {
+        lines.forEachIndexed { index, text ->
+            val score = objective.getScore("line$index")
+            score.customName(text)
+            score.score = lines.size - index
         }
     }
 
