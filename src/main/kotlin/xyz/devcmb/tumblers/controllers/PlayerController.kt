@@ -76,7 +76,7 @@ class PlayerController : IController {
                 player.kick(Component.text("Data failed to load. Please try again or contact an admin.", NamedTextColor.RED))
             }
 
-            player.playerListName(Format.formatPlayerName(player))
+            player.displayName(Format.formatPlayerName(player))
             Bukkit.broadcast(
                 Component.text("[").color(NamedTextColor.GRAY)
                     .append(Component.text("+").color(NamedTextColor.GREEN))

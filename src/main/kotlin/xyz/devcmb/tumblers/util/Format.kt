@@ -2,6 +2,9 @@ package xyz.devcmb.tumblers.util
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
+import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.data.Team
@@ -39,6 +42,16 @@ object Format {
         "{player} got banned from discord",
         "{player} got rejected"
     )
+
+    val miniMessage: MiniMessage = MiniMessage.builder()
+        .tags(TagResolver.builder()
+            .resolver(StandardTags.defaults())
+            .build())
+        .build()
+
+    fun mm(text: String): Component {
+        return miniMessage.deserialize(text)
+    }
 
     fun formatPlayerName(player: Player): Component {
         val tumblingPlayer = player.tumblingPlayer

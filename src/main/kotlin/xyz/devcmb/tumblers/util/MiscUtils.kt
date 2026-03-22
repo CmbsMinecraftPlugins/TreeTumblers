@@ -78,22 +78,6 @@ object MiscUtils {
         return result
     }
 
-    fun wrapString(string: String, length: Int): String {
-        var wrapCheck = 0
-        val wrappedString = StringBuilder()
-        for (i in 0..<string.length) {
-            if (wrapCheck >= length && string[i] == ' ') {
-                wrappedString.append("\n")
-                wrapCheck = 0
-            } else {
-                wrappedString.append(string[i])
-            }
-            wrapCheck++
-        }
-
-        return wrappedString.toString()
-    }
-
     fun wrapComponent(component: Component, width: Int): List<Component> {
         val text = PlainTextComponentSerializer.plainText().serialize(component)
         val style = component.style()

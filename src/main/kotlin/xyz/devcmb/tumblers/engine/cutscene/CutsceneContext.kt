@@ -21,24 +21,24 @@ class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: 
     }
 
     suspend fun teleportConfig(path: String) {
+        val location = getLocation(path)
+        suspendSync {
+            observers.forEach {
+                it.teleport(location)
+
+                createPassengerPig(it, location)
+            }
+        }
+    }
+
+    fun getLocation(path: String): Location {
         val config = map.data.getList(path) ?: throw GameControllerException("Teleport config path did not resolve to a valid list")
         val location: List<Double> = config.map {
             if(it !is Double) throw GameControllerException("Teleport list does not contain exclusively doubles")
             it
         }
 
-        if(location.size < 3) {
-            throw GameControllerException("Teleport list does not have enough elements")
-        }
-
-        suspendSync {
-            observers.forEach {
-                val location = location.unpackCoordinates(map.world)
-                it.teleport(location)
-
-                createPassengerPig(it, location)
-            }
-        }
+        return location.unpackCoordinates(map.world)
     }
 
     private fun createPassengerPig(player: Player, location: Location) {

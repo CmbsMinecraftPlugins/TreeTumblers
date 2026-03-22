@@ -61,6 +61,7 @@ games:
         world: "crumble_warfare"
         data:
           map_size: 70
+          kill_height: 86
           spawns:
             pregame: [-32.5,100.0,-33.5]
             ingame:
@@ -123,10 +124,13 @@ games:
             arena1: [-35.5,103.0,-36.5]
             arena2: [-535.5,103.0,-463.5]
             arena3: [464.5,103.0,-536.5]
-            arena4: [-535.0,103.0,-536.5]
+            arena4: [-535.5,103.0,-536.5]
+            cutscene: [464.5,103.0,463.5]
           cutscene:
             # X,Y,Z,pitch,yaw
-            start: [-35.5,110.0,-6.5,180.0,24.0]
+            start: [474.5,107.5,473.5,134.3,36.5]
+            crumble_demonstration: [438.5,102.5,489.5,45.0,33.0]
+            credit: [464.4,90.3,471.4,62.3,13.6]
           walls:
             # startX,startY,startZ,endX,endY,endZ
             - [0,115,-37,-72,99,-37]

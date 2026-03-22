@@ -89,10 +89,55 @@ class CrumbleController : GameBase(
             teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Component.text("Cutscene step #2", NamedTextColor.GRAY)) { map ->
-            teleport(0.0,128.0,0.0,0f,0f)
-            delay(2000)
-        }
+        CutsceneStep(Format.mm("In this game, as time goes on, the map will <yellow>crumble away</yellow> in a circle")) { map ->
+            teleportConfig("cutscene.crumble_demonstration")
+
+            val center = getLocation("centers.cutscene")
+            val currentMapSize = map.data.getInt("map_size")
+            var currentCrumbleRadius = ((currentMapSize * sqrt(2.0) * 0.5) + 1)
+
+            // maybe extract this duplicate code
+            val runnable = object : BukkitRunnable() {
+                override fun run() {
+                    val radiusSquared = currentCrumbleRadius * currentCrumbleRadius
+
+                    val halfMap = currentMapSize / 2
+                    val xStart = (center.x - halfMap).toInt()
+                    val xEnd = (center.x + halfMap).toInt()
+                    val zStart = (center.z - halfMap).toInt()
+                    val zEnd = (center.z + halfMap).toInt()
+                    val yStart = (center.y - 50).toInt()
+                    val yEnd = (center.y + 10).toInt()
+
+                    for (x in xStart..xEnd) {
+                        val dx = x + 0.5 - center.x
+                        for (z in zStart..zEnd) {
+                            val dz = z + 0.5 - center.z
+                            val distSq = dx*dx + dz*dz
+                            if (distSq < radiusSquared) continue
+
+                            for (y in yStart..yEnd) {
+                                val block = center.world.getBlockAt(x, y, z)
+                                if (!block.type.isAir) {
+                                    block.type = Material.AIR
+                                }
+                            }
+                        }
+                    }
+
+                    currentCrumbleRadius -= 0.2
+                }
+            }
+            runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
+
+            delay(4000)
+            runnable.cancel()
+        },
+        CutsceneStep(Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><light_purple><u>Cob</u></light_purple></click>!")) { map ->
+            teleportConfig("cutscene.credit")
+            delay(4000)
+        },
+        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
     flags = setOf(),
     scores = hashMapOf(
@@ -484,8 +529,6 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun postGame() {
-        suspendSync(this::unhideSpectators)
-
         val placements = getTeamPlacements()
         gameParticipants.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
@@ -587,6 +630,7 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun cleanup() {
+        suspendSync(this::unhideSpectators)
         playerKits.forEach {
             HandlerList.unregisterAll(it.value)
         }
@@ -712,7 +756,7 @@ class CrumbleController : GameBase(
         }
         spectatingPlayers.clear()
     }
-
+    
     suspend fun awaitEnd() {
         while(true) {
             val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
@@ -816,16 +860,17 @@ class CrumbleController : GameBase(
                 for(y in min(start.y, end.y).toInt()..max(start.y, end.y).toInt())
                 for(z in min(start.z, end.z).toInt()..max(start.z, end.z).toInt()) {
                     val location = Location(currentMap.world, x.toDouble(), y.toDouble(), z.toDouble())
+                    location.block.type = Material.AIR
+
                     currentMap.world.spawnParticle(
                         Particle.BLOCK,
                         location,
-                        20,
+                        5,
                         0.0,
                         0.0,
                         0.0,
                         location.block.blockData
                     )
-                    location.block.type = Material.AIR
                 }
             }
         }
@@ -1076,6 +1121,16 @@ class CrumbleController : GameBase(
             && (event.to.x != event.from.x || event.to.y != event.from.y || event.to.z != event.from.z)
         ) {
             event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerVoidEvent(event: PlayerMoveEvent) {
+        if(!roundActive || spectatingPlayers.contains(event.player)) return
+
+        val voidHeight = currentMap.data.getInt("kill_height")
+        if(event.to.y < voidHeight) {
+            event.player.health = 0.0
         }
     }
 
