@@ -60,10 +60,9 @@ class Map(
             world.setGameRule(GameRules.ADVANCE_TIME, false)
             world.setGameRule(GameRules.ADVANCE_WEATHER, false)
 
-            when {
-                game.flags.contains(Flag.DISABLE_FALL_DAMAGE) -> world.setGameRule(GameRules.FALL_DAMAGE, false)
-                game.flags.contains(Flag.DISABLE_PVP) -> world.setGameRule(GameRules.PVP, false)
-            }
+            world.setGameRule(GameRules.FALL_DAMAGE, !game.flags.contains(Flag.DISABLE_FALL_DAMAGE))
+            world.setGameRule(GameRules.PVP, !game.flags.contains(Flag.DISABLE_PVP))
+            world.setGameRule(GameRules.LOCATOR_BAR, game.flags.contains(Flag.ENABLE_LOCATOR_BAR))
         }
 
         val dataPath = "${game.configRoot}.maps.$id.data"

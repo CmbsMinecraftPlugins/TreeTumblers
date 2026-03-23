@@ -14,6 +14,7 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
 import org.bukkit.potion.PotionEffectType
@@ -407,6 +408,18 @@ abstract class GameBase(
     fun playerDeathEvent(event: PlayerDeathEvent){
         if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
         event.drops.clear()
+    }
+
+    @EventHandler
+    fun playerAttackEvent(event: EntityDamageByEntityEvent) {
+        val attacker = event.damager
+        val attacked = event.entity
+
+        if(attacker !is Player || attacked !is Player) return
+
+        if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || flags.contains(Flag.DISABLE_PVP)) {
+            event.isCancelled = true
+        }
     }
 
     /**

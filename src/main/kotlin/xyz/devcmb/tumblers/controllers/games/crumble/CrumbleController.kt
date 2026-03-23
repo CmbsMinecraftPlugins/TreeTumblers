@@ -48,6 +48,7 @@ import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.ScoreSource
 import xyz.devcmb.tumblers.engine.map.Map
@@ -1149,6 +1150,8 @@ class CrumbleController : GameBase(
             event.isCancelled = true
             return
         }
+
+        if(flags.contains(Flag.DISABLE_TNT_AUTO_EXPLODE)) return
 
         val player = event.player
         val block = event.block
