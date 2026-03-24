@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.games.SnifferCaretakerScoreboard
 import xyz.devcmb.tumblers.util.runTaskTimer
 
 class PlayerUIController(val player: Player) {
@@ -45,6 +46,7 @@ class PlayerUIController(val player: Player) {
         }
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
+        registerScoreboard(SnifferCaretakerScoreboard())
 
         player.scoreboard = playerScoreboard
 

@@ -8,6 +8,7 @@ import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -66,6 +67,13 @@ fun List<Double>.unpackCoordinates(world: World): Location {
         getOrNull(3)?.toFloat() ?: 0f,
         getOrNull(4)?.toFloat() ?: 0f
     )
+}
+
+fun List<*>.validateCoordinates(): List<Double>? {
+    return this.map {
+        if(it !is Double) throw GameControllerException("Coordinate list does not contain exclusively doubles")
+        it
+    }
 }
 
 val Long.tickSeconds: Double

@@ -137,3 +137,31 @@ games:
             - [-500,115,463,-572,99,463]
             - [500,115,-537,428,99,-537]
             - [-500,115,-537,-572,99,-537]
+  snifferCaretaker:
+    worlds_folder: "snifferCaretaker"
+    maps:
+      facility:
+        world: "facility"
+        data:
+          cutscene:
+            start: [15.6, 66.0, 4.0, 100.2, 6.0]
+          sniffer_spawns:
+            pink: [0.0, 65.0, 0.0]
+            # Todo: when adding other team stuff, please un sacrifice the other sniffers later
+            red: [0.0, 65.0, 1000.0]
+            orange: [0.0, 65.0, 1000.0]
+            yellow: [0.0, 65.0, 1000.0]
+            green: [0.0, 65.0, 1000.0]
+            blue: [0.0, 65.0, 1000.0]
+            aqua: [0.0, 65.0, 1000.0]
+            purple: [0.0, 65.0, 1000.0]
+          spawns:
+            pink: [-8.0, 66.0, 8.0]
+            # todo other team spawns
+            red: [-8.0, 66.0, 8.0]
+            orange: [-8.0, 66.0, 8.0]
+            yellow: [-8.0, 66.0, 8.0]
+            green: [-8.0, 66.0, 8.0]
+            blue: [-8.0, 66.0, 8.0]
+            aqua: [-8.0, 66.0, 8.0]
+            purple: [-8.0, 66.0, 8.0]
