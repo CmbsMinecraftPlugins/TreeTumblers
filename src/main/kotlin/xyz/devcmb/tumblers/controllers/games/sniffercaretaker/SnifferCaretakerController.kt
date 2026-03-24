@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameBase
@@ -51,6 +52,13 @@ class SnifferCaretakerController : GameBase(
     icon = Component.empty(),
     scoreboard = "snifferCaretakerScoreboard"
 ) {
+    companion object {
+        @field:Configurable("games.snifferCaretaker.game_length")
+        var gameLength: Int = 120
+
+        @field:Configurable("games.snifferCaretaker.chest_refresh")
+        var chestRefresh: Long = 10
+    }
     val currentMap: LoadedMap
         get() {
             return loadedMaps[0]
@@ -62,6 +70,23 @@ class SnifferCaretakerController : GameBase(
         Material.DIRT
     )
 
+
+    val kit: List<ItemStack> = listOf(
+        ItemStack(Material.STONE_PICKAXE).apply {
+            itemMeta = itemMeta.also {
+                it.isUnbreakable = true
+            }
+        },
+
+        ItemStack(Material.STONE_SHOVEL).apply {
+            itemMeta = itemMeta.also {
+                it.isUnbreakable = true
+            }
+        },
+
+        ItemStack(Material.BONE_MEAL, 64)
+    )
+
     fun stockChests(team: Team) {
         // TODO: there will be MORE chests later. un hard code it later!
         val chestPosition = currentMap.data.getList("supplyChests.farm.${team.name.lowercase()}")?.validateCoordinates()
@@ -70,7 +95,7 @@ class SnifferCaretakerController : GameBase(
         val chestLocation = chestPosition.unpackCoordinates(currentMap.world)
         currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
 
-        val chest = currentMap.world.getBlockAt(chestLocation).state as Chest
+        val chest = chestLocation.block.state as Chest
         val inventory = chest.inventory
 
         inventory.setItem(0, ItemStack(Material.WHEAT_SEEDS, 10))
@@ -127,19 +152,9 @@ class SnifferCaretakerController : GameBase(
 
                 it.teleport(playerLocation)
 
-                it.inventory.addItem(ItemStack(Material.STONE_PICKAXE).apply {
-                    itemMeta = itemMeta.also { item ->
-                        item.isUnbreakable = true
-                    }
-                })
-
-                it.inventory.addItem(ItemStack(Material.STONE_SHOVEL).apply {
-                    itemMeta = itemMeta.also { item ->
-                        item.isUnbreakable = true
-                    }
-                })
-
-                it.inventory.addItem(ItemStack(Material.BONE_MEAL, 64))
+                kit.forEach { item ->
+                    it.inventory.addItem(item)
+                }
             }
         }
     }
@@ -162,9 +177,9 @@ class SnifferCaretakerController : GameBase(
             }
         }
 
-        task.runTaskTimer(TreeTumblers.plugin, 20*10, 20*10)
+        task.runTaskTimer(TreeTumblers.plugin, 20*chestRefresh, 20*chestRefresh)
 
-        countdown(120)
+        countdown(gameLength)
     }
 
     /**
@@ -193,7 +208,7 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun playerInteractEvent(event: PlayerInteractEvent) {
         // infinite bone meal
-        if (event.action == Action.RIGHT_CLICK_BLOCK && event.item?.type == Material.BONE_MEAL) {
+        if (event.action == Action.RIGHT_CLICK_BLOCK && event.item?.type == Material.BONE_MEAL && event.clickedBlock?.blockData is Ageable) {
             event.isCancelled = true
             event.clickedBlock?.applyBoneMeal(event.blockFace)
         }

@@ -139,6 +139,8 @@ games:
             - [-500,115,-537,-572,99,-537]
   snifferCaretaker:
     worlds_folder: "snifferCaretaker"
+    game_length: 120
+    chest_refresh: 10
     maps:
       facility:
         world: "facility"
