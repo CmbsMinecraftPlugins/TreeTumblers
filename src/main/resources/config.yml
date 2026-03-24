@@ -141,6 +141,10 @@ games:
     worlds_folder: "snifferCaretaker"
     game_length: 120
     chest_refresh: 10
+    tasks: [
+      {type: "HUNGRY", item: "BREAD", stars: 2},
+      {type: "HUNGRY", item: "WHEAT", stars: 1}
+    ]
     maps:
       facility:
         world: "facility"

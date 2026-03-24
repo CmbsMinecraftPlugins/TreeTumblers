@@ -3,26 +3,34 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -53,12 +61,35 @@ class SnifferCaretakerController : GameBase(
     scoreboard = "snifferCaretakerScoreboard"
 ) {
     companion object {
+        val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
+
         @field:Configurable("games.snifferCaretaker.game_length")
         var gameLength: Int = 120
 
         @field:Configurable("games.snifferCaretaker.chest_refresh")
         var chestRefresh: Long = 10
     }
+
+    override val debugToolkit = object : DebugToolkit() {
+        override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
+            "createtask" to { sender ->
+                if (sender !is Player) {
+                    sender.sendMessage(Format.error("Only players can trigger this event!"))
+                    return@to
+                }
+
+                Team.entries.filter { it.playingTeam }.forEach {
+                    createNewTask(it)
+                }
+
+                sender.sendMessage(Format.success("Created a new task!"))
+            }
+        )
+
+        override fun killEvent(killer: Player?, killed: Player?) {}
+        override fun deathEvent(killed: Player?) {}
+    }
+
     val currentMap: LoadedMap
         get() {
             return loadedMaps[0]
@@ -69,7 +100,6 @@ class SnifferCaretakerController : GameBase(
         Material.WHEAT,
         Material.DIRT
     )
-
 
     val kit: List<ItemStack> = listOf(
         ItemStack(Material.STONE_PICKAXE).apply {
@@ -87,6 +117,17 @@ class SnifferCaretakerController : GameBase(
         ItemStack(Material.BONE_MEAL, 64)
     )
 
+    val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf(
+        Team.RED to mutableListOf(),
+        Team.ORANGE to mutableListOf(),
+        Team.YELLOW to mutableListOf(),
+        Team.GREEN to mutableListOf(),
+        Team.BLUE to mutableListOf(),
+        Team.AQUA to mutableListOf(),
+        Team.PURPLE to mutableListOf(),
+        Team.PINK to mutableListOf(),
+    )
+
     fun stockChests(team: Team) {
         // TODO: there will be MORE chests later. un hard code it later!
         val chestPosition = currentMap.data.getList("supplyChests.farm.${team.name.lowercase()}")?.validateCoordinates()
@@ -99,6 +140,39 @@ class SnifferCaretakerController : GameBase(
         val inventory = chest.inventory
 
         inventory.setItem(0, ItemStack(Material.WHEAT_SEEDS, 10))
+    }
+
+    fun completeTask(team: Team, task: Task) {
+        DebugUtil.info("completed a task!")
+        currentTasks.get(team)?.remove(task)
+    }
+
+    fun createNewTask(team: Team) {
+        val tasks = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")
+        val chosenTask = tasks?.random() as HashMap<*, *>
+
+        val stars = chosenTask["stars"]
+        if (stars !is Int) {return}
+
+        val item = chosenTask["item"]
+        if (item !is String) {return}
+
+        val createdTask = when (chosenTask["type"]) {
+            "HUNGRY" -> HungryTask(
+                team,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            else -> throw GameControllerException("Task type invalid")
+        }
+
+        currentTasks.get(team)!!.add(createdTask)
+        Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
+
+        team.getOnlinePlayers().forEach { player ->
+            player.sendMessage("Your sniffer is ${createdTask.feeling}! ${createdTask.description}")
+        }
     }
 
     /**
@@ -117,7 +191,13 @@ class SnifferCaretakerController : GameBase(
                     ?: throw GameControllerException("Sniffer spawns not found")
 
                 val snifferLocation = snifferSpawn.unpackCoordinates(map.world)
-                map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
+                val sniffer = map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
+
+                sniffer.persistentDataContainer.set(
+                    snifferTeamKey,
+                    PersistentDataType.STRING,
+                    it.name
+                )
 
                 // Five Big Booms
 
