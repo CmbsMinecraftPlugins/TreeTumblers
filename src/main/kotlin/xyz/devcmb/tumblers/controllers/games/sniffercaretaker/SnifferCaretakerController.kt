@@ -3,9 +3,19 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.block.Chest
+import org.bukkit.block.data.Ageable
 import org.bukkit.entity.EntityType
+import org.bukkit.event.EventHandler
+import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameBase
@@ -45,6 +55,27 @@ class SnifferCaretakerController : GameBase(
         get() {
             return loadedMaps[0]
         }
+
+    val breakableBlocks: List<Material> = listOf(
+        Material.WHEAT_SEEDS,
+        Material.WHEAT,
+        Material.DIRT
+    )
+
+    fun stockChests(team: Team) {
+        // TODO: there will be MORE chests later. un hard code it later!
+        val chestPosition = currentMap.data.getList("supplyChests.farm.${team.name.lowercase()}")?.validateCoordinates()
+            ?: throw GameControllerException("Chest position not found")
+
+        val chestLocation = chestPosition.unpackCoordinates(currentMap.world)
+        currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
+
+        val chest = currentMap.world.getBlockAt(chestLocation).state as Chest
+        val inventory = chest.inventory
+
+        inventory.setItem(0, ItemStack(Material.WHEAT_SEEDS, 10))
+    }
+
     /**
      * The load sequence that each individual game should do
      *
@@ -64,6 +95,8 @@ class SnifferCaretakerController : GameBase(
                 map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
 
                 // Five Big Booms
+
+                stockChests(it)
             }
         }
     }
@@ -93,6 +126,20 @@ class SnifferCaretakerController : GameBase(
                 val playerLocation = playerSpawn.unpackCoordinates(map.world)
 
                 it.teleport(playerLocation)
+
+                it.inventory.addItem(ItemStack(Material.STONE_PICKAXE).apply {
+                    itemMeta = itemMeta.also { item ->
+                        item.isUnbreakable = true
+                    }
+                })
+
+                it.inventory.addItem(ItemStack(Material.STONE_SHOVEL).apply {
+                    itemMeta = itemMeta.also { item ->
+                        item.isUnbreakable = true
+                    }
+                })
+
+                it.inventory.addItem(ItemStack(Material.BONE_MEAL, 64))
             }
         }
     }
@@ -107,7 +154,17 @@ class SnifferCaretakerController : GameBase(
         gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }
-        countdown(30)
+        val task = object : BukkitRunnable() {
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    stockChests(it)
+                }
+            }
+        }
+
+        task.runTaskTimer(TreeTumblers.plugin, 20*10, 20*10)
+
+        countdown(120)
     }
 
     /**
@@ -117,4 +174,33 @@ class SnifferCaretakerController : GameBase(
         delay(1000)
     }
 
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if (!breakableBlocks.contains(event.block.type)) {
+            event.isCancelled = true
+        }
+
+        if (event.block.type == Material.WHEAT) {
+            val ageable = event.block.blockData as Ageable
+            if (ageable.age < ageable.maximumAge) { return }
+
+            event.isCancelled = true
+            currentMap.world.getBlockAt(event.block.location).type = Material.AIR
+            currentMap.world.dropItem(event.block.location, ItemStack(Material.WHEAT))
+        }
+    }
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEvent) {
+        // infinite bone meal
+        if (event.action == Action.RIGHT_CLICK_BLOCK && event.item?.type == Material.BONE_MEAL) {
+            event.isCancelled = true
+            event.clickedBlock?.applyBoneMeal(event.blockFace)
+        }
+
+        // prevent farmland trampling!
+        if (event.action == Action.PHYSICAL && event.clickedBlock?.type == Material.FARMLAND) {
+            event.isCancelled = true
+        }
+    }
 }
