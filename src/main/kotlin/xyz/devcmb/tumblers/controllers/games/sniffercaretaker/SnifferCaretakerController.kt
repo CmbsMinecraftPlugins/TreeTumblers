@@ -114,19 +114,10 @@ class SnifferCaretakerController : GameBase(
             }
         },
 
-        ItemStack(Material.BONE_MEAL, 64)
+        ItemStack(Material.BONE_MEAL, 64),
     )
 
-    val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf(
-        Team.RED to mutableListOf(),
-        Team.ORANGE to mutableListOf(),
-        Team.YELLOW to mutableListOf(),
-        Team.GREEN to mutableListOf(),
-        Team.BLUE to mutableListOf(),
-        Team.AQUA to mutableListOf(),
-        Team.PURPLE to mutableListOf(),
-        Team.PINK to mutableListOf(),
-    )
+    val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
     fun stockChests(team: Team) {
         // TODO: there will be MORE chests later. un hard code it later!
@@ -187,6 +178,8 @@ class SnifferCaretakerController : GameBase(
 
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
+                currentTasks[it] = mutableListOf()
+
                 val snifferSpawn = map.data.getList("sniffer_spawns.${it.name.lowercase()}")?.validateCoordinates()
                     ?: throw GameControllerException("Sniffer spawns not found")
 

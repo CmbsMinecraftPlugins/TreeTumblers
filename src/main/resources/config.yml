@@ -143,7 +143,9 @@ games:
     chest_refresh: 10
     tasks: [
       {type: "HUNGRY", item: "BREAD", stars: 2},
-      {type: "HUNGRY", item: "WHEAT", stars: 1}
+      {type: "HUNGRY", item: "WHEAT", stars: 1},
+      {type: "HUNGRY", item: "PUMPKIN_PIE", stars: 4},
+      {type: "HUNGRY", item: "CAKE", stars: 5}
     ]
     maps:
       facility:
