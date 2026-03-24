@@ -137,3 +137,14 @@ games:
             - [-500,115,463,-572,99,463]
             - [500,115,-537,428,99,-537]
             - [-500,115,-537,-572,99,-537]
+  deathrun:
+    worlds_folder: "deathrun"
+    hdasijhbcasd: 1
+    maps:
+      forest:
+        world: "forest"
+        data:
+          spawns:
+            main: [-4.5,63.0,15.5]
+          cutscene:
+            start: [13.4,72.0,16.4,153.3,19.5]
