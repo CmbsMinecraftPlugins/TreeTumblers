@@ -285,7 +285,6 @@ class CrumbleController : GameBase(
                     BlockVector3.at(-500, 86, 500),
                     BlockVector3.at(500, 86, -500),
                     BlockVector3.at(-500, 86, -500),
-                    BlockVector3.at(500, 86, 500),
                     BlockVector3.at(0, 86, 500),
                     BlockVector3.at(500, 86, 0)
                 )
