@@ -21,6 +21,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 @EventGame
@@ -50,7 +51,7 @@ class DeathrunController : GameBase(
 ) {
     val playingTeams = Team.entries.filter { it.playingTeam }
     val rounds = playingTeams.size
-    var currentRound = 1
+    var currentRound = 0
     val roundIndex
         get() = currentRound - 1
 
@@ -89,15 +90,22 @@ class DeathrunController : GameBase(
     override suspend fun spawn(cycle: SpawnCycle) {
         if(cycle != SpawnCycle.PRE_ROUND) return
 
-        val currentSpawn: List<Double> = currentMap.data.getList("spawns.main")?.map {
+        val mainSpawn: List<Double> = currentMap.data.getList("spawns.main")?.map {
+            if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
+            it
+        } ?: throw GameControllerException("Main spawn set not found")
+
+        val attackerSpawn: List<Double> = currentMap.data.getList("spawns.attacker")?.map {
             if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
             it
         } ?: throw GameControllerException("Spawn set not found")
 
-        val location = currentSpawn.unpackCoordinates(currentMap.world)
+        val mainLocation = mainSpawn.unpackCoordinates(currentMap.world)
+        val attackerLocation = attackerSpawn.unpackCoordinates(currentMap.world)
 
         suspendSync {
             gamePlayers.forEach {
+                val location = if(it.tumblingPlayer.team == currentTeam) attackerLocation else mainLocation
                 it.teleport(location)
             }
         }
@@ -114,6 +122,7 @@ class DeathrunController : GameBase(
         }
 
         repeat(rounds) {
+            currentRound++
             spawn(SpawnCycle.PRE_ROUND)
             asyncCountdown(10) {}
             preRound()
@@ -125,7 +134,7 @@ class DeathrunController : GameBase(
         val audience = Audience.audience(gamePlayers)
         val title = Title.title(
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
-            Format.mm("<team> is up!", Placeholder.component("team", currentTeam.formattedName)),
+            Format.mm("<team> are up!", Placeholder.component("team", currentTeam.formattedName)),
             Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(5))
         )
 

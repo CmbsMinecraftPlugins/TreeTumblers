@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
@@ -61,7 +62,9 @@ class GameController : IController {
             game.pregame()
             game.gameMain()
             game.postGame()
-            game.cleanup()
+            TreeTumblers.pluginScope.async {
+                game.cleanup()
+            }
 
             HandlerList.unregisterAll(game)
             activeGame = null
