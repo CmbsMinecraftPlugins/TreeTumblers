@@ -1,8 +1,13 @@
 package xyz.devcmb.tumblers.controllers.games.deathrun
 
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -12,7 +17,10 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 @EventGame
@@ -40,10 +48,20 @@ class DeathrunController : GameBase(
     icon = Component.empty(),
     scoreboard = "deathrunScoreboard"
 ) {
-    val rounds = Team.entries.filter { it.playingTeam }.size
+    val playingTeams = Team.entries.filter { it.playingTeam }
+    val rounds = playingTeams.size
+    var currentRound = 1
+    val roundIndex
+        get() = currentRound - 1
+
     val currentMap: LoadedMap
         get() {
-            return loadedMaps[rounds - 1]
+            return loadedMaps[roundIndex]
+        }
+
+    val currentTeam: Team
+        get() {
+            return playingTeams[roundIndex]
         }
     /**
      * The load sequence that each individual game should do
@@ -91,16 +109,40 @@ class DeathrunController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
+        Bukkit.getOnlinePlayers().forEach {
+            it.enableBossBar("countdownBossbar")
+        }
+
         repeat(rounds) {
             spawn(SpawnCycle.PRE_ROUND)
-            delay(10000)
+            asyncCountdown(10) {}
+            preRound()
         }
+    }
+
+    suspend fun preRound() {
+        delay(1000)
+        val audience = Audience.audience(gamePlayers)
+        val title = Title.title(
+            Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
+            Format.mm("<team> is up!", Placeholder.component("team", currentTeam.formattedName)),
+            Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(5))
+        )
+
+        audience.showTitle(title)
+
+        delay(4000)
+        MiscUtils.subtitleCountdown(
+            audience,
+            Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
+            5
+        )
     }
 
     /**
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        TODO("Not yet implemented")
+        delay(2000)
     }
 }

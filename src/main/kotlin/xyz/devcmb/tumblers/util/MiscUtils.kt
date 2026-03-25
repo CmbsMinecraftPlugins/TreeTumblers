@@ -1,9 +1,15 @@
 package xyz.devcmb.tumblers.util
 
+import io.papermc.paper.util.Tick
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.block.Biome
@@ -169,6 +175,26 @@ object MiscUtils {
             val score = objective.getScore("line$index")
             score.customName(text)
             score.score = lines.size - index
+        }
+    }
+
+    suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int) {
+        repeat(length) {
+            val color = when(length - it) {
+                3 -> NamedTextColor.GREEN
+                2 -> NamedTextColor.YELLOW
+                1 -> NamedTextColor.RED
+                else -> NamedTextColor.WHITE
+            }
+
+            val title = Title.title(
+                title,
+                Component.text("> ${length - it} <", color).decoration(TextDecoration.BOLD, true),
+                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+            )
+
+            audience.showTitle(title)
+            delay(1000)
         }
     }
 
