@@ -11,6 +11,7 @@ import org.bukkit.block.data.Ageable
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
@@ -121,7 +122,7 @@ class SnifferCaretakerController : GameBase(
 
     fun stockChests(team: Team) {
         // TODO: there will be MORE chests later. un hard code it later!
-        val chestPosition = currentMap.data.getList("supplyChests.farm.${team.name.lowercase()}")?.validateCoordinates()
+        val chestPosition = currentMap.data.getList("supply_chests.farm.${team.name.lowercase()}")?.validateCoordinates()
             ?: throw GameControllerException("Chest position not found")
 
         val chestLocation = chestPosition.unpackCoordinates(currentMap.world)
@@ -135,22 +136,47 @@ class SnifferCaretakerController : GameBase(
 
     fun completeTask(team: Team, task: Task) {
         DebugUtil.info("completed a task!")
+
+        task.display?.remove()
         currentTasks.get(team)?.remove(task)
+
+        val displaySpawn = currentMap.data.getList("task_boards.${team.name.lowercase()}")?.validateCoordinates()
+            ?: throw GameControllerException("Task board spawn not found")
+
+        currentTasks[team]?.forEachIndexed { index, it ->
+            val displayLocation = displaySpawn.unpackCoordinates(currentMap.world)
+                .add(0.0, index * 0.5, 0.0)
+
+            it.display?.teleport(displayLocation)
+        }
     }
 
     fun createNewTask(team: Team) {
-        val tasks = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")
-        val chosenTask = tasks?.random() as HashMap<*, *>
+        @Suppress("UNCHECKED_CAST") //devcmb, this might be the wrong way to do it, but this has brought me enough pain, i want it to SHUT UP!
+        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks") as List<HashMap<*, *>>
+        val filteredTasks = tasks.filter {
+            currentTasks[team]!!.find { task ->
+                task.id == it["id"]
+            } == null
+        }
+
+        if (filteredTasks.isEmpty()) return
+
+        val chosenTask = filteredTasks.random()
 
         val stars = chosenTask["stars"]
-        if (stars !is Int) {return}
+        if (stars !is Int) return
+
+        val id = chosenTask["id"]
+        if (id !is String) return
 
         val item = chosenTask["item"]
-        if (item !is String) {return}
+        if (item !is String) return
 
         val createdTask = when (chosenTask["type"]) {
             "HUNGRY" -> HungryTask(
                 team,
+                id,
                 this,
                 stars,
                 Material.getMaterial(item)
@@ -158,11 +184,24 @@ class SnifferCaretakerController : GameBase(
             else -> throw GameControllerException("Task type invalid")
         }
 
+        val displaySpawn = currentMap.data.getList("task_boards.${team.name.lowercase()}")?.validateCoordinates()
+            ?: throw GameControllerException("Task board spawn not found")
+
+        val displayLocation = displaySpawn.unpackCoordinates(currentMap.world)
+            .add(0.0, currentTasks.get(team)!!.size * 0.5, 0.0)
+
+        val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
+        display.alignment = TextDisplay.TextAlignment.LEFT
+        display.lineWidth = 400
+        display.text(createdTask.displayText)
+
+        createdTask.display = display
+
         currentTasks.get(team)!!.add(createdTask)
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
         team.getOnlinePlayers().forEach { player ->
-            player.sendMessage("Your sniffer is ${createdTask.feeling}! ${createdTask.description}")
+            player.sendMessage(createdTask.displayText)
         }
     }
 
