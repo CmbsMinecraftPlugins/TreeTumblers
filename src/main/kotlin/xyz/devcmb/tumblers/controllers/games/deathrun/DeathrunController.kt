@@ -256,7 +256,10 @@ class DeathrunController : GameBase(
 
                 cooldowns.add(index)
                 TreeTumblers.pluginScope.launch {
+                    val round = currentRound
                     trap.activate()
+                    delay((trap.cooldown * 1000).toLong())
+                    if(round == currentRound) cooldowns.remove(index)
                 }
             }
         }.build())

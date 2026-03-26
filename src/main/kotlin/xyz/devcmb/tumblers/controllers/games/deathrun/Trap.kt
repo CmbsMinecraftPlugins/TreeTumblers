@@ -17,6 +17,7 @@ interface Trap {
 
     val id: String
     val itemKey: NamespacedKey
+    val cooldown: Int
 
     suspend fun activate()
 }

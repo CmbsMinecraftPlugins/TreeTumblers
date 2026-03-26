@@ -22,6 +22,7 @@ class MagmaFallTrap(
     override val name: Component = Format.mm("<bold><yellow>Magma Fall Trap</yellow></bold>")
     override val id: String = "magma_fall"
     override val itemKey: NamespacedKey = NamespacedKey("tumbling", "deathrun/magma_fall_trap")
+    override val cooldown: Int = 10
 
     override suspend fun activate() {
         val replaceStart: Location = data.getList("replace_start")?.map {
