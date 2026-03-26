@@ -21,13 +21,11 @@ class HungryTask(
     val item: Material?
 ) : Task {
     override val feeling = "hungry"
-    // todo: pretty this up, maybe, like color and stuff in the messages, this is just proof of concept ..?
-    override val description = "Feed it "
     override var display: TextDisplay? = null
 
-    val displayText = Format.mm(
+    override val displayText = Format.mm(
         "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! $description" +
+                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
                 "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>")
 
     @EventHandler
@@ -44,6 +42,6 @@ class HungryTask(
 
         playerItem.amount -= 1
 
-        taskComplete()
+        snifferCaretaker.completeTask(this.team, this)
     }
 }

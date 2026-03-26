@@ -13,6 +13,7 @@ import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -24,6 +25,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.GameBase
@@ -65,7 +67,7 @@ class SnifferCaretakerController : GameBase(
         val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
 
         @field:Configurable("games.snifferCaretaker.game_length")
-        var gameLength: Int = 120
+        var gameLength: Int = 600
 
         @field:Configurable("games.snifferCaretaker.chest_refresh")
         var chestRefresh: Long = 10
@@ -135,20 +137,29 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun completeTask(team: Team, task: Task) {
-        DebugUtil.info("completed a task!")
-
         task.display?.remove()
-        currentTasks.get(team)?.remove(task)
+        HandlerList.unregisterAll(task)
+
+        val taskIndex = currentTasks[team]!!.indexOfFirst {
+            it.id == task.id
+        }
+
+        DebugUtil.info("$taskIndex")
+
+        if (taskIndex == -1) return
+
+        currentTasks[team]!!.removeAt(taskIndex)
 
         val displaySpawn = currentMap.data.getList("task_boards.${team.name.lowercase()}")?.validateCoordinates()
             ?: throw GameControllerException("Task board spawn not found")
 
-        currentTasks[team]?.forEachIndexed { index, it ->
+        currentTasks[team]!!.forEachIndexed { index, it ->
             val displayLocation = displaySpawn.unpackCoordinates(currentMap.world)
                 .add(0.0, index * 0.5, 0.0)
 
             it.display?.teleport(displayLocation)
         }
+
     }
 
     fun createNewTask(team: Team) {
@@ -173,8 +184,17 @@ class SnifferCaretakerController : GameBase(
         val item = chosenTask["item"]
         if (item !is String) return
 
+        DebugUtil.info("Creating Task $id : Stars $stars Item $item")
+
         val createdTask = when (chosenTask["type"]) {
             "HUNGRY" -> HungryTask(
+                team,
+                id,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            "THIRSTY" -> ThirstyTask(
                 team,
                 id,
                 this,

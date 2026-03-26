@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.Listener
 import xyz.devcmb.tumblers.data.Team
@@ -10,16 +11,16 @@ interface Task : Listener {
 
     val id: String
     val feeling: String
-    val description: String
     val stars: Int
 
     var display: TextDisplay?
+    val displayText: Component
 
     fun setupDisplay() {
 
     }
 
     fun taskComplete() {
-        snifferCaretaker.completeTask(this.team, this)
+
     }
 }

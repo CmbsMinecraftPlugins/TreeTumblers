@@ -139,13 +139,16 @@ games:
             - [-500,115,-537,-572,99,-537]
   snifferCaretaker:
     worlds_folder: "snifferCaretaker"
-    game_length: 120
+    game_length: 600
     chest_refresh: 10
     tasks: [
       {id: "hungry_bread", type: "HUNGRY", item: "BREAD", stars: 2},
       {id: "hungry_wheat", type: "HUNGRY", item: "WHEAT", stars: 1},
       {id: "hungry_pumpkin_pie", type: "HUNGRY", item: "PUMPKIN_PIE", stars: 4},
-      {id: "hungry_cake", type: "HUNGRY", item: "CAKE", stars: 5}
+      {id: "hungry_cake", type: "HUNGRY", item: "CAKE", stars: 5},
+
+      {id: "thirsty_water", type: "THIRSTY", item: "WATER_BUCKET", stars: 1},
+      {id: "thirsty_milk", type: "THIRSTY", item: "MILK_BUCKET", stars: 2}
     ]
     maps:
       facility:
