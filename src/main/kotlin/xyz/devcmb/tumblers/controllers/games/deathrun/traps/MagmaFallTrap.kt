@@ -50,7 +50,7 @@ class MagmaFallTrap(
             }
         }
 
-        delay(600)
+        delay(400)
 
         suspendSync {
             replaceStart.forEachRegion(replaceEnd) {

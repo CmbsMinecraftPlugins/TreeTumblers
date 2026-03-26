@@ -12,6 +12,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.block.data.type.Gate
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -32,6 +33,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -57,7 +59,8 @@ class DeathrunController : GameBase(
     ),
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
-        Flag.DISABLE_PVP
+        Flag.DISABLE_PVP,
+        Flag.DISABLE_BLOCK_BREAKING
     ),
     scores = hashMapOf(),
     icon = Component.empty(),
@@ -204,6 +207,7 @@ class DeathrunController : GameBase(
             asyncCountdown(10) {}
             preRound()
             roundActive = true
+            openGate()
             countdown(300) // todo: replace
             roundActive = false
         }
@@ -233,6 +237,28 @@ class DeathrunController : GameBase(
      */
     override suspend fun postGame() {
         delay(2000)
+    }
+
+    suspend fun openGate() {
+        val gateStart: Location = currentMap.data.getList("gate_start")?.map {
+            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
+            it.toDouble()
+        }?.unpackCoordinates(currentMap.world)
+            ?: throw GameControllerException("Gate start not found")
+
+        val gateEnd: Location = currentMap.data.getList("gate_end")?.map {
+            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
+            it.toDouble()
+        }?.unpackCoordinates(currentMap.world)
+            ?: throw GameControllerException("Gate end not found")
+
+        suspendSync {
+            gateStart.forEachRegion(gateEnd) {
+                it.blockData = (it.blockData as Gate).also { gate ->
+                    gate.isOpen = true
+                }
+            }
+        }
     }
 
     fun setCurrentTrap(player: Player, index: Int) {

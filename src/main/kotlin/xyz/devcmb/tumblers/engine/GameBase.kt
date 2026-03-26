@@ -14,6 +14,7 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
@@ -420,6 +421,12 @@ abstract class GameBase(
         if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || flags.contains(Flag.DISABLE_PVP)) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun blockPlaceEvent(event: BlockPlaceEvent) {
+        if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
+            event.isCancelled = true
     }
 
     /**
