@@ -10,6 +10,7 @@ import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -112,6 +113,11 @@ class PlayerController : IController {
     @EventHandler
     fun playerInteract(event: PlayerInteractEvent) {
         AdvancedItemRegistry.handleInteract(event)
+    }
+
+    @EventHandler
+    fun playerDropItem(event: PlayerDropItemEvent) {
+        AdvancedItemRegistry.handleDrop(event)
     }
 
     /*

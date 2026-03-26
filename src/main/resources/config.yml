@@ -150,6 +150,9 @@ games:
             start: [13.4,72.0,16.4,153.3,19.5]
           traps:
             - id: "magma_fall"
+              start: [-1,70,-2]
+              end: [18,65,4]
               data:
-                start: [0.0,0.0,0.0]
-                end: [0.0,0.0,0.0]
+                replace_type: STONE
+                replace_start: [-1,61,22]
+                replace_end: [18,61,7]

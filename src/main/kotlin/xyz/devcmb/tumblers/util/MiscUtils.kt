@@ -21,8 +21,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.cos

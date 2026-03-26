@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.World
+import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -11,6 +12,8 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 val playerController: PlayerController by lazy {
@@ -66,6 +69,20 @@ fun List<Double>.unpackCoordinates(world: World): Location {
         getOrNull(3)?.toFloat() ?: 0f,
         getOrNull(4)?.toFloat() ?: 0f
     )
+}
+
+fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
+    return this.x >= min(bound1.x, bound2.x) && this.y >= min(bound1.y, bound2.y)
+        && this.z >= min(bound1.z, bound2.z) && this.x <= max(bound1.x, bound2.x)
+        && this.y <= max(bound1.y, bound2.y) && this.z <= max(bound1.z, bound2.z)
+}
+
+fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
+    for(x in min(this.x, other.x).toInt()..max(this.x, other.x).toInt())
+    for(y in min(this.y, other.y).toInt()..max(this.y, other.y).toInt())
+    for(z in min(this.z, other.z).toInt()..max(this.z, other.z).toInt()) {
+        execute(this.world.getBlockAt(x, y, z))
+    }
 }
 
 val Long.tickSeconds: Double
