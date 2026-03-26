@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.util
 
+import com.sk89q.worldedit.math.BlockVector3
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
@@ -67,6 +68,10 @@ fun List<Double>.unpackCoordinates(world: World): Location {
         getOrNull(3)?.toFloat() ?: 0f,
         getOrNull(4)?.toFloat() ?: 0f
     )
+}
+
+fun Location.toBlockVector3(): BlockVector3 {
+    return BlockVector3.at(this.x, this.y, this.z)
 }
 
 fun List<*>.validateCoordinates(): List<Double>? {

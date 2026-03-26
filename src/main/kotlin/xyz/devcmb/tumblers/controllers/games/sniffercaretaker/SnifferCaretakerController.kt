@@ -1,9 +1,15 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.regions.CuboidRegion
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Chest
@@ -37,6 +43,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
@@ -123,12 +130,16 @@ class SnifferCaretakerController : GameBase(
 
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
+    fun offsetLocation(location: Location, team: Team): Location {
+        return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
+    }
+
     fun stockChests(team: Team) {
         // TODO: there will be MORE chests later. un hard code it later!
-        val chestPosition = currentMap.data.getList("supply_chests.farm.${team.name.lowercase()}")?.validateCoordinates()
+        val chestPosition = currentMap.data.getList("supply_chests.farm")?.validateCoordinates()
             ?: throw GameControllerException("Chest position not found")
 
-        val chestLocation = chestPosition.unpackCoordinates(currentMap.world)
+        val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), team)
         currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
 
         val chest = chestLocation.block.state as Chest
@@ -151,11 +162,11 @@ class SnifferCaretakerController : GameBase(
 
         currentTasks[team]!!.removeAt(taskIndex)
 
-        val displaySpawn = currentMap.data.getList("task_boards.${team.name.lowercase()}")?.validateCoordinates()
+        val displaySpawn = currentMap.data.getList("task_board")?.validateCoordinates()
             ?: throw GameControllerException("Task board spawn not found")
 
         currentTasks[team]!!.forEachIndexed { index, it ->
-            val displayLocation = displaySpawn.unpackCoordinates(currentMap.world)
+            val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
                 .add(0.0, index * 0.5, 0.0)
 
             it.display?.teleport(displayLocation)
@@ -223,10 +234,10 @@ class SnifferCaretakerController : GameBase(
             else -> throw GameControllerException("Task type invalid")
         }
 
-        val displaySpawn = currentMap.data.getList("task_boards.${team.name.lowercase()}")?.validateCoordinates()
+        val displaySpawn = currentMap.data.getList("task_board")?.validateCoordinates()
             ?: throw GameControllerException("Task board spawn not found")
 
-        val displayLocation = displaySpawn.unpackCoordinates(currentMap.world)
+        val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
             .add(0.0, currentTasks.get(team)!!.size * 0.5, 0.0)
 
         val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
@@ -253,15 +264,33 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun gameLoad() {
         val map = loadMap(maps.random(), 1)
+        val adaptedWorld = BukkitAdapter.adapt(map.world)
+        val session = WorldEdit.getInstance().newEditSession(adaptedWorld)
+
+        val mapBounds = map.data.getList("base_map")!!.map { it as List<*>
+            it.validateCoordinates()
+        }
+
+        val mapBound1 = mapBounds[0]!!.unpackCoordinates(map.world)
+        val mapBound2 = mapBounds[1]!!.unpackCoordinates(map.world)
+
+        val region = CuboidRegion(mapBound1.toBlockVector3(), mapBound2.toBlockVector3())
+
+        repeat(7) {
+            val forwardExtentCopy = ForwardExtentCopy(adaptedWorld, region, adaptedWorld, region.minimumPoint.add((it + 1) * 1000, 0, 0))
+            Operations.complete(forwardExtentCopy)
+        }
+
+        session.close()
 
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
                 currentTasks[it] = mutableListOf()
 
-                val snifferSpawn = map.data.getList("sniffer_spawns.${it.name.lowercase()}")?.validateCoordinates()
+                val snifferSpawn = map.data.getList("sniffer_spawn")?.validateCoordinates()
                     ?: throw GameControllerException("Sniffer spawns not found")
 
-                val snifferLocation = snifferSpawn.unpackCoordinates(map.world)
+                val snifferLocation = offsetLocation(snifferSpawn.unpackCoordinates(map.world), it)
                 val sniffer = map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
 
                 sniffer.isInvulnerable = true
@@ -298,10 +327,10 @@ class SnifferCaretakerController : GameBase(
                 it.spigot().respawn()
                 val tumblingPlayer = it.tumblingPlayer
 
-                val playerSpawn = currentMap.data.getList("spawns.${tumblingPlayer.team.name.lowercase()}")?.validateCoordinates()
+                val playerSpawn = currentMap.data.getList("spawn")?.validateCoordinates()
                     ?: throw GameControllerException("Spawn not found")
 
-                val playerLocation = playerSpawn.unpackCoordinates(map.world)
+                val playerLocation = offsetLocation(playerSpawn.unpackCoordinates(map.world), tumblingPlayer.team)
 
                 it.teleport(playerLocation)
 
