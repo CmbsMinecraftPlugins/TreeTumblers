@@ -9,8 +9,12 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
+import org.bukkit.configuration.ConfigurationSection
+import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.deathrun.traps.MagmaFallTrap
+import xyz.devcmb.tumblers.controllers.games.deathrun.traps.Trap
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -64,6 +68,10 @@ class DeathrunController : GameBase(
         get() {
             return playingTeams[roundIndex]
         }
+
+    val traps: ArrayList<Class<out Trap>> = ArrayList()
+    val mapTraps: HashMap<Int, List<Trap>> = HashMap()
+
     /**
      * The load sequence that each individual game should do
      *
@@ -72,8 +80,36 @@ class DeathrunController : GameBase(
      * Anything that needs to be executed before players can access the game should be done here
      */
     override suspend fun gameLoad() {
+        traps.add(MagmaFallTrap::class.java)
+
         repeat(rounds) {
-            loadMap(maps.random(), it + 1)
+            val map = loadMap(maps.random(), it + 1)
+
+            val traps: List<Trap> = map.data.getList("traps")?.map { trap ->
+                if(
+                    trap !is HashMap<*,*>
+                    || trap["id"] == null
+                    || trap["id"] !is String
+                    || trap["data"] == null
+                    || trap["data"] !is HashMap<*,*>
+                ) throw GameControllerException("Trap is not a hashmap containing id and data")
+
+                val id = trap["id"]
+                val trapClass = traps.find { clazz ->
+                    val ins = clazz.getDeclaredConstructor(ConfigurationSection::class.java)
+                        .newInstance(YamlConfiguration().createSection("blah.blah.blah"))
+                    
+                    ins.id == id
+                } ?: throw GameControllerException("Trap $id not found")
+
+                // I tried doing `map.data.getConfigurationSection("traps.$index.data")` but that just always returned null no matter what
+                // So this copilot fix is the best I've got :sob:
+                // this took too long
+                val data = YamlConfiguration().createSection("data", trap["data"] as HashMap<*,*>)
+                trapClass.getDeclaredConstructor(ConfigurationSection::class.java).newInstance(data)
+            } ?: throw GameControllerException("Traps list not found")
+
+            mapTraps.put(it, traps)
         }
     }
 
