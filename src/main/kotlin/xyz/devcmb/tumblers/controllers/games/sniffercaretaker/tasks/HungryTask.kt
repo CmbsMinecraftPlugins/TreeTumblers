@@ -31,14 +31,14 @@ class HungryTask(
     @EventHandler
     fun playerInteractEntity(event: PlayerInteractEntityEvent) {
         val tumblingPlayer = event.player.tumblingPlayer
-        if (tumblingPlayer.team != team) { return }
+        if (tumblingPlayer.team != team) return
 
         val sniffer = event.rightClicked
-        if (sniffer.type != EntityType.SNIFFER) { return }
-        if (sniffer.persistentDataContainer.get(SnifferCaretakerController.snifferTeamKey, PersistentDataType.STRING) != team.name) { return }
+        if (sniffer.type != EntityType.SNIFFER) return
+        if (sniffer.persistentDataContainer.get(SnifferCaretakerController.snifferTeamKey, PersistentDataType.STRING) != team.name) return
 
         val playerItem = event.player.inventory.getItem(event.hand)
-        if (playerItem.type != item) { return }
+        if (playerItem.type != item) return
 
         playerItem.amount -= 1
 

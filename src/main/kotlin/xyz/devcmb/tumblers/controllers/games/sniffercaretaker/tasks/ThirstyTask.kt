@@ -33,14 +33,14 @@ class ThirstyTask(
     @EventHandler
     fun playerInteract(event: PlayerInteractEvent) {
         val tumblingPlayer = event.player.tumblingPlayer
-        if (tumblingPlayer.team != team) { return }
+        if (tumblingPlayer.team != team) return
 
         val cauldron = event.clickedBlock
         if (cauldron == null) return
         if (cauldron.type != Material.CAULDRON) return
 
         val playerItem = event.item
-        if (playerItem?.type != item) { return }
+        if (playerItem?.type != item) return
 
         if (event.hand == null) return
 

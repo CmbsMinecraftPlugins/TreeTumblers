@@ -148,7 +148,11 @@ games:
       {id: "hungry_cake", type: "HUNGRY", item: "CAKE", stars: 5},
 
       {id: "thirsty_water", type: "THIRSTY", item: "WATER_BUCKET", stars: 1},
-      {id: "thirsty_milk", type: "THIRSTY", item: "MILK_BUCKET", stars: 2}
+      {id: "thirsty_milk", type: "THIRSTY", item: "MILK_BUCKET", stars: 2},
+
+      {id: "bored_dirt", type: "BORED", item: "DIRT", stars: 1},
+      {id: "bored_mud", type: "BORED", item: "MUD", stars: 2},
+      {id: "bored_moss_block", type: "BORED", item: "MOSS_BLOCK", stars: 2}
     ]
     maps:
       facility:
@@ -166,6 +170,16 @@ games:
             blue: [0.0, 65.0, 1000.0]
             aqua: [0.0, 65.0, 1000.0]
             purple: [0.0, 65.0, 1000.0]
+          pens:
+            pink: [[-2.0, 65.0, -2.0], [2.0, 67.0, 2.0]]
+            red: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            orange: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            yellow: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            green: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            blue: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            aqua: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+            purple: [[0.0,0.0,0.0],[0.0,0.0,0.0]]
+
           spawns:
             pink: [-8.0, 66.0, 8.0]
             # todo other team spawns

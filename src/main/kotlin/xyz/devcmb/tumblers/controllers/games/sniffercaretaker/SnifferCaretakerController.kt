@@ -24,6 +24,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.BoredTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
@@ -206,6 +207,13 @@ class SnifferCaretakerController : GameBase(
                 Material.getMaterial(item)
             )
             "THIRSTY" -> ThirstyTask(
+                team,
+                id,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            "BORED" -> BoredTask(
                 team,
                 id,
                 this,
