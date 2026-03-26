@@ -163,8 +163,19 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun createNewTask(team: Team) {
-        @Suppress("UNCHECKED_CAST") //devcmb, this might be the wrong way to do it, but this has brought me enough pain, i want it to SHUT UP!
-        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks") as List<HashMap<*, *>>
+        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
+            if (
+                it !is HashMap<*, *>
+                || it["id"] == null
+                || it["id"] !is String
+                || it["stars"] == null
+                || it["stars"] !is Int
+                || it["item"] == null
+                || it["item"] !is String
+            ) throw GameControllerException("Task contains invalid data")
+            it
+        } ?: throw GameControllerException("Task list not found")
+
         val filteredTasks = tasks.filter {
             currentTasks[team]!!.find { task ->
                 task.id == it["id"]
@@ -244,6 +255,8 @@ class SnifferCaretakerController : GameBase(
 
                 val snifferLocation = snifferSpawn.unpackCoordinates(map.world)
                 val sniffer = map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
+
+                sniffer.isInvulnerable = true
 
                 sniffer.persistentDataContainer.set(
                     snifferTeamKey,
