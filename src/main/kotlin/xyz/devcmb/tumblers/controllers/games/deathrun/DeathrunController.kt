@@ -207,7 +207,7 @@ class DeathrunController : GameBase(
             asyncCountdown(10) {}
             preRound()
             roundActive = true
-            openGate()
+            roundStart()
             countdown(300) // todo: replace
             roundActive = false
         }
@@ -239,7 +239,11 @@ class DeathrunController : GameBase(
         delay(2000)
     }
 
-    suspend fun openGate() {
+    suspend fun roundStart() {
+        gameParticipants.filter { it.tumblingPlayer.team == currentTeam }.forEach {
+            giveTrapItem(it, it.location)
+        }
+
         val gateStart: Location = currentMap.data.getList("gate_start")?.map {
             if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
             it.toDouble()
@@ -261,7 +265,13 @@ class DeathrunController : GameBase(
         }
     }
 
-    fun setCurrentTrap(player: Player, index: Int) {
+    fun giveTrapItem(player: Player, pos: Location) {
+        val index = mapTraps[roundIndex]!!.indexOfFirst { pos.isInRegion(it.from, it.to) }
+        if(index == -1) return
+
+        val playerTrap = currentTraps[player]
+        if(playerTrap == index) return
+
         currentTraps[player] = index
         player.inventory.clear()
 
@@ -297,15 +307,7 @@ class DeathrunController : GameBase(
         if(player.tumblingPlayer.team != currentTeam || !roundActive) return
 
         val pos = event.to
-
-        val currentTrap = mapTraps[roundIndex]!!.indexOfFirst { pos.isInRegion(it.from, it.to) }
-        if(currentTrap == -1) return
-
-        val playerTrap = currentTraps[player]
-
-        if(playerTrap != currentTrap) {
-            setCurrentTrap(player, currentTrap)
-        }
+        giveTrapItem(event.player, pos)
     }
 
     class DeathrunTrapException(override val message: String) : Exception()
