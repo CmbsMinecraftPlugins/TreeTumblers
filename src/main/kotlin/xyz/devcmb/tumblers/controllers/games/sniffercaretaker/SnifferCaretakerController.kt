@@ -128,6 +128,12 @@ class SnifferCaretakerController : GameBase(
         ItemStack(Material.BONE_MEAL, 64),
     )
 
+    val chestItems: List<List<*>> = listOf(
+        listOf(Material.WHEAT_SEEDS, 8),
+        listOf(Material.PUMPKIN_SEEDS, 1),
+        listOf(Material.SUGAR_CANE, 1)
+    )
+
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
     fun offsetLocation(location: Location, team: Team): Location {
@@ -135,7 +141,6 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun stockChests(team: Team) {
-        // TODO: there will be MORE chests later. un hard code it later!
         val chestPosition = currentMap.data.getList("supply_chests.farm")?.validateCoordinates()
             ?: throw GameControllerException("Chest position not found")
 
@@ -145,7 +150,31 @@ class SnifferCaretakerController : GameBase(
         val chest = chestLocation.block.state as Chest
         val inventory = chest.inventory
 
-        inventory.setItem(0, ItemStack(Material.WHEAT_SEEDS, 10))
+        chestItems.forEach {
+            val material = it[0] as Material
+            val amount = it[1] as Int
+
+            fun chooseIndex() : Int {
+                val index = (0..26).random()
+                val slot = inventory.getItem(index)
+
+                if (slot == null) return index
+                if (slot.type != material) return chooseIndex()
+
+                return index
+            }
+
+            repeat(amount) {
+                val index = chooseIndex()
+                val slot = inventory.getItem(index)
+
+                if (slot == null) {
+                    inventory.setItem(index, ItemStack(material))
+                } else {
+                    slot.add(1)
+                }
+            }
+        }
     }
 
     fun completeTask(team: Team, task: Task) {
