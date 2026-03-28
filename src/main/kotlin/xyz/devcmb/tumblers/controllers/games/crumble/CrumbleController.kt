@@ -50,10 +50,11 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.engine.ScoreSource
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -142,15 +143,15 @@ class CrumbleController : GameBase(
     ),
     flags = setOf(),
     scores = hashMapOf(
-        ScoreSource.KILL to 45,
-        ScoreSource.INDIV_ROUND_WIN to 120,
-        ScoreSource.INDIV_ROUND_DRAW to 50,
-        ScoreSource.INDIV_ROUND_LOSE to 25,
-        ScoreSource.TEAM_ROUND_WIN to 250,
-        ScoreSource.TEAM_ROUND_DRAW to 140,
-        ScoreSource.TEAM_ROUND_LOSE to 50,
-        ScoreSource.TEAM_PLACEMENT to 80,
-        ScoreSource.INDIVIDUAL_PLACEMENT to 4,
+        CommonScoreSource.KILL to 45,
+        CommonScoreSource.INDIV_ROUND_WIN to 120,
+        CommonScoreSource.INDIV_ROUND_DRAW to 50,
+        CommonScoreSource.INDIV_ROUND_LOSE to 25,
+        CommonScoreSource.TEAM_ROUND_WIN to 250,
+        CommonScoreSource.TEAM_ROUND_DRAW to 140,
+        CommonScoreSource.TEAM_ROUND_LOSE to 50,
+        CommonScoreSource.TEAM_PLACEMENT to 80,
+        CommonScoreSource.INDIVIDUAL_PLACEMENT to 4,
     ),
     icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")),
     scoreboard = "crumbleScoreboard"
@@ -173,25 +174,25 @@ class CrumbleController : GameBase(
     }
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
-        ScoreSource.INDIV_ROUND_WIN to { amount ->
+        CommonScoreSource.INDIV_ROUND_WIN to { amount ->
             gameMessage(
                 Component.text("Round Won! ", NamedTextColor.WHITE)
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
         },
-        ScoreSource.INDIV_ROUND_DRAW to { amount ->
+        CommonScoreSource.INDIV_ROUND_DRAW to { amount ->
             gameMessage(
                 Component.text("Round Drawn! ", NamedTextColor.WHITE)
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
         },
-        ScoreSource.INDIV_ROUND_LOSE to { amount ->
+        CommonScoreSource.INDIV_ROUND_LOSE to { amount ->
             gameMessage(
                 Component.text("Round Lost! ", NamedTextColor.WHITE)
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
         },
-        ScoreSource.INDIVIDUAL_PLACEMENT to { amount ->
+        CommonScoreSource.INDIVIDUAL_PLACEMENT to { amount ->
             gameMessage(
                 Component.text("Placement Score ")
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
@@ -557,7 +558,7 @@ class CrumbleController : GameBase(
 
         val teamPlacements = getTeamPlacements()
         teamPlacements.forEach {
-            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.TEAM_PLACEMENT)
+            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.TEAM_PLACEMENT)
 
             teamScoresComponent = teamScoresComponent.append(
                 Component.empty()
@@ -571,7 +572,7 @@ class CrumbleController : GameBase(
 
             grantTeamScore(
                 it.first,
-                ScoreSource.TEAM_PLACEMENT,
+                CommonScoreSource.TEAM_PLACEMENT,
                 score
             )
         }
@@ -585,7 +586,7 @@ class CrumbleController : GameBase(
 
         val indivPlacements = getIndividualPlacements()
         indivPlacements.forEach {
-            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
+            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
             individualScoresComponent = individualScoresComponent.append(
                 Component.empty()
                     .appendNewline()
@@ -601,10 +602,10 @@ class CrumbleController : GameBase(
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
 
         indivPlacements.forEach {
-            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(ScoreSource.INDIVIDUAL_PLACEMENT)
+            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
             grantScore(
                 it.first,
-                ScoreSource.INDIVIDUAL_PLACEMENT,
+                CommonScoreSource.INDIVIDUAL_PLACEMENT,
                 placementScore
             )
         }
@@ -909,10 +910,10 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
-            grantScore(it, ScoreSource.INDIV_ROUND_WIN)
+            grantScore(it, CommonScoreSource.INDIV_ROUND_WIN)
         }
 
-        grantTeamScore(team, ScoreSource.TEAM_ROUND_WIN)
+        grantTeamScore(team, CommonScoreSource.TEAM_ROUND_WIN)
         matchResults[roundIndex].put(team, RoundResult.WIN)
     }
 
@@ -925,10 +926,10 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
-            grantScore(it, ScoreSource.INDIV_ROUND_LOSE)
+            grantScore(it, CommonScoreSource.INDIV_ROUND_LOSE)
         }
 
-        grantTeamScore(team, ScoreSource.TEAM_ROUND_LOSE)
+        grantTeamScore(team, CommonScoreSource.TEAM_ROUND_LOSE)
         matchResults[roundIndex].put(team, RoundResult.LOSS)
     }
 
@@ -941,20 +942,20 @@ class CrumbleController : GameBase(
 
         team.getOnlinePlayers().forEach {
             it.showTitle(title)
-            grantScore(it, ScoreSource.INDIV_ROUND_DRAW)
+            grantScore(it, CommonScoreSource.INDIV_ROUND_DRAW)
         }
 
-        grantTeamScore(team, ScoreSource.TEAM_ROUND_DRAW)
+        grantTeamScore(team, CommonScoreSource.TEAM_ROUND_DRAW)
         matchResults[roundIndex].put(team, RoundResult.DRAW)
     }
 
     fun playerKillAnnouncement(killer: Player?, killed: Player?) {
         sendTeamMessage(killed) {
-            Format.formatKillMessage(killer, killed, it, getScoreSource(ScoreSource.KILL))
+            Format.formatKillMessage(killer, killed, it, getScoreSource(CommonScoreSource.KILL))
         }
 
         if(killer != null) {
-            grantScore(killer, ScoreSource.KILL)
+            grantScore(killer, CommonScoreSource.KILL)
         }
     }
 
