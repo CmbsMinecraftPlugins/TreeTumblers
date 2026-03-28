@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.util
 import com.sk89q.worldedit.math.BlockVector3
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.entity.Player
@@ -13,6 +14,8 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 val playerController: PlayerController by lazy {
@@ -72,6 +75,28 @@ fun List<Double>.unpackCoordinates(world: World): Location {
 
 fun Location.toBlockVector3(): BlockVector3 {
     return BlockVector3.at(this.x, this.y, this.z)
+}
+
+fun Location.randomBetween(other: Location): Location {
+    val x = (min(this.x.toInt(), other.x.toInt())..max(this.x.toInt(), other.x.toInt())).random()
+    val y = (min(this.y.toInt(), other.y.toInt())..max(this.y.toInt(), other.y.toInt())).random()
+    val z = (min(this.z.toInt(), other.z.toInt())..max(this.z.toInt(), other.z.toInt())).random()
+
+    return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
+}
+
+fun World.fill(location1: Location, location2: Location, material: Material) {
+    val xRange = (min(location1.x.toInt(), location2.x.toInt())..max(location1.x.toInt(), location2.x.toInt()))
+    val yRange = (min(location1.y.toInt(), location2.y.toInt())..max(location1.y.toInt(), location2.y.toInt()))
+    val zRange = (min(location1.z.toInt(), location2.z.toInt())..max(location1.z.toInt(), location2.z.toInt()))
+
+    xRange.forEach { x ->
+        yRange.forEach { y ->
+            zRange.forEach { z ->
+                this.getBlockAt(x, y, z).type = material
+            }
+        }
+    }
 }
 
 fun List<*>.validateCoordinates(): List<Double>? {

@@ -43,6 +43,8 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.fill
+import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
@@ -109,7 +111,9 @@ class SnifferCaretakerController : GameBase(
     val breakableBlocks: List<Material> = listOf(
         Material.WHEAT_SEEDS,
         Material.WHEAT,
-        Material.DIRT
+        Material.DIRT,
+        Material.MOSS_BLOCK,
+        Material.MUD
     )
 
     val kit: List<ItemStack> = listOf(
@@ -134,6 +138,16 @@ class SnifferCaretakerController : GameBase(
         listOf(Material.SUGAR_CANE, 1)
     )
 
+    val blockItems: HashMap<String, List<List<*>>> = hashMapOf(
+        "dirt" to listOf(
+            listOf(Material.DIRT, 9)
+        ),
+        "moss" to listOf(
+            listOf(Material.STONE, 6),
+            listOf(Material.MOSS_BLOCK, 2)
+        )
+    )
+
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
     fun offsetLocation(location: Location, team: Team): Location {
@@ -149,6 +163,8 @@ class SnifferCaretakerController : GameBase(
 
         val chest = chestLocation.block.state as Chest
         val inventory = chest.inventory
+
+        inventory.clear()
 
         chestItems.forEach {
             val material = it[0] as Material
@@ -174,6 +190,46 @@ class SnifferCaretakerController : GameBase(
                     slot.add(1)
                 }
             }
+        }
+    }
+
+    fun stockBlocks(team: Team) {
+        blockItems.forEach { (key, it) ->
+            val area = currentMap.data.getList("block_containments.$key.area")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
+//            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
+//                it.validateCoordinates()
+//            }
+
+            val areaMin = offsetLocation(area[0]!!.unpackCoordinates(currentMap.world), team)
+            val areaMax = offsetLocation(area[1]!!.unpackCoordinates(currentMap.world), team)
+
+//            val doorMin = door[0]!!.unpackCoordinates(currentMap.world)
+//            val doorMax = door[1]!!.unpackCoordinates(currentMap.world)
+
+            currentMap.world.fill(areaMin, areaMax, Material.AIR)
+
+            it.forEach { value ->
+                val material = value[0] as Material
+                val amount = value[1] as Int
+
+                fun choosePosition(): Location {
+                    val pos = areaMin.randomBetween(areaMax)
+                    val block = pos.block
+                    if (block.type != material && block.type != Material.AIR) return choosePosition()
+
+                    return pos
+                }
+
+                repeat(amount) {
+                    val pos = choosePosition()
+                    pos.block.type = material
+                }
+            }
+
+
         }
     }
 
@@ -384,6 +440,7 @@ class SnifferCaretakerController : GameBase(
             override fun run() {
                 Team.entries.filter { it.playingTeam }.forEach {
                     stockChests(it)
+                    stockBlocks(it)
                 }
             }
         }
