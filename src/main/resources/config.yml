@@ -151,6 +151,8 @@ games:
             start: [13.4,72.0,16.4,153.3,19.5]
           gate_start: [-2,62,8]
           gate_end: [-2,62,21]
+          win_zone_start: [20,65,5]
+          win_zone_end: [20,61,22]
           traps:
             - id: "magma_fall"
               start: [-1,70,-2]

@@ -35,6 +35,7 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -68,7 +69,9 @@ class DeathrunController : GameBase(
         Flag.DISABLE_PVP,
         Flag.DISABLE_BLOCK_BREAKING
     ),
-    scores = hashMapOf(),
+    scores = hashMapOf(
+
+    ),
     icon = Component.empty(),
     scoreboard = "deathrunScoreboard"
 ) {
@@ -358,6 +361,29 @@ class DeathrunController : GameBase(
 
         val pos = event.to
         giveTrapItem(event.player, pos)
+    }
+
+    @EventHandler
+    fun runnerMoveEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        if(player.tumblingPlayer.team == currentTeam || !roundActive) return
+
+        val pos = event.to
+        val winStart = currentMap.data.getList("win_zone_start")?.map {
+            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
+            it.toDouble()
+        }?.unpackCoordinates(currentMap.world)
+            ?: throw GameControllerException("Win start location not found")
+
+        val winEnd = currentMap.data.getList("win_zone_end")?.map {
+            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
+            it.toDouble()
+        }?.unpackCoordinates(currentMap.world)
+            ?: throw GameControllerException("Win end location not found")
+
+        if(pos.isInRegion(winStart, winEnd)) {
+            DebugUtil.info("Player is inside the region")
+        }
     }
 
     @EventHandler
