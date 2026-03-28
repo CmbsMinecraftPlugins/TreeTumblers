@@ -97,3 +97,21 @@ fun Player.buttonClickSound() {
 fun Player.sound(sound: Sound) {
     player!!.playSound(player!!.location, sound, 10f, 1f)
 }
+
+fun Player.hideToAll() {
+    playerController.hiddenPlayers.add(this)
+    Bukkit.getOnlinePlayers().forEach {
+        if(it !== this) {
+            it.hidePlayer(TreeTumblers.plugin, this)
+        }
+    }
+}
+
+fun Player.showToAll() {
+    playerController.hiddenPlayers.remove(this)
+    Bukkit.getOnlinePlayers().forEach {
+        if(it !== this) {
+            it.showPlayer(TreeTumblers.plugin, this)
+        }
+    }
+}

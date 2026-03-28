@@ -11,8 +11,11 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.block.Biome
+import org.bukkit.entity.Firework
+import org.bukkit.entity.Player
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
@@ -193,6 +196,22 @@ object MiscUtils {
 
             audience.showTitle(title)
             delay(1000)
+        }
+    }
+
+    fun spawnFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) {
+        val world = player.world
+        val location = player.location.clone()
+
+        val firework = world.spawn(location, Firework::class.java) { fw ->
+            fw.fireworkMeta = fw.fireworkMeta.apply {
+                addEffect(effect)
+                power = 0
+            }
+        }
+
+        runTaskLater(detonationDelay) {
+            firework.detonate()
         }
     }
 

@@ -9,8 +9,11 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.attribute.Attribute
+import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -32,6 +35,7 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 class PlayerController : IController {
     val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
+    val hiddenPlayers: MutableSet<Player> = HashSet()
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
@@ -59,6 +63,10 @@ class PlayerController : IController {
         player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.heal(20.0)
+
+        hiddenPlayers.forEach {
+            player.hidePlayer(TreeTumblers.plugin, it)
+        }
 
         event.joinMessage(Component.empty())
         playerUIControllers.put(player, PlayerUIController(player))
@@ -97,6 +105,8 @@ class PlayerController : IController {
         val player = event.player
         val tumblingPlayer = player.tumblingPlayer
 
+        hiddenPlayers.remove(player)
+
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("-").color(NamedTextColor.RED))
@@ -122,6 +132,12 @@ class PlayerController : IController {
     @EventHandler
     fun playerDropItem(event: PlayerDropItemEvent) {
         AdvancedItemRegistry.handleDrop(event)
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun playerFireworkDamageEvent(event: EntityDamageEvent) {
+        if(event.entity is Player && event.damageSource.damageType == DamageType.FIREWORKS)
+            event.isCancelled = true
     }
 
     /*

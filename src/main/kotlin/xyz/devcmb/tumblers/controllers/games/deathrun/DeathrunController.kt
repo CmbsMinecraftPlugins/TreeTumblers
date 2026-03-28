@@ -9,6 +9,8 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Color
+import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -35,12 +37,13 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -57,7 +60,7 @@ class DeathrunController : GameBase(
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")))
             .append(Component.text(" Deathrun"))
         ) {
             teleportConfig("cutscene.start")
@@ -70,9 +73,12 @@ class DeathrunController : GameBase(
         Flag.DISABLE_BLOCK_BREAKING
     ),
     scores = hashMapOf(
-
+        DeathrunScoreSource.RUN_COMPLETE to 140,
+        DeathrunScoreSource.RUN_FAILED to 20,
+        DeathrunScoreSource.TRAP_KILL to 10,
+        DeathrunScoreSource.TRAP_DAMAGE to 5
     ),
-    icon = Component.empty(),
+    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
     scoreboard = "deathrunScoreboard"
 ) {
     companion object {
@@ -106,6 +112,21 @@ class DeathrunController : GameBase(
         get() {
             return gameParticipants.filter { it.tumblingPlayer.team != currentTeam }.toSet()
         }
+
+    override val scoreMessages: HashMap<ScoreSource, (Int) -> Component> = hashMapOf(
+        DeathrunScoreSource.RUN_COMPLETE to { amount ->
+            gameMessage(
+                Component.text("Run complete! ")
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        },
+        DeathrunScoreSource.RUN_FAILED to { amount ->
+            gameMessage(
+                Component.text("Run failed! ")
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
+        }
+    )
 
     val traps: ArrayList<Class<out Trap>> = ArrayList()
     val mapTraps: HashMap<Int, ArrayList<Trap>> = HashMap()
@@ -354,6 +375,30 @@ class DeathrunController : GameBase(
         }.build())
     }
 
+    fun completeRun(player: Player) {
+        alivePlayers.remove(player)
+        player.hideToAll()
+        MiscUtils.spawnFirework(player, FireworkEffect.builder()
+            .trail(false)
+            .flicker(false)
+            .withColor(Color.YELLOW)
+            .withColor(Color.ORANGE)
+            .with(FireworkEffect.Type.BALL_LARGE)
+            .build()
+        )
+
+        player.allowFlight = true
+        player.isFlying = true
+
+        grantScore(player, DeathrunScoreSource.RUN_COMPLETE)
+        player.showTitle(Title.title(
+            Component.empty(),
+            Format.success("Run complete")
+                .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_COMPLETE)}]", NamedTextColor.GOLD)),
+            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
+        ))
+    }
+
     @EventHandler
     fun attackerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
@@ -366,7 +411,10 @@ class DeathrunController : GameBase(
     @EventHandler
     fun runnerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
-        if(player.tumblingPlayer.team == currentTeam || !roundActive) return
+        if(
+            !roundActive
+            || !alivePlayers.contains(player)
+        ) return
 
         val pos = event.to
         val winStart = currentMap.data.getList("win_zone_start")?.map {
@@ -382,7 +430,7 @@ class DeathrunController : GameBase(
             ?: throw GameControllerException("Win end location not found")
 
         if(pos.isInRegion(winStart, winEnd)) {
-            DebugUtil.info("Player is inside the region")
+            completeRun(player)
         }
     }
 
@@ -397,8 +445,15 @@ class DeathrunController : GameBase(
 
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
+        if(event.isCancelled) return
+
         val player = event.entity
         if(player !is Player) return
+
+        if(!alivePlayers.contains(player)) {
+            event.isCancelled = true
+            return
+        }
 
         event.damage = 2.0
         spawnMain(player)
@@ -411,4 +466,11 @@ class DeathrunController : GameBase(
     }
 
     class DeathrunTrapException(override val message: String) : Exception()
+
+    enum class DeathrunScoreSource(override val id: String) : ScoreSource {
+        RUN_COMPLETE("deathrun_run_complete"),
+        RUN_FAILED("deathrun_run_failed"),
+        TRAP_DAMAGE("deathrun_trap_damage"),
+        TRAP_KILL("deathrun_trap_kill")
+    }
 }
