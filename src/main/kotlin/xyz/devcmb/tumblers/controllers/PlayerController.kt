@@ -8,6 +8,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -54,7 +55,10 @@ class PlayerController : IController {
         player.gameMode = GameMode.SURVIVAL
         player.isFlying = false
         player.allowFlight = false
+        player.clearActivePotionEffects()
         player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+        player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+        player.heal(20.0)
 
         event.joinMessage(Component.empty())
         playerUIControllers.put(player, PlayerUIController(player))

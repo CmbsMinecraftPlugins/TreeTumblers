@@ -5,6 +5,7 @@ import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
@@ -82,7 +83,7 @@ class GameController : IController {
         event.isCancelled = true
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOW)
     fun playerJoin(event: PlayerJoinEvent) {
         if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) {
             val player = event.player

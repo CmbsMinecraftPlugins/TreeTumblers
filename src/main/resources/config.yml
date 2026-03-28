@@ -139,6 +139,7 @@ games:
             - [-500,115,-537,-572,99,-537]
   deathrun:
     worlds_folder: "deathrun"
+    lives: 3
     maps:
       forest:
         world: "forest"

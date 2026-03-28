@@ -1224,7 +1224,7 @@ class CrumbleController : GameBase(
     }
 
     @EventHandler
-    fun blockBreakEvent(event: BlockBreakEvent) {
+    fun preRoundBlockBreakEvent(event: BlockBreakEvent) {
         if(!roundActive) event.isCancelled = true
     }
 

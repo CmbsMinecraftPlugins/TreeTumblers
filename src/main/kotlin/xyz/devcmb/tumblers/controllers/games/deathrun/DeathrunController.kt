@@ -12,15 +12,21 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.attribute.Attribute
 import org.bukkit.block.data.type.Gate
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityRegainHealthEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.MagmaFallTrap
 import xyz.devcmb.tumblers.data.Team
@@ -67,7 +73,8 @@ class DeathrunController : GameBase(
     scoreboard = "deathrunScoreboard"
 ) {
     companion object {
-        val trapKey = NamespacedKey("tumbling", "deathrun_trap")
+        @field:Configurable("games.deathrun.lives")
+        var lives: Int = 3
     }
 
     val playingTeams = Team.entries.filter { it.playingTeam }
@@ -87,10 +94,22 @@ class DeathrunController : GameBase(
             return playingTeams[roundIndex]
         }
 
+    val attackingPlayers: Set<Player>
+        get() {
+            return gameParticipants.filter { it.tumblingPlayer.team == currentTeam }.toSet()
+        }
+
+    val runningPlayers: Set<Player>
+        get() {
+            return gameParticipants.filter { it.tumblingPlayer.team != currentTeam }.toSet()
+        }
+
     val traps: ArrayList<Class<out Trap>> = ArrayList()
     val mapTraps: HashMap<Int, ArrayList<Trap>> = HashMap()
     val currentTraps: HashMap<Player, Int> = HashMap()
     val cooldowns: MutableSet<Int> = HashSet()
+
+    val alivePlayers: MutableSet<Player> = HashSet()
 
     /**
      * The load sequence that each individual game should do
@@ -168,25 +187,35 @@ class DeathrunController : GameBase(
     override suspend fun spawn(cycle: SpawnCycle) {
         if(cycle != SpawnCycle.PRE_ROUND) return
 
+        suspendSync {
+            gamePlayers.forEach {
+                if(it.tumblingPlayer.team == currentTeam) {
+                    spawnAttacker(it)
+                } else {
+                    spawnMain(it)
+                }
+            }
+        }
+    }
+
+    fun spawnMain(player: Player) {
         val mainSpawn: List<Double> = currentMap.data.getList("spawns.main")?.map {
             if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
             it
         } ?: throw GameControllerException("Main spawn set not found")
 
+        val mainLocation = mainSpawn.unpackCoordinates(currentMap.world)
+        player.teleport(mainLocation)
+    }
+
+    fun spawnAttacker(player: Player) {
         val attackerSpawn: List<Double> = currentMap.data.getList("spawns.attacker")?.map {
             if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
             it
         } ?: throw GameControllerException("Spawn set not found")
 
-        val mainLocation = mainSpawn.unpackCoordinates(currentMap.world)
         val attackerLocation = attackerSpawn.unpackCoordinates(currentMap.world)
-
-        suspendSync {
-            gamePlayers.forEach {
-                val location = if(it.tumblingPlayer.team == currentTeam) attackerLocation else mainLocation
-                it.teleport(location)
-            }
-        }
+        player.teleport(attackerLocation)
     }
 
     /**
@@ -208,12 +237,18 @@ class DeathrunController : GameBase(
             preRound()
             roundActive = true
             roundStart()
-            countdown(300) // todo: replace
+            countdown(60) // todo: replace
             roundActive = false
+            postRound()
         }
     }
 
     suspend fun preRound() {
+        alivePlayers.addAll(runningPlayers)
+        alivePlayers.forEach {
+            it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = lives.toDouble() * 2
+        }
+
         delay(1000)
         val audience = Audience.audience(gamePlayers)
         val title = Title.title(
@@ -232,6 +267,21 @@ class DeathrunController : GameBase(
         )
     }
 
+    suspend fun postRound() {
+        alivePlayers.clear()
+        suspendSync {
+            gameParticipants.forEach {
+                it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+                it.heal(20.0)
+            }
+
+            attackingPlayers.forEach {
+                it.removePotionEffect(PotionEffectType.SPEED)
+                it.inventory.clear()
+            }
+        }
+    }
+
     /**
      * The method to invoke after the game has ended
      */
@@ -240,10 +290,6 @@ class DeathrunController : GameBase(
     }
 
     suspend fun roundStart() {
-        gameParticipants.filter { it.tumblingPlayer.team == currentTeam }.forEach {
-            giveTrapItem(it, it.location)
-        }
-
         val gateStart: Location = currentMap.data.getList("gate_start")?.map {
             if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
             it.toDouble()
@@ -257,6 +303,11 @@ class DeathrunController : GameBase(
             ?: throw GameControllerException("Gate end not found")
 
         suspendSync {
+            attackingPlayers.forEach {
+                giveTrapItem(it, it.location)
+                it.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
+            }
+
             gateStart.forEachRegion(gateEnd) {
                 it.blockData = (it.blockData as Gate).also { gate ->
                     gate.isOpen = true
@@ -279,12 +330,11 @@ class DeathrunController : GameBase(
         player.inventory.addItem(AdvancedItemStack(Material.PAPER) {
             name(trap.name)
             droppable(false)
-            persistentDataContainer {
-                set(trapKey, PersistentDataType.INTEGER, index)
-            }
             model(trap.itemKey)
 
             rightClick {
+                if(player.tumblingPlayer.team != currentTeam) return@rightClick
+
                 if(cooldowns.contains(index)) {
                     player.sendMessage(Format.error("This trap is currently on cooldown!"))
                     return@rightClick
@@ -308,6 +358,30 @@ class DeathrunController : GameBase(
 
         val pos = event.to
         giveTrapItem(event.player, pos)
+    }
+
+    @EventHandler
+    fun openGateEvent(event: PlayerInteractEvent) {
+        val block = event.clickedBlock ?: return
+
+        if(block.blockData is Gate) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerDamageEvent(event: EntityDamageEvent) {
+        val player = event.entity
+        if(player !is Player) return
+
+        event.damage = 2.0
+        spawnMain(player)
+    }
+
+    @EventHandler
+    fun playerHealEvent(event: EntityRegainHealthEvent) {
+        if(event.entity !is Player || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM) return
+        event.isCancelled = true
     }
 
     class DeathrunTrapException(override val message: String) : Exception()

@@ -14,7 +14,7 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
-import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
@@ -424,7 +424,7 @@ abstract class GameBase(
     }
 
     @EventHandler
-    fun blockPlaceEvent(event: BlockPlaceEvent) {
+    fun blockBreakEvent(event: BlockBreakEvent) {
         if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
             event.isCancelled = true
     }
