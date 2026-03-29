@@ -253,7 +253,7 @@ class DatabaseController : IController {
             WHERE uuid = ?
         """.trimIndent())
 
-        statement.setString(1, team.name)
+        statement.setString(1, team.name.lowercase())
         statement.setString(2, profile.id.toString())
 
         // trying to account for if they change their username
