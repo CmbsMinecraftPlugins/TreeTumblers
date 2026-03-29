@@ -14,6 +14,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.util.UUID
 
 /*
  * Database documentation time
@@ -68,7 +69,7 @@ class DatabaseController : IController {
 
                 createTables()
                 setupTeams()
-                getWhitelistedPlayerNames()
+                getWhitelistedPlayers()
             } catch (e: SQLException) {
                 DebugUtil.severe("Failed to connect to the MySQL database: ${e.message}")
             }
@@ -119,7 +120,8 @@ class DatabaseController : IController {
         statement.executeBatch()
     }
 
-    val whitelistedPlayersCache: MutableSet<String> = HashSet()
+    val whitelistedPlayersCache: HashMap<String, Team> = HashMap()
+    val whitelistedPlayerUUIDs: HashMap<String, UUID> = HashMap()
     var hasCached: Boolean = false
 
     suspend fun whitelistPlayer(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
@@ -132,12 +134,13 @@ class DatabaseController : IController {
                         team = VALUES(team)
             """.trimIndent()
         )
-        statement.setString(1, profile.id.toString())
+        statement.setString(1, profile.id!!.toString())
         statement.setString(2, profile.name)
-        statement.setString(3, team.name)
+        statement.setString(3, team.name.lowercase())
 
         statement.executeUpdate()
-        whitelistedPlayersCache.add(profile.name!!)
+        whitelistedPlayersCache.put(profile.name!!, team)
+        whitelistedPlayerUUIDs.put(profile.name!!, profile.id!!)
     }
 
     suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
@@ -153,6 +156,7 @@ class DatabaseController : IController {
 
         statement.executeUpdate()
         whitelistedPlayersCache.remove(profile.name)
+        whitelistedPlayerUUIDs.remove(profile.name)
     }
 
     suspend fun replicatePlayerData(player: TumblingPlayer) = withContext(Dispatchers.IO) {
@@ -202,7 +206,7 @@ class DatabaseController : IController {
             val teamColumn: String = resultSet.getString("team")
             val score: Int = resultSet.getInt("score")
 
-            val team = Team.entries.find { it.name == teamColumn }
+            val team = Team.entries.find { it.name.lowercase() == teamColumn.lowercase() }
             if(team == null) {
                 throw IllegalStateException("Could not find a team with value $teamColumn")
             }
@@ -213,20 +217,30 @@ class DatabaseController : IController {
         }
     }
 
-    suspend fun getWhitelistedPlayerNames(): Set<String> = withContext(Dispatchers.IO) {
+    suspend fun getWhitelistedPlayers(): HashMap<String, Team> = withContext(Dispatchers.IO) {
         if(!whitelistedPlayersCache.isEmpty() && hasCached) return@withContext whitelistedPlayersCache
 
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_players WHERE whitelisted = true;
         """.trimIndent())
 
-        val names: MutableSet<String> = HashSet()
+        val names: HashMap<String, Team> = HashMap()
+        val uuids: HashMap<String, UUID> = HashMap()
         val resultSet = statement.executeQuery()
         while(resultSet.next()) {
-            names.add(resultSet.getString("username"))
+            names.put(
+                resultSet.getString("username"),
+                Team.entries.find { it.name.lowercase() == resultSet.getString("team").lowercase() }!!
+            )
+
+            uuids.put(
+                resultSet.getString("username"),
+                UUID.fromString(resultSet.getString("uuid"))
+            )
         }
 
-        whitelistedPlayersCache.addAll(names)
+        whitelistedPlayersCache.putAll(names)
+        whitelistedPlayerUUIDs.putAll(uuids)
         hasCached = true
 
         names
@@ -239,8 +253,14 @@ class DatabaseController : IController {
             WHERE uuid = ?
         """.trimIndent())
 
-        statement.setString(1, team.name)
+        statement.setString(1, team.name.lowercase())
         statement.setString(2, profile.id.toString())
+
+        // trying to account for if they change their username
+        whitelistedPlayersCache.put(
+            whitelistedPlayerUUIDs.filterValues { it == profile.id }.keys.first(),
+            team
+        )
 
         try {
             statement.executeUpdate()

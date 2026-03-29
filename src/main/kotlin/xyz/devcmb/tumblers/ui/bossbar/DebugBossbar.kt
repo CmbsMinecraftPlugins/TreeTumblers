@@ -13,7 +13,7 @@ class DebugBossbar(override val id: String = "debugBossbar", override val paddin
         val text = "TreeTumblers | ${Constants.BRANCH} (${Constants.VERSION})"
 
         val bgSize = 250.0
-        val textLength: Double = (UserInterfaceUtility.getPixelWidth(text) + (text.length - 1)).toDouble()
+        val textLength: Double = UserInterfaceUtility.getPixelWidth(text).toDouble()
         val bgOffset = (textLength+((bgSize - textLength)/2.0)).roundToInt()
         val fullOffset = ((bgSize - textLength) / 2.0).roundToInt()
 

@@ -9,7 +9,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
-enum class Team(teamName: String, val color: TextColor, val icon: String, val priority: Int, val playingTeam: Boolean = true) {
+enum class Team(val teamName: String, val color: TextColor, val icon: String, val priority: Int, val playingTeam: Boolean = true) {
     RED("Red Rabbits", NamedTextColor.RED, "\uE000", 1),
     ORANGE("Orange Ocelots", TextColor.fromHexString("#ff9100")!!, "\uE001", 2),
     YELLOW("Yellow Yaks", NamedTextColor.YELLOW, "\uE002", 3),
