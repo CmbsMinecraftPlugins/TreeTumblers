@@ -551,56 +551,11 @@ class CrumbleController : GameBase(
         }
 
         delay(5000)
-
-        var teamScoresComponent = Component.empty()
-            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
-
-        val teamPlacements = getTeamPlacements()
-        teamPlacements.forEach {
-            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.TEAM_PLACEMENT)
-
-            teamScoresComponent = teamScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
-                    .append(Component.text(" [+${score}]", NamedTextColor.GOLD))
-            )
-
-            grantTeamScore(
-                it.first,
-                CommonScoreSource.TEAM_PLACEMENT,
-                score
-            )
-        }
-        teamScoresComponent = teamScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(teamScoresComponent)
-
+        announceTeamScores()
         delay(5000)
-        var individualScoresComponent = Component.empty()
-            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
+        announceIndivScores()
 
         val indivPlacements = getIndividualPlacements()
-        indivPlacements.forEach {
-            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
-            individualScoresComponent = individualScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(Format.formatPlayerName(it.first))
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
-                    .append(Component.text(" [+${placementScore}]", NamedTextColor.GOLD))
-            )
-        }
-
-        individualScoresComponent = individualScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
-
         indivPlacements.forEach {
             val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
             grantScore(
@@ -611,24 +566,8 @@ class CrumbleController : GameBase(
         }
 
         delay(5000)
-        var eventPlacementsComponent = Component.empty()
-            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
-
-        val eventPlacements = eventController.getEventTeamPlacements()
-        eventPlacements.forEach {
-            eventPlacementsComponent = eventPlacementsComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
-            )
-        }
-
-        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
+        announceOverallTeamScores()
+        delay(5000)
     }
 
     override suspend fun cleanup() {

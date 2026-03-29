@@ -20,7 +20,7 @@ class CountdownBossbar(
 
         val bgSize = 30
         val text = MiscUtils.formatToMSS(currentGame.countdownTime)
-        val textLength: Double = (UserInterfaceUtility.getPixelWidth(text) + (text.length - 1)).toDouble()
+        val textLength: Double = UserInterfaceUtility.getPixelWidth(text).toDouble()
         val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
         val fullOffset = ((bgSize - textLength) / 2).roundToInt()
 

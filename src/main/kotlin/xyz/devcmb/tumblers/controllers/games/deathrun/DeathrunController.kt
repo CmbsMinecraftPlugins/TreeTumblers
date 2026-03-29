@@ -6,6 +6,8 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
@@ -22,6 +24,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
@@ -37,15 +40,18 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import kotlin.math.max
@@ -76,7 +82,9 @@ class DeathrunController : GameBase(
         DeathrunScoreSource.RUN_COMPLETE to 140,
         DeathrunScoreSource.RUN_FAILED to 20,
         DeathrunScoreSource.TRAP_KILL to 10,
-        DeathrunScoreSource.TRAP_DAMAGE to 5
+        DeathrunScoreSource.TRAP_DAMAGE to 5,
+        CommonScoreSource.INDIVIDUAL_PLACEMENT to 4,
+        CommonScoreSource.TEAM_PLACEMENT to 80,
     ),
     icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
     scoreboard = "deathrunScoreboard"
@@ -87,7 +95,7 @@ class DeathrunController : GameBase(
     }
 
     val playingTeams = Team.entries.filter { it.playingTeam }
-    val rounds = playingTeams.size
+    val rounds = 1//playingTeams.size
     var currentRound = 0
     val roundIndex
         get() = max(currentRound - 1, 0)
@@ -134,6 +142,7 @@ class DeathrunController : GameBase(
     val cooldowns: MutableSet<Int> = HashSet()
 
     val alivePlayers: MutableSet<Player> = HashSet()
+    val spectators: MutableSet<Player> = HashSet()
 
     /**
      * The load sequence that each individual game should do
@@ -242,6 +251,7 @@ class DeathrunController : GameBase(
         player.teleport(attackerLocation)
     }
 
+    var roundEnded = false
     /**
      * The method for the main gameplay loop for an individual game
      *
@@ -261,8 +271,16 @@ class DeathrunController : GameBase(
             preRound()
             roundActive = true
             roundStart()
-            countdown(60) // todo: replace
+            asyncCountdown(120) {
+                roundEnded = true
+            }
+
+            while(!roundEnded) {
+                delay(500)
+            }
+
             roundActive = false
+            roundEnd()
             postRound()
         }
     }
@@ -292,7 +310,17 @@ class DeathrunController : GameBase(
     }
 
     suspend fun postRound() {
+        if(currentRound != rounds) {
+            spectators.forEach {
+                it.showToAll()
+                it.isFlying = false
+                it.allowFlight = false
+            }
+        }
+
         alivePlayers.clear()
+        spectators.clear()
+
         suspendSync {
             gameParticipants.forEach {
                 it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
@@ -310,7 +338,50 @@ class DeathrunController : GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        delay(2000)
+        val placements = getTeamPlacements()
+        gameParticipants.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        delay(5000)
+        announceTeamScores()
+        delay(5000)
+        announceIndivScores()
+
+        val indivPlacements = getIndividualPlacements()
+        indivPlacements.forEach {
+            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
+            grantScore(
+                it.first,
+                CommonScoreSource.INDIVIDUAL_PLACEMENT,
+                placementScore
+            )
+        }
+
+        delay(5000)
+        announceOverallTeamScores()
+        delay(5000)
+    }
+
+    override suspend fun cleanup() {
+        Bukkit.getOnlinePlayers().forEach {
+            it.disableBossBar("countdownBossbar")
+        }
+        super.cleanup()
     }
 
     suspend fun roundStart() {
@@ -375,9 +446,29 @@ class DeathrunController : GameBase(
         }.build())
     }
 
-    fun completeRun(player: Player) {
+    fun makeSpectator(player: Player) {
         alivePlayers.remove(player)
+        spectators.add(player)
         player.hideToAll()
+        player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+        player.heal(20.0)
+        player.allowFlight = true
+        player.isFlying = true
+
+        if(alivePlayers.isEmpty()) {
+            roundEnded = true
+        }
+    }
+
+    fun completeRun(player: Player) {
+        makeSpectator(player)
+        // TODO: Show the time
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
+            gameMessage(Format.mm(
+                "<green><player> has completed the run!</green>",
+                Placeholder.component("player", Format.formatPlayerName(player))
+            ))
+        )
         MiscUtils.spawnFirework(player, FireworkEffect.builder()
             .trail(false)
             .flicker(false)
@@ -387,9 +478,6 @@ class DeathrunController : GameBase(
             .build()
         )
 
-        player.allowFlight = true
-        player.isFlying = true
-
         grantScore(player, DeathrunScoreSource.RUN_COMPLETE)
         player.showTitle(Title.title(
             Component.empty(),
@@ -397,6 +485,41 @@ class DeathrunController : GameBase(
                 .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_COMPLETE)}]", NamedTextColor.GOLD)),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
+    }
+
+    fun failRun(player: Player) {
+        makeSpectator(player)
+        grantScore(player, DeathrunScoreSource.RUN_FAILED)
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
+            gameMessage(Format.mm(
+                "<red><player> has been eliminated!</red>",
+                Placeholder.component("player", Format.formatPlayerName(player))
+            ))
+        )
+        currentTeam.getOnlinePlayers().forEach {
+            grantScore(it, DeathrunScoreSource.TRAP_KILL)
+        }
+
+        player.showTitle(Title.title(
+            Component.empty(),
+            Format.error("Run failed")
+                .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_FAILED)}]", NamedTextColor.GOLD)),
+            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
+        ))
+    }
+
+    suspend fun roundEnd() {
+        roundEnded = false
+        cancelCountdown()
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(gameMessage(Component.text("Round Over!")))
+            it.showTitle(Title.title(
+                Format.mm("<red><bold>Round Over</bold></red>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(10))
+            ))
+        }
+        delay(4000)
     }
 
     @EventHandler
@@ -456,7 +579,27 @@ class DeathrunController : GameBase(
         }
 
         event.damage = 2.0
-        spawnMain(player)
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(
+                Format.formatDeathMessage(
+                    player,
+                    it,
+                    it.tumblingPlayer.team == currentTeam,
+                    getScoreSource(DeathrunScoreSource.TRAP_DAMAGE)
+                )
+            )
+
+            if(it.tumblingPlayer.team == currentTeam) {
+                grantScore(it, DeathrunScoreSource.TRAP_DAMAGE)
+            }
+        }
+        if(player.health - 2.0 > 0) spawnMain(player)
+    }
+
+    @EventHandler
+    fun playerRunFail(event: PlayerDeathEvent) {
+        event.isCancelled = true
+        failRun(event.player)
     }
 
     @EventHandler
