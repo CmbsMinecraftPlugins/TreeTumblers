@@ -119,7 +119,7 @@ object UserInterfaceUtility {
     }
 
     fun getPixelWidth(text: String): Int {
-        return text.sumOf { ch -> DefaultFontGlyphs.entries.find { it.char == ch }?.width ?: 0 }
+        return text.sumOf { ch -> DefaultFontGlyphs.entries.find { it.char == ch }?.width ?: 0 } + (text.length - 1)
     }
 
     fun refreshAll(id: String) {
