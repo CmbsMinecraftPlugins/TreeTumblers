@@ -4,6 +4,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
@@ -13,6 +14,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
@@ -44,18 +46,32 @@ class EventController : IController {
         var teamComponent = Component.empty()
 
         teamScores.toSortedMap().forEach {
-            teamComponent = teamComponent.appendNewline()
-                .append(Component.text(" "))
-                .append(it.key.formattedName)
-                // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                .append(UserInterfaceUtility.negativeSpace(
-                    // +11 is for the 10-length icon and the 1 padding pixel
-                    UserInterfaceUtility.getPixelWidth(it.key.teamName) + 11)
+            var playersComponent = Component.empty()
+            databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.key }.toList().forEachIndexed { index, entry ->
+                val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
+                val onlinePlayer = Bukkit.getPlayer(uuid)
+                var name = Component.empty()
+                if(index != 0) {
+                    name = name.append(Component.text(" • ", NamedTextColor.WHITE))
+                }
+
+                name = name.append(
+                    if(onlinePlayer != null) Component.text(onlinePlayer.name, it.key.color)
+                    else Component.text(entry.first, NamedTextColor.GRAY)
                 )
-                .append(Component.text(" ".repeat(60)))
-                .append(Component.text(it.value, NamedTextColor.GOLD))
-                .append(Component.text(" "))
-                .appendNewline()
+
+                playersComponent = playersComponent.append(name)
+            }
+
+            teamComponent = teamComponent.append(
+                Format.mm(
+                    " <br><team><shift>${" ".repeat(60)}<gold>${it.value}</gold> <br><players><br>",
+                    Placeholder.component("team", it.key.formattedName),
+                    // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.key.teamName) + 11)),
+                    Placeholder.component("players", playersComponent)
+                )
+            )
         }
 
         Audience.audience(Bukkit.getOnlinePlayers()).sendPlayerListHeader(
