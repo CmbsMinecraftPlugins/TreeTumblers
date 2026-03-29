@@ -37,17 +37,17 @@ class EventController : IController {
         }
 
         topbarRunnable = object : BukkitRunnable() {
-            override fun run() = sendTopbar()
+            override fun run() = sendDefaultTopbar()
         }
         topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
 
-    fun sendTopbar() {
+    fun sendDefaultTopbar() {
         var teamComponent = Component.empty()
 
-        teamScores.toSortedMap().forEach {
-            var playersComponent = Component.empty()
-            databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.key }.toList().forEachIndexed { index, entry ->
+        getEventTeamPlacements().forEachIndexed { i, it ->
+            var playersComponent = Component.text(" ")
+            databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
                 val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
                 val onlinePlayer = Bukkit.getPlayer(uuid)
                 var name = Component.empty()
@@ -55,20 +55,21 @@ class EventController : IController {
                     name = name.append(Component.text(" • ", NamedTextColor.WHITE))
                 }
 
-                name = name.append(
-                    if(onlinePlayer != null) Component.text(onlinePlayer.name, it.key.color)
+                name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
+                    if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
                     else Component.text(entry.first, NamedTextColor.GRAY)
                 )
 
                 playersComponent = playersComponent.append(name)
             }
+            playersComponent = playersComponent.append(Component.text(" "))
 
             teamComponent = teamComponent.append(
                 Format.mm(
-                    " <br><team><shift>${" ".repeat(60)}<gold>${it.value}</gold> <br><players><br>",
-                    Placeholder.component("team", it.key.formattedName),
+                    " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
+                    Placeholder.component("team", it.first.formattedName),
                     // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.key.teamName) + 11)),
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
                     Placeholder.component("players", playersComponent)
                 )
             )
@@ -109,7 +110,10 @@ class EventController : IController {
     }
 
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
-        val sorted = teamScores.entries.sortedByDescending { it.value }
+        val sorted = teamScores.entries.sortedWith(
+            compareByDescending<MutableMap.MutableEntry<Team, Int>> { it.value }
+                .thenBy { it.key.priority }
+        )
         return MiscUtils.calculatePlacements(sorted)
     }
 
