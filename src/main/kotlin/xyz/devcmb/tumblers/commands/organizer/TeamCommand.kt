@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -64,5 +65,14 @@ class TeamCommand {
                 executor.sendMessage(Format.error("Player does not exist!"))
             }
         }
+    }
+
+    @Execute(name = "list")
+    fun executeList(@Context sender: CommandSender) {
+        var teams = Component.empty()
+        Team.entries.forEachIndexed { i, it ->
+            teams = teams.appendNewline().append(it.formattedName)
+        }
+        sender.sendMessage(Component.text("Here are all the teams: ", NamedTextColor.AQUA).append(teams))
     }
 }
