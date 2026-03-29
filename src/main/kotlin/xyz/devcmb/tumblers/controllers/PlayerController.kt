@@ -64,6 +64,11 @@ class PlayerController : IController {
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.heal(20.0)
 
+        Bukkit.getOnlinePlayers().forEach {
+            player.unlistPlayer(it)
+            it.unlistPlayer(player)
+        }
+
         hiddenPlayers.forEach {
             player.hidePlayer(TreeTumblers.plugin, it)
         }

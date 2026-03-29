@@ -22,7 +22,7 @@ class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseControl
     ): ParseResult<DatabaseController.WhitelistedPlayer> {
         val whitelistedPlayerNames = databaseController.whitelistedPlayersCache
 
-        if(!whitelistedPlayerNames.contains(argument)) {
+        if(!whitelistedPlayerNames.containsKey(argument)) {
             return ParseResult.failure("Player not found or not whitelisted!")
         }
 
@@ -34,6 +34,6 @@ class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseControl
         argument: Argument<DatabaseController.WhitelistedPlayer>,
         context: SuggestionContext
     ): SuggestionResult? {
-        return databaseController.whitelistedPlayersCache.stream().collect(SuggestionResult.collector())
+        return databaseController.whitelistedPlayersCache.toList().map { it.first }.stream().collect(SuggestionResult.collector())
     }
 }
