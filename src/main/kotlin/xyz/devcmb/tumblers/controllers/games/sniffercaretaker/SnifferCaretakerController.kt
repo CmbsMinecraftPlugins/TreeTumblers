@@ -15,6 +15,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
@@ -49,6 +50,8 @@ import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
+import java.util.UUID
+import kotlin.collections.forEach
 
 @EventGame
 class SnifferCaretakerController : GameBase(
@@ -80,7 +83,10 @@ class SnifferCaretakerController : GameBase(
         var gameLength: Int = 600
 
         @field:Configurable("games.snifferCaretaker.chest_refresh")
-        var chestRefresh: Long = 10
+        var chestRefresh: Long = 20
+
+        @field:Configurable("games.snifferCaretaker.block_refresh")
+        var blockRefresh: Long = 15
     }
 
     override val debugToolkit = object : DebugToolkit() {
@@ -148,14 +154,28 @@ class SnifferCaretakerController : GameBase(
         )
     )
 
+    var timers = mutableMapOf(
+        "supply_chest" to chestRefresh * 20,
+        "dirt" to blockRefresh * 20,
+        "moss" to blockRefresh * 20
+    )
+
+    val timerBases = hashMapOf(
+        "supply_chest" to chestRefresh * 20,
+        "dirt" to blockRefresh * 20,
+        "moss" to blockRefresh * 20
+    )
+
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
+
+    val signs: HashMap<Team, HashMap<String, TextDisplay>> = hashMapOf()
 
     fun offsetLocation(location: Location, team: Team): Location {
         return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
     }
 
     fun stockChests(team: Team) {
-        val chestPosition = currentMap.data.getList("supply_chests.farm")?.validateCoordinates()
+        val chestPosition = currentMap.data.getList("supply_chest")?.validateCoordinates()
             ?: throw GameControllerException("Chest position not found")
 
         val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), team)
@@ -323,11 +343,12 @@ class SnifferCaretakerController : GameBase(
             ?: throw GameControllerException("Task board spawn not found")
 
         val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
-            .add(0.0, currentTasks.get(team)!!.size * 0.5, 0.0)
+            .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
 
         val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
         display.alignment = TextDisplay.TextAlignment.LEFT
         display.lineWidth = 400
+
         display.text(createdTask.displayText)
 
         createdTask.display = display
@@ -337,6 +358,39 @@ class SnifferCaretakerController : GameBase(
 
         team.getOnlinePlayers().forEach { player ->
             player.sendMessage(createdTask.displayText)
+        }
+    }
+
+    fun setupSign(key: String, team: Team) : TextDisplay {
+        val displaySpawn = currentMap.data.getList(key)?.validateCoordinates()
+            ?: throw GameControllerException("Sign spawn not found at $key")
+
+        val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
+
+        val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
+        display.alignment = TextDisplay.TextAlignment.CENTER
+        display.lineWidth = 400
+        display.isPersistent = true
+        display.text(Format.mm("WHAT AM I DOING"))
+
+        return display
+    }
+
+    fun setupSigns(team: Team) {
+        signs[team]!!["supply_chest"] = setupSign("supply_chest_sign", team)
+        signs[team]!!["dirt"] = setupSign("block_containments.dirt.sign", team)
+        signs[team]!!["moss"] = setupSign("block_containments.moss.sign", team)
+    }
+
+    fun updateSigns(team: Team) {
+        signs[team]!!.forEach { key, it ->
+
+            it.interpolationDelay = 0
+            it.interpolationDuration = 0
+            it.text(Component.text("Restocking in ${timers[key]}"))
+
+            DebugUtil.info("${it.text()}")
+            it.teleport(it.location.add(0.0, 1.0, 0.0))
         }
     }
 
@@ -372,6 +426,10 @@ class SnifferCaretakerController : GameBase(
             Team.entries.filter { it.playingTeam }.forEach {
                 currentTasks[it] = mutableListOf()
 
+                signs[it] = hashMapOf()
+
+
+
                 val snifferSpawn = map.data.getList("sniffer_spawn")?.validateCoordinates()
                     ?: throw GameControllerException("Sniffer spawns not found")
 
@@ -389,6 +447,9 @@ class SnifferCaretakerController : GameBase(
                 // Five Big Booms
 
                 stockChests(it)
+
+
+
             }
         }
     }
@@ -436,16 +497,42 @@ class SnifferCaretakerController : GameBase(
         gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }
-        val task = object : BukkitRunnable() {
-            override fun run() {
-                Team.entries.filter { it.playingTeam }.forEach {
-                    stockChests(it)
-                    stockBlocks(it)
+
+
+        suspendSync {
+            Team.entries.filter { it.playingTeam }.forEach {
+                setupSigns(it)
+            }
+
+            val task = object : BukkitRunnable() {
+                override fun run() {
+                    Team.entries.filter { it.playingTeam }.forEach {
+                        stockChests(it)
+                        stockBlocks(it)
+                    }
                 }
             }
+
+            val tickTask = object : BukkitRunnable() {
+                override fun run() {
+                    timers.forEach { key, it ->
+                        timers[key] = timers[key]!! - 1
+                        if (timers[key]!! < 0) {
+                            timers[key] = timerBases[key]!!
+                        }
+                    }
+
+                    Team.entries.filter { it.playingTeam }.forEach { team ->
+                        updateSigns(team)
+                    }
+                }
+            }
+
+            task.runTaskTimer(TreeTumblers.plugin, 20*chestRefresh, 20*chestRefresh)
+            tickTask.runTaskTimer(TreeTumblers.plugin, 100, 20)
         }
 
-        task.runTaskTimer(TreeTumblers.plugin, 20*chestRefresh, 20*chestRefresh)
+
 
         countdown(gameLength)
     }
