@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.PlayerController
+import kotlin.math.roundToInt
 
 object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
@@ -116,6 +117,22 @@ object UserInterfaceUtility {
         }
 
         return Component.text(result.toString()).font(SPACES)
+    }
+
+    // a link to the research I did to get these numbers
+    // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
+    fun backgroundTextCenter(background: Component, textComponent: Component, stringText: String, bgSize: Double, offset: Double = 0.0): Component {
+        val textLength: Double = (getPixelWidth(stringText) + offset)
+
+        // very important: if these are not roundToInt, it could be offset (I found this out the hard way)
+        val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
+        val fullOffset = ((bgSize - textLength) / 2).roundToInt()
+
+        return Component.empty()
+            .append(negativeSpace(fullOffset))
+            .append(background)
+            .append(negativeSpace(bgOffset))
+            .append(textComponent)
     }
 
     fun getPixelWidth(text: String): Int {

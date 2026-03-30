@@ -12,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Color
@@ -71,7 +72,6 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 @EventGame
@@ -461,20 +461,13 @@ class CrumbleController : GameBase(
                     var component = Component.empty()
                     val kit = playerKits[it]
                     if(kit != null) {
-                        // a link to the research I did to get these numbers
-                        // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
-                        val bgSize = 69.5
-                        // very important: if these are not roundToInt, it could be offset (I found this out the hard way)
-                        val bgOffset = (kit.kitDisplayTextLength+((bgSize - kit.kitDisplayTextLength)/2)).roundToInt()
-                        val fullOffset = ((bgSize - kit.kitDisplayTextLength) / 2).roundToInt()
-
-                        component = Component.empty()
-                            .append(UserInterfaceUtility.negativeSpace(fullOffset))
-                            .append(Component.text("\uEF00").font(font))
-                            .append(UserInterfaceUtility.negativeSpace(bgOffset))
-                            .append(Component.text(kit.kitIcon).font(font))
-                            .append(Component.text(" ${kit.name}"))
-                            .shadowColor(ShadowColor.shadowColor(0))
+                        component = component.append(UserInterfaceUtility.backgroundTextCenter(
+                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                            Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Component.text(kit.kitIcon).font(font))),
+                            kit.name,
+                            69.5,
+                            14.0
+                        ))
                     }
 
                     it.sendActionBar(component)

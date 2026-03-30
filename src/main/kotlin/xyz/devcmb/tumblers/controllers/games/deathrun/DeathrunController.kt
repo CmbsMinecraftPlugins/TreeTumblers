@@ -59,7 +59,6 @@ import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import kotlin.math.max
-import kotlin.math.roundToInt
 
 @EventGame
 class DeathrunController : GameBase(
@@ -223,20 +222,14 @@ class DeathrunController : GameBase(
             val runnable = object : BukkitRunnable() {
                 override fun run() {
                     val time = completionTimes.getOrElse(it) { ticksElapsed }
-
-                    val bgSize = 69.5
                     val text = MiscUtils.formatMsTime(time * 50L)
-                    val textLength: Double = UserInterfaceUtility.getPixelWidth(text).toDouble()
-                    val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
-                    val fullOffset = ((bgSize - textLength) / 2).roundToInt()
 
-                    it.sendActionBar(
-                        Component.empty()
-                            .append(UserInterfaceUtility.negativeSpace(fullOffset))
-                            .append(Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)))
-                            .append(UserInterfaceUtility.negativeSpace(bgOffset))
-                            .append(Component.text(text))
-                    )
+                    it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
+                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                        Component.text(text),
+                        text,
+                        69.5
+                    ))
                 }
             }
             runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
