@@ -132,6 +132,13 @@ object MiscUtils {
         return String.format("%d:%02d", minutes, seconds)
     }
 
+    fun formatMsTime(ms: Long): String {
+        val minutes: Long = ms / 1000 / 60
+        val seconds: Long = (ms / 1000) % 60
+        val millis: Long = ms % 1000
+        return String.format("%d:%02d.%03d", minutes, seconds, millis)
+    }
+
     fun getOrdinalSuffix(num: Int): String {
         if (num % 100 >= 11 && num % 100 <= 13) {
             return "th"

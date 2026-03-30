@@ -1,11 +1,13 @@
 package xyz.devcmb.tumblers.controllers.games.deathrun
 
+import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -29,6 +31,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -42,6 +45,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -55,6 +59,7 @@ import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 @EventGame
 class DeathrunController : GameBase(
@@ -86,16 +91,18 @@ class DeathrunController : GameBase(
         CommonScoreSource.INDIVIDUAL_PLACEMENT to 4,
         CommonScoreSource.TEAM_PLACEMENT to 80,
     ),
-    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
+    icon = Component.text("\uEA00").font(font),
     scoreboard = "deathrunScoreboard"
 ) {
     companion object {
+        val font = NamespacedKey("tumbling", "games/deathrun")
+
         @field:Configurable("games.deathrun.lives")
         var lives: Int = 3
     }
 
     val playingTeams = Team.entries.filter { it.playingTeam }
-    val rounds = 1//playingTeams.size
+    val rounds = playingTeams.size
     var currentRound = 0
     val roundIndex
         get() = max(currentRound - 1, 0)
@@ -143,6 +150,10 @@ class DeathrunController : GameBase(
 
     val alivePlayers: MutableSet<Player> = HashSet()
     val spectators: MutableSet<Player> = HashSet()
+
+    var ticksElapsed: Int = 0
+    val completionTimes: HashMap<Player, Int> = HashMap()
+    var timerActionBarTasks: HashMap<Player, BukkitRunnable> = HashMap()
 
     /**
      * The load sequence that each individual game should do
@@ -208,6 +219,29 @@ class DeathrunController : GameBase(
     }
 
     override suspend fun gamePregame() {
+        gameParticipants.forEach {
+            val runnable = object : BukkitRunnable() {
+                override fun run() {
+                    val time = completionTimes.getOrElse(it) { ticksElapsed }
+
+                    val bgSize = 69.5
+                    val text = MiscUtils.formatMsTime(time * 50L)
+                    val textLength: Double = UserInterfaceUtility.getPixelWidth(text).toDouble()
+                    val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
+                    val fullOffset = ((bgSize - textLength) / 2).roundToInt()
+
+                    it.sendActionBar(
+                        Component.empty()
+                            .append(UserInterfaceUtility.negativeSpace(fullOffset))
+                            .append(Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)))
+                            .append(UserInterfaceUtility.negativeSpace(bgOffset))
+                            .append(Component.text(text))
+                    )
+                }
+            }
+            runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
+            timerActionBarTasks.put(it, runnable)
+        }
     }
 
     /**
@@ -293,12 +327,15 @@ class DeathrunController : GameBase(
 
         delay(1000)
         val audience = Audience.audience(gamePlayers)
+        audience.sendMessage(gameMessage(
+            Format.mm("Round $currentRound: <team> are up!", Placeholder.component("team", currentTeam.formattedName))
+        ))
+
         val title = Title.title(
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
             Format.mm("<team> are up!", Placeholder.component("team", currentTeam.formattedName)),
             Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(5))
         )
-
         audience.showTitle(title)
 
         delay(4000)
@@ -320,6 +357,8 @@ class DeathrunController : GameBase(
 
         alivePlayers.clear()
         spectators.clear()
+        completionTimes.clear()
+        ticksElapsed = 0
 
         suspendSync {
             gameParticipants.forEach {
@@ -462,13 +501,13 @@ class DeathrunController : GameBase(
 
     fun completeRun(player: Player) {
         makeSpectator(player)
-        // TODO: Show the time
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
-                "<green><player> has completed the run!</green>",
+                "<green><player> has completed the run in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
                 Placeholder.component("player", Format.formatPlayerName(player))
             ))
         )
+        completionTimes.put(player, ticksElapsed)
         MiscUtils.spawnFirework(player, FireworkEffect.builder()
             .trail(false)
             .flicker(false)
@@ -606,6 +645,12 @@ class DeathrunController : GameBase(
     fun playerHealEvent(event: EntityRegainHealthEvent) {
         if(event.entity !is Player || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM) return
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun tickEvent(event: ServerTickStartEvent) {
+        if(!roundActive) return
+        ticksElapsed++
     }
 
     class DeathrunTrapException(override val message: String) : Exception()
