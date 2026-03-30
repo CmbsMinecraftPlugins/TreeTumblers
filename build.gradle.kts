@@ -1,3 +1,4 @@
+import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
@@ -69,11 +70,11 @@ fun padLeftZeros(inputString: String, length: Int): String {
     return sb.toString()
 }
 
+
 tasks.register("updateVersion") {
     doLast {
         val versionFile = file("src/main/kotlin/xyz/devcmb/tumblers/Constants.kt")
         val versionCounterFile = file("version.txt")
-        val newVersion = project.version.toString()
 
         var counter = 0
         if (versionCounterFile.exists()) {
@@ -82,12 +83,35 @@ tasks.register("updateVersion") {
 
         counter++
         val hexCounter = counter.toString(16)
-        val updatedVersion = "$newVersion-${padLeftZeros(hexCounter, 6)}"
+        val updatedVersion = padLeftZeros(hexCounter, 3)
         val content = versionFile.readText()
+
+        fun gitBranch(): String {
+            return try {
+                val byteOut = ByteArrayOutputStream()
+                project.exec {
+                    commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
+                    standardOutput = byteOut
+                }
+                String(byteOut.toByteArray()).trim().also {
+                    if (it == "HEAD") {
+                        "detached"
+                    }
+                }
+            } catch (e: Exception) {
+                logger.warn("Unable to determine current branch: ${e.message}")
+                "unknown"
+            }
+        }
+
         val updatedContent = content.replace(
             Regex("""(const val VERSION: String = ")([^"]+)(")"""),
             "$1$updatedVersion$3"
+        ).replace(
+            Regex("""(const val BRANCH: String = ")([^"]+)(")"""),
+            "$1${gitBranch()}$3"
         )
+
 
         Files.write(
             Paths.get(versionFile.toURI()),

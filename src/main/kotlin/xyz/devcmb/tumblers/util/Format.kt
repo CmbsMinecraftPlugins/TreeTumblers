@@ -53,6 +53,10 @@ object Format {
         return miniMessage.deserialize(text)
     }
 
+    fun mm(text: String, vararg placeholder: TagResolver): Component {
+        return miniMessage.deserialize(text, *placeholder)
+    }
+
     fun formatPlayerName(player: Player): Component {
         val tumblingPlayer = player.tumblingPlayer
         val team = tumblingPlayer.team

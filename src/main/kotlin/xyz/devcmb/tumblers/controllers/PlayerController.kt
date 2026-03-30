@@ -53,6 +53,10 @@ class PlayerController : IController {
         player.gameMode = GameMode.SURVIVAL
         player.isFlying = false
         player.allowFlight = false
+        Bukkit.getOnlinePlayers().forEach {
+            player.unlistPlayer(it)
+            it.unlistPlayer(player)
+        }
         player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
 
         event.joinMessage(Component.empty())
