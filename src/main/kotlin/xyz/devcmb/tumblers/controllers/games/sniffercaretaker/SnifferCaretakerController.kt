@@ -15,7 +15,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
 import org.bukkit.command.CommandSender
-import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
@@ -50,7 +49,6 @@ import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
-import java.util.UUID
 import kotlin.collections.forEach
 
 @EventGame
@@ -367,11 +365,12 @@ class SnifferCaretakerController : GameBase(
 
         val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
 
-        val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
-        display.alignment = TextDisplay.TextAlignment.CENTER
-        display.lineWidth = 400
-        display.isPersistent = true
-        display.text(Format.mm("WHAT AM I DOING"))
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
+            it.alignment = TextDisplay.TextAlignment.CENTER
+            it.lineWidth = 400
+            it.isPersistent = true
+            it.text(Format.mm("WHAT AM I DOING"))
+        })
 
         return display
     }
@@ -388,9 +387,6 @@ class SnifferCaretakerController : GameBase(
             it.interpolationDelay = 0
             it.interpolationDuration = 0
             it.text(Component.text("Restocking in ${timers[key]}"))
-
-            DebugUtil.info("${it.text()}")
-            it.teleport(it.location.add(0.0, 1.0, 0.0))
         }
     }
 
