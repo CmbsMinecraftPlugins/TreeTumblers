@@ -23,6 +23,7 @@ import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
@@ -138,6 +139,7 @@ class SnifferCaretakerController : GameBase(
         },
 
         ItemStack(Material.BONE_MEAL, 64),
+        ItemStack(Material.BUCKET)
     )
 
     val chestItems: List<List<*>> = listOf(
@@ -596,5 +598,10 @@ class SnifferCaretakerController : GameBase(
         if (event.action == Action.PHYSICAL && event.clickedBlock?.type == Material.FARMLAND) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun playerItemConsumeEvent(event: PlayerItemConsumeEvent) {
+        event.isCancelled = true
     }
 }
