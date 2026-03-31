@@ -41,6 +41,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
@@ -369,7 +370,7 @@ class SnifferCaretakerController : GameBase(
             it.alignment = TextDisplay.TextAlignment.CENTER
             it.lineWidth = 400
             it.isPersistent = true
-            it.text(Format.mm("WHAT AM I DOING"))
+            it.text(Format.mm("loading..."))
         })
 
         return display
@@ -383,10 +384,9 @@ class SnifferCaretakerController : GameBase(
 
     fun updateSigns(team: Team) {
         signs[team]!!.forEach { key, it ->
-
             it.interpolationDelay = 0
             it.interpolationDuration = 0
-            it.text(Component.text("Restocking in ${timers[key]}"))
+            it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))
         }
     }
 
@@ -525,7 +525,7 @@ class SnifferCaretakerController : GameBase(
             }
 
             task.runTaskTimer(TreeTumblers.plugin, 20*chestRefresh, 20*chestRefresh)
-            tickTask.runTaskTimer(TreeTumblers.plugin, 100, 20)
+            tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
         }
 
 
