@@ -15,6 +15,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
@@ -33,6 +34,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.BoredTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -181,6 +183,8 @@ class SnifferCaretakerController : GameBase(
 
     val signs: HashMap<Team, HashMap<String, TextDisplay>> = hashMapOf()
 
+    val spawnedMobs: HashMap<Team, MutableList<Entity>> = hashMapOf()
+
     fun offsetLocation(location: Location, team: Team): Location {
         return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
     }
@@ -269,12 +273,14 @@ class SnifferCaretakerController : GameBase(
         val mobLocation = offsetLocation(mobCoordinates.unpackCoordinates(currentMap.world), team)
 
         mobSpawns.forEach {
-            currentMap.world.spawnEntity(mobLocation, it)
+            val entity = currentMap.world.spawnEntity(mobLocation, it)
+            spawnedMobs[team]!!.add(entity)
         }
     }
 
     fun completeTask(team: Team, task: Task) {
         task.display?.remove()
+        task.destroy()
         HandlerList.unregisterAll(task)
 
         val taskIndex = currentTasks[team]!!.indexOfFirst {
@@ -356,6 +362,13 @@ class SnifferCaretakerController : GameBase(
                 stars,
                 Material.getMaterial(item)
             )
+            "LONELY" -> LonelyTask(
+                team,
+                id,
+                this,
+                stars,
+                EntityType.valueOf(item)
+            )
             else -> throw GameControllerException("Task type invalid")
         }
 
@@ -372,6 +385,7 @@ class SnifferCaretakerController : GameBase(
         display.text(createdTask.displayText)
 
         createdTask.display = display
+        createdTask.init()
 
         currentTasks.get(team)!!.add(createdTask)
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
@@ -443,8 +457,8 @@ class SnifferCaretakerController : GameBase(
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
                 currentTasks[it] = mutableListOf()
-
                 signs[it] = hashMapOf()
+                spawnedMobs[it] = mutableListOf()
 
                 val snifferSpawn = map.data.getList("sniffer_spawn")?.validateCoordinates()
                     ?: throw GameControllerException("Sniffer spawns not found")

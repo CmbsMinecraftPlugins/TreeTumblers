@@ -154,7 +154,10 @@ games:
 
       {id: "bored_dirt", type: "BORED", item: "DIRT", stars: 1},
       {id: "bored_mud", type: "BORED", item: "MUD", stars: 2},
-      {id: "bored_moss_block", type: "BORED", item: "MOSS_BLOCK", stars: 2}
+      {id: "bored_moss_block", type: "BORED", item: "MOSS_BLOCK", stars: 2},
+
+      {id: "lonely_chicken", type: "LONELY", item: "CHICKEN", stars: 3},
+      {id: "lonely_cow", type: "LONELY", item: "COW", stars: 4},
     ]
     maps:
       facility:
@@ -164,7 +167,7 @@ games:
             start: [15.6, 66.0, 4.0, 100.2, 6.0]
           base_map: [[-23.0, 61.0, -15.0], [25.0, 75.0, 11.0]]
           sniffer_spawn: [0.0, 65.0, 0.0]
-          pen: [[-2.0, 65.0, -2.0], [2.0, 67.0, 2.0]]
+          pen: [[-2.0, 64.0, -2.0], [6.0, 67.0, 4.0]]
           spawn: [-8.0, 66.0, 8.0]
           supply_chest: [-17.0, 65.0, 1.0]
           supply_chest_sign: [-13.9, 68.4, 1.5, -90.0, 0.0]

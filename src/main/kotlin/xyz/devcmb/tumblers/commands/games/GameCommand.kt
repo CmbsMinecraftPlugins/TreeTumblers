@@ -56,7 +56,8 @@ class GameCommand {
             debugToolkit.events[event.name]!!(sender)
             sender.sendMessage(Format.success("Event successfully executed!"))
         } catch(e: Exception) {
-            sender.sendMessage(Format.error("An error occurred while trying to execute this event!"))
+            sender.sendMessage(Format.error("An error occurred while trying to execute this event! Check the console for trace"))
+            DebugUtil.severe(e.stackTraceToString())
         }
     }
 

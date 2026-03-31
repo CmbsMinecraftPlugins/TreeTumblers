@@ -16,11 +16,11 @@ interface Task : Listener {
     var display: TextDisplay?
     val displayText: Component
 
-    fun setupDisplay() {
+    fun init() {
 
     }
 
-    fun taskComplete() {
+    fun destroy() {
 
     }
 }
