@@ -86,6 +86,9 @@ class SnifferCaretakerController : GameBase(
 
         @field:Configurable("games.snifferCaretaker.block_refresh")
         var blockRefresh: Long = 15
+
+        @field:Configurable("games.snifferCaretaker.mob_refresh")
+        var mobRefresh: Long = 30
     }
 
     override val debugToolkit = object : DebugToolkit() {
@@ -153,16 +156,23 @@ class SnifferCaretakerController : GameBase(
         )
     )
 
+    val mobSpawns: List<EntityType> = listOf(
+        EntityType.CHICKEN,
+        EntityType.COW
+    )
+
     var timers = mutableMapOf(
         "supply_chest" to chestRefresh * 20,
         "dirt" to blockRefresh * 20,
-        "moss" to blockRefresh * 20
+        "moss" to blockRefresh * 20,
+        "mob" to mobRefresh * 20
     )
 
     val timerBases = hashMapOf(
         "supply_chest" to chestRefresh * 20,
         "dirt" to blockRefresh * 20,
-        "moss" to blockRefresh * 20
+        "moss" to blockRefresh * 20,
+        "mob" to mobRefresh * 20
     )
 
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
@@ -247,8 +257,17 @@ class SnifferCaretakerController : GameBase(
                     pos.block.type = material
                 }
             }
+        }
+    }
 
+    fun stockMobs(team: Team) {
+        val mobCoordinates = currentMap.data.getList("mob_spawn")?.validateCoordinates()
+            ?: throw GameControllerException("Mob spawn not found")
 
+        val mobLocation = offsetLocation(mobCoordinates.unpackCoordinates(currentMap.world), team)
+
+        mobSpawns.forEach {
+            currentMap.world.spawnEntity(mobLocation, it)
         }
     }
 
@@ -380,6 +399,7 @@ class SnifferCaretakerController : GameBase(
         signs[team]!!["supply_chest"] = setupSign("supply_chest_sign", team)
         signs[team]!!["dirt"] = setupSign("block_containments.dirt.sign", team)
         signs[team]!!["moss"] = setupSign("block_containments.moss.sign", team)
+        signs[team]!!["mob"] = setupSign("mob_spawn_sign", team)
     }
 
     fun updateSigns(team: Team) {
@@ -424,8 +444,6 @@ class SnifferCaretakerController : GameBase(
 
                 signs[it] = hashMapOf()
 
-
-
                 val snifferSpawn = map.data.getList("sniffer_spawn")?.validateCoordinates()
                     ?: throw GameControllerException("Sniffer spawns not found")
 
@@ -439,13 +457,6 @@ class SnifferCaretakerController : GameBase(
                     PersistentDataType.STRING,
                     it.name
                 )
-
-                // Five Big Booms
-
-                stockChests(it)
-
-
-
             }
         }
     }
@@ -500,11 +511,26 @@ class SnifferCaretakerController : GameBase(
                 setupSigns(it)
             }
 
-            val task = object : BukkitRunnable() {
+            val chestTask = object : BukkitRunnable() {
                 override fun run() {
                     Team.entries.filter { it.playingTeam }.forEach {
                         stockChests(it)
+                    }
+                }
+            }
+
+            val blockTask = object : BukkitRunnable() {
+                override fun run() {
+                    Team.entries.filter { it.playingTeam }.forEach {
                         stockBlocks(it)
+                    }
+                }
+            }
+
+            val mobTask = object : BukkitRunnable() {
+                override fun run() {
+                    Team.entries.filter { it.playingTeam }.forEach {
+                        stockMobs(it)
                     }
                 }
             }
@@ -524,7 +550,9 @@ class SnifferCaretakerController : GameBase(
                 }
             }
 
-            task.runTaskTimer(TreeTumblers.plugin, 20*chestRefresh, 20*chestRefresh)
+            chestTask.runTaskTimer(TreeTumblers.plugin, 0, 20*chestRefresh)
+            blockTask.runTaskTimer(TreeTumblers.plugin, 0, 20*blockRefresh)
+            mobTask.runTaskTimer(TreeTumblers.plugin, 0, 20*mobRefresh)
             tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
         }
 

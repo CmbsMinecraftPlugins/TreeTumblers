@@ -142,6 +142,7 @@ games:
     game_length: 600
     chest_refresh: 20
     block_refresh: 15
+    mob_refresh: 30
     tasks: [
       {id: "hungry_bread", type: "HUNGRY", item: "BREAD", stars: 2},
       {id: "hungry_wheat", type: "HUNGRY", item: "WHEAT", stars: 1},
@@ -161,7 +162,7 @@ games:
         data:
           cutscene:
             start: [15.6, 66.0, 4.0, 100.2, 6.0]
-          base_map: [[-23.0, 61.0, -15.0], [12.0, 75.0, 11.0]]
+          base_map: [[-23.0, 61.0, -15.0], [25.0, 75.0, 11.0]]
           sniffer_spawn: [0.0, 65.0, 0.0]
           pen: [[-2.0, 65.0, -2.0], [2.0, 67.0, 2.0]]
           spawn: [-8.0, 66.0, 8.0]
@@ -177,3 +178,5 @@ games:
               door: [[-12.0, 65.0, -7.0], [-8.0, 67.0, -7.0 ]]
               sign: [-9.5, 68.4, -5.9]
           task_board: [-9.0, 65.0, 6.0]
+          mob_spawn: [20.0, 70.0, -9.0]
+          mob_spawn_sign: [3.0, 65.7, -10.9, 0.0, 0.0]
