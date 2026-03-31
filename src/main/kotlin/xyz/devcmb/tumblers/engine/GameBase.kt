@@ -464,6 +464,11 @@ abstract class GameBase(
      * Announce the event team scores
      */
     fun announceOverallTeamScores() {
+        if(!EventController.eventMode) {
+            Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(Format.warning("Event mode is disabled so team points are not saved!"))
+            return
+        }
+
         var eventPlacementsComponent = Component.empty()
             .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
             .appendNewline()

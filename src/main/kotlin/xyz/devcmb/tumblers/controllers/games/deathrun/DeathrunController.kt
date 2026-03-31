@@ -370,6 +370,12 @@ class DeathrunController : GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
+        timerActionBarTasks.forEach {
+            it.value.cancel()
+            it.key.sendActionBar(Component.empty())
+        }
+        timerActionBarTasks.clear()
+
         val placements = getTeamPlacements()
         gameParticipants.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
