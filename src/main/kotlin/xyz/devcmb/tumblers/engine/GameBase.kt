@@ -359,7 +359,10 @@ abstract class GameBase(
      */
     fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
-        teamScores.put(team, teamScores[team]!! + amount)
+
+        team.getOnlinePlayers().forEach {
+            grantScore(it, source, amountOverride?.div(4))
+        }
         DebugUtil.info("Granting $amount score to $team with source $source")
         eventController.grantTeamScore(team, amount)
     }

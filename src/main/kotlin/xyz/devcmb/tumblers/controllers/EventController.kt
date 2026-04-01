@@ -106,7 +106,10 @@ class EventController : IController {
 
     fun grantTeamScore(team: Team, amount: Int) {
         if(!eventMode) return
-        teamScores.put(team, (teamScores[team] ?: 0) + amount)
+
+        team.getOnlinePlayers().forEach {
+            grantScore(it, amount / 4)
+        }
     }
 
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
