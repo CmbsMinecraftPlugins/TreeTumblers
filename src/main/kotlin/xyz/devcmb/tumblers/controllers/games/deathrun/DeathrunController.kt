@@ -139,6 +139,12 @@ class DeathrunController : GameBase(
                 Component.text("Run failed! ")
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
+        },
+        CommonScoreSource.INDIVIDUAL_PLACEMENT to { amount ->
+            gameMessage(
+                Component.text("Placement Score ")
+                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
+            )
         }
     )
 
