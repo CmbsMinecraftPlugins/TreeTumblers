@@ -39,20 +39,25 @@ class LonelyTask(
     val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
     val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
 
-    fun checkMob(mob: Entity) {
+    fun checkMob(mob: Entity): Boolean {
         val location = mob.location
 
-        if (location.x < penMin.x || location.x > penMax.x) return
-        if (location.y < penMin.y || location.y > penMax.y) return
-        if (location.z < penMin.z || location.z > penMax.z) return
+        if (location.x < penMin.x || location.x > penMax.x) return false
+        if (location.y < penMin.y || location.y > penMax.y) return false
+        if (location.z < penMin.z || location.z > penMax.z) return false
 
         snifferCaretaker.completeTask(this.team, this)
+
+        return true
     }
 
     val task = object : BukkitRunnable() {
         override fun run() {
             snifferCaretaker.spawnedMobs[team]!!.forEach {
-                if (it.type == item) checkMob(it)
+                if (it.type == item) {
+                    val result = checkMob(it)
+                    if (result) return
+                }
             }
         }
     }
