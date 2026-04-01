@@ -4,6 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
@@ -24,7 +25,15 @@ class CrumbleKitSelector(
     val gameController: GameController,
     override val id: String = "crumbleKitSelector"
 ) : HandledInventory {
-    override val inventory = ChestInventoryUI(player, Component.text("Kit Selector")).apply {
+    // https://septicuss.notion.site/Fonts-ce8c8c12c313463ea01ac9b16d7e6bbb
+    override val inventory = ChestInventoryUI(
+        player,
+        UserInterfaceUtility.negativeSpace(8)
+            .append(Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font))
+            .append(UserInterfaceUtility.negativeSpace(170))
+            .append(Component.text("Kit Selector", NamedTextColor.DARK_GRAY).font(NamespacedKey("minecraft", "default"))),
+        6
+    ).apply {
         val page = ChestInventoryPage()
         addPage("main", page, true)
         page.addItemMap(InventoryItemMap(
@@ -37,78 +46,91 @@ class CrumbleKitSelector(
                 val crumble = gameController.activeGame as CrumbleController
 
                 val items: ArrayList<InventoryMappedItem> = ArrayList()
-                val templates = crumble.kitTemplates.toSortedMap(compareBy { it })
-                templates.forEach { _,template ->
-                    items.add(InventoryMappedItem(
-                        getItemStack = { _,_ ->
-                            val currentPlayerKits = crumble.playerKits.filter { item -> item.value.id == template.id }
-                            var stack = ItemStack.of(Material.PAPER).apply {
-                                itemMeta = itemMeta.also { meta ->
-                                    meta.itemName(Component.text(template.name))
-                                    if(
-                                        crumble.playerKits[player]?.id != template.id
-                                        && currentPlayerKits.size < CrumbleController.maxPlayersPerKit
-                                    ) meta.itemModel = template.inventoryModel
+                val templates = crumble.kitTemplates.toSortedMap(compareBy { it }).toList()
+
+                val slots = listOf(1,4,7,21,23,37,40,43)
+                var spacesOccupied = 0
+
+                repeat(55) { slot ->
+                    if(slots.contains(slot)) {
+                        val template = templates[spacesOccupied].second
+                        items.add(InventoryMappedItem(
+                            getItemStack = { _,_ ->
+                                val currentPlayerKits = crumble.playerKits.filter { item -> item.value.id == template.id }
+                                var stack = ItemStack.of(Material.PAPER).apply {
+                                    itemMeta = itemMeta.also { meta ->
+                                        meta.itemName(Component.text(template.name))
+                                        if(
+                                            crumble.playerKits[player]?.id != template.id
+                                            && currentPlayerKits.size < CrumbleController.maxPlayersPerKit
+                                        ) meta.itemModel = template.inventoryModel
+                                    }
                                 }
-                            }
 
-                            var lore: MutableList<Component> = mutableListOf(
-                                Component.text("Ability: ${template.abilityName}", NamedTextColor.AQUA),
-                                *MiscUtils.wrapComponent(
-                                    Component.text(template.abilityDescription, NamedTextColor.WHITE),
-                                    40
-                                ).toTypedArray(),
-                                Component.empty(),
-                                Component.text("Kill Power: ${template.killPowerName}", NamedTextColor.YELLOW),
-                                *MiscUtils.wrapComponent(
-                                    Component.text(template.killPowerDescription, NamedTextColor.WHITE),
-                                    40
-                                ).toTypedArray(),
-                                Component.empty(),
-                                Component.text("${currentPlayerKits.size}/${CrumbleController.maxPlayersPerKit}", NamedTextColor.GRAY)
-                            )
+                                var lore: MutableList<Component> = mutableListOf(
+                                    Component.text("Ability: ${template.abilityName}", NamedTextColor.AQUA),
+                                    *MiscUtils.wrapComponent(
+                                        Component.text(template.abilityDescription, NamedTextColor.WHITE),
+                                        40
+                                    ).toTypedArray(),
+                                    Component.empty(),
+                                    Component.text("Kill Power: ${template.killPowerName}", NamedTextColor.YELLOW),
+                                    *MiscUtils.wrapComponent(
+                                        Component.text(template.killPowerDescription, NamedTextColor.WHITE),
+                                        40
+                                    ).toTypedArray(),
+                                    Component.empty(),
+                                    Component.text("${currentPlayerKits.size}/${CrumbleController.maxPlayersPerKit}", NamedTextColor.GRAY)
+                                )
 
-                            if(crumble.playerKits[player]?.id == template.id) {
-                                stack = stack.withType(Material.GREEN_STAINED_GLASS_PANE)
-                                lore.add(Component.text("Selected!", NamedTextColor.GREEN))
-                            }
-
-                            if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
-                                if(stack.type != Material.GREEN_STAINED_GLASS_PANE) stack = stack.withType(Material.BARRIER)
-                                lore.add(Component.text("Max players!", NamedTextColor.RED))
-                            }
-
-                            lore = lore.map { it.decoration(TextDecoration.ITALIC, false) }.toMutableList()
-                            stack = stack.apply {
-                                itemMeta = itemMeta.also {
-                                    it.lore(lore)
+                                if(crumble.playerKits[player]?.id == template.id) {
+                                    stack = stack.withType(Material.GREEN_STAINED_GLASS_PANE)
+                                    lore.add(Component.text("Selected!", NamedTextColor.GREEN))
                                 }
-                            }
 
-                            stack
-                        },
-                        onClick = { page, item ->
-                            if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
-                                player.sendMessage(Format.error("This kit has too many players!"))
-                                return@InventoryMappedItem
-                            }
+                                if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
+                                    if(stack.type != Material.GREEN_STAINED_GLASS_PANE) stack = stack.withType(Material.BARRIER)
+                                    lore.add(Component.text("Max players!", NamedTextColor.RED))
+                                }
 
-                            if(crumble.playerKits[player]?.id == template.id) {
-                                player.sendMessage(Format.error("You've already selected this kit!"))
-                                return@InventoryMappedItem
-                            }
+                                lore = lore.map { it.decoration(TextDecoration.ITALIC, false) }.toMutableList()
+                                stack = stack.apply {
+                                    itemMeta = itemMeta.also {
+                                        it.lore(lore)
+                                    }
+                                }
 
-                            crumble.selectKit(player, template.id)
-                            player.buttonClickSound()
-                            UserInterfaceUtility.refreshAll(id)
-                        }
-                    ))
+                                stack
+                            },
+                            onClick = { page, item ->
+                                if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
+                                    player.sendMessage(Format.error("This kit has too many players!"))
+                                    return@InventoryMappedItem
+                                }
+
+                                if(crumble.playerKits[player]?.id == template.id) {
+                                    player.sendMessage(Format.error("You've already selected this kit!"))
+                                    return@InventoryMappedItem
+                                }
+
+                                crumble.selectKit(player, template.id)
+                                player.buttonClickSound()
+                                UserInterfaceUtility.refreshAll(id)
+                            }
+                        ))
+                        spacesOccupied++
+                    } else {
+                        items.add(InventoryMappedItem(
+                            getItemStack = { _,_ -> ItemStack.empty() }
+                        ))
+                    }
                 }
+
                 items
             },
             startSlot = 0,
             itemPage = 1,
-            maxItems = 27
+            maxItems = 53
         ))
     }
 }
