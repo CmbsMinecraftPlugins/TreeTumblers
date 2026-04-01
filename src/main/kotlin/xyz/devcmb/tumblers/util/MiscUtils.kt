@@ -14,7 +14,9 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.TreeTumblers
+import java.io.File
 import java.time.Duration
+import java.util.jar.JarFile
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.coroutines.resume
@@ -170,6 +172,19 @@ object MiscUtils {
             score.customName(text)
             score.score = lines.size - index
         }
+    }
+
+    // AI code
+    fun listResourceFolder(folder: String): List<File> {
+        val jarFile = File(TreeTumblers::class.java.protectionDomain.codeSource.location.toURI())
+        val jar = JarFile(jarFile)
+
+        val normalized = folder.trimEnd('/') + "/"
+
+        return jar.entries().asSequence()
+            .filter { !it.isDirectory && it.name.startsWith(normalized) }
+            .map { File(it.name) } // full path inside resources
+            .toList()
     }
 
     // Source - https://stackoverflow.com/a/73494554

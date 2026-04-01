@@ -1,0 +1,8 @@
+{
+  "type": "AddVelocity",
+  "effect": {
+    "x": 0.0,
+    "y": 20.0,
+    "z": 0.0
+  }
+}

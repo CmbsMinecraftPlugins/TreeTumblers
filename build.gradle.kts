@@ -22,6 +22,9 @@ repositories {
     maven("https://maven.enginehub.org/repo/")
     maven("https://mvn.lib.co.nz/public")
     maven("https://repo.codemc.io/repository/maven-releases/")
+    maven("https://maven.noxcrew.com/public") {
+        name = "noxcrew-public"
+    }
 }
 
 dependencies {
@@ -29,6 +32,7 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.11.2")
     compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
     compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
+    implementation("com.noxcrew.noxesium:paper:2.8.2")
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
