@@ -1,8 +1,10 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
@@ -23,11 +25,16 @@ class BoredTask(
 ) : Task {
     override val feeling = "bored"
     override var display: TextDisplay? = null
+    override var count = 5
 
-    override val displayText = Format.mm(
-        "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
-                "<sprite:blocks:block/${item?.name?.lowercase()}> <yellow><lang:${item?.blockTranslationKey}></yellow> to its pen!")
+    override fun getDisplayText(): Component {
+        return Format.mm(
+            "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
+                    "<sprite:blocks:block/${item?.name?.lowercase()}> " +
+                    "$count <yellow><lang:${item?.blockTranslationKey}>${if (count == 1) "" else "s"}</yellow> to its pen!"
+        )
+    }
 
     val penCoordinates = snifferCaretaker.currentMap.data.getList("pen")!!.map { it as List<*>
         it.validateCoordinates()
@@ -53,5 +60,17 @@ class BoredTask(
         runTaskLater(20*3) {
             block.type = Material.AIR
         }
+    }
+
+    @EventHandler
+    fun blockBreak(event: BlockBreakEvent) {
+        val block = event.block
+        if (block.type != item) return
+
+        if (block.x < penMin.x || block.x > penMax.x) return
+        if (block.y < penMin.y || block.y > penMax.y) return
+        if (block.z < penMin.z || block.z > penMax.z) return
+
+        event.isCancelled = true
     }
 }

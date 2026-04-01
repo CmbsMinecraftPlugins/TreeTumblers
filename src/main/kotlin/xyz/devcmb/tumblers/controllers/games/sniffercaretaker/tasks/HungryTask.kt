@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.TextDisplay
@@ -22,11 +23,15 @@ class HungryTask(
 ) : Task {
     override val feeling = "hungry"
     override var display: TextDisplay? = null
+    override var count = 1
 
-    override val displayText = Format.mm(
-        "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
-                "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>")
+    override fun getDisplayText(): Component {
+        return Format.mm(
+            "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
+                    "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
+        )
+    }
 
     @EventHandler
     fun playerInteractEntity(event: PlayerInteractEntityEvent) {

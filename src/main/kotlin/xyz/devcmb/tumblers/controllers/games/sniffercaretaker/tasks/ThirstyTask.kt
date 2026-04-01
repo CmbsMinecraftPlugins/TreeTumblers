@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.block.data.Levelled
 import org.bukkit.entity.TextDisplay
@@ -24,11 +25,15 @@ class ThirstyTask(
 ) : Task {
     override val feeling = "thirsty"
     override var display: TextDisplay? = null
+    override var count = 1
 
-    override val displayText = Format.mm(
-        "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
-                "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}></yellow> to its cauldron!")
+
+    override fun getDisplayText(): Component {
+        return Format.mm(
+            "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
+                    "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}></yellow> to its cauldron!")
+    }
 
     @EventHandler
     fun playerInteract(event: PlayerInteractEvent) {

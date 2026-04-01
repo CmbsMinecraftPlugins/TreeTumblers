@@ -153,7 +153,7 @@ games:
       {id: "thirsty_milk", type: "THIRSTY", item: "MILK_BUCKET", stars: 2},
 
       {id: "bored_dirt", type: "BORED", item: "DIRT", stars: 1},
-      {id: "bored_mud", type: "BORED", item: "MUD", stars: 2},
+      {id: "bored_mud", type: "BORED", item: "MUD", stars: 3},
       {id: "bored_moss_block", type: "BORED", item: "MOSS_BLOCK", stars: 2},
 
       {id: "lonely_chicken", type: "LONELY", item: "CHICKEN", stars: 3},

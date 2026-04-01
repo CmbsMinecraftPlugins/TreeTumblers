@@ -42,6 +42,7 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -74,7 +75,13 @@ class SnifferCaretakerController : GameBase(
         },
     ),
     flags = emptySet(),
-    scores = hashMapOf(),
+    scores = hashMapOf(
+        SnifferCaretakerScoreSource.TASK_1_STAR to 25,
+        SnifferCaretakerScoreSource.TASK_2_STAR to 50,
+        SnifferCaretakerScoreSource.TASK_3_STAR to 90,
+        SnifferCaretakerScoreSource.TASK_4_STAR to 150,
+        SnifferCaretakerScoreSource.TASK_5_STAR to 250
+    ),
     icon = Component.empty(),
     scoreboard = "snifferCaretakerScoreboard"
 ) {
@@ -279,6 +286,10 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun completeTask(team: Team, task: Task) {
+        task.count -= 1
+
+        if (task.count > 0) return
+
         task.display?.remove()
         task.destroy()
         HandlerList.unregisterAll(task)
@@ -378,11 +389,11 @@ class SnifferCaretakerController : GameBase(
         val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
             .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
 
-        val display: TextDisplay = currentMap.world.spawnEntity(displayLocation, EntityType.TEXT_DISPLAY) as TextDisplay
-        display.alignment = TextDisplay.TextAlignment.LEFT
-        display.lineWidth = 400
-
-        display.text(createdTask.displayText)
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
+            it.alignment = TextDisplay.TextAlignment.LEFT
+            it.lineWidth = 400
+            it.text(createdTask.getDisplayText())
+        })
 
         createdTask.display = display
         createdTask.init()
@@ -391,7 +402,7 @@ class SnifferCaretakerController : GameBase(
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
         team.getOnlinePlayers().forEach { player ->
-            player.sendMessage(createdTask.displayText)
+            player.sendMessage(createdTask.getDisplayText())
         }
     }
 
@@ -423,6 +434,10 @@ class SnifferCaretakerController : GameBase(
             it.interpolationDelay = 0
             it.interpolationDuration = 0
             it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))
+        }
+
+        currentTasks[team]!!.forEach {
+            it.display?.text(it.getDisplayText())
         }
     }
 
@@ -617,5 +632,13 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun playerItemConsumeEvent(event: PlayerItemConsumeEvent) {
         event.isCancelled = true
+    }
+
+    enum class SnifferCaretakerScoreSource(override val id: String) : ScoreSource {
+        TASK_1_STAR("task_1_star"),
+        TASK_2_STAR("task_2_star"),
+        TASK_3_STAR("task_3_star"),
+        TASK_4_STAR("task_4_star"),
+        TASK_5_STAR("task_5_star")
     }
 }

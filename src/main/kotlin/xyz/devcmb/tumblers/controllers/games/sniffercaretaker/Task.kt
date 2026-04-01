@@ -12,9 +12,13 @@ interface Task : Listener {
     val id: String
     val feeling: String
     val stars: Int
+    var count: Int
 
     var display: TextDisplay?
-    val displayText: Component
+
+    fun getDisplayText(): Component {
+        return Component.empty()
+    }
 
     fun init() {
 

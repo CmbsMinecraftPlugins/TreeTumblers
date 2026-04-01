@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
+import net.kyori.adventure.text.Component
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.TextDisplay
@@ -22,11 +23,14 @@ class LonelyTask(
 ) : Task {
     override val feeling = "lonely"
     override var display: TextDisplay? = null
+    override var count = 10
 
-    override val displayText = Format.mm(
-        "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring a " +
-                "<yellow><lang:${item?.translationKey()}></yellow> to its pen!")
+    override fun getDisplayText(): Component {
+        return Format.mm(
+            "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring a " +
+                    "<yellow><lang:${item?.translationKey()}></yellow> to its pen for $count seconds!")
+    }
 
     val penCoordinates = snifferCaretaker.currentMap.data.getList("pen")!!.map { it as List<*>
         it.validateCoordinates()
