@@ -161,3 +161,14 @@ games:
                 replace_type: STONE
                 replace_start: [-1,61,22]
                 replace_end: [18,61,7]
+            - id: "beam_run"
+              start: [ 19,70,-2 ]
+              end: [ 43,65,4 ]
+              data:
+                blocks:
+                  - [ 41,61,20 ]
+                  - [ 41,61,19 ]
+                  - [ 33,61,18 ]
+                  - [ 33,61,17 ]
+                  - [ 29,61,17 ]
+                  - [ 29,61,16 ]

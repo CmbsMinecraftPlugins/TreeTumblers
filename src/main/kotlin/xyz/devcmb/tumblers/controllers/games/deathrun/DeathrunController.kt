@@ -36,7 +36,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.deathrun.traps.MagmaFallTrap
+import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -170,6 +170,7 @@ class DeathrunController : GameBase(
     @Suppress("UNCHECKED_CAST")
     override suspend fun gameLoad() {
         traps.add(MagmaFallTrap::class.java)
+        traps.add(BeamRunTrap::class.java)
 
         repeat(rounds) {
             val map = loadMap(maps.random(), it + 1)
