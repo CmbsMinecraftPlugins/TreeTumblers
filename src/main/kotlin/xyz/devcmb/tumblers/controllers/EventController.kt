@@ -104,14 +104,6 @@ class EventController : IController {
         teamScores.put(tumblingPlayer.team, (teamScores[tumblingPlayer.team] ?: 0) + amount)
     }
 
-    fun grantTeamScore(team: Team, amount: Int) {
-        if(!eventMode) return
-
-        team.getOnlinePlayers().forEach {
-            grantScore(it, amount / 4)
-        }
-    }
-
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
         val sorted = teamScores.entries.sortedWith(
             compareByDescending<MutableMap.MutableEntry<Team, Int>> { it.value }

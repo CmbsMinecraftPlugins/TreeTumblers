@@ -351,20 +351,22 @@ abstract class GameBase(
     }
 
     /**
-     * Grants score to only a team
-     *
-     * This does not affect individual placements
+     * Grants a score equally amongst a team
      * @param team The team to give score to
      * @param source The source of score
      */
+
     fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
+        val playerCount = team.getOnlinePlayers().size
+
+        if (amount % playerCount != 0) {
+            DebugUtil.warning("Attempted to give team ${team.name} ($playerCount players) $amount score, which cannot be divided equally, giving ${(amount / playerCount) * playerCount} score instead of $amount")
+        }
 
         team.getOnlinePlayers().forEach {
-            grantScore(it, source, amountOverride?.div(4))
+            grantScore(it, source, amount / playerCount)
         }
-        DebugUtil.info("Granting $amount score to $team with source $source")
-        eventController.grantTeamScore(team, amount)
     }
 
     /**
