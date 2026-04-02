@@ -116,7 +116,7 @@ object UserInterfaceUtility {
             }
         }
 
-        return Component.text(result.toString()).font(SPACES)
+        return Component.text(result.toString(), NamedTextColor.WHITE).font(SPACES)
     }
 
     // a link to the research I did to get these numbers
