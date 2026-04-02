@@ -32,7 +32,6 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
-import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -417,8 +416,6 @@ abstract class GameBase(
 
         val teamPlacements = getTeamPlacements()
         teamPlacements.forEach {
-            val score = (teamPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.TEAM_PLACEMENT)
-
             teamScoresComponent = teamScoresComponent.append(
                 Component.empty()
                     .appendNewline()
@@ -426,13 +423,6 @@ abstract class GameBase(
                     .append(it.first.formattedName)
                     .append(Component.text(" - ", NamedTextColor.GRAY))
                     .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
-                    .append(Component.text(" [+${score}]", NamedTextColor.GOLD))
-            )
-
-            grantTeamScore(
-                it.first,
-                CommonScoreSource.TEAM_PLACEMENT,
-                score
             )
         }
         teamScoresComponent = teamScoresComponent.appendNewline()
@@ -449,7 +439,6 @@ abstract class GameBase(
 
         val indivPlacements = getIndividualPlacements()
         indivPlacements.forEach {
-            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
             individualScoresComponent = individualScoresComponent.append(
                 Component.empty()
                     .appendNewline()
@@ -457,7 +446,6 @@ abstract class GameBase(
                     .append(Format.formatPlayerName(it.first))
                     .append(Component.text(" - ", NamedTextColor.GRAY))
                     .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
-                    .append(Component.text(" [+${placementScore}]", NamedTextColor.GOLD))
             )
         }
 

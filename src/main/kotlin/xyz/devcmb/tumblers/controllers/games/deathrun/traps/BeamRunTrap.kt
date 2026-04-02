@@ -10,7 +10,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.block.data.BlockData
 import org.bukkit.configuration.ConfigurationSection
-import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.controllers.games.deathrun.Trap
@@ -31,9 +30,9 @@ class BeamRunTrap(
 
     override suspend fun activate() {
         data.getList("blocks")?.map {
-            if(it !is List<*>) throw GameControllerException("Locations list does not contain location lists")
+            if(it !is List<*>) throw DeathrunController.DeathrunTrapException("Locations list does not contain location lists")
             it.map { int ->
-                if(int !is Int) throw GameControllerException("Locations list does not contain exclusively integers")
+                if(int !is Int) throw DeathrunController.DeathrunTrapException("Locations list does not contain exclusively integers")
                 int.toDouble()
             }
         }?.forEach {
@@ -72,6 +71,6 @@ class BeamRunTrap(
                     location.block.blockData = data
                 }
             }
-        } ?: throw GameControllerException("Beam run locations table not provided")
+        } ?: throw DeathrunController.DeathrunTrapException("Beam run locations table not provided")
     }
 }

@@ -20,6 +20,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.block.data.type.Gate
+import org.bukkit.command.CommandSender
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.Player
@@ -38,12 +39,12 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
@@ -86,9 +87,7 @@ class DeathrunController : GameBase(
         DeathrunScoreSource.RUN_COMPLETE to 140,
         DeathrunScoreSource.RUN_FAILED to 20,
         DeathrunScoreSource.TRAP_KILL to 10,
-        DeathrunScoreSource.TRAP_DAMAGE to 5,
-        CommonScoreSource.INDIVIDUAL_PLACEMENT to 4,
-        CommonScoreSource.TEAM_PLACEMENT to 80,
+        DeathrunScoreSource.TRAP_DAMAGE to 5
     ),
     icon = Component.text("\uEA00").font(font),
     scoreboard = "deathrunScoreboard"
@@ -139,14 +138,20 @@ class DeathrunController : GameBase(
                 Component.text("Run failed! ")
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
-        },
-        CommonScoreSource.INDIVIDUAL_PLACEMENT to { amount ->
-            gameMessage(
-                Component.text("Placement Score ")
-                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
-            )
         }
     )
+
+    override val debugToolkit: DebugToolkit? = object : DebugToolkit() {
+        override val events: HashMap<String, (CommandSender) -> Unit> = hashMapOf()
+
+        override fun killEvent(killer: Player?, killed: Player?) {
+            killed?.damage(1.0)
+        }
+
+        override fun deathEvent(killed: Player?) {
+            killed?.damage(1.0)
+        }
+    }
 
     val traps: ArrayList<Class<out Trap>> = ArrayList()
     val mapTraps: HashMap<Int, ArrayList<Trap>> = HashMap()
@@ -171,6 +176,7 @@ class DeathrunController : GameBase(
     override suspend fun gameLoad() {
         traps.add(MagmaFallTrap::class.java)
         traps.add(BeamRunTrap::class.java)
+        traps.add(HappyGhastTrap::class.java)
 
         repeat(rounds) {
             val map = loadMap(maps.random(), it + 1)
@@ -406,16 +412,6 @@ class DeathrunController : GameBase(
         announceTeamScores()
         delay(5000)
         announceIndivScores()
-
-        val indivPlacements = getIndividualPlacements()
-        indivPlacements.forEach {
-            val placementScore = (indivPlacements.size - (it.second - 1)) * getScoreSource(CommonScoreSource.INDIVIDUAL_PLACEMENT)
-            grantScore(
-                it.first,
-                CommonScoreSource.INDIVIDUAL_PLACEMENT,
-                placementScore
-            )
-        }
 
         delay(5000)
         announceOverallTeamScores()
@@ -657,6 +653,16 @@ class DeathrunController : GameBase(
     fun tickEvent(event: ServerTickStartEvent) {
         if(!roundActive) return
         ticksElapsed++
+    }
+
+    @EventHandler
+    fun moveEvent(event: PlayerMoveEvent) {
+        if(!roundActive) return
+
+        val voidHeight = currentMap.data.getInt("void_height")
+        if(event.to.y < voidHeight) {
+            event.player.damage(1.0)
+        }
     }
 
     class DeathrunTrapException(override val message: String) : Exception()
