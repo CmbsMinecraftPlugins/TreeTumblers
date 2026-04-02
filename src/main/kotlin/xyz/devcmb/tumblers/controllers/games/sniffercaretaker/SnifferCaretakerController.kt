@@ -76,11 +76,11 @@ class SnifferCaretakerController : GameBase(
     ),
     flags = emptySet(),
     scores = hashMapOf(
-        SnifferCaretakerScoreSource.TASK_1_STAR to 25,
-        SnifferCaretakerScoreSource.TASK_2_STAR to 50,
-        SnifferCaretakerScoreSource.TASK_3_STAR to 90,
-        SnifferCaretakerScoreSource.TASK_4_STAR to 150,
-        SnifferCaretakerScoreSource.TASK_5_STAR to 250
+        SnifferCaretakerScoreSource.TASK_1_STAR to 20,
+        SnifferCaretakerScoreSource.TASK_2_STAR to 40,
+        SnifferCaretakerScoreSource.TASK_3_STAR to 60,
+        SnifferCaretakerScoreSource.TASK_4_STAR to 80,
+        SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
     icon = Component.empty(),
     scoreboard = "snifferCaretakerScoreboard"
@@ -100,6 +100,14 @@ class SnifferCaretakerController : GameBase(
         @field:Configurable("games.snifferCaretaker.mob_refresh")
         var mobRefresh: Long = 30
     }
+
+    override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+        SnifferCaretakerScoreSource.TASK_1_STAR to { amount -> gameMessage(Format.mm("Completed a <aqua>1-Star Task!</aqua> <gold>[+$amount]</gold>")) },
+        SnifferCaretakerScoreSource.TASK_2_STAR to { amount -> gameMessage(Format.mm("Completed a <dark_purple>2-Star Task!</dark_purple> <gold>[+$amount]</gold>")) },
+        SnifferCaretakerScoreSource.TASK_3_STAR to { amount -> gameMessage(Format.mm("Completed a <color:#ff9100>3-Star Task!</color> <gold>[+$amount]</gold>")) },
+        SnifferCaretakerScoreSource.TASK_4_STAR to { amount -> gameMessage(Format.mm("Completed a <red>4-Star Task!</red> <gold>[+$amount]</gold>")) },
+        SnifferCaretakerScoreSource.TASK_5_STAR to { amount -> gameMessage(Format.mm("Completed a <yellow>5-Star Task!</yellow> <gold>[+$amount]</gold>")) },
+    )
 
     override val debugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
@@ -289,6 +297,8 @@ class SnifferCaretakerController : GameBase(
         task.count -= 1
 
         if (task.count > 0) return
+
+        grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
 
         task.display?.remove()
         task.destroy()
