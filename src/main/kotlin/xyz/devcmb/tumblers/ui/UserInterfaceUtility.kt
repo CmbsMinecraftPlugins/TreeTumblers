@@ -115,7 +115,7 @@ object UserInterfaceUtility {
             }
         }
 
-        return Component.text(result.toString()).font(SPACES)
+        return Component.text(result.toString(), NamedTextColor.WHITE).font(SPACES)
     }
 
     fun getPixelWidth(text: String): Int {
