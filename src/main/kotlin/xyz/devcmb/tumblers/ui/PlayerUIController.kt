@@ -46,7 +46,7 @@ class PlayerUIController(val player: Player) {
         }
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
-        registerScoreboard(SnifferCaretakerScoreboard())
+        registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
 
         player.scoreboard = playerScoreboard
 
