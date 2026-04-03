@@ -577,6 +577,7 @@ class DeathrunController : GameBase(
 
         suspendSync {
             gateStart.forEachRegion(gateEnd) {
+                if(it.blockData !is Gate) return@forEachRegion
                 it.blockData = (it.blockData as Gate).also { gate ->
                     gate.isOpen = true
                 }
@@ -662,14 +663,21 @@ class DeathrunController : GameBase(
 
     fun completeRun(player: Player) {
         makeSpectator(player)
+        val placement = placements[roundIndex].size
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
-                "<green><player> has completed the run in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
+                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
                 Placeholder.component("player", Format.formatPlayerName(player))
             ))
         )
 
         grantScore(player, DeathrunScoreSource.RUN_COMPLETE, getRunCompletionScore())
+        player.showTitle(Title.title(
+            Component.empty(),
+            Format.success("Run complete")
+                .append(Component.text(" [+${getRunCompletionScore()}]", NamedTextColor.GOLD)),
+            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
+        ))
 
         completionTimes.put(player, ticksElapsed)
         placements[roundIndex].put(player, completionTimes.size)
@@ -683,12 +691,6 @@ class DeathrunController : GameBase(
             .build()
         )
 
-        player.showTitle(Title.title(
-            Component.empty(),
-            Format.success("Run complete")
-                .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_COMPLETE)}]", NamedTextColor.GOLD)),
-            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
-        ))
     }
 
     fun getRunCompletionScore(): Int {
