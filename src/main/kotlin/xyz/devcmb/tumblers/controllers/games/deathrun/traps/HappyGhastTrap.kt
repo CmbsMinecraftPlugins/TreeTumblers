@@ -37,7 +37,6 @@ class HappyGhastTrap(
                     location.clone().add(0.0,12.0,0.0),
                     Fireball::class.java
                 ) { fireball ->
-                    fireball.location.add(location)
                     fireball.velocity = Vector(0.0, -0.1, 0.0)
                 }
             } ?: throw DeathrunController.DeathrunTrapException("Ghast location list not provided")
