@@ -52,7 +52,7 @@ class PlayerController : IController {
     override fun init() {
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.NORMAL)
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
@@ -62,7 +62,7 @@ class PlayerController : IController {
         player.clearActivePotionEffects()
         player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        player.heal(20.0)
+        player.health = 20.0
 
         Bukkit.getOnlinePlayers().forEach {
             player.unlistPlayer(it)

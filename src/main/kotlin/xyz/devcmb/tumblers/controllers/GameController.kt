@@ -83,7 +83,7 @@ class GameController : IController {
         event.isCancelled = true
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.HIGH)
     fun playerJoin(event: PlayerJoinEvent) {
         if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) {
             val player = event.player
@@ -94,7 +94,7 @@ class GameController : IController {
     }
 
     class Game(val id: String) {
-        fun get(): GameBase {
+        fun getTemplate(): GameBase {
             val gameController = ControllerDelegate.getController("gameController") as GameController
             val gameType = gameController.games.find { it.id == id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")

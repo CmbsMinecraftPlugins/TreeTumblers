@@ -12,23 +12,19 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
-import org.bukkit.Bukkit
-import org.bukkit.Color
-import org.bukkit.FireworkEffect
-import org.bukkit.GameMode
-import org.bukkit.Location
-import org.bukkit.Material
-import org.bukkit.NamespacedKey
+import org.bukkit.*
 import org.bukkit.attribute.Attribute
 import org.bukkit.block.data.type.Gate
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Fireball
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
@@ -48,18 +44,9 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.*
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
-import xyz.devcmb.tumblers.util.disableBossBar
-import xyz.devcmb.tumblers.util.enableBossBar
-import xyz.devcmb.tumblers.util.forEachRegion
-import xyz.devcmb.tumblers.util.hideToAll
-import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
-import xyz.devcmb.tumblers.util.parseCoordinates
-import xyz.devcmb.tumblers.util.showToAll
-import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.math.max
 
 @EventGame
@@ -742,6 +729,15 @@ class DeathrunController : GameBase(
         if(checkpoint == -1) return
 
         setCheckpoint(event.player, checkpoint)
+    }
+
+    @EventHandler
+    fun destructionlessFireballEvent(event: ProjectileHitEvent) {
+        if(event.entity !is Fireball) return
+
+        event.isCancelled = true
+        event.entity.location.createExplosion(2.0f,false,false)
+        event.entity.remove()
     }
 
     class DeathrunTrapException(override val message: String) : Exception()
