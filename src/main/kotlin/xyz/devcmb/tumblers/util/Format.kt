@@ -62,11 +62,17 @@ object Format {
                 .append(Component.text("Player", NamedTextColor.WHITE))
             else formatPlayerName(killed)
 
-        return mm(
+        var component = mm(
             "<killed> was slain by <killer>",
             Placeholder.component("killed", killedName),
             Placeholder.component("killer", killerName)
         )
+
+        if(receiver == killer) {
+            component = component.append(Component.text(" [+$score]", NamedTextColor.GOLD))
+        }
+
+        return component
     }
 
     fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {

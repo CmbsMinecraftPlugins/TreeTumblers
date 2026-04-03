@@ -37,7 +37,7 @@ class MagmaFallTrap(
         }?.unpackCoordinates(deathrunController.currentMap.world)
             ?: throw DeathrunController.DeathrunTrapException("Magma fall replace end field not specified")
 
-        val replaceBlockType: Material = data.getString("replace_type")?.let { type -> Material.entries.first { it.name == type } }
+        val replaceBlockType: Material = data.getString("replace_type")?.let { type -> Material.matchMaterial(type) }
             ?: throw DeathrunController.DeathrunTrapException("Replace type not specified")
 
         val oldBlocks: HashMap<Location, Material> = HashMap()

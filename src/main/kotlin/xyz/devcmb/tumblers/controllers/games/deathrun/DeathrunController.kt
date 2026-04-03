@@ -262,7 +262,7 @@ class DeathrunController : GameBase(
             placements.add(hashMapOf())
 
             val map = loadMap(maps.random(), it + 1)
-            val traps: ArrayList<Trap> = ArrayList(map.data.getList("traps")?.map { trap ->
+            val roundMapTraps: ArrayList<Trap> = ArrayList(map.data.getList("traps")?.map { trap ->
                 if(
                     trap !is HashMap<*,*>
                     || trap["id"] == null
@@ -302,12 +302,12 @@ class DeathrunController : GameBase(
                 // this took too long
                 val data = YamlConfiguration().createSection("data", trap["data"] as HashMap<*,*>)
 
-                val start = (trap["start"] as List<Int>).validateLocation(currentMap.world)
-                val end = (trap["end"] as List<Int>).validateLocation(currentMap.world)
+                val start = (trap["start"] as List<Int>).validateLocation(map.world)
+                val end = (trap["end"] as List<Int>).validateLocation(map.world)
                 trapClass.newInstance(this, data, start, end)
             } ?: throw GameControllerException("Traps list not found"))
 
-            mapTraps.put(it, traps)
+            mapTraps.put(it, roundMapTraps)
         }
     }
 
@@ -751,7 +751,7 @@ class DeathrunController : GameBase(
 
     suspend fun roundEnd() {
         suspendSync {
-            Bukkit.getOnlinePlayers().forEach {
+            gameParticipants.forEach {
                 if(!placements[roundIndex].containsKey(it)) {
                     failRun(it)
                 }

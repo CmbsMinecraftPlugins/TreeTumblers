@@ -66,9 +66,9 @@ class GameController : IController {
             TreeTumblers.pluginScope.async {
                 game.cleanup()
             }
-
             HandlerList.unregisterAll(game)
             activeGame = null
+
         }
     }
 
