@@ -15,6 +15,7 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.FireworkEffect
+import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -161,6 +162,8 @@ class DeathrunController : GameBase(
     val alivePlayers: MutableSet<Player> = HashSet()
     val spectators: MutableSet<Player> = HashSet()
 
+    val placements: ArrayList<HashMap<Player, Int>> = ArrayList()
+
     var ticksElapsed: Int = 0
     val completionTimes: HashMap<Player, Int> = HashMap()
     var timerActionBarTasks: HashMap<Player, BukkitRunnable> = HashMap()
@@ -179,8 +182,9 @@ class DeathrunController : GameBase(
         traps.add(HappyGhastTrap::class.java)
 
         repeat(rounds) {
-            val map = loadMap(maps.random(), it + 1)
+            placements.add(hashMapOf())
 
+            val map = loadMap(maps.random(), it + 1)
             val traps: ArrayList<Trap> = ArrayList(map.data.getList("traps")?.map { trap ->
                 if(
                     trap !is HashMap<*,*>
@@ -232,6 +236,8 @@ class DeathrunController : GameBase(
 
     override suspend fun gamePregame() {
         gameParticipants.forEach {
+            it.gameMode = GameMode.ADVENTURE
+
             val runnable = object : BukkitRunnable() {
                 override fun run() {
                     val time = completionTimes.getOrElse(it) { ticksElapsed }
@@ -289,6 +295,10 @@ class DeathrunController : GameBase(
 
         val attackerLocation = attackerSpawn.unpackCoordinates(currentMap.world)
         player.teleport(attackerLocation)
+
+        placements[roundIndex].put(player, -2)
+        giveTrapItem(player, player.location)
+        player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
     }
 
     var roundEnded = false
@@ -421,6 +431,9 @@ class DeathrunController : GameBase(
     override suspend fun cleanup() {
         Bukkit.getOnlinePlayers().forEach {
             it.disableBossBar("countdownBossbar")
+            if(it.gameMode == GameMode.ADVENTURE) {
+                it.gameMode = GameMode.SURVIVAL
+            }
         }
         super.cleanup()
     }
@@ -439,11 +452,6 @@ class DeathrunController : GameBase(
             ?: throw GameControllerException("Gate end not found")
 
         suspendSync {
-            attackingPlayers.forEach {
-                giveTrapItem(it, it.location)
-                it.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
-            }
-
             gateStart.forEachRegion(gateEnd) {
                 it.blockData = (it.blockData as Gate).also { gate ->
                     gate.isOpen = true
@@ -470,6 +478,11 @@ class DeathrunController : GameBase(
 
             rightClick {
                 if(player.tumblingPlayer.team != currentTeam) return@rightClick
+
+                if(!roundActive) {
+                    player.sendMessage(Format.error("You can't use traps unless the round is active!"))
+                    return@rightClick
+                }
 
                 if(cooldowns.contains(index)) {
                     player.sendMessage(Format.error("This trap is currently on cooldown!"))
@@ -509,7 +522,10 @@ class DeathrunController : GameBase(
                 Placeholder.component("player", Format.formatPlayerName(player))
             ))
         )
+
         completionTimes.put(player, ticksElapsed)
+        placements[roundIndex].put(player, completionTimes.size)
+
         MiscUtils.spawnFirework(player, FireworkEffect.builder()
             .trail(false)
             .flicker(false)
@@ -540,6 +556,7 @@ class DeathrunController : GameBase(
         currentTeam.getOnlinePlayers().forEach {
             grantScore(it, DeathrunScoreSource.TRAP_KILL)
         }
+        placements[roundIndex].put(player, -1)
 
         player.showTitle(Title.title(
             Component.empty(),
@@ -566,7 +583,7 @@ class DeathrunController : GameBase(
     @EventHandler
     fun attackerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
-        if(player.tumblingPlayer.team != currentTeam || !roundActive) return
+        if(player.tumblingPlayer.team != currentTeam) return
 
         val pos = event.to
         giveTrapItem(event.player, pos)

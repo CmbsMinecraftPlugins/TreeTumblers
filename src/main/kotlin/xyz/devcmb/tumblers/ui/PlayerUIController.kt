@@ -46,7 +46,7 @@ class PlayerUIController(val player: Player) {
         }
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
-        registerScoreboard(DeathrunScoreboard())
+        registerScoreboard(DeathrunScoreboard(gameController, player))
 
         player.scoreboard = playerScoreboard
 

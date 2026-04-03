@@ -190,7 +190,7 @@ class CrumbleController : GameBase(
     )
 
     val rounds = Team.entries.filter { it.playingTeam }.size - 1
-    var currentRound = 1
+    var currentRound = 0
     val roundIndex: Int
         get() { return currentRound - 1 }
 
@@ -490,6 +490,7 @@ class CrumbleController : GameBase(
     var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
+            currentRound++
             gameTimeoutEnd = false
             unhideSpectators()
             preRound()
@@ -703,7 +704,6 @@ class CrumbleController : GameBase(
             ))
         }
         delay(2500)
-        currentRound++
     }
 
     suspend fun announceMatchup() {
