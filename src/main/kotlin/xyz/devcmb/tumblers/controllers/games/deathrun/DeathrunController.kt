@@ -253,6 +253,7 @@ class DeathrunController : GameBase(
 
         endDisplayUpdateTask = object : BukkitRunnable() {
             override fun run() {
+                DebugUtil.info("Setting endDisplay ${endDisplay?.uniqueId} to text \"+${getRunCompletionScore()} Score\"")
                 endDisplay?.text(Format.mm("<yellow>+${getRunCompletionScore()} Score</yellow>"))
             }
         }
@@ -655,8 +656,12 @@ class DeathrunController : GameBase(
         val yaw = currentMap.data.getDouble("point_display.yaw")
         displayPos.yaw = yaw.toFloat()
 
+        displayPos.chunk.load()
         endDisplay = currentMap.world.spawn(displayPos, TextDisplay::class.java) {
-            it.text(Format.mm("<yellow>+0 Score</yellow>"))
+            it.isPersistent = true
+            it.lineWidth = 400
+            it.alignment = TextDisplay.TextAlignment.CENTER
+            it.text(Format.mm("<yellow>+<red>?</red> Score</yellow>"))
             it.transformation = Transformation(
                 Vector3f(),
                 AxisAngle4f(),
