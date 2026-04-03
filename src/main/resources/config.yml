@@ -153,6 +153,11 @@ games:
           gate_end: [-2,62,21]
           win_zone_start: [71,66,23]
           win_zone_end: [71,61,6]
+          void_height: 48
+          checkpoints:
+            - start: [45,68,22]
+              end: [45,61,7]
+              respawn: [45,63,15,-90.0,0.0]
           traps:
             - id: "magma_fall"
               start: [-1,70,-2]

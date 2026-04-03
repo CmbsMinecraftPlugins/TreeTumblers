@@ -57,9 +57,9 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.parseCoordinates
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.unpackCoordinates
 import kotlin.math.max
 
 @EventGame
@@ -156,7 +156,9 @@ class DeathrunController : GameBase(
 
     val traps: ArrayList<Class<out Trap>> = ArrayList()
     val mapTraps: HashMap<Int, ArrayList<Trap>> = HashMap()
+    val mapCheckpoints: ArrayList<Triple<Location, Location, Location>> = ArrayList()
     val currentTraps: HashMap<Player, Int> = HashMap()
+    val playerCheckpoints: HashMap<Player, Int> = HashMap()
     val cooldowns: MutableSet<Int> = HashSet()
 
     val alivePlayers: MutableSet<Player> = HashSet()
@@ -225,8 +227,8 @@ class DeathrunController : GameBase(
                 // this took too long
                 val data = YamlConfiguration().createSection("data", trap["data"] as HashMap<*,*>)
 
-                val start = (trap["start"] as List<Int>).map { v -> v.toDouble() }.unpackCoordinates(currentMap.world)
-                val end = (trap["end"] as List<Int>).map { v -> v.toDouble() }.unpackCoordinates(currentMap.world)
+                val start = (trap["start"] as List<Int>).parseCoordinates(currentMap.world)
+                val end = (trap["end"] as List<Int>).parseCoordinates(currentMap.world)
                 trapClass.newInstance(this, data, start, end)
             } ?: throw GameControllerException("Traps list not found"))
 
@@ -280,27 +282,32 @@ class DeathrunController : GameBase(
     }
 
     fun spawnMain(player: Player) {
-        val mainSpawn: List<Double> = currentMap.data.getList("spawns.main")?.map {
-            if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
-            it
-        } ?: throw GameControllerException("Main spawn set not found")
+        val mainSpawn: Location = currentMap.data.getList("spawns.main")
+            ?.parseCoordinates(currentMap.world)
+            ?: throw GameControllerException("Main spawn set not found")
 
-        val mainLocation = mainSpawn.unpackCoordinates(currentMap.world)
-        player.teleport(mainLocation)
+        player.teleport(mainSpawn)
     }
 
     fun spawnAttacker(player: Player) {
-        val attackerSpawn: List<Double> = currentMap.data.getList("spawns.attacker")?.map {
-            if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
-            it
-        } ?: throw GameControllerException("Spawn set not found")
+        val attackerSpawn: Location = currentMap.data.getList("spawns.attacker")
+            ?.parseCoordinates(currentMap.world)
+            ?: throw GameControllerException("Spawn set not found")
 
-        val attackerLocation = attackerSpawn.unpackCoordinates(currentMap.world)
-        player.teleport(attackerLocation)
+        player.teleport(attackerSpawn)
 
         placements[roundIndex].put(player, -2)
         giveTrapItem(player, player.location)
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
+    }
+
+    fun respawnRunner(player: Player) {
+        val checkpoint = playerCheckpoints[player]
+        if(checkpoint == null) {
+            spawnMain(player)
+        } else {
+            player.teleport(mapCheckpoints[checkpoint].third)
+        }
     }
 
     var roundEnded = false
@@ -340,8 +347,36 @@ class DeathrunController : GameBase(
     suspend fun preRound() {
         alivePlayers.addAll(runningPlayers)
         alivePlayers.forEach {
+            it.health = lives.toDouble() * 2
             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = lives.toDouble() * 2
         }
+
+        val checkpoints: List<Triple<Location, Location, Location>> = currentMap.data.getList("checkpoints")?.mapIndexed { index, checkpoint ->
+            if(
+                checkpoint !is HashMap<*,*>
+                || checkpoint["start"] == null
+                || checkpoint["end"] == null
+                || checkpoint["respawn"] == null
+                || checkpoint["start"] !is List<*>
+                || checkpoint["end"] !is List<*>
+                || checkpoint["respawn"] !is List<*>
+            ) throw GameControllerException("Checkpoint definition not formatted correctly")
+
+            val start = (checkpoint["start"] as List<*>)
+                .parseCoordinates(currentMap.world)
+                ?: throw GameControllerException("Checkpoint start location not provided or invalid")
+
+            val end = (checkpoint["end"] as List<*>)
+                .parseCoordinates(currentMap.world)
+                ?: throw GameControllerException("Checkpoint end location not provided or invalid")
+
+            val respawn = (checkpoint["respawn"] as List<*>)
+                .parseCoordinates(currentMap.world)
+                ?: throw GameControllerException("Checkpoint respawn location not provided or invalid")
+
+            Triple(start, end, respawn)
+        } ?: throw GameControllerException("Checkpoints list not found in map config")
+        mapCheckpoints.addAll(checkpoints)
 
         delay(1000)
         val audience = Audience.audience(gamePlayers)
@@ -376,6 +411,8 @@ class DeathrunController : GameBase(
         alivePlayers.clear()
         spectators.clear()
         completionTimes.clear()
+        mapCheckpoints.clear()
+        playerCheckpoints.clear()
         ticksElapsed = 0
 
         suspendSync {
@@ -443,16 +480,12 @@ class DeathrunController : GameBase(
     }
 
     suspend fun roundStart() {
-        val gateStart: Location = currentMap.data.getList("gate_start")?.map {
-            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
-            it.toDouble()
-        }?.unpackCoordinates(currentMap.world)
+        val gateStart: Location = currentMap.data.getList("gate_start")
+            ?.parseCoordinates(currentMap.world)
             ?: throw GameControllerException("Gate start not found")
 
-        val gateEnd: Location = currentMap.data.getList("gate_end")?.map {
-            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
-            it.toDouble()
-        }?.unpackCoordinates(currentMap.world)
+        val gateEnd: Location = currentMap.data.getList("gate_end")
+            ?.parseCoordinates(currentMap.world)
             ?: throw GameControllerException("Gate end not found")
 
         suspendSync {
@@ -509,7 +542,7 @@ class DeathrunController : GameBase(
         spectators.add(player)
         player.hideToAll()
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        player.heal(20.0)
+        player.health = 20.0
         player.allowFlight = true
         player.isFlying = true
 
@@ -590,6 +623,18 @@ class DeathrunController : GameBase(
         delay(4000)
     }
 
+    fun setCheckpoint(player: Player, index: Int) {
+        val currentCheckpoint = playerCheckpoints[player] ?: -1
+        if(index <= currentCheckpoint) return
+
+        playerCheckpoints.put(player, index)
+        player.showTitle(Title.title(
+            Component.empty(),
+            Format.success("Checkpoint!"),
+            Title.Times.times(Tick.of(5), Tick.of(30), Tick.of(5))
+        ))
+    }
+
     @EventHandler
     fun attackerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
@@ -608,16 +653,12 @@ class DeathrunController : GameBase(
         ) return
 
         val pos = event.to
-        val winStart = currentMap.data.getList("win_zone_start")?.map {
-            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
-            it.toDouble()
-        }?.unpackCoordinates(currentMap.world)
+        val winStart = currentMap.data.getList("win_zone_start")
+            ?.parseCoordinates(currentMap.world)
             ?: throw GameControllerException("Win start location not found")
 
-        val winEnd = currentMap.data.getList("win_zone_end")?.map {
-            if(it !is Int) throw GameControllerException("Location list does not contain exclusively doubles")
-            it.toDouble()
-        }?.unpackCoordinates(currentMap.world)
+        val winEnd = currentMap.data.getList("win_zone_end")
+            ?.parseCoordinates(currentMap.world)
             ?: throw GameControllerException("Win end location not found")
 
         if(pos.isInRegion(winStart, winEnd)) {
@@ -646,7 +687,6 @@ class DeathrunController : GameBase(
             return
         }
 
-        event.damage = 2.0
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(
                 Format.formatDeathMessage(
@@ -661,7 +701,11 @@ class DeathrunController : GameBase(
                 grantScore(it, DeathrunScoreSource.TRAP_DAMAGE)
             }
         }
-        if(player.health - 2.0 > 0) spawnMain(player)
+
+        event.damage = 2.0
+        if(player.health - 2.0 > 0) {
+            respawnRunner(player)
+        }
     }
 
     @EventHandler
@@ -690,6 +734,14 @@ class DeathrunController : GameBase(
         if(event.to.y < voidHeight) {
             event.player.damage(1.0)
         }
+    }
+
+    @EventHandler
+    fun checkpointEvent(event: PlayerMoveEvent) {
+        val checkpoint = mapCheckpoints.indexOfFirst { event.to.isInRegion(it.first, it.second) }
+        if(checkpoint == -1) return
+
+        setCheckpoint(event.player, checkpoint)
     }
 
     class DeathrunTrapException(override val message: String) : Exception()

@@ -77,6 +77,15 @@ fun List<Double>.unpackCoordinates(world: World): Location {
     )
 }
 
+fun List<*>.parseCoordinates(world: World): Location? {
+    val list = this.map {
+        if(it !is Double && it !is Int && it !is Float) return@parseCoordinates null
+        it.toDouble()
+    }
+
+    return list.unpackCoordinates(world)
+}
+
 fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
     return this.blockX >= min(bound1.blockX, bound2.blockX) && this.blockY >= min(bound1.blockY, bound2.blockY)
         && this.blockZ >= min(bound1.blockZ, bound2.blockZ) && this.blockX <= max(bound1.blockX, bound2.blockX)
