@@ -50,6 +50,7 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.randomBetween
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
@@ -139,7 +140,10 @@ class SnifferCaretakerController : GameBase(
         Material.WHEAT,
         Material.DIRT,
         Material.MOSS_BLOCK,
-        Material.MUD
+        Material.MUD,
+        Material.GRAVEL,
+        Material.SAND,
+        Material.COARSE_DIRT
     )
 
     val kit: List<ItemStack> = listOf(
@@ -156,7 +160,8 @@ class SnifferCaretakerController : GameBase(
         },
 
         ItemStack(Material.BONE_MEAL, 64),
-        ItemStack(Material.BUCKET)
+        ItemStack(Material.BUCKET),
+        ItemStack(Material.GLASS_BOTTLE)
     )
 
     val chestItems: List<List<*>> = listOf(
@@ -167,7 +172,9 @@ class SnifferCaretakerController : GameBase(
 
     val blockItems: HashMap<String, List<List<*>>> = hashMapOf(
         "dirt" to listOf(
-            listOf(Material.DIRT, 9)
+            listOf(Material.DIRT, 4),
+            listOf(Material.SAND, 4),
+            listOf(Material.GRAVEL, 4)
         ),
         "moss" to listOf(
             listOf(Material.STONE, 6),
@@ -245,19 +252,46 @@ class SnifferCaretakerController : GameBase(
 
     fun stockBlocks(team: Team) {
         blockItems.forEach { (key, it) ->
+            val floor = currentMap.data.getList("block_containments.$key.floor")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
             val area = currentMap.data.getList("block_containments.$key.area")!!.map { it as List<*>
                 it.validateCoordinates()
             }
 
-//            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
-//                it.validateCoordinates()
-//            }
+            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
+            val floorMin = offsetLocation(floor[0]!!.unpackCoordinates(currentMap.world), team)
+            val floorMax = offsetLocation(floor[1]!!.unpackCoordinates(currentMap.world), team)
 
             val areaMin = offsetLocation(area[0]!!.unpackCoordinates(currentMap.world), team)
             val areaMax = offsetLocation(area[1]!!.unpackCoordinates(currentMap.world), team)
 
-//            val doorMin = door[0]!!.unpackCoordinates(currentMap.world)
-//            val doorMax = door[1]!!.unpackCoordinates(currentMap.world)
+            val doorMin = offsetLocation(door[0]!!.unpackCoordinates(currentMap.world), team)
+            val doorMax = offsetLocation(door[1]!!.unpackCoordinates(currentMap.world), team)
+
+            var i = 0
+
+            for (it in (doorMin.y.toInt()..doorMax.y.toInt())) {
+                runTaskLater((i * 3).toLong()) {
+                    currentMap.world.fill(
+                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
+                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
+                        Material.AIR
+                    )
+                }
+
+                i++
+            }
+
+            currentMap.world.fill(
+                floorMin,
+                floorMax,
+                Material.SMOOTH_STONE
+            )
 
             currentMap.world.fill(areaMin, areaMax, Material.AIR)
 
@@ -277,6 +311,60 @@ class SnifferCaretakerController : GameBase(
                     val pos = choosePosition()
                     pos.block.type = material
                 }
+            }
+        }
+    }
+
+    fun closeBlockContainments(team: Team) {
+        blockItems.forEach { (key, _) ->
+            val floor = currentMap.data.getList("block_containments.$key.floor")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
+            val area = currentMap.data.getList("block_containments.$key.area")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
+            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
+                it.validateCoordinates()
+            }
+
+            val floorMin = offsetLocation(floor[0]!!.unpackCoordinates(currentMap.world), team)
+            val floorMax = offsetLocation(floor[1]!!.unpackCoordinates(currentMap.world), team)
+
+            val areaMin = offsetLocation(area[0]!!.unpackCoordinates(currentMap.world), team)
+            val areaMax = offsetLocation(area[1]!!.unpackCoordinates(currentMap.world), team)
+
+            val doorMin = offsetLocation(door[0]!!.unpackCoordinates(currentMap.world), team)
+            val doorMax = offsetLocation(door[1]!!.unpackCoordinates(currentMap.world), team)
+
+            for (i in (0..6)) {
+                runTaskLater((i * 10).toLong()) {
+                    currentMap.world.fill(
+                        floorMin,
+                        floorMax,
+                        if (i % 2 == 0) Material.BAMBOO_MOSAIC else Material.SMOOTH_STONE
+                    )
+                }
+            }
+
+            var i = 0
+
+            for (it in (doorMin.y.toInt()..doorMax.y.toInt()).reversed()) {
+                runTaskLater((i * 3).toLong() + 70) {
+                    currentMap.world.fill(
+                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
+                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
+                        Material.WAXED_OXIDIZED_COPPER_GRATE
+                    )
+                }
+
+                i++
+            }
+
+            runTaskLater(70) {
+                currentMap.world.fill(floorMin, floorMax, Material.AIR)
+                currentMap.world.fill(areaMin, areaMax, Material.AIR)
             }
         }
     }
@@ -568,6 +656,14 @@ class SnifferCaretakerController : GameBase(
                 }
             }
 
+            val blockContainmentClosingTask = object : BukkitRunnable() {
+                override fun run() {
+                    Team.entries.filter { it.playingTeam }.forEach {
+                        closeBlockContainments(it)
+                    }
+                }
+            }
+
             val mobTask = object : BukkitRunnable() {
                 override fun run() {
                     Team.entries.filter { it.playingTeam }.forEach {
@@ -593,6 +689,7 @@ class SnifferCaretakerController : GameBase(
 
             chestTask.runTaskTimer(TreeTumblers.plugin, 0, 20*chestRefresh)
             blockTask.runTaskTimer(TreeTumblers.plugin, 0, 20*blockRefresh)
+            blockContainmentClosingTask.runTaskTimer(TreeTumblers.plugin, 20*(blockRefresh-6), 20*blockRefresh)
             mobTask.runTaskTimer(TreeTumblers.plugin, 0, 20*mobRefresh)
             tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
         }
