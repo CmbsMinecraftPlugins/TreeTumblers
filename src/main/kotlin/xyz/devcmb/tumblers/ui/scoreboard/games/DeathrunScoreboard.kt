@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.ui.scoreboard.games
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
@@ -9,6 +9,8 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -25,7 +27,10 @@ class DeathrunScoreboard(
         val objective = scoreboard.registerNewObjective(
             "deathrunGameScoreboard",
             Criteria.create("dummy"),
-            Format.mm("<yellow><b>Deathrun</b></yellow>")
+            Format.mm(
+                MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
+                Placeholder.unparsed("name", "Deathrun")
+            )
         )
         objective.displaySlot = DisplaySlot.SIDEBAR
 
@@ -48,23 +53,19 @@ class DeathrunScoreboard(
             rounds.add(component)
         }
 
-        val leaderboard: ArrayList<Component> = arrayListOf()
-        activeGame.getTeamPlacements().forEach { (team, placement) ->
-            leaderboard.add(
-                Component.empty()
-                    .append(Component.text("$placement. ", NamedTextColor.WHITE))
-                    .append(team.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(activeGame.teamScores[team]!!, NamedTextColor.GOLD))
-            )
-        }
-
+        val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
         MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
             Component.empty(),
-            Format.mm("<aqua>Round <white>${activeGame.currentRound}/${activeGame.rounds}</white></aqua>"),
+            Format.mm(
+                MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
+                Placeholder.unparsed("current", activeGame.currentRound.toString()),
+                Placeholder.unparsed("total", activeGame.rounds.toString())
+            ),
             *rounds.toTypedArray(),
             Component.empty(),
             *leaderboard.toTypedArray(),
+            Component.empty(),
+            UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty()
         ))
 

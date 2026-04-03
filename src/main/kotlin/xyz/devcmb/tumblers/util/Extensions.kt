@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.util
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
@@ -23,6 +24,11 @@ val playerController: PlayerController by lazy {
 val Player.tumblingPlayer: TumblingPlayer
     get() {
         return playerController.players.find { it.bukkitPlayer == this }!!
+    }
+
+val Player.formattedName: Component
+    get() {
+        return Format.formatPlayerName(this)
     }
 
 fun Player.openHandledInventory(id: String) {

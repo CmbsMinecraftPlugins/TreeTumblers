@@ -2,9 +2,15 @@ package xyz.devcmb.tumblers.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.math.roundToInt
 
 object UserInterfaceUtility {
@@ -148,5 +154,41 @@ object UserInterfaceUtility {
         }
     }
 
+    fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {
+        val leaderboard: ArrayList<Component> = arrayListOf()
+        val placements = activeGame.getTeamPlacements().take(4)
 
+        placements.forEach { (team, placement) ->
+            leaderboard.add(Format.mm(
+                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                Placeholder.unparsed("placement", placement.toString()),
+                Placeholder.component("team", team.formattedName),
+                Placeholder.parsed("score", "<gold>${activeGame.teamScores[team]!!}</gold>")
+            ))
+        }
+
+        if(placements.find { it.first == player.tumblingPlayer.team } == null) {
+            val teamPlacement = activeGame.getTeamPlacements().find { it.first == player.tumblingPlayer.team }!!
+            leaderboard.add(Component.empty())
+            leaderboard.add(Format.mm(
+                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                Placeholder.unparsed("placement", teamPlacement.second.toString()),
+                Placeholder.component("team", teamPlacement.first.formattedName),
+                Placeholder.parsed("score", "<gold>${activeGame.teamScores[teamPlacement.first]!!}</gold>")
+            ))
+        }
+
+        return leaderboard
+    }
+
+    fun getIndividualScoreComponent(player: Player, activeGame: GameBase): Component {
+        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == player }!!
+        return Format.mm(
+            MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT,
+            Placeholder.unparsed("placement", playerPlacement.second.toString()),
+            Placeholder.parsed("head", "<head:${player.uniqueId}>"),
+            Placeholder.component("name", player.formattedName),
+            Placeholder.parsed("score", "<gold>${activeGame.playerScores[player] ?: 0}</gold>")
+        )
+    }
 }
