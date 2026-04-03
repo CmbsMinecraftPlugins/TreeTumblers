@@ -253,7 +253,6 @@ class DeathrunController : GameBase(
 
         endDisplayUpdateTask = object : BukkitRunnable() {
             override fun run() {
-                DebugUtil.info("Setting endDisplay ${endDisplay?.uniqueId} to text \"+${getRunCompletionScore()} Score\"")
                 endDisplay?.text(Format.mm("<yellow>+${getRunCompletionScore()} Score</yellow>"))
             }
         }
