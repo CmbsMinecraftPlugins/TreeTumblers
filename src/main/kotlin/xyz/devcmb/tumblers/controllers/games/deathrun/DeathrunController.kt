@@ -573,13 +573,19 @@ class DeathrunController : GameBase(
     suspend fun roundEnd() {
         roundEnded = false
         cancelCountdown()
-        Bukkit.getOnlinePlayers().forEach {
-            it.sendMessage(gameMessage(Component.text("Round Over!")))
-            it.showTitle(Title.title(
-                Format.mm("<red><bold>Round Over</bold></red>"),
-                Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(10))
-            ))
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                if(!placements[roundIndex].containsKey(it)) {
+                    failRun(it)
+                }
+
+                it.sendMessage(gameMessage(Component.text("Round Over!")))
+                it.showTitle(Title.title(
+                    Format.mm("<red><bold>Round Over</bold></red>"),
+                    Component.empty(),
+                    Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(10))
+                ))
+            }
         }
         delay(4000)
     }
