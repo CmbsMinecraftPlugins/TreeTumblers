@@ -33,5 +33,21 @@ object MiniMessagePlaceholders {
          * name - The name of the game
          */
         const val SCOREBOARD_TITLE = "<yellow><bold><name></bold></yellow>"
+
+        /**
+         * player - The player who died
+         */
+        val DEATH_MESSAGES = arrayListOf(
+            "<player> tripped",
+            "<player> didn't try hard enough",
+            "<player> thought they could speed bridge",
+            "<player> had a skill issue",
+            "<player> became a pork chop",
+            "<player> went kaboom",
+            "<player> was caught playing fortnite",
+            "<player> should get their eyes checked",
+            "<player> should buy a better pc",
+            "<player> got banned from discord"
+        ).map { "<gray>$it</gray>" }
     }
 }
