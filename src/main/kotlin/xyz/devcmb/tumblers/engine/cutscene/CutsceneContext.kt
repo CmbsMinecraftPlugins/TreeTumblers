@@ -5,11 +5,17 @@ import org.bukkit.entity.EntityType
 import org.bukkit.entity.Pig
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
-class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: CutsceneStep) {
+class CutsceneContext(
+    val observers: Set<Player>,
+    val map: LoadedMap,
+    val step: CutsceneStep,
+    val game: GameBase,
+) {
     suspend fun teleport(x: Double, y: Double, z: Double, pitch: Float, yaw: Float) {
         suspendSync {
             observers.forEach {

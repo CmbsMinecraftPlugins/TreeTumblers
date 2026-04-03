@@ -77,9 +77,16 @@ fun List<Double>.unpackCoordinates(world: World): Location {
     )
 }
 
-fun List<*>.parseCoordinates(world: World): Location? {
+// thanks ai
+// what does any of this mean
+inline fun <reified T> List<*>.validateList(): List<T>? {
+    if (!all { it is T }) return null
+    return map { it as T }
+}
+
+fun List<*>.validateLocation(world: World): Location? {
     val list = this.map {
-        if(it !is Double && it !is Int && it !is Float) return@parseCoordinates null
+        if(it !is Double && it !is Int && it !is Float) return@validateLocation null
         it.toDouble()
     }
 

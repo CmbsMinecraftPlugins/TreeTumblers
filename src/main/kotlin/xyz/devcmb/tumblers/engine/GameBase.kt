@@ -191,7 +191,7 @@ abstract class GameBase(
         currentState = State.CUTSCENE
 
         cutsceneSteps.forEach {
-            it.run(gamePlayers, loadedMaps.first())
+            it.run(gamePlayers, loadedMaps.first(), this)
             it.cleanup(gamePlayers)
         }
     }

@@ -18,8 +18,10 @@ import org.bukkit.block.data.type.Gate
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Fireball
 import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
@@ -27,9 +29,14 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ColorableArmorMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.util.Transformation
+import org.joml.AxisAngle4f
+import org.joml.Vector3f
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -47,6 +54,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.*
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import kotlin.collections.get
 import kotlin.math.max
 
 @EventGame
@@ -64,7 +72,75 @@ class DeathrunController : GameBase(
         ) {
             teleportConfig("cutscene.start")
             delay(5000)
-        }
+        },
+        CutsceneStep(Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>")) { map ->
+            teleportConfig("cutscene.trapper_showcase")
+
+            val armorStands: ArrayList<ArmorStand> = ArrayList()
+            map.data.getList("cutscene.armor_stands")?.forEach {
+                if(it !is List<*>) throw GameControllerException("Cutscene armor stand location table is not a list")
+                val location = it.validateLocation(map.world) ?: throw GameControllerException("Cutscene armor stand locations are not valid")
+
+                suspendSync {
+                    map.world.spawn(location, ArmorStand::class.java) { stand ->
+                        stand.equipment.setHelmet(ItemStack.of(Material.LEATHER_HELMET).apply {
+                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
+                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
+                            }
+                        }, true)
+
+                        stand.equipment.setChestplate(ItemStack.of(Material.LEATHER_CHESTPLATE).apply {
+                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
+                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
+                            }
+                        }, true)
+
+                        stand.equipment.setLeggings(ItemStack.of(Material.LEATHER_LEGGINGS).apply {
+                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
+                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
+                            }
+                        }, true)
+
+                        stand.equipment.setBoots(ItemStack.of(Material.LEATHER_BOOTS).apply {
+                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
+                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
+                            }
+                        }, true)
+
+                        armorStands.add(stand)
+                    }
+                }
+
+                delay(500)
+            }
+
+            delay(2500)
+            suspendSync {
+                armorStands.forEach(ArmorStand::remove)
+                armorStands.clear()
+            }
+        },
+        CutsceneStep(Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage.")) {
+            teleportConfig("cutscene.trap_showcase")
+
+            val trap = (game as DeathrunController).mapTraps[0]!![0]
+            delay(1000)
+            trap.activate()
+            delay(700)
+        },
+        CutsceneStep(Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get")) {
+            val game = game as DeathrunController
+            suspendSync {
+                game.summonScoreDisplay()
+            }
+            teleportConfig("cutscene.runner_score_showcase")
+            delay(6000)
+            suspendSync {
+                game.endDisplay?.remove()
+                game.endDisplay = null
+            }
+        },
+        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
@@ -72,7 +148,9 @@ class DeathrunController : GameBase(
         Flag.DISABLE_BLOCK_BREAKING
     ),
     scores = hashMapOf(
-        DeathrunScoreSource.RUN_COMPLETE to 140,
+        // this * placement = awarded score
+        DeathrunScoreSource.RUN_COMPLETE to 20,
+        // constant value
         DeathrunScoreSource.RUN_FAILED to 20,
         DeathrunScoreSource.TRAP_KILL to 10,
         DeathrunScoreSource.TRAP_DAMAGE to 5
@@ -157,6 +235,9 @@ class DeathrunController : GameBase(
     val completionTimes: HashMap<Player, Int> = HashMap()
     var timerActionBarTasks: HashMap<Player, BukkitRunnable> = HashMap()
 
+    var endDisplay: TextDisplay? = null
+    var endDisplayUpdateTask: BukkitRunnable? = null
+
     /**
      * The load sequence that each individual game should do
      *
@@ -169,6 +250,13 @@ class DeathrunController : GameBase(
         traps.add(MagmaFallTrap::class.java)
         traps.add(BeamRunTrap::class.java)
         traps.add(HappyGhastTrap::class.java)
+
+        endDisplayUpdateTask = object : BukkitRunnable() {
+            override fun run() {
+                endDisplay?.text(Format.mm("<yellow>+${getRunCompletionScore()} Score</yellow>"))
+            }
+        }
+        endDisplayUpdateTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
 
         repeat(rounds) {
             placements.add(hashMapOf())
@@ -214,8 +302,8 @@ class DeathrunController : GameBase(
                 // this took too long
                 val data = YamlConfiguration().createSection("data", trap["data"] as HashMap<*,*>)
 
-                val start = (trap["start"] as List<Int>).parseCoordinates(currentMap.world)
-                val end = (trap["end"] as List<Int>).parseCoordinates(currentMap.world)
+                val start = (trap["start"] as List<Int>).validateLocation(currentMap.world)
+                val end = (trap["end"] as List<Int>).validateLocation(currentMap.world)
                 trapClass.newInstance(this, data, start, end)
             } ?: throw GameControllerException("Traps list not found"))
 
@@ -270,7 +358,7 @@ class DeathrunController : GameBase(
 
     fun spawnMain(player: Player) {
         val mainSpawn: Location = currentMap.data.getList("spawns.main")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Main spawn set not found")
 
         player.teleport(mainSpawn)
@@ -278,7 +366,7 @@ class DeathrunController : GameBase(
 
     fun spawnAttacker(player: Player) {
         val attackerSpawn: Location = currentMap.data.getList("spawns.attacker")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Spawn set not found")
 
         player.teleport(attackerSpawn)
@@ -338,6 +426,10 @@ class DeathrunController : GameBase(
             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = lives.toDouble() * 2
         }
 
+        suspendSync {
+            summonScoreDisplay()
+        }
+
         val checkpoints: List<Triple<Location, Location, Location>> = currentMap.data.getList("checkpoints")?.mapIndexed { index, checkpoint ->
             if(
                 checkpoint !is HashMap<*,*>
@@ -350,15 +442,15 @@ class DeathrunController : GameBase(
             ) throw GameControllerException("Checkpoint definition not formatted correctly")
 
             val start = (checkpoint["start"] as List<*>)
-                .parseCoordinates(currentMap.world)
+                .validateLocation(currentMap.world)
                 ?: throw GameControllerException("Checkpoint start location not provided or invalid")
 
             val end = (checkpoint["end"] as List<*>)
-                .parseCoordinates(currentMap.world)
+                .validateLocation(currentMap.world)
                 ?: throw GameControllerException("Checkpoint end location not provided or invalid")
 
             val respawn = (checkpoint["respawn"] as List<*>)
-                .parseCoordinates(currentMap.world)
+                .validateLocation(currentMap.world)
                 ?: throw GameControllerException("Checkpoint respawn location not provided or invalid")
 
             Triple(start, end, respawn)
@@ -400,9 +492,14 @@ class DeathrunController : GameBase(
         completionTimes.clear()
         mapCheckpoints.clear()
         playerCheckpoints.clear()
+
+
         ticksElapsed = 0
 
         suspendSync {
+            endDisplay!!.remove()
+            endDisplay = null
+
             gameParticipants.forEach {
                 it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
                 it.heal(20.0)
@@ -424,6 +521,9 @@ class DeathrunController : GameBase(
             it.key.sendActionBar(Component.empty())
         }
         timerActionBarTasks.clear()
+
+        endDisplayUpdateTask?.cancel()
+        endDisplayUpdateTask = null
 
         val placements = getTeamPlacements()
         gameParticipants.forEach { plr ->
@@ -468,11 +568,11 @@ class DeathrunController : GameBase(
 
     suspend fun roundStart() {
         val gateStart: Location = currentMap.data.getList("gate_start")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate start not found")
 
         val gateEnd: Location = currentMap.data.getList("gate_end")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate end not found")
 
         suspendSync {
@@ -524,6 +624,28 @@ class DeathrunController : GameBase(
         }.build())
     }
 
+    fun summonScoreDisplay() {
+        val displayPos = currentMap.data.getList("point_display.pos")
+            ?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Point display position not provided or not valid")
+
+        val scale = currentMap.data.getDouble("point_display.scale")
+            .toFloat()
+
+        val yaw = currentMap.data.getDouble("point_display.yaw")
+        displayPos.yaw = yaw.toFloat()
+
+        endDisplay = currentMap.world.spawn(displayPos, TextDisplay::class.java) {
+            it.text(Format.mm("<yellow>+0 Score</yellow>"))
+            it.transformation = Transformation(
+                Vector3f(),
+                AxisAngle4f(),
+                Vector3f(scale, scale, scale),
+                AxisAngle4f()
+            )
+        }
+    }
+
     fun makeSpectator(player: Player) {
         alivePlayers.remove(player)
         spectators.add(player)
@@ -547,6 +669,8 @@ class DeathrunController : GameBase(
             ))
         )
 
+        grantScore(player, DeathrunScoreSource.RUN_COMPLETE, getRunCompletionScore())
+
         completionTimes.put(player, ticksElapsed)
         placements[roundIndex].put(player, completionTimes.size)
 
@@ -559,13 +683,16 @@ class DeathrunController : GameBase(
             .build()
         )
 
-        grantScore(player, DeathrunScoreSource.RUN_COMPLETE)
         player.showTitle(Title.title(
             Component.empty(),
             Format.success("Run complete")
                 .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_COMPLETE)}]", NamedTextColor.GOLD)),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
+    }
+
+    fun getRunCompletionScore(): Int {
+        return (gameParticipants.size - placements[roundIndex].size) * getScoreSource(DeathrunScoreSource.RUN_COMPLETE)
     }
 
     fun failRun(player: Player) {
@@ -591,8 +718,6 @@ class DeathrunController : GameBase(
     }
 
     suspend fun roundEnd() {
-        roundEnded = false
-        cancelCountdown()
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
                 if(!placements[roundIndex].containsKey(it)) {
@@ -606,6 +731,9 @@ class DeathrunController : GameBase(
                     Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(10))
                 ))
             }
+
+            roundEnded = false
+            cancelCountdown()
         }
         delay(4000)
     }
@@ -641,11 +769,11 @@ class DeathrunController : GameBase(
 
         val pos = event.to
         val winStart = currentMap.data.getList("win_zone_start")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Win start location not found")
 
         val winEnd = currentMap.data.getList("win_zone_end")
-            ?.parseCoordinates(currentMap.world)
+            ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Win end location not found")
 
         if(pos.isInRegion(winStart, winEnd)) {

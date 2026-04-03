@@ -148,9 +148,22 @@ games:
             main: [-4.5,63.0,15.5,-90.0,0.0]
             attacker: [2.5,67.0,2.5]
           cutscene:
-            start: [13.4,72.0,16.4,153.3,19.5]
+            start: [36.84,61.84,21.5,155.7,9.3]
+            trapper_showcase: [6.15,66.9,7.89,179.2,6.3]
+            # Must be the first trap
+            trap_showcase: [8.78,68.6,9.0,0.2,48.6]
+            armor_stands:
+              - [3,67,1]
+              - [5,67,1]
+              - [7,67,1]
+              - [9,67,1]
+            runner_score_showcase: [64.119,62.36,19.425,-122.6,5.7]
           gate_start: [-2,62,8]
           gate_end: [-2,62,21]
+          point_display:
+            pos: [ 71.25,63.12,14.81 ]
+            yaw: 90
+            scale: 5.0
           win_zone_start: [71,66,23]
           win_zone_end: [71,61,6]
           void_height: 48
