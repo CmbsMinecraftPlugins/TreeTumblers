@@ -224,7 +224,7 @@ class DeathrunController : GameBase(
     val mapCheckpoints: ArrayList<Triple<Location, Location, Location>> = ArrayList()
     val currentTraps: HashMap<Player, Int> = HashMap()
     val playerCheckpoints: HashMap<Player, Int> = HashMap()
-    val cooldowns: MutableSet<Int> = HashSet()
+    val cooldownTimes: HashMap<Int, Long> = HashMap()
 
     val alivePlayers: MutableSet<Player> = HashSet()
     val spectators: MutableSet<Player> = HashSet()
@@ -370,6 +370,7 @@ class DeathrunController : GameBase(
             ?: throw GameControllerException("Spawn set not found")
 
         player.teleport(attackerSpawn)
+        player.enableBossBar("deathrunCooldownBossbar")
 
         placements[roundIndex].put(player, -2)
         giveTrapItem(player, player.location)
@@ -398,7 +399,7 @@ class DeathrunController : GameBase(
 
         repeat(rounds) {
             currentRound++
-            cooldowns.clear()
+            cooldownTimes.clear()
             currentTraps.clear()
             spawn(SpawnCycle.PRE_ROUND)
             asyncCountdown(10) {}
@@ -471,6 +472,15 @@ class DeathrunController : GameBase(
         audience.showTitle(title)
 
         delay(4000)
+        suspendSync {
+            gameParticipants.forEach { plr ->
+                if(plr.tumblingPlayer.team == currentTeam) return@forEach
+                gameParticipants.forEach { other ->
+                    if(other == plr || !alivePlayers.contains(other)) return@forEach
+                    plr.hidePlayer(TreeTumblers.plugin, other)
+                }
+            }
+        }
         MiscUtils.subtitleCountdown(
             audience,
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
@@ -479,11 +489,21 @@ class DeathrunController : GameBase(
     }
 
     suspend fun postRound() {
-        if(currentRound != rounds) {
-            spectators.forEach {
-                it.showToAll()
-                it.isFlying = false
-                it.allowFlight = false
+        suspendSync {
+            if(currentRound != rounds) {
+                spectators.forEach {
+                    it.showToAll()
+                    it.isFlying = false
+                    it.allowFlight = false
+                }
+            }
+
+            gameParticipants.forEach { plr ->
+                plr.disableBossBar("deathrunCooldownBossbar")
+                gameParticipants.forEach { other ->
+                    if(other == plr || !gameParticipants.contains(other)) return@forEach
+                    plr.showPlayer(TreeTumblers.plugin, other)
+                }
             }
         }
 
@@ -492,7 +512,6 @@ class DeathrunController : GameBase(
         completionTimes.clear()
         mapCheckpoints.clear()
         playerCheckpoints.clear()
-
 
         ticksElapsed = 0
 
@@ -609,17 +628,17 @@ class DeathrunController : GameBase(
                     return@rightClick
                 }
 
-                if(cooldowns.contains(index)) {
+                if(cooldownTimes.contains(index)) {
                     player.sendMessage(Format.error("This trap is currently on cooldown!"))
                     return@rightClick
                 }
 
-                cooldowns.add(index)
+                cooldownTimes.put(index, System.currentTimeMillis())
                 TreeTumblers.pluginScope.launch {
                     val round = currentRound
                     trap.activate()
                     delay((trap.cooldown * 1000).toLong())
-                    if(round == currentRound) cooldowns.remove(index)
+                    if(round == currentRound) cooldownTimes.remove(index)
                 }
             }
         }.build())
@@ -656,6 +675,13 @@ class DeathrunController : GameBase(
         player.allowFlight = true
         player.isFlying = true
 
+        gameParticipants.forEach { plr ->
+            gameParticipants.forEach { other ->
+                if(other == plr || !gameParticipants.contains(other) || spectators.contains(other)) return@forEach
+                plr.showPlayer(TreeTumblers.plugin, other)
+            }
+        }
+
         if(alivePlayers.isEmpty()) {
             roundEnded = true
         }
@@ -663,7 +689,7 @@ class DeathrunController : GameBase(
 
     fun completeRun(player: Player) {
         makeSpectator(player)
-        val placement = placements[roundIndex].size
+        val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
                 "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
