@@ -235,24 +235,26 @@ class DeathrunController : GameBase(
     }
 
     override suspend fun gamePregame() {
-        gameParticipants.forEach {
-            it.gameMode = GameMode.ADVENTURE
+        suspendSync {
+            gameParticipants.forEach {
+                it.gameMode = GameMode.ADVENTURE
 
-            val runnable = object : BukkitRunnable() {
-                override fun run() {
-                    val time = completionTimes.getOrElse(it) { ticksElapsed }
-                    val text = MiscUtils.formatMsTime(time * 50L)
+                val runnable = object : BukkitRunnable() {
+                    override fun run() {
+                        val time = completionTimes.getOrElse(it) { ticksElapsed }
+                        val text = MiscUtils.formatMsTime(time * 50L)
 
-                    it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
-                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                        Component.text(text),
-                        text,
-                        69.5
-                    ))
+                        it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
+                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                            Component.text(text),
+                            text,
+                            69.5
+                        ))
+                    }
                 }
+                runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
+                timerActionBarTasks.put(it, runnable)
             }
-            runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
-            timerActionBarTasks.put(it, runnable)
         }
     }
 
@@ -429,10 +431,12 @@ class DeathrunController : GameBase(
     }
 
     override suspend fun cleanup() {
-        Bukkit.getOnlinePlayers().forEach {
-            it.disableBossBar("countdownBossbar")
-            if(it.gameMode == GameMode.ADVENTURE) {
-                it.gameMode = GameMode.SURVIVAL
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                it.disableBossBar("countdownBossbar")
+                if(it.gameMode == GameMode.ADVENTURE) {
+                    it.gameMode = GameMode.SURVIVAL
+                }
             }
         }
         super.cleanup()
