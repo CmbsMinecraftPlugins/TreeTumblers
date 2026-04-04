@@ -168,15 +168,16 @@ class SnifferCaretakerController : GameBase(
         ItemStack(Material.GLASS_BOTTLE)
     )
 
-    val chestItems: List<List<*>> = listOf(
-        listOf(Material.WHEAT_SEEDS, 6),
-        listOf(Material.PUMPKIN_SEEDS, 1),
-        listOf(Material.SUGAR_CANE, 1)
-    )
-
-    val basementItems: List<List<*>> = listOf(
-        listOf(Material.RED_MUSHROOM, 3),
-        listOf(Material.BROWN_MUSHROOM, 3),
+    val chestItems: HashMap<String, List<Pair<Material, Int>>> = hashMapOf(
+        "supply_chest" to listOf(
+            Pair(Material.WHEAT_SEEDS, 6),
+            Pair(Material.PUMPKIN_SEEDS, 1),
+            Pair(Material.SUGAR_CANE, 1)
+        ),
+        "basement_supply_chest" to listOf(
+            Pair(Material.RED_MUSHROOM, 3),
+            Pair(Material.BROWN_MUSHROOM, 3),
+        )
     )
 
     val blockItems: HashMap<String, List<List<*>>> = hashMapOf(
@@ -198,6 +199,7 @@ class SnifferCaretakerController : GameBase(
 
     var timers = mutableMapOf(
         "supply_chest" to chestRefresh * 20,
+        "basement_supply_chest" to chestRefresh * 20,
         "dirt" to blockRefresh * 20,
         "moss" to blockRefresh * 20,
         "mob" to mobRefresh * 20
@@ -205,6 +207,7 @@ class SnifferCaretakerController : GameBase(
 
     val timerBases = hashMapOf(
         "supply_chest" to chestRefresh * 20,
+        "basement_supply_chest" to chestRefresh * 20,
         "dirt" to blockRefresh * 20,
         "moss" to blockRefresh * 20,
         "mob" to mobRefresh * 20
@@ -223,40 +226,41 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun stockChests(team: Team) {
+        chestItems.forEach { key, it ->
+            val chestPosition = currentMap.data.getList(key)?.validateCoordinates()
+                ?: throw GameControllerException("Chest position not found")
 
-        val chestPosition = currentMap.data.getList("supply_chest")?.validateCoordinates()
-            ?: throw GameControllerException("Chest position not found")
+            val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), team)
+            currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
 
-        val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), team)
-        currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
+            val chest = chestLocation.block.state as Chest
+            val inventory = chest.inventory
 
-        val chest = chestLocation.block.state as Chest
-        val inventory = chest.inventory
+            inventory.clear()
 
-        inventory.clear()
+            it.forEach { item ->
+                val material = item.first
+                val amount = item.second
 
-        chestItems.forEach {
-            val material = it[0] as Material
-            val amount = it[1] as Int
+                fun chooseIndex() : Int {
+                    val index = (0..26).random()
+                    val slot = inventory.getItem(index)
 
-            fun chooseIndex() : Int {
-                val index = (0..26).random()
-                val slot = inventory.getItem(index)
+                    if (slot == null) return index
+                    if (slot.type != material) return chooseIndex()
 
-                if (slot == null) return index
-                if (slot.type != material) return chooseIndex()
+                    return index
+                }
 
-                return index
-            }
+                repeat(amount) {
+                    val index = chooseIndex()
+                    val slot = inventory.getItem(index)
 
-            repeat(amount) {
-                val index = chooseIndex()
-                val slot = inventory.getItem(index)
-
-                if (slot == null) {
-                    inventory.setItem(index, ItemStack(material))
-                } else {
-                    slot.add(1)
+                    if (slot == null) {
+                        inventory.setItem(index, ItemStack(material))
+                    } else {
+                        slot.add(1)
+                    }
                 }
             }
         }
@@ -391,6 +395,14 @@ class SnifferCaretakerController : GameBase(
             val entity = currentMap.world.spawnEntity(mobLocation, it)
             spawnedMobs[team]!!.add(entity)
         }
+
+
+        val spiderMobCoordinates = currentMap.data.getList("spider_spawn")?.validateCoordinates()
+            ?: throw GameControllerException("Spider spawn not found")
+
+        val spiderMobLocation = offsetLocation(spiderMobCoordinates.unpackCoordinates(currentMap.world), team)
+
+        currentMap.world.spawnEntity(spiderMobLocation, EntityType.SPIDER)
     }
 
     fun completeTask(team: Team, task: Task) {
@@ -528,6 +540,7 @@ class SnifferCaretakerController : GameBase(
 
     fun setupSigns(team: Team) {
         signs[team]!!["supply_chest"] = setupSign("supply_chest_sign", team)
+        signs[team]!!["basement_supply_chest"] = setupSign("basement_supply_chest_sign", team)
         signs[team]!!["dirt"] = setupSign("block_containments.dirt.sign", team)
         signs[team]!!["moss"] = setupSign("block_containments.moss.sign", team)
         signs[team]!!["mob"] = setupSign("mob_spawn_sign", team)
