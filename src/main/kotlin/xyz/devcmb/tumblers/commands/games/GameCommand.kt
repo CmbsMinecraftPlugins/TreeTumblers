@@ -70,13 +70,19 @@ class GameCommand {
             return
         }
 
+        if(activeGame.currentTimer == null) {
+            sender.sendMessage(Format.warning("There is no current game timer!"))
+            return
+        }
+
         val value = value.getOrNull()
         if(value == null) {
             sender.sendMessage(Format.info("The current game timer is ${activeGame.countdownTime}"))
             return
         }
 
-        activeGame.countdownTime = value
+
+        activeGame.currentTimer!!.currentTime = value
         sender.sendMessage(Format.success("Timer set successfully!"))
     }
 

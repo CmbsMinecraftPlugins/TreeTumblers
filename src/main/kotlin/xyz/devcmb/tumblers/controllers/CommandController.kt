@@ -12,6 +12,7 @@ import xyz.devcmb.tumblers.commands.games.*
 import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.DebugUtil
 
 @Controller("commandController", Controller.Priority.LOWEST)
@@ -25,7 +26,8 @@ class CommandController : IController {
                 TeamCommand(),
                 GameCommand(),
                 WorldCommand(),
-                ScoreCommand()
+                ScoreCommand(),
+                TimerCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
@@ -33,6 +35,7 @@ class CommandController : IController {
             .argument(GameController.Game::class.java, GameArgument())
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
+            .argument(Timer::class.java, TimerArgument())
             .invalidUsage(InvalidUsageHandler())
             .build()
     }
