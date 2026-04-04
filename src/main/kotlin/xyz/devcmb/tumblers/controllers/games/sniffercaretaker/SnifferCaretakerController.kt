@@ -56,6 +56,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
 import kotlin.collections.forEach
+import kotlin.math.max
 
 @EventGame
 class SnifferCaretakerController : GameBase(
@@ -100,6 +101,9 @@ class SnifferCaretakerController : GameBase(
 
         @field:Configurable("games.snifferCaretaker.mob_refresh")
         var mobRefresh: Long = 30
+
+        @field:Configurable("games.snifferCaretaker.task_interval")
+        var taskInterval: Long = 8
     }
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
@@ -119,7 +123,7 @@ class SnifferCaretakerController : GameBase(
                 }
 
                 Team.entries.filter { it.playingTeam }.forEach {
-                    createNewTask(it)
+                    createNewTask(it, taskQueue.random())
                 }
 
                 sender.sendMessage(Format.success("Created a new task!"))
@@ -165,9 +169,14 @@ class SnifferCaretakerController : GameBase(
     )
 
     val chestItems: List<List<*>> = listOf(
-        listOf(Material.WHEAT_SEEDS, 8),
+        listOf(Material.WHEAT_SEEDS, 6),
         listOf(Material.PUMPKIN_SEEDS, 1),
         listOf(Material.SUGAR_CANE, 1)
+    )
+
+    val basementItems: List<List<*>> = listOf(
+        listOf(Material.RED_MUSHROOM, 3),
+        listOf(Material.BROWN_MUSHROOM, 3),
     )
 
     val blockItems: HashMap<String, List<List<*>>> = hashMapOf(
@@ -201,6 +210,8 @@ class SnifferCaretakerController : GameBase(
         "mob" to mobRefresh * 20
     )
 
+    val taskQueue: MutableList<String> = mutableListOf()
+    val taskIndexes: HashMap<Team, Int> = hashMapOf()
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
     val signs: HashMap<Team, HashMap<String, TextDisplay>> = hashMapOf()
@@ -212,6 +223,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun stockChests(team: Team) {
+
         val chestPosition = currentMap.data.getList("supply_chest")?.validateCoordinates()
             ?: throw GameControllerException("Chest position not found")
 
@@ -414,7 +426,7 @@ class SnifferCaretakerController : GameBase(
 
     }
 
-    fun createNewTask(team: Team) {
+    fun createNewTask(team: Team, task: String) {
         val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
             if (
                 it !is HashMap<*, *>
@@ -428,15 +440,9 @@ class SnifferCaretakerController : GameBase(
             it
         } ?: throw GameControllerException("Task list not found")
 
-        val filteredTasks = tasks.filter {
-            currentTasks[team]!!.find { task ->
-                task.id == it["id"]
-            } == null
-        }
-
-        if (filteredTasks.isEmpty()) return
-
-        val chosenTask = filteredTasks.random()
+        val chosenTask: HashMap<*, *> = (tasks.find {
+            it["id"] == task
+        } ?: GameControllerException("Invalid task ID")) as HashMap<*, *>
 
         val stars = chosenTask["stars"]
         if (stars !is Int) return
@@ -567,8 +573,41 @@ class SnifferCaretakerController : GameBase(
 
         session.close()
 
+        val tasks: List<String> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
+            if (
+                it !is HashMap<*, *>
+                || it["id"] == null
+                || it["id"] !is String
+                || it["stars"] == null
+                || it["stars"] !is Int
+                || it["item"] == null
+                || it["item"] !is String
+            ) throw GameControllerException("Task contains invalid data")
+            it["id"] as String
+        } ?: throw GameControllerException("Task list not found")
+
+        fun pickTask(): String {
+            val chosen = tasks.random()
+
+            if (taskQueue.isEmpty()) return chosen
+
+            val min = max(0, taskQueue.size - 10)
+            val max = taskQueue.size - 1
+
+            for (i in min..max) {
+                if (taskQueue[i] == chosen) return pickTask()
+            }
+
+            return chosen
+        }
+
+        repeat(500) {
+            taskQueue.add(pickTask())
+        }
+
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
+                taskIndexes[it] = 0
                 currentTasks[it] = mutableListOf()
                 signs[it] = hashMapOf()
                 spawnedMobs[it] = mutableListOf()
@@ -687,11 +726,23 @@ class SnifferCaretakerController : GameBase(
                 }
             }
 
+            val taskTask = object : BukkitRunnable() { // don't you just love running tasks to create tasks which requires tasks to finish the tasks :D
+                override fun run() {
+                    Team.entries.filter { it.playingTeam }.forEach {
+                        if (currentTasks[it]!!.size <= 5) {
+                            createNewTask(it, taskQueue[taskIndexes[it]!!])
+                            taskIndexes[it] = taskIndexes[it]!! + 1
+                        }
+                    }
+                }
+            }
+
             chestTask.runTaskTimer(TreeTumblers.plugin, 0, 20*chestRefresh)
             blockTask.runTaskTimer(TreeTumblers.plugin, 0, 20*blockRefresh)
             blockContainmentClosingTask.runTaskTimer(TreeTumblers.plugin, 20*(blockRefresh-6), 20*blockRefresh)
             mobTask.runTaskTimer(TreeTumblers.plugin, 0, 20*mobRefresh)
             tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
+            taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
 

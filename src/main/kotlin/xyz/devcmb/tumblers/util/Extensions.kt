@@ -10,7 +10,6 @@ import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
-import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -101,7 +100,7 @@ fun World.fill(location1: Location, location2: Location, material: Material) {
 
 fun List<*>.validateCoordinates(): List<Double>? {
     return this.map {
-        if(it !is Double) throw GameControllerException("Coordinate list does not contain exclusively doubles")
+        if(it !is Double) return@validateCoordinates null
         it
     }
 }
