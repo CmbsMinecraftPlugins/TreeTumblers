@@ -1,12 +1,21 @@
 package xyz.devcmb.tumblers.util
 
+import io.papermc.paper.util.Tick
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withTimeout
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.block.Biome
+import org.bukkit.entity.Firework
+import org.bukkit.entity.Player
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
@@ -15,8 +24,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
-import kotlin.collections.component1
-import kotlin.collections.component2
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.math.cos
@@ -125,6 +132,13 @@ object MiscUtils {
         return String.format("%d:%02d", minutes, seconds)
     }
 
+    fun formatMsTime(ms: Long): String {
+        val minutes: Long = ms / 1000 / 60
+        val seconds: Long = (ms / 1000) % 60
+        val millis: Long = ms % 1000
+        return String.format("%d:%02d.%03d", minutes, seconds, millis)
+    }
+
     fun getOrdinalSuffix(num: Int): String {
         if (num % 100 >= 11 && num % 100 <= 13) {
             return "th"
@@ -169,6 +183,42 @@ object MiscUtils {
             val score = objective.getScore("line$index")
             score.customName(text)
             score.score = lines.size - index
+        }
+    }
+
+    suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int) {
+        repeat(length) {
+            val color = when(length - it) {
+                3 -> NamedTextColor.GREEN
+                2 -> NamedTextColor.YELLOW
+                1 -> NamedTextColor.RED
+                else -> NamedTextColor.WHITE
+            }
+
+            val title = Title.title(
+                title,
+                Component.text("> ${length - it} <", color).decoration(TextDecoration.BOLD, true),
+                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+            )
+
+            audience.showTitle(title)
+            delay(1000)
+        }
+    }
+
+    fun spawnFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) {
+        val world = player.world
+        val location = player.location.clone()
+
+        val firework = world.spawn(location, Firework::class.java) { fw ->
+            fw.fireworkMeta = fw.fireworkMeta.apply {
+                addEffect(effect)
+                power = 0
+            }
+        }
+
+        runTaskLater(detonationDelay) {
+            firework.detonate()
         }
     }
 

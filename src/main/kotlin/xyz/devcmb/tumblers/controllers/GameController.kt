@@ -1,9 +1,11 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
@@ -61,10 +63,12 @@ class GameController : IController {
             game.pregame()
             game.gameMain()
             game.postGame()
-            game.cleanup()
-
+            TreeTumblers.pluginScope.async {
+                game.cleanup()
+            }
             HandlerList.unregisterAll(game)
             activeGame = null
+
         }
     }
 
@@ -79,7 +83,7 @@ class GameController : IController {
         event.isCancelled = true
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     fun playerJoin(event: PlayerJoinEvent) {
         if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) {
             val player = event.player
@@ -90,7 +94,7 @@ class GameController : IController {
     }
 
     class Game(val id: String) {
-        fun get(): GameBase {
+        fun getTemplate(): GameBase {
             val gameController = ControllerDelegate.getController("gameController") as GameController
             val gameType = gameController.games.find { it.id == id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")

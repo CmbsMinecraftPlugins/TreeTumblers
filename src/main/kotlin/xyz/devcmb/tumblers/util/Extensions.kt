@@ -1,9 +1,11 @@
 package xyz.devcmb.tumblers.util
 
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Sound
 import org.bukkit.World
+import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -11,6 +13,8 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 val playerController: PlayerController by lazy {
@@ -20,6 +24,11 @@ val playerController: PlayerController by lazy {
 val Player.tumblingPlayer: TumblingPlayer
     get() {
         return playerController.players.find { it.bukkitPlayer == this }!!
+    }
+
+val Player.formattedName: Component
+    get() {
+        return Format.formatPlayerName(this)
     }
 
 fun Player.openHandledInventory(id: String) {
@@ -68,6 +77,36 @@ fun List<Double>.unpackCoordinates(world: World): Location {
     )
 }
 
+// thanks ai
+// what does any of this mean
+inline fun <reified T> List<*>.validateList(): List<T>? {
+    if (!all { it is T }) return null
+    return map { it as T }
+}
+
+fun List<*>.validateLocation(world: World): Location? {
+    val list = this.map {
+        if(it !is Double && it !is Int && it !is Float) return@validateLocation null
+        it.toDouble()
+    }
+
+    return list.unpackCoordinates(world)
+}
+
+fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
+    return this.blockX >= min(bound1.blockX, bound2.blockX) && this.blockY >= min(bound1.blockY, bound2.blockY)
+        && this.blockZ >= min(bound1.blockZ, bound2.blockZ) && this.blockX <= max(bound1.blockX, bound2.blockX)
+        && this.blockY <= max(bound1.blockY, bound2.blockY) && this.blockZ <= max(bound1.blockY, bound2.blockY)
+}
+
+fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
+    for(x in min(this.x, other.x).toInt()..max(this.x, other.x).toInt())
+    for(y in min(this.y, other.y).toInt()..max(this.y, other.y).toInt())
+    for(z in min(this.z, other.z).toInt()..max(this.z, other.z).toInt()) {
+        execute(this.world.getBlockAt(x, y, z))
+    }
+}
+
 val Long.tickSeconds: Double
     get() {
         return ((this / 20.0) * 10.0).roundToInt() / 10.0
@@ -79,4 +118,22 @@ fun Player.buttonClickSound() {
 
 fun Player.sound(sound: Sound) {
     player!!.playSound(player!!.location, sound, 10f, 1f)
+}
+
+fun Player.hideToAll() {
+    playerController.hiddenPlayers.add(this)
+    Bukkit.getOnlinePlayers().forEach {
+        if(it !== this) {
+            it.hidePlayer(TreeTumblers.plugin, this)
+        }
+    }
+}
+
+fun Player.showToAll() {
+    playerController.hiddenPlayers.remove(this)
+    Bukkit.getOnlinePlayers().forEach {
+        if(it !== this) {
+            it.showPlayer(TreeTumblers.plugin, this)
+        }
+    }
 }

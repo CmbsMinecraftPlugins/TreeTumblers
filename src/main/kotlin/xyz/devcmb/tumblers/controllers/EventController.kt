@@ -1,7 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.launch
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -75,25 +74,31 @@ class EventController : IController {
             )
         }
 
-        Audience.audience(Bukkit.getOnlinePlayers()).sendPlayerListHeader(
-            Component.empty()
-                .appendNewline()
-                .append(Component.text("\u0001").font(UserInterfaceUtility.ICONS))
-                .appendNewline()
-                .appendNewline()
-                .appendNewline()
-                .appendNewline()
-                .appendNewline()
-                .append(
-                    Component.text("EVENT MODE: ", NamedTextColor.AQUA)
-                        .append(Component.text(
-                            if(eventMode) "ENABLED" else "DISABLED",
-                            if(eventMode) NamedTextColor.GREEN else NamedTextColor.RED
-                        ))
-                )
-                .appendNewline()
-                .append(teamComponent)
-        )
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendPlayerListHeader(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("\u0001").font(UserInterfaceUtility.ICONS))
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .append(
+                        Component.text("EVENT MODE: ", NamedTextColor.AQUA)
+                            .append(Component.text(
+                                if(eventMode) "ENABLED" else "DISABLED",
+                                if(eventMode) NamedTextColor.GREEN else NamedTextColor.RED
+                            ))
+                    )
+                    .appendNewline()
+                    .append(teamComponent)
+            )
+
+            it.sendPlayerListFooter(Format.mm(
+                "<aqua>Ping: <white>${it.ping}ms</white></aqua> <white>•</white> <aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua>"
+            ))
+        }
     }
 
     fun grantScore(player: Player, amount: Int) {

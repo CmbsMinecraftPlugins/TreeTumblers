@@ -17,6 +17,7 @@ class AdvancedItemStackContext(
 
     var rightClick: ((Player) -> Unit)? = null
     var leftClick: ((Player) -> Unit)? = null
+    var droppable: Boolean = true
 
     fun name(component: Component) {
         item.itemMeta = item.itemMeta.also {
@@ -42,6 +43,10 @@ class AdvancedItemStackContext(
 
     fun leftClick(action: (Player) -> Unit) {
         leftClick = action
+    }
+
+    fun droppable(bool: Boolean) {
+        droppable = bool
     }
 
     fun persistentDataContainer(action: PersistentDataContainer.() -> Unit) {

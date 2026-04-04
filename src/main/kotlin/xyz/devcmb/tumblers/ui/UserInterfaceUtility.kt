@@ -2,9 +2,16 @@ package xyz.devcmb.tumblers.ui
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.tumblingPlayer
+import kotlin.math.roundToInt
 
 object UserInterfaceUtility {
     val SPACES = NamespacedKey("tumbling", "spaces")
@@ -118,6 +125,22 @@ object UserInterfaceUtility {
         return Component.text(result.toString(), NamedTextColor.WHITE).font(SPACES)
     }
 
+    // a link to the research I did to get these numbers
+    // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
+    fun backgroundTextCenter(background: Component, textComponent: Component, stringText: String, bgSize: Double, offset: Double = 0.0): Component {
+        val textLength: Double = (getPixelWidth(stringText) + offset)
+
+        // very important: if these are not roundToInt, it could be offset (I found this out the hard way)
+        val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
+        val fullOffset = ((bgSize - textLength) / 2).roundToInt()
+
+        return Component.empty()
+            .append(negativeSpace(fullOffset))
+            .append(background)
+            .append(negativeSpace(bgOffset))
+            .append(textComponent)
+    }
+
     fun getPixelWidth(text: String): Int {
         return text.sumOf { ch -> DefaultFontGlyphs.entries.find { it.char == ch }?.width ?: 0 } + (text.length - 1)
     }
@@ -131,5 +154,41 @@ object UserInterfaceUtility {
         }
     }
 
+    fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {
+        val leaderboard: ArrayList<Component> = arrayListOf()
+        val placements = activeGame.getTeamPlacements().take(4)
 
+        placements.forEach { (team, placement) ->
+            leaderboard.add(Format.mm(
+                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                Placeholder.unparsed("placement", placement.toString()),
+                Placeholder.component("team", team.formattedName),
+                Placeholder.parsed("score", "<gold>${activeGame.teamScores[team]!!}</gold>")
+            ))
+        }
+
+        if(placements.find { it.first == player.tumblingPlayer.team } == null) {
+            val teamPlacement = activeGame.getTeamPlacements().find { it.first == player.tumblingPlayer.team }!!
+            leaderboard.add(Component.empty())
+            leaderboard.add(Format.mm(
+                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                Placeholder.unparsed("placement", teamPlacement.second.toString()),
+                Placeholder.component("team", teamPlacement.first.formattedName),
+                Placeholder.parsed("score", "<gold>${activeGame.teamScores[teamPlacement.first]!!}</gold>")
+            ))
+        }
+
+        return leaderboard
+    }
+
+    fun getIndividualScoreComponent(player: Player, activeGame: GameBase): Component {
+        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == player }!!
+        return Format.mm(
+            MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT,
+            Placeholder.unparsed("placement", playerPlacement.second.toString()),
+            Placeholder.parsed("head", "<head:${player.uniqueId}>"),
+            Placeholder.component("name", player.formattedName),
+            Placeholder.parsed("score", "<gold>${activeGame.playerScores[player] ?: 0}</gold>")
+        )
+    }
 }

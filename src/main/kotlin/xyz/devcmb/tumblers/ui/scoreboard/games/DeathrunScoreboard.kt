@@ -8,44 +8,49 @@ import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.GameController
-import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
+import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.tumblingPlayer
 
-class CrumbleScoreboard(
+class DeathrunScoreboard(
     val gameController: GameController,
     val player: Player,
-    override val id: String = "crumbleScoreboard"
+    override val id: String = "deathrunScoreboard"
 ) : HandledScoreboard {
     override fun getObjectives(scoreboard: Scoreboard): Set<Objective> {
         val activeGame = gameController.activeGame
-        if(activeGame !is CrumbleController) return emptySet()
+        if(activeGame !is DeathrunController) return emptySet()
 
         val objective = scoreboard.registerNewObjective(
-            "crumbleGameScoreboard",
+            "deathrunGameScoreboard",
             Criteria.create("dummy"),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-                Placeholder.unparsed("name", "Crumble")
+                Placeholder.unparsed("name", "Deathrun")
             )
         )
-
         objective.displaySlot = DisplaySlot.SIDEBAR
 
-        var rounds = Format.mm("<aqua>Rounds: </aqua>")
-        repeat(activeGame.rounds) {
-            val result = activeGame.matchResults[it][player.tumblingPlayer.team]
-            val append = when(result) {
-                CrumbleController.RoundResult.WIN -> "<white>[<green>W</green>]</white>"
-                CrumbleController.RoundResult.DRAW -> "<white>[<yellow>D</yellow>]</white>"
-                CrumbleController.RoundResult.LOSS -> "<white>[<red>L</red>]</white>"
-                null -> "<white>[ ]</white>"
+        val rounds = arrayListOf<Component>()
+        repeat((activeGame.rounds + 3) / 4) { set ->
+            var component = Component.empty()
+
+            repeat(minOf(4, activeGame.rounds - (set * 4))) { setRound ->
+                val roundIndex = (set * 4) + setRound
+                val result = activeGame.placements[roundIndex][player]
+
+                component = component.append(when (result) {
+                    null -> Format.mm("${if(setRound != 0) " " else ""}<white>[ ]</white>")
+                    -1 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
+                    -2 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<red>\uD83D\uDDE1</red>]</white>")
+                    else -> Format.mm("${if (setRound != 0) " " else ""}<white>[<green>$result${MiscUtils.getOrdinalSuffix(result)}</green>]</white>")
+                })
             }
-            rounds = rounds.append(Format.mm("${if(it != 0) " " else ""}$append"))
+
+            rounds.add(component)
         }
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
@@ -56,7 +61,7 @@ class CrumbleScoreboard(
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),
                 Placeholder.unparsed("total", activeGame.rounds.toString())
             ),
-            rounds,
+            *rounds.toTypedArray(),
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),

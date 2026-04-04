@@ -4,8 +4,10 @@ import io.papermc.paper.util.Tick
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -14,6 +16,7 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.vehicle.VehicleExitEvent
@@ -30,6 +33,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
@@ -187,7 +191,7 @@ abstract class GameBase(
         currentState = State.CUTSCENE
 
         cutsceneSteps.forEach {
-            it.run(gamePlayers, loadedMaps.first())
+            it.run(gamePlayers, loadedMaps.first(), this)
             it.cleanup(gamePlayers)
         }
     }
@@ -402,6 +406,82 @@ abstract class GameBase(
         return MiscUtils.calculatePlacements(sorted)
     }
 
+    /**
+     * Announce the team standings for this game
+     */
+    fun announceTeamScores() {
+        var teamScoresComponent = Component.empty()
+            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val teamPlacements = getTeamPlacements()
+        teamPlacements.forEach {
+            teamScoresComponent = teamScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+        teamScoresComponent = teamScoresComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(teamScoresComponent)
+    }
+
+    /**
+     * Announce the individual standings for this game
+     */
+    fun announceIndivScores() {
+        var individualScoresComponent = Component.empty()
+            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val indivPlacements = getIndividualPlacements()
+        indivPlacements.forEach {
+            individualScoresComponent = individualScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(Format.formatPlayerName(it.first))
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+
+        individualScoresComponent = individualScoresComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
+    }
+
+    /**
+     * Announce the event team scores
+     */
+    fun announceOverallTeamScores() {
+        if(!EventController.eventMode) {
+            Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(Format.warning("Event mode is disabled so team points are not saved!"))
+            return
+        }
+
+        var eventPlacementsComponent = Component.empty()
+            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val eventPlacements = eventController.getEventTeamPlacements()
+        eventPlacements.forEach {
+            eventPlacementsComponent = eventPlacementsComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+
+        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
+        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
+    }
+
     @EventHandler
     fun playerDismountEvent(event: VehicleExitEvent) {
         val player = event.exited
@@ -426,6 +506,12 @@ abstract class GameBase(
         if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || flags.contains(Flag.DISABLE_PVP)) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
+            event.isCancelled = true
     }
 
     /**

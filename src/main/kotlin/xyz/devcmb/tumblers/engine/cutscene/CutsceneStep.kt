@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -22,7 +23,7 @@ class CutsceneStep(
     val init: suspend CutsceneContext.(map: LoadedMap) -> Unit
 ) {
     val pigs: HashMap<Player, Entity> = HashMap()
-    suspend fun run(observers: Set<Player>, map: LoadedMap) {
+    suspend fun run(observers: Set<Player>, map: LoadedMap, game: GameBase) {
         suspendSync {
             observers.forEach {
                 observers.forEach { other ->
@@ -40,7 +41,7 @@ class CutsceneStep(
             }
         }
 
-        val context = CutsceneContext(observers, map, this)
+        val context = CutsceneContext(observers, map, this, game)
         context.init(map)
     }
 

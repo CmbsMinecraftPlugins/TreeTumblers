@@ -12,6 +12,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Color
@@ -71,7 +72,6 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 @EventGame
@@ -190,7 +190,7 @@ class CrumbleController : GameBase(
     )
 
     val rounds = Team.entries.filter { it.playingTeam }.size - 1
-    var currentRound = 1
+    var currentRound = 0
     val roundIndex: Int
         get() { return currentRound - 1 }
 
@@ -275,7 +275,6 @@ class CrumbleController : GameBase(
                     BlockVector3.at(-500, 86, 500),
                     BlockVector3.at(500, 86, -500),
                     BlockVector3.at(-500, 86, -500),
-                    BlockVector3.at(500, 86, 500),
                     BlockVector3.at(0, 86, 500),
                     BlockVector3.at(500, 86, 0)
                 )
@@ -451,20 +450,13 @@ class CrumbleController : GameBase(
                     var component = Component.empty()
                     val kit = playerKits[it]
                     if(kit != null) {
-                        // a link to the research I did to get these numbers
-                        // https://confused-animal-c90.notion.site/Minecraft-resource-pack-UI-3206aa5edc9980e9a296d96d9ec07142
-                        val bgSize = 69.5
-                        // very important: if these are not roundToInt, it could be offset (I found this out the hard way)
-                        val bgOffset = (kit.kitDisplayTextLength+((bgSize - kit.kitDisplayTextLength)/2)).roundToInt()
-                        val fullOffset = ((bgSize - kit.kitDisplayTextLength) / 2).roundToInt()
-
-                        component = Component.empty()
-                            .append(UserInterfaceUtility.negativeSpace(fullOffset))
-                            .append(Component.text("\uEF00").font(font))
-                            .append(UserInterfaceUtility.negativeSpace(bgOffset))
-                            .append(Component.text(kit.kitIcon).font(font))
-                            .append(Component.text(" ${kit.name}"))
-                            .shadowColor(ShadowColor.shadowColor(0))
+                        component = component.append(UserInterfaceUtility.backgroundTextCenter(
+                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                            Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Component.text(kit.kitIcon).font(font))),
+                            kit.name,
+                            69.5,
+                            14.0
+                        ))
                     }
 
                     it.sendActionBar(component)
@@ -498,6 +490,7 @@ class CrumbleController : GameBase(
     var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
+            currentRound++
             gameTimeoutEnd = false
             unhideSpectators()
             preRound()
@@ -541,64 +534,13 @@ class CrumbleController : GameBase(
         }
 
         delay(5000)
-
-        var teamScoresComponent = Component.empty()
-            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
-
-        val teamPlacements = getTeamPlacements()
-        teamPlacements.forEach {
-            teamScoresComponent = teamScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
-            )
-        }
-        teamScoresComponent = teamScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(teamScoresComponent)
+        announceTeamScores()
+        delay(5000)
+        announceIndivScores()
 
         delay(5000)
-        var individualScoresComponent = Component.empty()
-            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
-
-        val indivPlacements = getIndividualPlacements()
-        indivPlacements.forEach {
-            individualScoresComponent = individualScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(Format.formatPlayerName(it.first))
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
-            )
-        }
-
-        individualScoresComponent = individualScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
-
+        announceOverallTeamScores()
         delay(5000)
-        var eventPlacementsComponent = Component.empty()
-            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
-            .appendNewline()
-
-        val eventPlacements = eventController.getEventTeamPlacements()
-        eventPlacements.forEach {
-            eventPlacementsComponent = eventPlacementsComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
-            )
-        }
-
-        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
     }
 
     override suspend fun cleanup() {
@@ -762,7 +704,6 @@ class CrumbleController : GameBase(
             ))
         }
         delay(2500)
-        currentRound++
     }
 
     suspend fun announceMatchup() {
@@ -1192,7 +1133,7 @@ class CrumbleController : GameBase(
     }
 
     @EventHandler
-    fun blockBreakEvent(event: BlockBreakEvent) {
+    fun preRoundBlockBreakEvent(event: BlockBreakEvent) {
         if(!roundActive) event.isCancelled = true
     }
 

@@ -115,12 +115,14 @@ gradle-app.setting
 **/build/
 
 # Common working directory
-run/
+runs
+
+# AI because gitignore is very annoying
+run/**
 !run/plugins/
 !run/plugins/TreeTumblers/
-run/plugins/TreeTumblers/*
-!run/plugins/TreeTumblers/templates
-runs/
+!run/plugins/TreeTumblers/templates/
+!run/plugins/TreeTumblers/templates/**
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar

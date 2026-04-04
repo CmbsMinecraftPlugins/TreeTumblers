@@ -6,8 +6,6 @@ import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.MiscUtils
-import kotlin.math.roundToInt
-
 class CountdownBossbar(
     val gameController: GameController,
     override val id: String = "countdownBossbar",
@@ -18,16 +16,12 @@ class CountdownBossbar(
         val currentGame = gameController.activeGame
         if(currentGame == null) return Component.text("0:00")
 
-        val bgSize = 30
         val text = MiscUtils.formatToMSS(currentGame.countdownTime)
-        val textLength: Double = (UserInterfaceUtility.getPixelWidth(text) + (text.length - 1)).toDouble()
-        val bgOffset = (textLength+((bgSize - textLength)/2)).roundToInt()
-        val fullOffset = ((bgSize - textLength) / 2).roundToInt()
-
-        return Component.empty()
-            .append(UserInterfaceUtility.negativeSpace(fullOffset))
-            .append(Component.text("\uEF01").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)))
-            .append(UserInterfaceUtility.negativeSpace(bgOffset))
-            .append(Component.text(text).font(NamespacedKey("tumbling", "default_shift/ascent_5")))
+        return UserInterfaceUtility.backgroundTextCenter(
+            Component.text("\uEF01").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
+            Component.text(text).font(NamespacedKey("tumbling", "default_shift/ascent_5")),
+            text,
+            30.0
+        )
     }
 }
