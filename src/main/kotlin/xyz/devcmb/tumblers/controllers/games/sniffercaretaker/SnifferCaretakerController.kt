@@ -1,10 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
-import com.sk89q.worldedit.WorldEdit
-import com.sk89q.worldedit.bukkit.BukkitAdapter
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy
-import com.sk89q.worldedit.function.operation.Operations
-import com.sk89q.worldedit.regions.CuboidRegion
+
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -55,7 +51,6 @@ import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
-import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
@@ -578,24 +573,28 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun gameLoad() {
         val map = loadMap(maps.random(), 1)
-        val adaptedWorld = BukkitAdapter.adapt(map.world)
-        val session = WorldEdit.getInstance().newEditSession(adaptedWorld)
 
-        val mapBounds = map.data.getList("base_map")!!.map { it as List<*>
-            it.validateCoordinates()
-        }
 
-        val mapBound1 = mapBounds[0]!!.unpackCoordinates(map.world)
-        val mapBound2 = mapBounds[1]!!.unpackCoordinates(map.world)
 
-        val region = CuboidRegion(mapBound1.toBlockVector3(), mapBound2.toBlockVector3())
+        // TODO: REMEMBER! USE THIS CODE TO GENERATE THE MAP AS THE ACTUAL MAP DATA ITSELF, SO IT DOESNT NEED TO SPEND
+//        val adaptedWorld = BukkitAdapter.adapt(map.world)
+//        val session = WorldEdit.getInstance().newEditSession(adaptedWorld)
+//
+//        val mapBounds = map.data.getList("base_map")!!.map { it as List<*>
+//            it.validateCoordinates()
+//        }
+//
+//        val mapBound1 = mapBounds[0]!!.unpackCoordinates(map.world)
+//        val mapBound2 = mapBounds[1]!!.unpackCoordinates(map.world)
+//
+//        val region = CuboidRegion(mapBound1.toBlockVector3(), mapBound2.toBlockVector3())
+//
+//        repeat(7) {
+//            val forwardExtentCopy = ForwardExtentCopy(adaptedWorld, region, adaptedWorld, region.minimumPoint.add((it + 1) * 1000, 0, 0))
+//            Operations.complete(forwardExtentCopy)
+//        }
 
-        repeat(7) {
-            val forwardExtentCopy = ForwardExtentCopy(adaptedWorld, region, adaptedWorld, region.minimumPoint.add((it + 1) * 1000, 0, 0))
-            Operations.complete(forwardExtentCopy)
-        }
-
-        session.close()
+        //session.close()
 
         val tasks: List<String> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
             if (

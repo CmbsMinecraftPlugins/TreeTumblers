@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.block.data.Levelled
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.Event
@@ -67,14 +68,35 @@ class ThirstyTask(
             else -> {}
         }
 
-        (cauldron.blockData as Levelled).also {
-            it.level = 3
+
+        cauldron.blockData = (cauldron.blockData as Levelled).also {
+            it.level = it.maximumLevel
+        }
+
+        repeat(2) {
+            runTaskLater(20L*(it + 1)) {
+                cauldron.blockData = (cauldron.blockData as Levelled).also { data ->
+                    data.level = data.maximumLevel - (it + 1)
+                }
+
+                snifferCaretaker.currentMap.world.playSound(
+                    cauldron.location,
+                    if (item == Material.MILK_BUCKET) Sound.ENTITY_WANDERING_TRADER_DRINK_MILK else Sound.ENTITY_GENERIC_DRINK,
+                    1f, 1f
+                )
+            }
         }
 
         snifferCaretaker.completeTask(this.team, this)
 
         runTaskLater(20*3) {
             cauldron.type = Material.CAULDRON
+
+            snifferCaretaker.currentMap.world.playSound(
+                cauldron.location,
+                if (item == Material.MILK_BUCKET) Sound.ENTITY_WANDERING_TRADER_DRINK_MILK else Sound.ENTITY_GENERIC_DRINK,
+                1f, 1f
+            )
         }
 
     }
