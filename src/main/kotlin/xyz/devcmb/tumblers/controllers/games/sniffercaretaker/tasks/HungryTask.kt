@@ -2,10 +2,12 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.Sound
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerInteractEntityEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
@@ -13,6 +15,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import kotlin.random.Random
 
 class HungryTask(
     override val team: Team,
@@ -45,7 +48,14 @@ class HungryTask(
         val playerItem = event.player.inventory.getItem(event.hand)
         if (playerItem.type != item) return
 
-        playerItem.amount -= 1
+        if (item == Material.MUSHROOM_STEW) {
+            event.player.inventory.setItem(event.hand, ItemStack(Material.BOWL))
+            // that's right, we're gonna Hard Code :steamhappy:
+        } else {
+            playerItem.amount -= 1
+        }
+
+        snifferCaretaker.currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_EAT, 1.0f, 0.8f + (Random.nextFloat() * 0.4f))
 
         snifferCaretaker.completeTask(this.team, this)
     }

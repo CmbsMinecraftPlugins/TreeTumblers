@@ -12,17 +12,21 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Particle
+import org.bukkit.Sound
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Player
+import org.bukkit.entity.Sniffer
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.ItemStack
@@ -151,7 +155,7 @@ class SnifferCaretakerController : GameBase(
     )
 
     val kit: List<ItemStack> = listOf(
-        ItemStack(Material.STONE_PICKAXE).apply {
+        ItemStack(Material.WOODEN_SWORD).apply {
             itemMeta = itemMeta.also {
                 it.isUnbreakable = true
             }
@@ -165,7 +169,8 @@ class SnifferCaretakerController : GameBase(
 
         ItemStack(Material.BONE_MEAL, 64),
         ItemStack(Material.BUCKET),
-        ItemStack(Material.GLASS_BOTTLE)
+        ItemStack(Material.GLASS_BOTTLE),
+        ItemStack(Material.BOWL)
     )
 
     val chestItems: HashMap<String, List<Pair<Material, Int>>> = hashMapOf(
@@ -177,6 +182,7 @@ class SnifferCaretakerController : GameBase(
         "basement_supply_chest" to listOf(
             Pair(Material.RED_MUSHROOM, 3),
             Pair(Material.BROWN_MUSHROOM, 3),
+            Pair(Material.STICK, 5),
         )
     )
 
@@ -218,7 +224,7 @@ class SnifferCaretakerController : GameBase(
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
 
     val signs: HashMap<Team, HashMap<String, TextDisplay>> = hashMapOf()
-
+    val sniffers: HashMap<Team, Sniffer> = hashMapOf()
     val spawnedMobs: HashMap<Team, MutableList<Entity>> = hashMapOf()
 
     fun offsetLocation(location: Location, team: Team): Location {
@@ -409,6 +415,11 @@ class SnifferCaretakerController : GameBase(
         task.count -= 1
 
         if (task.count > 0) return
+
+        val sniffer = sniffers[team]!!
+
+        currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
+        currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 100)
 
         grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
 
@@ -629,15 +640,16 @@ class SnifferCaretakerController : GameBase(
                     ?: throw GameControllerException("Sniffer spawns not found")
 
                 val snifferLocation = offsetLocation(snifferSpawn.unpackCoordinates(map.world), it)
-                val sniffer = map.world.spawnEntity(snifferLocation, EntityType.SNIFFER)
+                val sniffer = map.world.spawn(snifferLocation, Sniffer::class.java, { mob ->
+                    mob.isInvulnerable = true
+                    mob.persistentDataContainer.set(
+                        snifferTeamKey,
+                        PersistentDataType.STRING,
+                        it.name
+                    )
+                })
 
-                sniffer.isInvulnerable = true
-
-                sniffer.persistentDataContainer.set(
-                    snifferTeamKey,
-                    PersistentDataType.STRING,
-                    it.name
-                )
+                sniffers[it] = sniffer
             }
         }
     }
@@ -803,6 +815,14 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun playerItemConsumeEvent(event: PlayerItemConsumeEvent) {
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun entityDeathEvent(event: EntityDeathEvent) {
+        if (event.entity.type == EntityType.SPIDER) {
+            event.drops.clear()
+            currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.SPIDER_EYE, 1))
+        }
     }
 
     enum class SnifferCaretakerScoreSource(override val id: String) : ScoreSource {
