@@ -785,7 +785,7 @@ class DeathrunController : GameBase(
     @EventHandler
     fun attackerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
-        if(player.tumblingPlayer.team != currentTeam) return
+        if(player.tumblingPlayer.team != currentTeam || currentState != State.GAME_ON) return
 
         val pos = event.to
         giveTrapItem(event.player, pos)

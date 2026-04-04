@@ -32,11 +32,11 @@ class CutsceneStep(
                 }
 
                 it.sendMessage(Component.empty()
-                    .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
+                    .append(UserInterfaceUtility.constructLine(35, NamedTextColor.AQUA))
                     .append(Component.newline())
                     .append(chatMessage)
                     .append(Component.newline())
-                    .append(UserInterfaceUtility.constructLine(20, NamedTextColor.AQUA))
+                    .append(UserInterfaceUtility.constructLine(35, NamedTextColor.AQUA))
                 )
             }
         }
