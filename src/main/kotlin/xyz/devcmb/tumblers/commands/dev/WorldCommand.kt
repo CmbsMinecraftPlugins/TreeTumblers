@@ -5,6 +5,7 @@ import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
+import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -24,6 +25,7 @@ import kotlin.jvm.optionals.getOrElse
 import kotlin.jvm.optionals.getOrNull
 
 @Command(name = "world")
+@Permission("tumbling.dev")
 class WorldCommand {
     val worldController: WorldController by lazy {
         ControllerDelegate.getController("worldController") as WorldController

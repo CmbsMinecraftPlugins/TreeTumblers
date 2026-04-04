@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 class CountdownBossbar(
     val gameController: GameController,
@@ -15,6 +16,15 @@ class CountdownBossbar(
     override fun getComponent(): Component {
         val currentGame = gameController.activeGame
         if(currentGame == null) return Component.text("0:00")
+
+        if(currentGame.currentTimer?.paused == true) {
+            return UserInterfaceUtility.backgroundTextCenter(
+                Component.text("\uEF03").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
+                Format.mm("<yellow>Paused</yellow>").font(NamespacedKey("tumbling", "default_shift/ascent_5")),
+                "Paused",
+                75.0
+            )
+        }
 
         val text = MiscUtils.formatToMSS(currentGame.countdownTime)
         return UserInterfaceUtility.backgroundTextCenter(
