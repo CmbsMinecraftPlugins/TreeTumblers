@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
@@ -57,7 +58,30 @@ class BoredTask(
 
         snifferCaretaker.completeTask(this.team, this)
 
+        repeat(6) {
+            runTaskLater(10L*it) {
+                val sourceId = (0..1000000).random()
+
+                team.getOnlinePlayers().forEach { player ->
+                    player.sendBlockDamage(block.location, (it / 8f) + 0.1f, sourceId)
+                    snifferCaretaker.currentMap.world.playSound(block.location, block.blockData.soundGroup.placeSound, 0.5f, 0.8f)
+                }
+            }
+        }
+
         runTaskLater(20*3) {
+            snifferCaretaker.currentMap.world.spawnParticle(
+                Particle.BLOCK,
+                block.location,
+                10,
+                0.05,
+                0.05,
+                0.05,
+                block.blockData
+            )
+
+            snifferCaretaker.currentMap.world.playSound(block.location, block.blockData.soundGroup.breakSound, 1f, 1f)
+
             block.type = Material.AIR
         }
     }
