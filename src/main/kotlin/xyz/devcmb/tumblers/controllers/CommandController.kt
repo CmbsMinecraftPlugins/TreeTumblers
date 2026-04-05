@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
 import xyz.devcmb.tumblers.commands.arguments.*
 import xyz.devcmb.tumblers.commands.dev.*
+import xyz.devcmb.tumblers.commands.event.EventCommand
 import xyz.devcmb.tumblers.commands.games.*
 import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.data.Team
@@ -27,7 +28,8 @@ class CommandController : IController {
                 GameCommand(),
                 WorldCommand(),
                 ScoreCommand(),
-                TimerCommand()
+                TimerCommand(),
+                EventCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

@@ -6,7 +6,18 @@ database:
   database:
 
 event:
-  event_mode: false
+  event_mode: true
+  cutscene:
+    first: [1.13,198.19,14.26,-125.2,40.2]
+  voting:
+    quadrants:
+      # x1,y1,z1,x2,y2,z2
+      - [10,192,7,23,188,-6]
+      - [10,192,9,23,188,22]
+      - [8,192,9,8,188,9]
+      - [8,192,7,8,188,7]
+    inactive_quadrant_material: GRAY_CONCRETE
+    center: [9,196,8]
 
 templates:
   # The path where all the template worlds are contained
@@ -14,9 +25,8 @@ templates:
   world_root: "&/templates/worlds"
 
 lobby:
-  # TODO: Make this point to an actual lobby lol
-  world: world
-  position: [0.0, 78.0, 0.0]
+  world: hub
+  position: [-20.0, 209.0, 5.0,-90.0,0.0]
 
 # All games use the same format for their config, aside from the data fields
 # Refer to the comments in the first game for usage in the others

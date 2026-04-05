@@ -28,7 +28,7 @@ val Player.tumblingPlayer: TumblingPlayer
 
 val Player.formattedName: Component
     get() {
-        return Format.formatPlayerName(this)
+        return Format.formatPlayerName(this.tumblingPlayer)
     }
 
 fun Player.openHandledInventory(id: String) {
@@ -55,6 +55,19 @@ fun Player.deactivateScoreboard(id: String) {
 
 fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
+}
+
+fun List<Location>.getPlayers(heightUp: Int, heightDown: Int, condition: ((player: Player) -> Boolean)? = null): List<Player> {
+    return Bukkit.getOnlinePlayers().filter { condition?.invoke(it) ?: true }.filter { player ->
+        val playerLocation = player.location
+
+        any { location ->
+            location.world == playerLocation.world &&
+                playerLocation.blockX == location.blockX &&
+                playerLocation.blockZ == location.blockZ &&
+                playerLocation.blockY in (location.blockY - heightDown)..(location.blockY + heightUp)
+        }
+    }
 }
 
 fun runTask(runnable: Runnable) =

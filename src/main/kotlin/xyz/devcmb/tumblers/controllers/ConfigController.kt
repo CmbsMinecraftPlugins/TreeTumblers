@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
+import org.bukkit.Material
 import org.bukkit.configuration.MemorySection
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
@@ -49,6 +50,7 @@ class ConfigController : IController {
                     ?.toMap(HashMap())
                     ?: HashMap<String, MemorySection>()
 
+                Material::class.java -> Material.matchMaterial(config.getString(path)!!)
 
                 else -> config.get(path)
             }

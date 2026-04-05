@@ -13,6 +13,7 @@ import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -24,18 +25,20 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import java.util.UUID
 
 @Controller("playerController", Controller.Priority.MEDIUM)
 class PlayerController : IController {
-    val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
+    lateinit var players: ArrayList<TumblingPlayer>
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
@@ -43,20 +46,41 @@ class PlayerController : IController {
 
     companion object {
         @field:Configurable("lobby.world")
-        var lobbyWorld = "world"
+        var lobbyWorld: String = "world"
 
         @field:Configurable("lobby.position")
         var lobbySpawn: List<Double> = listOf(0.0, 127.0, 0.0)
     }
 
     override fun init() {
+        TreeTumblers.pluginScope.launch {
+            players = databaseController.getAllPlayerData()
+        }
+    }
+
+    fun registerTumblingPlayer(uuid: UUID, name: String, team: Team, score: Int) {
+        val player = TumblingPlayer(uuid)
+        player.bukkitPlayer = Bukkit.getPlayer(uuid)
+        player.name = name
+        player.team = team
+        player.score = score
+
+        players.add(player)
+    }
+
+    fun unregisterTumblingPlayer(uuid: UUID) {
+        players.removeIf { it.uuid == uuid }
+    }
+
+    fun setPlayerTeam(uuid: UUID, team: Team) {
+        players.find { it.uuid == uuid }!!.team = team
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
-        player.gameMode = GameMode.SURVIVAL
+        player.gameMode = GameMode.ADVENTURE
         player.isFlying = false
         player.allowFlight = false
         player.clearActivePotionEffects()
@@ -84,25 +108,16 @@ class PlayerController : IController {
             )
         }
 
-        TreeTumblers.pluginScope.launch {
-            var data: TumblingPlayer
-            try {
-                data = databaseController.getPlayerData(player)
-                players.add(data)
-            } catch(e: Exception) {
-                DebugUtil.severe("Failed to get player data for ${player.name}: ${e.message}")
-                player.kick(Component.text("Data failed to load. Please try again or contact an admin.", NamedTextColor.RED))
-            }
+        val tumblingPlayer = players.find { it.uuid == player.uniqueId }!!
+        tumblingPlayer.bukkitPlayer = player
 
-            player.displayName(Format.formatPlayerName(player))
-            Bukkit.broadcast(
-                Component.text("[").color(NamedTextColor.GRAY)
-                    .append(Component.text("+").color(NamedTextColor.GREEN))
-                    .append(Component.text("] ").color(NamedTextColor.GRAY))
-                    .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
-            )
-
-        }
+        player.displayName(Format.formatPlayerName(tumblingPlayer))
+        Bukkit.broadcast(
+            Component.text("[").color(NamedTextColor.GRAY)
+                .append(Component.text("+").color(NamedTextColor.GREEN))
+                .append(Component.text("] ").color(NamedTextColor.GRAY))
+                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
+        )
     }
 
     @EventHandler
@@ -112,21 +127,17 @@ class PlayerController : IController {
 
         hiddenPlayers.remove(player)
 
+        playerUIControllers[player]?.cleanup()
+        playerUIControllers.remove(player)
+
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("-").color(NamedTextColor.RED))
                 .append(Component.text("] ").color(NamedTextColor.GRAY))
-                .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
+                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
         )
 
-        TreeTumblers.pluginScope.launch {
-            try {
-                databaseController.replicatePlayerData(tumblingPlayer)
-                players.remove(tumblingPlayer)
-            } catch(e: Exception) {
-                DebugUtil.severe("Failed to replicate player data for ${player.name}: ${e.message}")
-            }
-        }
+        tumblingPlayer.bukkitPlayer = null
     }
 
     @EventHandler
@@ -169,5 +180,11 @@ class PlayerController : IController {
                 )
             }
         }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
+            event.isCancelled = true
     }
 }

@@ -32,7 +32,7 @@ class GameCommand {
         }
 
         try {
-            gameController.startGame(game.id)
+            gameController.startGameAsync(game.id)
             sender.sendMessage(Format.success("Started game successfully!"))
         } catch(e: GameOperatorException) {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))

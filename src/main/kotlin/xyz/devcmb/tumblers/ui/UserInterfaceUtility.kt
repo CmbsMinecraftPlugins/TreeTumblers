@@ -163,7 +163,7 @@ object UserInterfaceUtility {
                 MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
                 Placeholder.unparsed("placement", placement.toString()),
                 Placeholder.component("team", team.formattedName),
-                Placeholder.parsed("score", "<gold>${activeGame.teamScores[team]!!}</gold>")
+                Placeholder.parsed("score", activeGame.teamScores[team]!!.toString())
             ))
         }
 
@@ -174,7 +174,7 @@ object UserInterfaceUtility {
                 MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
                 Placeholder.unparsed("placement", teamPlacement.second.toString()),
                 Placeholder.component("team", teamPlacement.first.formattedName),
-                Placeholder.parsed("score", "<gold>${activeGame.teamScores[teamPlacement.first]!!}</gold>")
+                Placeholder.parsed("score", activeGame.teamScores[teamPlacement.first]!!.toString())
             ))
         }
 
@@ -182,13 +182,15 @@ object UserInterfaceUtility {
     }
 
     fun getIndividualScoreComponent(player: Player, activeGame: GameBase): Component {
-        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == player }!!
+        val tumblingPlayer = player.tumblingPlayer
+        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }!!
+
         return Format.mm(
             MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT,
             Placeholder.unparsed("placement", playerPlacement.second.toString()),
             Placeholder.parsed("head", "<head:${player.uniqueId}>"),
             Placeholder.component("name", player.formattedName),
-            Placeholder.parsed("score", "<gold>${activeGame.playerScores[player] ?: 0}</gold>")
+            Placeholder.parsed("score", (activeGame.playerScores[tumblingPlayer] ?: 0).toString())
         )
     }
 }

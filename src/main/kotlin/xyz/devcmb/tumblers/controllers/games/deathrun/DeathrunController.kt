@@ -60,6 +60,7 @@ import kotlin.math.max
 @EventGame
 class DeathrunController : GameBase(
     id = "deathrun",
+    name = "Deathrun",
     votable = true,
     maps = setOf(
         Map("forest")
@@ -708,7 +709,7 @@ class DeathrunController : GameBase(
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
                 "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
-                Placeholder.component("player", Format.formatPlayerName(player))
+                Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
 
@@ -744,7 +745,7 @@ class DeathrunController : GameBase(
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
                 "<red><player> has been eliminated!</red>",
-                Placeholder.component("player", Format.formatPlayerName(player))
+                Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
         currentTeam.getOnlinePlayers().forEach {

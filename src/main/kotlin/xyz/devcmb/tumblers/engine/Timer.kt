@@ -6,8 +6,10 @@ import kotlinx.coroutines.launch
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.TimerController
+import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 
-class Timer(val id: String, time: Int) {
+class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit = {}) {
     var currentTime = time
     var job: Job? = null
     var endedEarly: Boolean? = null
@@ -26,13 +28,23 @@ class Timer(val id: String, time: Int) {
                 if(paused) continue
 
                 delay(1000)
-                if(currentTime <= 0) break
                 currentTime--
+
+                if(currentTime <= 0) break
             }
 
             endedEarly = false
+            suspendSync {
+                onComplete.invoke(false)
+            }
             timerController.unregister(this@Timer)
         }
+    }
+
+    fun format(): String {
+        if(paused) return "PAUSED"
+
+        return MiscUtils.formatToMSS(currentTime)
     }
 
     suspend fun join() {
@@ -45,6 +57,7 @@ class Timer(val id: String, time: Int) {
 
         endedEarly = true
         job!!.cancel()
+        onComplete.invoke(true)
         timerController.unregister(this)
         job = null
     }

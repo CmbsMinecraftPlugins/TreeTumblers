@@ -26,7 +26,12 @@ class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
 
-    data class RegisteredGame(val id: String, val game: Class<out GameBase>)
+    data class RegisteredGame(
+        val id: String,
+        val name: String,
+        val votable: Boolean,
+        val game: Class<out GameBase>
+    )
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -39,13 +44,24 @@ class GameController : IController {
             .filter { GameBase::class.java.isAssignableFrom(it) }
             .forEach { clazz ->
                 val gameClass = clazz as Class<out GameBase>
-                val gameId = gameClass.getDeclaredConstructor().newInstance().id
+                val templateInstance = gameClass.getDeclaredConstructor().newInstance()
 
-                games.add(RegisteredGame(gameId, gameClass))
+                games.add(RegisteredGame(
+                    templateInstance.id,
+                    templateInstance.name,
+                    templateInstance.votable,
+                    gameClass
+                ))
             }
     }
 
-    fun startGame(id: String) {
+    fun startGameAsync(id: String) {
+        TreeTumblers.pluginScope.launch {
+            startGame(id)
+        }
+    }
+
+    suspend fun startGame(id: String) {
         if(activeGame != null) throw GameOperatorException("Cannot start a game while one is currently active")
 
         val gameClass = games.find { it.id == id }?.game
@@ -56,20 +72,17 @@ class GameController : IController {
         activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
-        TreeTumblers.pluginScope.launch {
-            game.load()
-            game.finishLoading()
-            game.runCutscene()
-            game.pregame()
-            game.gameMain()
-            game.postGame()
-            TreeTumblers.pluginScope.async {
-                game.cleanup()
-            }
-            HandlerList.unregisterAll(game)
-            activeGame = null
-
+        game.load()
+        game.finishLoading()
+        game.runCutscene()
+        game.pregame()
+        game.gameMain()
+        game.postGame()
+        TreeTumblers.pluginScope.async {
+            game.cleanup()
         }
+        HandlerList.unregisterAll(game)
+        activeGame = null
     }
 
     @EventHandler

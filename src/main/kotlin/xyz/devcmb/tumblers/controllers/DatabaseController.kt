@@ -4,8 +4,9 @@ import com.destroystokyo.paper.profile.PlayerProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import org.bukkit.entity.Player
+import org.bukkit.Bukkit
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.DatabaseException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -53,6 +54,10 @@ class DatabaseController : IController {
     lateinit var connection: Connection
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
+    }
+
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController("playerController") as PlayerController
     }
 
     override fun init() {
@@ -125,6 +130,8 @@ class DatabaseController : IController {
     var hasCached: Boolean = false
 
     suspend fun whitelistPlayer(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
+        require(profile.id != null) { "PlayerProfile does not have a UUID" }
+
         val statement = connection.prepareStatement(
             """
                 INSERT INTO tumbling_players (uuid, username, team, score, whitelisted) 
@@ -141,9 +148,22 @@ class DatabaseController : IController {
         statement.executeUpdate()
         whitelistedPlayersCache.put(profile.name!!, team)
         whitelistedPlayerUUIDs.put(profile.name!!, profile.id!!)
+
+        val scoreStatement = connection.prepareStatement("""
+            SELECT score FROM tumbling_players WHERE uuid = ?
+        """.trimIndent())
+
+        scoreStatement.setString(1, profile.id.toString())
+
+        val score = scoreStatement.executeQuery()
+        if(!score.next()) throw DatabaseException("Score not found in database directly after update")
+
+        playerController.registerTumblingPlayer(profile.id!!, profile.name!!, team, score.getInt("score"))
     }
 
     suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
+        require(profile.id != null) { "PlayerProfile does not have a UUID" }
+
         val statement = connection.prepareStatement(
             """
                 UPDATE tumbling_players
@@ -154,6 +174,7 @@ class DatabaseController : IController {
 
         statement.setString(1, profile.id.toString())
 
+        playerController.unregisterTumblingPlayer(profile.id!!)
         statement.executeUpdate()
         whitelistedPlayersCache.remove(profile.name)
         whitelistedPlayerUUIDs.remove(profile.name)
@@ -167,7 +188,7 @@ class DatabaseController : IController {
         """.trimIndent())
 
         statement.setInt(1, player.score)
-        statement.setString(2, player.bukkitPlayer.uniqueId.toString())
+        statement.setString(2, player.uuid.toString())
 
         statement.executeUpdate()
     }
@@ -194,27 +215,36 @@ class DatabaseController : IController {
         }
     }
 
-    suspend fun getPlayerData(player: Player): TumblingPlayer = withContext(Dispatchers.IO) {
+    suspend fun getAllPlayerData(): ArrayList<TumblingPlayer> = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
-            SELECT * FROM tumbling_players WHERE uuid = ? LIMIT 1;
+            SELECT * FROM tumbling_players WHERE whitelisted = true;
         """.trimIndent())
 
-        statement.setString(1, player.uniqueId.toString())
-
+        val tumblingPlayers: ArrayList<TumblingPlayer> = ArrayList()
         val resultSet = statement.executeQuery()
-        if(resultSet.next()) {
+        while(resultSet.next()) {
             val teamColumn: String = resultSet.getString("team")
             val score: Int = resultSet.getInt("score")
+            val uuidColumn = resultSet.getString("uuid")
+            val username = resultSet.getString("username")
 
             val team = Team.entries.find { it.name.lowercase() == teamColumn.lowercase() }
             if(team == null) {
-                throw IllegalStateException("Could not find a team with value $teamColumn")
+                throw DatabaseException("Could not find a team with value $teamColumn")
             }
 
-            TumblingPlayer(player, team, score)
-        } else {
-            throw IllegalStateException("Could not find player data for ${player.name}")
+            val uuid = UUID.fromString(uuidColumn)
+
+            val tumblingPlayer = TumblingPlayer(uuid)
+            tumblingPlayer.bukkitPlayer = Bukkit.getPlayer(uuid)
+            tumblingPlayer.score = score
+            tumblingPlayer.name = username
+            tumblingPlayer.team = team
+
+            tumblingPlayers.add(tumblingPlayer)
         }
+
+        tumblingPlayers
     }
 
     suspend fun getWhitelistedPlayers(): HashMap<String, Team> = withContext(Dispatchers.IO) {
@@ -247,6 +277,8 @@ class DatabaseController : IController {
     }
 
     suspend fun setPlayerTeam(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
+        require(profile.id != null) { "PlayerProfile does not have a UUID" }
+
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
             SET team = ?
@@ -264,6 +296,7 @@ class DatabaseController : IController {
 
         try {
             statement.executeUpdate()
+            playerController.setPlayerTeam(profile.id!!, team)
         } catch(e: SQLException) {
             DebugUtil.severe("Failed to set player team: ${e.message}")
         }

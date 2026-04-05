@@ -9,6 +9,9 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.server.ServerLoadEvent
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -29,6 +32,9 @@ class WorldController : IController {
                 return field
                     .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
             }
+
+        @field:Configurable("lobby.world")
+        var lobbyWorld: String = "hub"
     }
 
     override fun init() {
@@ -171,6 +177,13 @@ class WorldController : IController {
         }
 
         deleteDir(file)
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun onServerLoad(event: ServerLoadEvent) {
+        if (Bukkit.getWorld(lobbyWorld) == null) {
+            Bukkit.createWorld(WorldCreator(lobbyWorld))
+        }
     }
 
     data class LoadableTemplate(val file: File)
