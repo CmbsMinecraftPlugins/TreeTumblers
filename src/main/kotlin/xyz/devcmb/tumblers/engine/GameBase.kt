@@ -4,7 +4,6 @@ import io.papermc.paper.util.Tick
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -432,7 +431,7 @@ abstract class GameBase(
             )
         }
         teamScoresComponent = teamScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(teamScoresComponent)
+        Bukkit.broadcast(teamScoresComponent)
     }
 
     /**
@@ -451,12 +450,12 @@ abstract class GameBase(
                     .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
                     .append(Format.formatPlayerName(it.first))
                     .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(playerScores[it.first]!!, NamedTextColor.YELLOW))
+                    .append(Component.text(playerScores[it.first] ?: 0, NamedTextColor.YELLOW))
             )
         }
 
         individualScoresComponent = individualScoresComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(individualScoresComponent)
+        Bukkit.broadcast(individualScoresComponent)
     }
 
     /**
@@ -480,10 +479,10 @@ abstract class GameBase(
         }
 
         eventPlacementsComponent = eventPlacementsComponent.appendNewline()
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
+        Bukkit.broadcast(eventPlacementsComponent)
 
         if(!EventController.eventMode) {
-            Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
+            Bukkit.broadcast(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
         }
     }
 

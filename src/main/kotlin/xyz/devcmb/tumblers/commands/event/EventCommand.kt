@@ -1,0 +1,41 @@
+package xyz.devcmb.tumblers.commands.event
+
+import dev.rollczi.litecommands.annotations.command.Command
+import dev.rollczi.litecommands.annotations.context.Context
+import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.flag.Flag
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import org.bukkit.command.CommandSender
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.util.Format
+
+@Command(name = "event")
+class EventCommand {
+
+    val eventController: EventController by lazy {
+        ControllerDelegate.getController<EventController>()
+    }
+
+    @Execute(name = "start")
+    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+        if(!confirm) {
+            var ready = true
+            Team.entries.forEach {
+                if(it.getOnlinePlayers().size != it.getAllPlayers().size) {
+                    sender.sendMessage(Format.mm("<yellow><team> are not ready!</yellow>", Placeholder.component("team", it.formattedName)))
+                    ready = false
+                }
+            }
+
+            if(!ready) {
+                sender.sendMessage(Format.warning("Not all teams have all their players! Re-run with --confirm to execute."))
+                return
+            }
+        }
+
+        eventController.startEvent()
+        sender.sendMessage(Format.success("Start signal sent successfully!"))
+    }
+}

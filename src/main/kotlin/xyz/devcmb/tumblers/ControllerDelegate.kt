@@ -52,12 +52,9 @@ object ControllerDelegate {
         return controller
     }
 
-    inline fun <reified T> getController(): T? {
+    inline fun <reified T> getController(): T {
         val controller: T? = controllers.values.find { it is T } as T?
-        if(controller == null) {
-            DebugUtil.severe("Controller with class ${T::class.java.name} not found")
-            return null
-        }
+        if(controller == null) throw IllegalArgumentException("Controller with the class ${T::class.java.name} was not found")
 
         return controller
     }

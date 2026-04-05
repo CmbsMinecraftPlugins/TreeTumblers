@@ -1,10 +1,12 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
+import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -12,21 +14,33 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.playerController
+import java.util.UUID
 
 @Controller("eventController", Controller.Priority.MEDIUM)
 class EventController : IController {
     lateinit var teamScores: HashMap<Team, Int>
 
     private val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController<DatabaseController>()!!
+        ControllerDelegate.getController<DatabaseController>()
     }
     lateinit var topbarRunnable: BukkitRunnable
-    var state: State = State.PRE_EVENT
+    var state: State = State.EVENT_INACTIVE
+
+    var eventTimer: Timer? = null
+    var eventTimerTitle: String? = null
+
+    val readyCheckWaiting: ArrayList<Player> = ArrayList()
+    var readyCheckAborted: Boolean = false
+    var readyCheckTimer: Timer? = null
 
     companion object {
         @field:Configurable("event.event_mode")
@@ -42,6 +56,83 @@ class EventController : IController {
             override fun run() = sendDefaultTopbar()
         }
         topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
+    }
+
+    fun startEvent() {
+        TreeTumblers.pluginScope.launch {
+            val ready = readyCheck()
+            if(!ready) {
+                suspendSync {
+                    Bukkit.getOnlinePlayers().forEach { it.closeInventory() }
+                }
+                Bukkit.broadcast(Format.warning("Not all players ready! Ready check failed!"))
+                return@launch
+            }
+
+            Bukkit.broadcast(Format.success("All players ready! Ready check success!"))
+        }
+    }
+
+    suspend fun readyCheck(): Boolean {
+        Bukkit.broadcast(Format.mm("<green><b>Are you ready?</b><green>"))
+        Team.entries
+            .filter { it.playingTeam }
+            .forEach {
+                readyCheckWaiting.addAll(it.getOnlinePlayers())
+            }
+
+        suspendSync {
+            readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
+        }
+
+        readyCheckTimer = Timer("ready_check_expiry_${UUID.randomUUID().toString().take(6)}", 10) { early ->
+            if(early) return@Timer
+
+            readyCheckWaiting.forEach {
+                Bukkit.broadcast(Format.error(
+                    Format.mm(
+                        "<player> is not ready!",
+                        Placeholder.component("player", it.formattedName)
+                    )
+                ))
+            }
+            readyCheckWaiting.clear()
+            readyCheckAborted = true
+        }
+        readyCheckTimer!!.start()
+
+        while(readyCheckWaiting.isNotEmpty() && !readyCheckAborted) {
+            delay(50)
+        }
+
+        val aborted = readyCheckAborted
+        readyCheckAborted = false
+
+        readyCheckTimer?.end()
+        readyCheckTimer = null
+
+        return !aborted
+    }
+
+    fun markReady(player: Player) {
+        Bukkit.broadcast(Format.success(
+            Format.mm(
+                "<player> is ready!",
+                Placeholder.component("player", player.formattedName)
+            )
+        ))
+        readyCheckWaiting.remove(player)
+    }
+
+    fun markNotReady(player: Player) {
+        Bukkit.broadcast(Format.error(
+            Format.mm(
+                "<player> is not ready!",
+                Placeholder.component("player", player.formattedName)
+            )
+        ))
+        readyCheckAborted = true
+        readyCheckWaiting.clear()
     }
     
     fun sendDefaultTopbar() {
@@ -148,7 +239,9 @@ class EventController : IController {
     }
 
     enum class State {
+        EVENT_INACTIVE,
         PRE_EVENT,
+        INTERMISSION,
         VOTING,
         NORMAL_GAME,
         FINAL_GAME,

@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
+import xyz.devcmb.tumblers.ui.inventory.ReadyCheckInventory
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
@@ -42,6 +43,7 @@ class PlayerUIController(val player: Player) {
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
+        registerInventory(ReadyCheckInventory(player, eventController))
 
         registerBossBar(AliveTeamsBossbar(gameController))
         registerBossBar(CountdownBossbar(gameController))

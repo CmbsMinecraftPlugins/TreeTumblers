@@ -29,6 +29,16 @@ class IntermissionScoreboard(
         )
         objective.displaySlot = DisplaySlot.SIDEBAR
 
+        val timer: Component = when {
+            eventController.readyCheckTimer != null ->
+                Format.mm("<aqua>Ready Check: <white>${eventController.readyCheckTimer!!.format()}</white></aqua>")
+            eventController.eventTimer != null ->
+                Format.mm("<aqua>${eventController.eventTimerTitle ?: "Timer"}: <white>${eventController.eventTimer!!.format()}</white></aqua>")
+            eventController.state == EventController.State.EVENT_INACTIVE ->
+                Format.mm("<aqua>Event Inactive</aqua>")
+            else -> Component.empty()
+        }
+
         val leaderboard: ArrayList<Component> = ArrayList()
         val placements = eventController.getEventTeamPlacements()
         placements.forEach {
@@ -49,6 +59,8 @@ class IntermissionScoreboard(
             Placeholder.parsed("score", player.tumblingPlayer.score.toString())
         )
         MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+            Component.empty(),
+            timer,
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),

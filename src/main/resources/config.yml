@@ -6,7 +6,7 @@ database:
   database:
 
 event:
-  event_mode: false
+  event_mode: true
 
 templates:
   # The path where all the template worlds are contained

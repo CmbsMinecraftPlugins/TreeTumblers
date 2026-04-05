@@ -6,8 +6,9 @@ import kotlinx.coroutines.launch
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.TimerController
+import xyz.devcmb.tumblers.util.MiscUtils
 
-class Timer(val id: String, time: Int) {
+class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit = {}) {
     var currentTime = time
     var job: Job? = null
     var endedEarly: Boolean? = null
@@ -31,9 +32,12 @@ class Timer(val id: String, time: Int) {
             }
 
             endedEarly = false
+            onComplete.invoke(false)
             timerController.unregister(this@Timer)
         }
     }
+
+    fun format() = MiscUtils.formatToMSS(currentTime)
 
     suspend fun join() {
         requireNotNull(job) { "Cannot join to an inactive timer" }
@@ -45,6 +49,7 @@ class Timer(val id: String, time: Int) {
 
         endedEarly = true
         job!!.cancel()
+        onComplete.invoke(true)
         timerController.unregister(this)
         job = null
     }

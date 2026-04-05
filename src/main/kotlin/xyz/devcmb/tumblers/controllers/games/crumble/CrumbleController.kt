@@ -788,7 +788,7 @@ class CrumbleController : GameBase(
             }
         }
 
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(gameMessage(Component.text("Round started!")))
+        Bukkit.broadcast(gameMessage(Component.text("Round started!")))
     }
 
     fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
