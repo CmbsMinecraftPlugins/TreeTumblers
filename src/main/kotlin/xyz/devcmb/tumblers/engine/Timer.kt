@@ -7,6 +7,7 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.TimerController
 import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 
 class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit = {}) {
     var currentTime = time
@@ -33,7 +34,9 @@ class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit 
             }
 
             endedEarly = false
-            onComplete.invoke(false)
+            suspendSync {
+                onComplete.invoke(false)
+            }
             timerController.unregister(this@Timer)
         }
     }

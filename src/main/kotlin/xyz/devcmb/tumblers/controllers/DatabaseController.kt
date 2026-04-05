@@ -153,6 +153,8 @@ class DatabaseController : IController {
             SELECT score FROM tumbling_players WHERE uuid = ?
         """.trimIndent())
 
+        scoreStatement.setString(1, profile.id.toString())
+
         val score = scoreStatement.executeQuery()
         if(!score.next()) throw DatabaseException("Score not found in database directly after update")
 
@@ -215,7 +217,7 @@ class DatabaseController : IController {
 
     suspend fun getAllPlayerData(): ArrayList<TumblingPlayer> = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
-            SELECT * FROM tumbling_players
+            SELECT * FROM tumbling_players WHERE whitelisted = true;
         """.trimIndent())
 
         val tumblingPlayers: ArrayList<TumblingPlayer> = ArrayList()
