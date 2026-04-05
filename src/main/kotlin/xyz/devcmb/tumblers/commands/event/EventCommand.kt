@@ -65,6 +65,7 @@ class EventCommand {
         }
 
         eventController.eventTimer!!.paused = true
+        sender.sendMessage(Format.success("Event timer paused successfully!"))
     }
 
     @Execute(name = "timer unpause")
@@ -75,6 +76,7 @@ class EventCommand {
         }
 
         eventController.eventTimer!!.paused = false
+        sender.sendMessage(Format.success("Event timer unpaused successfully!"))
     }
 
     @Execute(name = "timer set")
@@ -85,5 +87,6 @@ class EventCommand {
         }
 
         eventController.eventTimer!!.currentTime = time
+        sender.sendMessage(Format.success("Event timer set successfully!"))
     }
 }

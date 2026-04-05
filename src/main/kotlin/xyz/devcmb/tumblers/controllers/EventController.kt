@@ -140,7 +140,16 @@ class EventController : IController {
             }
 
             // TODO: Finale
+            cleanupEvent()
         }
+    }
+
+    fun cleanupEvent() {
+        state = State.EVENT_INACTIVE
+        playedGames.clear()
+        game = 0
+        eventTimer = null
+        eventTimerTitle = null
     }
 
     var nextGame: String? = null

@@ -39,6 +39,12 @@ class IntermissionScoreboard(
             else -> Component.empty()
         }
 
+        val gameComponent = Format.mm(
+            MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_GAME,
+            Placeholder.unparsed("current", eventController.game.toString()),
+            Placeholder.unparsed("max", eventController.totalGames.toString())
+        )
+
         val leaderboard: ArrayList<Component> = ArrayList()
         val placements = eventController.getEventTeamPlacements()
         placements.forEach {
@@ -58,9 +64,11 @@ class IntermissionScoreboard(
             Placeholder.component("name", player.formattedName),
             Placeholder.parsed("score", player.tumblingPlayer.score.toString())
         )
+
         MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
             Component.empty(),
             timer,
+            gameComponent,
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),
