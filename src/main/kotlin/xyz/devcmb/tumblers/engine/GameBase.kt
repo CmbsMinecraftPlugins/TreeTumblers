@@ -274,7 +274,7 @@ abstract class GameBase(
                 it.activateScoreboard("intermissionScoreboard")
 
                 if(it.gameMode != GameMode.CREATIVE) {
-                    it.gameMode = GameMode.SURVIVAL
+                    it.gameMode = GameMode.ADVENTURE
                     it.isFlying = false
                     it.allowFlight = false
                 }
