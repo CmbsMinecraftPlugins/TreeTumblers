@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.commands.event
 
+import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
@@ -17,7 +18,6 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "event")
 @Permission("tumbling.event")
 class EventCommand {
-
     val eventController: EventController by lazy {
         ControllerDelegate.getController<EventController>()
     }
@@ -75,5 +75,15 @@ class EventCommand {
         }
 
         eventController.eventTimer!!.paused = false
+    }
+
+    @Execute(name = "timer set")
+    fun executeTimerSet(@Context sender: CommandSender, @Arg time: Int) {
+        if(eventController.eventTimer == null) {
+            sender.sendMessage(Format.warning("There is no active event timer!"))
+            return
+        }
+
+        eventController.eventTimer!!.currentTime = time
     }
 }

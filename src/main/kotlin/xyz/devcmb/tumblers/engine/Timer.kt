@@ -37,7 +37,11 @@ class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit 
         }
     }
 
-    fun format() = MiscUtils.formatToMSS(currentTime)
+    fun format(): String {
+        if(paused) return "PAUSED"
+
+        return MiscUtils.formatToMSS(currentTime)
+    }
 
     suspend fun join() {
         requireNotNull(job) { "Cannot join to an inactive timer" }

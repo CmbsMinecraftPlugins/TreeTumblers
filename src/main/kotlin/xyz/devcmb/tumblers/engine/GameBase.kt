@@ -44,6 +44,7 @@ import java.util.UUID
 /**
  * Base class for all games
  * @param id The unique identifier of the game
+ * @param name The name of the game for public-facing events (voting, etc.)
  * @param votable Whether this game is available for voting during the voting stage
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
@@ -61,6 +62,7 @@ import java.util.UUID
  */
 abstract class GameBase(
     val id: String,
+    val name: String,
     val votable: Boolean,
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,

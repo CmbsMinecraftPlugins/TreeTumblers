@@ -9,12 +9,14 @@ event:
   event_mode: true
   cutscene:
     first: [1.13,198.19,14.26,-125.2,40.2]
-  voting_quadrants:
-    # x1,y1,z1,x2,y2,z2
-    - [10,192,7,23,188,-5]
-    - [10,192,9,23,188,22]
-    - [8,192,9,8,188,9]
-    - [8,192,7,8,188,7]
+  voting:
+    quadrants:
+      # x1,y1,z1,x2,y2,z2
+      - [10,192,7,23,188,-6]
+      - [10,192,9,23,188,22]
+      - [8,192,9,8,188,9]
+      - [8,192,7,8,188,7]
+    inactive_quadrant_material: GRAY_CONCRETE
 
 templates:
   # The path where all the template worlds are contained

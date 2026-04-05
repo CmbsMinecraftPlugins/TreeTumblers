@@ -60,6 +60,7 @@ import kotlin.math.max
 @EventGame
 class DeathrunController : GameBase(
     id = "deathrun",
+    name = "Deathrun",
     votable = true,
     maps = setOf(
         Map("forest")

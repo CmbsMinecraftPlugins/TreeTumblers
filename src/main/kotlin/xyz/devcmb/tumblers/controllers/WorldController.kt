@@ -10,6 +10,7 @@ import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.server.ServerLoadEvent
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
@@ -178,7 +179,7 @@ class WorldController : IController {
         deleteDir(file)
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.LOWEST)
     fun onServerLoad(event: ServerLoadEvent) {
         if (Bukkit.getWorld(lobbyWorld) == null) {
             Bukkit.createWorld(WorldCreator(lobbyWorld))

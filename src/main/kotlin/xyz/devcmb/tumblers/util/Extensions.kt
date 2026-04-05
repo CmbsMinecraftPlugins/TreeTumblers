@@ -57,6 +57,19 @@ fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
 }
 
+fun List<Location>.getPlayers(heightUp: Int, heightDown: Int): List<Player> {
+    return Bukkit.getOnlinePlayers().filter { player ->
+        val playerLocation = player.location
+
+        any { location ->
+            location.world == playerLocation.world &&
+                playerLocation.blockX == location.blockX &&
+                playerLocation.blockZ == location.blockZ &&
+                playerLocation.blockY in (location.blockY - heightDown)..(location.blockY + heightUp)
+        }
+    }
+}
+
 fun runTask(runnable: Runnable) =
     Bukkit.getScheduler().runTask(TreeTumblers.plugin, runnable)
 fun runTaskLater(delay: Long, runnable: Runnable) =

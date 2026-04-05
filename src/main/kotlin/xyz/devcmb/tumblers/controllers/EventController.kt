@@ -3,15 +3,22 @@ package xyz.devcmb.tumblers.controllers
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -23,10 +30,15 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.playerController
+import xyz.devcmb.tumblers.util.validateList
+import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
+import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
 class EventController : IController {
@@ -35,6 +47,11 @@ class EventController : IController {
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController<DatabaseController>()
     }
+
+    private val gameController: GameController by lazy {
+        ControllerDelegate.getController<GameController>()
+    }
+
     lateinit var topbarRunnable: BukkitRunnable
     var state: State = State.EVENT_INACTIVE
 
@@ -45,12 +62,23 @@ class EventController : IController {
     var readyCheckAborted: Boolean = false
     var readyCheckTimer: Timer? = null
 
+    var game: Int = 0
+    val totalGames: Int
+        get() {
+            return min(gameController.games.filter { it.votable }.size, 8)
+        }
+    val playedGames: ArrayList<String> = ArrayList()
+    val votingQuadrants: ArrayList<ArrayList<Location>> = ArrayList()
+
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
+
+        @field:Configurable("event.voting.inactive_quadrant_material")
+        var inactiveQuadrantMaterial: Material = Material.GRAY_CONCRETE
     }
 
     override fun init() {
@@ -62,6 +90,32 @@ class EventController : IController {
             override fun run() = sendDefaultTopbar()
         }
         topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
+    }
+
+    @EventHandler
+    fun serverLoadEvent(event: ServerLoadEvent) {
+        val lobby = Bukkit.getWorld(lobbyWorld)!!
+        val votingQuadrantPositions = TreeTumblers.plugin.config.getList("event.voting.quadrants")?.map {
+            if(it !is List<*>) throw TumblingEventException("Voting quadrant is not a 2d list")
+            it.validateList<Int>() ?: throw TumblingEventException("Voting quadrant does not contain exclusively Integers")
+        } ?: throw TumblingEventException("Voting quadrant positions not provided")
+
+        votingQuadrantPositions.forEach {
+            val from = it.take(3).validateLocation(lobby)
+                ?: throw TumblingEventException("First 3 elements of the voting quadrant location are not a valid location")
+
+            val to = it.takeLast(3).validateLocation(lobby)
+                ?: throw TumblingEventException("Last 3 elements of the voting quadrant location are not a valid location")
+
+            val blocks: ArrayList<Location> = ArrayList()
+            from.forEachRegion(to) { block ->
+                if(block.type == inactiveQuadrantMaterial) {
+                    blocks.add(block.location)
+                }
+            }
+
+            votingQuadrants.add(blocks)
+        }
     }
 
     fun startEvent() {
@@ -76,7 +130,18 @@ class EventController : IController {
 
             eventTimer!!.join()
             runOpeningCutscene()
+
+            repeat(totalGames) {
+                eventLoop()
+            }
+
+            // TODO: Finale
         }
+    }
+
+    suspend fun eventLoop() {
+        game++
+        voting()
     }
 
     suspend fun readyCheck(): Boolean {
@@ -161,6 +226,7 @@ class EventController : IController {
             delay(7000)
         }
     )
+
     suspend fun runOpeningCutscene() {
         // TODO: Add more steps and adjust the `time` to match
         eventTimer = Timer("event_opening_cutscene", 7)
@@ -183,6 +249,126 @@ class EventController : IController {
 
             it.cleanup(observers)
         }
+    }
+
+    val votingTextColors: ArrayList<TextColor> = arrayListOf(
+        NamedTextColor.RED,
+        NamedTextColor.BLUE,
+        NamedTextColor.GREEN,
+        NamedTextColor.YELLOW
+    )
+
+    val votingConcretes: ArrayList<Material> = arrayListOf(
+        Material.RED_CONCRETE,
+        Material.BLUE_CONCRETE,
+        Material.GREEN_CONCRETE,
+        Material.YELLOW_CONCRETE
+    )
+
+    val quadrantGames: HashMap<Int, GameController.RegisteredGame> = HashMap()
+    val votes: ArrayList<Int> = ArrayList()
+
+    suspend fun voting() {
+        eventTimer = Timer("event_voting", 30)
+        eventTimerTitle = "Voting"
+
+        repeat(4) {
+            val quadrant = votingQuadrants[it]
+            val games = gameController.games.filter { game -> !playedGames.contains(game.id) && !quadrantGames.containsValue(game) }
+            if(games.isEmpty()) return@repeat
+
+            val game = games.random()
+            quadrantGames.put(it, game)
+
+            suspendSync {
+                quadrant.forEach { loc ->
+                    loc.block.type = votingConcretes[it]
+                }
+            }
+
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Component.text(game.name, votingTextColors[it]),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+            ))
+
+            delay(2500)
+        }
+
+        delay(2000)
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<green>Vote!</green>"),
+            Component.empty(),
+            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
+        ))
+
+        eventTimer!!.start()
+        eventTimer!!.join()
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<yellow>Voting Closed!</yellow>"),
+            Component.empty(),
+            Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
+        ))
+
+        suspendSync {
+            votingQuadrants.forEach { quadrant ->
+                quadrant.forEach { loc ->
+                    loc.block.type = inactiveQuadrantMaterial
+                }
+            }
+        }
+
+        val winningGame = countVotes()
+
+        delay(2000)
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Component.empty(),
+            Component.text("And the game is..."),
+            Title.Times.times(Tick.of(0), Tick.of(99999), Tick.of(5))
+        ))
+
+        delay(2000)
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Component.text(winningGame.first.name, votingTextColors[winningGame.second]),
+            Component.text("And the game is..."),
+            Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
+        ))
+
+        var votesComponent = Format.mm("<white><bold>Votes: </bold><br></white>")
+        votes.forEachIndexed { i, it ->
+            votesComponent = votesComponent.append(Format.mm(
+                "<white><br><game> - ${it}</white>",
+                Placeholder.component("game", Component.text(quadrantGames[i]!!.name, votingTextColors[i]))
+            ))
+        }
+
+        Bukkit.broadcast(votesComponent)
+
+        quadrantGames.clear()
+        votes.clear()
+        delay(7000)
+    }
+
+    fun countVotes(): Pair<GameController.RegisteredGame, Int> {
+        var highest: Pair<Int, Int>? = null
+
+        votingQuadrants.forEachIndexed { i, it ->
+            if(quadrantGames[i] == null) return@forEachIndexed
+
+            val players = it.getPlayers(3, 0)
+            votes.add(players.size)
+
+            if(highest == null || players.size > highest.second) {
+                highest = Pair(i, players.size)
+            }
+        }
+
+        val randomFallback = (0..quadrantGames.size).random()
+        return Pair(highest?.let { quadrantGames[highest.first]!! } ?: quadrantGames[randomFallback]!!, highest?.first ?: randomFallback)
     }
 
     fun sendDefaultTopbar() {

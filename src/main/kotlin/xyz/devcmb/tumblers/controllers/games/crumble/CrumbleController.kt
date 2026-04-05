@@ -77,6 +77,7 @@ import kotlin.math.sqrt
 @EventGame
 class CrumbleController : GameBase(
     id = "crumble",
+    name = "Crumble",
     votable = true,
     maps = setOf(
         Map("warfare")

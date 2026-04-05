@@ -26,7 +26,12 @@ class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
 
-    data class RegisteredGame(val id: String, val game: Class<out GameBase>)
+    data class RegisteredGame(
+        val id: String,
+        val name: String,
+        val votable: Boolean,
+        val game: Class<out GameBase>
+    )
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -39,9 +44,14 @@ class GameController : IController {
             .filter { GameBase::class.java.isAssignableFrom(it) }
             .forEach { clazz ->
                 val gameClass = clazz as Class<out GameBase>
-                val gameId = gameClass.getDeclaredConstructor().newInstance().id
+                val templateInstance = gameClass.getDeclaredConstructor().newInstance()
 
-                games.add(RegisteredGame(gameId, gameClass))
+                games.add(RegisteredGame(
+                    templateInstance.id,
+                    templateInstance.name,
+                    templateInstance.votable,
+                    gameClass
+                ))
             }
     }
 
