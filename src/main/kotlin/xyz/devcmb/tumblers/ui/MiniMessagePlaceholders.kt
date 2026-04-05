@@ -9,7 +9,7 @@ object MiniMessagePlaceholders {
          *
          * score - The team's score
          */
-        const val TEAM_SCOREBOARD_PLACEMENT = "<placement>. <team> - <score>"
+        const val TEAM_SCOREBOARD_PLACEMENT = "<placement>. <team> - <gold><score></gold>"
 
         /**
          * placement - The player's placement
@@ -20,7 +20,7 @@ object MiniMessagePlaceholders {
          *
          * score - The player's score
          */
-        const val INDIVIDUAL_SCOREBOARD_PLACEMENT = "<placement>. <head> <name> - <score>"
+        const val INDIVIDUAL_SCOREBOARD_PLACEMENT = "<placement>. <head> <name> - <gold><score></gold>"
 
         /**
          * current - The current round
@@ -49,5 +49,9 @@ object MiniMessagePlaceholders {
             "<player> should buy a better pc",
             "<player> got banned from discord"
         ).map { "<gray>$it</gray>" }
+    }
+
+    object Event {
+        const val EVENT_SCOREBOARD_TITLE = "<green><b>Tree Tumblers</b></green>"
     }
 }

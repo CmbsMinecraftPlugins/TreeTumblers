@@ -9,7 +9,7 @@ import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.util.DebugUtil
 
 object ControllerDelegate {
-    private val controllers: HashMap<String, IController> = HashMap()
+    val controllers: HashMap<String, IController> = HashMap()
 
     @Suppress("UNCHECKED_CAST")
     fun registerAllControllers() {
@@ -45,7 +45,17 @@ object ControllerDelegate {
     fun getController(id: String): IController? {
         val controller: IController? = controllers[id]
         if(controller == null) {
-            DebugUtil.warning("Controller with id $id not found")
+            DebugUtil.severe("Controller with id $id not found")
+            return null
+        }
+
+        return controller
+    }
+
+    inline fun <reified T> getController(): T? {
+        val controller: T? = controllers.values.find { it is T } as T?
+        if(controller == null) {
+            DebugUtil.severe("Controller with class ${T::class.java.name} not found")
             return null
         }
 

@@ -32,6 +32,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -88,7 +89,7 @@ abstract class GameBase(
     val gameParticipants: MutableSet<Player> = HashSet()
 
     val teamScores: HashMap<Team, Int> = HashMap()
-    val playerScores: HashMap<Player, Int> = HashMap()
+    val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
 
     open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
@@ -117,7 +118,7 @@ abstract class GameBase(
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
         gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
         gameParticipants.forEach {
-            playerScores.put(it, 0)
+            playerScores.put(it.tumblingPlayer, 0)
         }
         Team.entries.filter { it.playingTeam }.forEach {
             teamScores.put(it, 0)
@@ -264,6 +265,7 @@ abstract class GameBase(
                 it.foodLevel = 20
 
                 it.deactivateScoreboard(scoreboard)
+                it.activateScoreboard("intermissionScoreboard")
 
                 if(it.gameMode != GameMode.CREATIVE) {
                     it.gameMode = GameMode.SURVIVAL
@@ -336,23 +338,30 @@ abstract class GameBase(
     }
 
     /**
-     * Grants score to a [Player] and their team
-     * @param player The player to give score to
+     * Grants score to a [TumblingPlayer] and their team
+     * @param player The tumbling player to give score to
      * @param source The source of score
      */
-    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) {
+    fun grantScore(player: TumblingPlayer, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
-        val team = player.tumblingPlayer.team
+        val team = player.team
 
         teamScores.put(team, teamScores[team]!! + amount)
         playerScores.put(player, (playerScores[player] ?: 0) + amount)
 
-        if(scoreMessages.contains(source))
-            player.sendMessage(scoreMessages[source]!!(amount))
+        if(scoreMessages.contains(source) && player.bukkitPlayer != null)
+            player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
 
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
         eventController.grantScore(player, amount)
     }
+
+    /**
+     * Grants score to a [Player] and their team
+     * @param player The player to give score to
+     * @param source The source of score
+     */
+    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) = grantScore(player.tumblingPlayer, source, amountOverride)
 
     /**
      * Grants a score equally amongst a team
@@ -362,13 +371,13 @@ abstract class GameBase(
 
     fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
-        val playerCount = team.getOnlinePlayers().size
+        val playerCount = team.getAllPlayers().size
 
         if (amount % playerCount != 0) {
             DebugUtil.warning("Attempted to give team ${team.name} ($playerCount players) $amount score, which cannot be divided equally, giving ${(amount / playerCount) * playerCount} score instead of $amount")
         }
 
-        team.getOnlinePlayers().forEach {
+        team.getAllPlayers().forEach {
             grantScore(it, source, amount / playerCount)
         }
     }
@@ -399,9 +408,9 @@ abstract class GameBase(
      * Get the current individual placements for all playing players
      * @return An ArrayList of players sorted by score (descending) with ties broken by team priority (ascending)
      */
-    fun getIndividualPlacements(): ArrayList<Pair<Player, Int>> {
+    fun getIndividualPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val sorted = playerScores.entries
-            .sortedWith(compareBy({ -it.value }, { it.key.tumblingPlayer.team.priority }))
+            .sortedWith(compareBy({ -it.value }, { it.key.team.priority }))
         
         return MiscUtils.calculatePlacements(sorted)
     }

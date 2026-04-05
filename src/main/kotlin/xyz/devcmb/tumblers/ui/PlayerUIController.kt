@@ -8,6 +8,7 @@ import org.bukkit.entity.Player
 import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
 import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
@@ -17,6 +18,7 @@ import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
 import xyz.devcmb.tumblers.util.runTaskTimer
@@ -32,6 +34,7 @@ class PlayerUIController(val player: Player) {
     val activeBossBars: HashMap<String, BossBar> = HashMap()
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
     val gameController = ControllerDelegate.getController("gameController") as GameController
+    val eventController = ControllerDelegate.getController("eventController") as EventController
 
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
 
@@ -49,6 +52,12 @@ class PlayerUIController(val player: Player) {
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
+
+        registerScoreboard(IntermissionScoreboard(eventController, player))
+
+        if(gameController.activeGame == null) {
+            activateScoreboard("intermissionScoreboard")
+        }
 
         player.scoreboard = playerScoreboard
 

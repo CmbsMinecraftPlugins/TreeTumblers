@@ -5,25 +5,27 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
-import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.playerController
 
 @Controller("eventController", Controller.Priority.MEDIUM)
 class EventController : IController {
     lateinit var teamScores: HashMap<Team, Int>
+
     private val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController("databaseController") as DatabaseController
+        ControllerDelegate.getController<DatabaseController>()!!
     }
     lateinit var topbarRunnable: BukkitRunnable
+    var state: State = State.PRE_EVENT
 
     companion object {
         @field:Configurable("event.event_mode")
@@ -40,7 +42,7 @@ class EventController : IController {
         }
         topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
-
+    
     fun sendDefaultTopbar() {
         var teamComponent = Component.empty()
 
@@ -101,12 +103,11 @@ class EventController : IController {
         }
     }
 
-    fun grantScore(player: Player, amount: Int) {
+    fun grantScore(player: TumblingPlayer, amount: Int) {
         if(!eventMode) return
-        val tumblingPlayer = player.tumblingPlayer
 
-        tumblingPlayer.score += amount
-        teamScores.put(tumblingPlayer.team, (teamScores[tumblingPlayer.team] ?: 0) + amount)
+        player.score += amount
+        teamScores.put(player.team, (teamScores[player.team] ?: 0) + amount)
     }
 
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
@@ -117,10 +118,31 @@ class EventController : IController {
         return MiscUtils.calculatePlacements(sorted)
     }
 
+    fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
+        val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
+        playerController.players.forEach {
+            playerScores.put(it, it.score)
+        }
+
+        val sorted = playerScores.entries.sortedWith(
+            compareByDescending<MutableMap.MutableEntry<TumblingPlayer, Int>> { it.value }
+                .thenBy { it.key.bukkitPlayer?.name }
+        )
+        return MiscUtils.calculatePlacements(sorted)
+    }
+
     override fun cleanup() {
         if(!eventMode) return
         TreeTumblers.pluginScope.launch {
             databaseController.replicateTeamData(teamScores)
         }
+    }
+
+    enum class State {
+        PRE_EVENT,
+        VOTING,
+        NORMAL_GAME,
+        FINAL_GAME,
+        POST_EVENT
     }
 }

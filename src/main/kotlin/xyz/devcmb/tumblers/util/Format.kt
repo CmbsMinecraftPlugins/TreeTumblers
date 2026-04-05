@@ -9,6 +9,7 @@ import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
@@ -27,9 +28,10 @@ object Format {
         return miniMessage.deserialize(text, *placeholder)
     }
 
-    fun formatPlayerName(player: Player): Component {
-        val tumblingPlayer = player.tumblingPlayer
-        val team = tumblingPlayer.team
+    fun formatPlayerName(player: Player) = formatPlayerName(player.tumblingPlayer)
+
+    fun formatPlayerName(player: TumblingPlayer): Component {
+        val team = player.team
         return Component.empty()
             .append(
                 Component.text(team.icon, NamedTextColor.WHITE)
@@ -42,25 +44,28 @@ object Format {
     fun formatKillMessage(killer: Player?, killed: Player?, receiver: Player, score: Int): Component {
         require(killer != null || killed != null) { "Both killer and killed cannot be null" }
 
+        val killerTumblingPlayer = killer?.tumblingPlayer
+        val killedTumblingPlayer = killed?.tumblingPlayer
+
         val killerName =
-            if(killer == null) Component.empty()
+            if(killerTumblingPlayer == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killer)
+            else formatPlayerName(killerTumblingPlayer)
 
         val killedName =
-            if(killed == null) Component.empty()
+            if(killedTumblingPlayer == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killed)
+            else formatPlayerName(killedTumblingPlayer)
 
         var component = mm(
             "<killed> was slain by <killer>",
@@ -76,15 +81,17 @@ object Format {
     }
 
     fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
+        val killedTumblingPlayer = killed?.tumblingPlayer
+
         val killedName =
-            if(killed == null) Component.empty()
+            if(killedTumblingPlayer == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killed)
+            else formatPlayerName(killedTumblingPlayer)
 
         var result = mm(
             MiniMessagePlaceholders.Game.DEATH_MESSAGES.random(),

@@ -7,6 +7,8 @@ import net.kyori.adventure.text.format.TextColor
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 enum class Team(val teamName: String, val color: TextColor, val icon: String, val priority: Int, val playingTeam: Boolean = true) {
@@ -33,14 +35,20 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
             return Audience.audience(getOnlinePlayers())
         }
 
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController("playerController") as PlayerController
+    }
+
     fun getOnlinePlayers(): Set<Player> {
         val players = HashSet<Player>()
-        Bukkit.getOnlinePlayers().forEach {
-            if(it.tumblingPlayer.team == this) {
-                players.add(it)
-            }
-        }
+        Bukkit.getOnlinePlayers()
+            .filter { it.tumblingPlayer.team == this }
+            .forEach(players::add)
 
         return players
+    }
+
+    fun getAllPlayers(): Set<TumblingPlayer> {
+        return playerController.players.filter { it.team == this }.toSet()
     }
 }

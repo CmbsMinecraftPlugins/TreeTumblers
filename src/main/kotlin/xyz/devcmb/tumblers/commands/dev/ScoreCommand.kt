@@ -65,7 +65,7 @@ class ScoreCommand {
         val tumblingPlayer = player.tumblingPlayer
         sender.sendMessage(
             Component.empty()
-                .append(Format.formatPlayerName(player))
+                .append(Format.formatPlayerName(tumblingPlayer))
                 .append(Component.text(" - ", NamedTextColor.GRAY))
                 .append(Component.text(tumblingPlayer.score, NamedTextColor.GOLD))
         )

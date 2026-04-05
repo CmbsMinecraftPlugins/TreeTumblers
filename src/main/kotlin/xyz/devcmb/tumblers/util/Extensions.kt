@@ -28,7 +28,7 @@ val Player.tumblingPlayer: TumblingPlayer
 
 val Player.formattedName: Component
     get() {
-        return Format.formatPlayerName(this)
+        return Format.formatPlayerName(this.tumblingPlayer)
     }
 
 fun Player.openHandledInventory(id: String) {

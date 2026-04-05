@@ -24,18 +24,20 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import java.util.UUID
 
 @Controller("playerController", Controller.Priority.MEDIUM)
 class PlayerController : IController {
-    val players: ArrayList<TumblingPlayer> = ArrayList()
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
+    lateinit var players: ArrayList<TumblingPlayer>
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
@@ -50,6 +52,27 @@ class PlayerController : IController {
     }
 
     override fun init() {
+        TreeTumblers.pluginScope.launch {
+            players = databaseController.getAllPlayerData()
+        }
+    }
+
+    fun registerTumblingPlayer(uuid: UUID, name: String, team: Team, score: Int) {
+        players.add(TumblingPlayer(
+            Bukkit.getPlayer(uuid),
+            uuid,
+            name,
+            team,
+            score
+        ))
+    }
+
+    fun unregisterTumblingPlayer(uuid: UUID) {
+        players.removeIf { it.uuid == uuid }
+    }
+
+    fun setPlayerTeam(uuid: UUID, team: Team) {
+        players.find { it.uuid == uuid }!!.team = team
     }
 
     @EventHandler(priority = EventPriority.NORMAL)
@@ -84,25 +107,16 @@ class PlayerController : IController {
             )
         }
 
-        TreeTumblers.pluginScope.launch {
-            var data: TumblingPlayer
-            try {
-                data = databaseController.getPlayerData(player)
-                players.add(data)
-            } catch(e: Exception) {
-                DebugUtil.severe("Failed to get player data for ${player.name}: ${e.message}")
-                player.kick(Component.text("Data failed to load. Please try again or contact an admin.", NamedTextColor.RED))
-            }
+        val tumblingPlayer = players.find { it.uuid == player.uniqueId }!!
+        tumblingPlayer.bukkitPlayer = player
 
-            player.displayName(Format.formatPlayerName(player))
-            Bukkit.broadcast(
-                Component.text("[").color(NamedTextColor.GRAY)
-                    .append(Component.text("+").color(NamedTextColor.GREEN))
-                    .append(Component.text("] ").color(NamedTextColor.GRAY))
-                    .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
-            )
-
-        }
+        player.displayName(Format.formatPlayerName(tumblingPlayer))
+        Bukkit.broadcast(
+            Component.text("[").color(NamedTextColor.GRAY)
+                .append(Component.text("+").color(NamedTextColor.GREEN))
+                .append(Component.text("] ").color(NamedTextColor.GRAY))
+                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
+        )
     }
 
     @EventHandler
@@ -116,13 +130,13 @@ class PlayerController : IController {
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("-").color(NamedTextColor.RED))
                 .append(Component.text("] ").color(NamedTextColor.GRAY))
-                .append(Format.formatPlayerName(player).color(NamedTextColor.WHITE))
+                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
         )
 
         TreeTumblers.pluginScope.launch {
             try {
+                tumblingPlayer.bukkitPlayer = null
                 databaseController.replicatePlayerData(tumblingPlayer)
-                players.remove(tumblingPlayer)
             } catch(e: Exception) {
                 DebugUtil.severe("Failed to replicate player data for ${player.name}: ${e.message}")
             }
