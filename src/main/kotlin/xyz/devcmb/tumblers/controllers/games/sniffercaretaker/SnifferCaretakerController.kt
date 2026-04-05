@@ -414,7 +414,7 @@ class SnifferCaretakerController : GameBase(
         val sniffer = sniffers[team]!!
 
         currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
-        currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 100)
+        currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
 
         grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
 

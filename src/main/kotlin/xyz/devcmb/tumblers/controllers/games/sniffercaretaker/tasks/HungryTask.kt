@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.TextDisplay
@@ -56,7 +57,14 @@ class HungryTask(
         }
 
         snifferCaretaker.currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_EAT, 1.0f, 0.8f + (Random.nextFloat() * 0.4f))
-
+        snifferCaretaker.currentMap.world.spawnParticle(
+            Particle.ITEM,
+            sniffer.location.add(sniffer.location.direction.multiply(2)).add(0.0,0.5,0.0),
+            60,
+            0.1,0.1,0.1,
+            0.15,
+            ItemStack.of(item)
+        )
         snifferCaretaker.completeTask(this.team, this)
     }
 }
