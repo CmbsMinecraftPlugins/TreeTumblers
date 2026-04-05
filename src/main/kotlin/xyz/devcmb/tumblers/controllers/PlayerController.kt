@@ -13,6 +13,7 @@ import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -45,7 +46,7 @@ class PlayerController : IController {
 
     companion object {
         @field:Configurable("lobby.world")
-        var lobbyWorld = "world"
+        var lobbyWorld: String = "world"
 
         @field:Configurable("lobby.position")
         var lobbySpawn: List<Double> = listOf(0.0, 127.0, 0.0)
@@ -79,7 +80,7 @@ class PlayerController : IController {
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
-        player.gameMode = GameMode.SURVIVAL
+        player.gameMode = GameMode.ADVENTURE
         player.isFlying = false
         player.allowFlight = false
         player.clearActivePotionEffects()
@@ -179,5 +180,11 @@ class PlayerController : IController {
                 )
             }
         }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
+            event.isCancelled = true
     }
 }

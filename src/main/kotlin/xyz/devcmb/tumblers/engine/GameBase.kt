@@ -18,7 +18,6 @@ import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.vehicle.VehicleExitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -119,6 +118,7 @@ abstract class GameBase(
     suspend fun load() {
         currentState = State.LOADING
 
+        Bukkit.getOnlinePlayers().forEach { it.deactivateScoreboard("intermissionScoreboard") }
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
         gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
         gameParticipants.forEach {
@@ -484,14 +484,6 @@ abstract class GameBase(
         if(!EventController.eventMode) {
             Bukkit.broadcast(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
         }
-    }
-
-    @EventHandler
-    fun playerDismountEvent(event: VehicleExitEvent) {
-        val player = event.exited
-        if(player !is Player || currentState != State.CUTSCENE) return
-
-        event.isCancelled = true
     }
 
     @EventHandler

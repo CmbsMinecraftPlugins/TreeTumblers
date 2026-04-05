@@ -13,7 +13,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 
 enum class Team(val teamName: String, val color: TextColor, val icon: String, val priority: Int, val playingTeam: Boolean = true) {
     RED("Red Rabbits", NamedTextColor.RED, "\uE000", 1),
-    ORANGE("Orange Ocelots", TextColor.fromHexString("#ff9100")!!, "\uE001", 2),
+    ORANGE("Orange Orcas", TextColor.fromHexString("#ff9100")!!, "\uE001", 2),
     YELLOW("Yellow Yaks", NamedTextColor.YELLOW, "\uE002", 3),
     GREEN("Green Grasshoppers", NamedTextColor.GREEN,  "\uE003", 4),
     AQUA("Aqua Alpacas", NamedTextColor.AQUA, "\uE009", 5),

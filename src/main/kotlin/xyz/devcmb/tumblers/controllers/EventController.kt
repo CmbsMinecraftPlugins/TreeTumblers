@@ -1,10 +1,12 @@
 package xyz.devcmb.tumblers.controllers
 
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
@@ -15,6 +17,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -45,6 +48,9 @@ class EventController : IController {
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
+
+        @field:Configurable("lobby.world")
+        var lobbyWorld: String = "hub"
     }
 
     override fun init() {
@@ -61,15 +67,15 @@ class EventController : IController {
     fun startEvent() {
         TreeTumblers.pluginScope.launch {
             val ready = readyCheck()
-            if(!ready) {
-                suspendSync {
-                    Bukkit.getOnlinePlayers().forEach { it.closeInventory() }
-                }
-                Bukkit.broadcast(Format.warning("Not all players ready! Ready check failed!"))
-                return@launch
-            }
+            if(!ready) return@launch
 
-            Bukkit.broadcast(Format.success("All players ready! Ready check success!"))
+            state = State.PRE_EVENT
+            eventTimer = Timer("pre_event_timer", 5)
+            eventTimer!!.start()
+            eventTimerTitle = "Event Start"
+
+            eventTimer!!.join()
+            runOpeningCutscene()
         }
     }
 
@@ -111,30 +117,74 @@ class EventController : IController {
         readyCheckTimer?.end()
         readyCheckTimer = null
 
+        if(aborted) {
+            suspendSync {
+                Bukkit.getOnlinePlayers().forEach { it.closeInventory() }
+            }
+            Bukkit.broadcast(Format.warning("Not all players ready! Ready check failed!"))
+        } else {
+            Bukkit.broadcast(Format.success("All players ready! Ready check success!"))
+        }
+
         return !aborted
     }
 
     fun markReady(player: Player) {
-        Bukkit.broadcast(Format.success(
+        Bukkit.broadcast(
             Format.mm(
-                "<player> is ready!",
+                "<green><player> is ready!</green>",
                 Placeholder.component("player", player.formattedName)
             )
-        ))
+        )
         readyCheckWaiting.remove(player)
     }
 
     fun markNotReady(player: Player) {
-        Bukkit.broadcast(Format.error(
+        Bukkit.broadcast(
             Format.mm(
-                "<player> is not ready!",
+                "<red><player> is not ready!</red>",
                 Placeholder.component("player", player.formattedName)
             )
-        ))
+        )
         readyCheckAborted = true
         readyCheckWaiting.clear()
     }
-    
+
+    val cutsceneSteps: ArrayList<CutsceneStep> = arrayListOf(
+        CutsceneStep(null) {
+            title(
+                Format.mm("<green><b>Tree Tumblers</b></green>"),
+                Format.mm("Welcome to the event!"),
+                Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(40))
+            )
+            teleportConfig("first")
+            delay(7000)
+        }
+    )
+    suspend fun runOpeningCutscene() {
+        // TODO: Add more steps and adjust the `time` to match
+        eventTimer = Timer("event_opening_cutscene", 7)
+        eventTimer!!.start()
+        eventTimerTitle = "Cutscene"
+
+        cutsceneSteps.forEach {
+            val observers = Bukkit.getOnlinePlayers().toSet()
+            it.run(
+                observers,
+                Bukkit.getWorld(lobbyWorld)!!,
+                TreeTumblers.plugin.config.getConfigurationSection("event.cutscene")!!
+            )
+
+            if(eventTimer?.paused == true) {
+                while(eventTimer?.paused == true) {
+                    delay(500)
+                }
+            }
+
+            it.cleanup(observers)
+        }
+    }
+
     fun sendDefaultTopbar() {
         var teamComponent = Component.empty()
 
