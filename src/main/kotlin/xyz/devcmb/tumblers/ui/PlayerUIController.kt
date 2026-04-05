@@ -5,6 +5,7 @@ import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
+import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Objective
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -37,6 +38,7 @@ class PlayerUIController(val player: Player) {
     val eventController = ControllerDelegate.getController("eventController") as EventController
 
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
+    val updateTask: BukkitTask
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
@@ -61,7 +63,7 @@ class PlayerUIController(val player: Player) {
 
         player.scoreboard = playerScoreboard
 
-        runTaskTimer(0, 5) {
+        updateTask = runTaskTimer(0, 5) {
             bossBars.forEach {
                 if(activeBossBars.containsKey(it.id)) {
                     val bar = activeBossBars[it.id]!!
@@ -78,6 +80,10 @@ class PlayerUIController(val player: Player) {
                 scoreboard.getObjectives(playerScoreboard)
             }
         }
+    }
+
+    fun cleanup() {
+        updateTask.cancel()
     }
 
     fun registerInventory(inv: HandledInventory) {

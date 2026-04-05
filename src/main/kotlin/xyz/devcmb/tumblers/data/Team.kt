@@ -40,12 +40,9 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
     }
 
     fun getOnlinePlayers(): Set<Player> {
-        val players = HashSet<Player>()
-        Bukkit.getOnlinePlayers()
+        return Bukkit.getOnlinePlayers()
             .filter { it.tumblingPlayer.team == this }
-            .forEach(players::add)
-
-        return players
+            .toSet()
     }
 
     fun getAllPlayers(): Set<TumblingPlayer> {

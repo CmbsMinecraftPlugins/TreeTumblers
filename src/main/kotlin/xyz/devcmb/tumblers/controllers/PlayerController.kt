@@ -126,6 +126,9 @@ class PlayerController : IController {
 
         hiddenPlayers.remove(player)
 
+        playerUIControllers[player]?.cleanup()
+        playerUIControllers.remove(player)
+
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
                 .append(Component.text("-").color(NamedTextColor.RED))
