@@ -41,6 +41,7 @@ import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import java.util.UUID
 
 /**
  * Base class for all games
@@ -99,7 +100,11 @@ abstract class GameBase(
 
     open val debugToolkit: DebugToolkit? = null
 
-    var countdownTime: Int = 0
+    val countdownTime: Int
+        get() {
+            return currentTimer?.currentTime ?: 0
+        }
+    var currentTimer: Timer? = null
 
     companion object {
         @Configurable("lobby.world")
@@ -290,22 +295,12 @@ abstract class GameBase(
     /**
      * Perform a countdown synchronously, stored in the [countdownTime] field
      * @param time How long to run the countdown for
-     * @return Whether the timer fully completed or was abruptly ended
      */
-    suspend fun countdown(time: Int): Boolean {
-        countdownJob?.cancel()
-        countdownJob = TreeTumblers.pluginScope.launch {
-            countdownTime = time
-            while(true) {
-                delay(1000)
-                if (countdownTime <= 0) return@launch
-                countdownTime--
-            }
-        }
-        countdownJob!!.join()
-        val result = !countdownCancelled
-        countdownCancelled = false
-        return result
+    suspend fun countdown(time: Int, id: String? = null, async: Boolean = false): Boolean {
+        currentTimer = Timer(id ?: "${id}_${if(async) "async_" else ""}countdown_${UUID.randomUUID().toString().take(5)}", time)
+        currentTimer!!.start()
+        currentTimer!!.join()
+        return (currentTimer?.endedEarly == false)
     }
 
     /**
@@ -313,8 +308,8 @@ abstract class GameBase(
      * @param time How long to run the countdown for
      * @param onComplete The function to invoke when/if the countdown fully finishes
      */
-    fun asyncCountdown(time: Int, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
-        val success = countdown(time)
+    fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
+        val success = countdown(time, id, true)
         if(onComplete != null && success) onComplete()
     }
 
@@ -387,9 +382,9 @@ abstract class GameBase(
      */
     fun gameMessage(text: Component): Component {
         return Component.empty()
-            .append(Component.text("[", NamedTextColor.YELLOW))
+            .append(Component.text("(", NamedTextColor.YELLOW))
             .append(icon)
-            .append(Component.text("] ", NamedTextColor.YELLOW))
+            .append(Component.text(") ", NamedTextColor.YELLOW))
             .append(text)
     }
 

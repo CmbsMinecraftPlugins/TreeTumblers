@@ -402,11 +402,11 @@ class DeathrunController : GameBase(
             cooldownTimes.clear()
             currentTraps.clear()
             spawn(SpawnCycle.PRE_ROUND)
-            asyncCountdown(10) {}
+            asyncCountdown(10, "deathrun_pregame_countdown") {}
             preRound()
             roundActive = true
             roundStart()
-            asyncCountdown(120) {
+            asyncCountdown(120, "deathrun_game_countdown") {
                 roundEnded = true
             }
 
@@ -471,7 +471,13 @@ class DeathrunController : GameBase(
         )
         audience.showTitle(title)
 
+
         delay(4000)
+
+        while(currentTimer?.paused == true) {
+            delay(1000)
+        }
+
         suspendSync {
             gameParticipants.forEach { plr ->
                 if(plr.tumblingPlayer.team == currentTeam) return@forEach
@@ -481,11 +487,16 @@ class DeathrunController : GameBase(
                 }
             }
         }
+
         MiscUtils.subtitleCountdown(
             audience,
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
             5
         )
+
+        while(currentTimer?.paused == true) {
+            delay(1000)
+        }
     }
 
     suspend fun postRound() {

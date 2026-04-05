@@ -468,7 +468,7 @@ class CrumbleController : GameBase(
             it.enableBossBar("countdownBossbar")
         }
 
-        countdown(20)
+        countdown(20, "crumble_kit_selection_timer")
 
         suspendSync {
             gameParticipants.forEach {
@@ -498,14 +498,14 @@ class CrumbleController : GameBase(
             preRoundFreeze = true
             delay(500)
             preRoundFreeze = false
-            asyncCountdown(7) {
+            asyncCountdown(7, "crumble_pregame_timer") {
                 dropWalls()
             }
             setupCrumble()
             setupBorder()
             announceMatchup()
             roundActive = true
-            asyncCountdown(roundLength) {
+            asyncCountdown(roundLength, "crumble_round_timer") {
                 gameTimeoutEnd = true
             }
             awaitEnd()
