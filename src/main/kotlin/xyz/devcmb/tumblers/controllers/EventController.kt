@@ -13,6 +13,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.playerController
@@ -98,14 +99,12 @@ class EventController : IController {
             )
 
             it.sendPlayerListFooter(Format.mm(
-                "<aqua>Ping: <white>${it.ping}ms</white></aqua> <white>•</white> <aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua>"
+                "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
             ))
         }
     }
 
     fun grantScore(player: TumblingPlayer, amount: Int) {
-        if(!eventMode) return
-
         player.score += amount
         teamScores.put(player.team, (teamScores[player.team] ?: 0) + amount)
     }
@@ -131,11 +130,21 @@ class EventController : IController {
         return MiscUtils.calculatePlacements(sorted)
     }
 
-    override fun cleanup() {
+    fun replicateScores() {
         if(!eventMode) return
+
         TreeTumblers.pluginScope.launch {
+            DebugUtil.info("Replicating event data...")
             databaseController.replicateTeamData(teamScores)
+            playerController.players.forEach {
+                databaseController.replicatePlayerData(it)
+            }
+            DebugUtil.success("Data replication successful!")
         }
+    }
+
+    override fun cleanup() {
+        replicateScores()
     }
 
     enum class State {

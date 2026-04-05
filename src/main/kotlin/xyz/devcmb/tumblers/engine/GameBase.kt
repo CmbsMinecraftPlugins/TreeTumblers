@@ -287,6 +287,8 @@ abstract class GameBase(
         loadedMaps.forEach {
             it.cleanup()
         }
+
+        eventController.replicateScores()
     }
 
     private var countdownJob: Job? = null
@@ -461,11 +463,6 @@ abstract class GameBase(
      * Announce the event team scores
      */
     fun announceOverallTeamScores() {
-        if(!EventController.eventMode) {
-            Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(Format.warning("Event mode is disabled so team points are not saved!"))
-            return
-        }
-
         var eventPlacementsComponent = Component.empty()
             .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
             .appendNewline()
@@ -484,6 +481,10 @@ abstract class GameBase(
 
         eventPlacementsComponent = eventPlacementsComponent.appendNewline()
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(eventPlacementsComponent)
+
+        if(!EventController.eventMode) {
+            Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
+        }
     }
 
     @EventHandler

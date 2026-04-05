@@ -136,14 +136,7 @@ class PlayerController : IController {
                 .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
         )
 
-        TreeTumblers.pluginScope.launch {
-            try {
-                tumblingPlayer.bukkitPlayer = null
-                databaseController.replicatePlayerData(tumblingPlayer)
-            } catch(e: Exception) {
-                DebugUtil.severe("Failed to replicate player data for ${player.name}: ${e.message}")
-            }
-        }
+        tumblingPlayer.bukkitPlayer = null
     }
 
     @EventHandler
