@@ -35,6 +35,7 @@ import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.playerController
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
@@ -79,6 +80,9 @@ class EventController : IController {
 
         @field:Configurable("event.voting.inactive_quadrant_material")
         var inactiveQuadrantMaterial: Material = Material.GRAY_CONCRETE
+
+        @field:Configurable("event.voting.center")
+        var voteCenter: List<Int> = listOf(0,0,0)
     }
 
     override fun init() {
@@ -139,9 +143,16 @@ class EventController : IController {
         }
     }
 
+    var nextGame: String? = null
     suspend fun eventLoop() {
         game++
         voting()
+        state = State.NORMAL_GAME
+        gameController.startGame(nextGame!!)
+        playedGames.add(nextGame!!)
+        nextGame = null
+        state = State.INTERMISSION
+        delay(10000)
     }
 
     suspend fun readyCheck(): Boolean {
@@ -269,7 +280,18 @@ class EventController : IController {
     val votes: ArrayList<Int> = ArrayList()
 
     suspend fun voting() {
-        eventTimer = Timer("event_voting", 30)
+        state = State.VOTING
+
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                val location = voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingEventException("Voting arena does not have a center location")
+
+                it.teleport(location.toCenterLocation())
+            }
+        }
+
+        eventTimer = Timer("event_voting", 20)
         eventTimerTitle = "Voting"
 
         repeat(4) {
@@ -338,7 +360,7 @@ class EventController : IController {
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
 
-        var votesComponent = Format.mm("<white><bold>Votes: </bold><br></white>")
+        var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
         votes.forEachIndexed { i, it ->
             votesComponent = votesComponent.append(Format.mm(
                 "<white><br><game> - ${it}</white>",
@@ -350,6 +372,7 @@ class EventController : IController {
 
         quadrantGames.clear()
         votes.clear()
+        nextGame = winningGame.first.id
         delay(7000)
     }
 
@@ -359,7 +382,7 @@ class EventController : IController {
         votingQuadrants.forEachIndexed { i, it ->
             if(quadrantGames[i] == null) return@forEachIndexed
 
-            val players = it.getPlayers(3, 0)
+            val players = it.getPlayers(3, 0) { it.tumblingPlayer.team.playingTeam }
             votes.add(players.size)
 
             if(highest == null || players.size > highest.second) {

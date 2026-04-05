@@ -17,6 +17,7 @@ event:
       - [8,192,9,8,188,9]
       - [8,192,7,8,188,7]
     inactive_quadrant_material: GRAY_CONCRETE
+    center: [9,196,8]
 
 templates:
   # The path where all the template worlds are contained

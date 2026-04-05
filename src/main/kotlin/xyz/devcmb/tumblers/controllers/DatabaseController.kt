@@ -232,13 +232,14 @@ class DatabaseController : IController {
             }
 
             val uuid = UUID.fromString(uuidColumn)
-            tumblingPlayers.add(TumblingPlayer(
-                Bukkit.getPlayer(uuid),
-                uuid,
-                username,
-                team,
-                score
-            ))
+
+            val tumblingPlayer = TumblingPlayer(uuid)
+            tumblingPlayer.bukkitPlayer = Bukkit.getPlayer(uuid)
+            tumblingPlayer.score = score
+            tumblingPlayer.name = username
+            tumblingPlayer.team = team
+
+            tumblingPlayers.add(tumblingPlayer)
         }
 
         tumblingPlayers

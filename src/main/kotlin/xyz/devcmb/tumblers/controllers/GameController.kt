@@ -55,7 +55,13 @@ class GameController : IController {
             }
     }
 
-    fun startGame(id: String) {
+    fun startGameAsync(id: String) {
+        TreeTumblers.pluginScope.launch {
+            startGame(id)
+        }
+    }
+
+    suspend fun startGame(id: String) {
         if(activeGame != null) throw GameOperatorException("Cannot start a game while one is currently active")
 
         val gameClass = games.find { it.id == id }?.game
@@ -66,20 +72,17 @@ class GameController : IController {
         activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
-        TreeTumblers.pluginScope.launch {
-            game.load()
-            game.finishLoading()
-            game.runCutscene()
-            game.pregame()
-            game.gameMain()
-            game.postGame()
-            TreeTumblers.pluginScope.async {
-                game.cleanup()
-            }
-            HandlerList.unregisterAll(game)
-            activeGame = null
-
+        game.load()
+        game.finishLoading()
+        game.runCutscene()
+        game.pregame()
+        game.gameMain()
+        game.postGame()
+        TreeTumblers.pluginScope.async {
+            game.cleanup()
         }
+        HandlerList.unregisterAll(game)
+        activeGame = null
     }
 
     @EventHandler

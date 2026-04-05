@@ -298,6 +298,7 @@ abstract class GameBase(
     /**
      * Perform a countdown synchronously, stored in the [countdownTime] field
      * @param time How long to run the countdown for
+     * @return If the timer wasn't ended early
      */
     suspend fun countdown(time: Int, id: String? = null, async: Boolean = false): Boolean {
         currentTimer = Timer(id ?: "${id}_${if(async) "async_" else ""}countdown_${UUID.randomUUID().toString().take(5)}", time)
@@ -309,11 +310,11 @@ abstract class GameBase(
     /**
      * Runs the [countdown] method asynchronously
      * @param time How long to run the countdown for
-     * @param onComplete The function to invoke when/if the countdown fully finishes
+     * @param onComplete The function to invoke when the countdown finishes executing
      */
-    fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
+    fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         val success = countdown(time, id, true)
-        if(onComplete != null && success) onComplete()
+        if(onComplete != null) onComplete(!success)
     }
 
     /**

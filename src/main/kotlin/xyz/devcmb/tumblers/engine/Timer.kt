@@ -27,8 +27,9 @@ class Timer(val id: String, time: Int, val onComplete: (early: Boolean) -> Unit 
                 if(paused) continue
 
                 delay(1000)
-                if(currentTime <= 0) break
                 currentTime--
+
+                if(currentTime <= 0) break
             }
 
             endedEarly = false

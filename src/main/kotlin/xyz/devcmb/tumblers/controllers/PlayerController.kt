@@ -59,13 +59,13 @@ class PlayerController : IController {
     }
 
     fun registerTumblingPlayer(uuid: UUID, name: String, team: Team, score: Int) {
-        players.add(TumblingPlayer(
-            Bukkit.getPlayer(uuid),
-            uuid,
-            name,
-            team,
-            score
-        ))
+        val player = TumblingPlayer(uuid)
+        player.bukkitPlayer = Bukkit.getPlayer(uuid)
+        player.name = name
+        player.team = team
+        player.score = score
+
+        players.add(player)
     }
 
     fun unregisterTumblingPlayer(uuid: UUID) {

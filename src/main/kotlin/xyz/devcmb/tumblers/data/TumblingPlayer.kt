@@ -4,9 +4,10 @@ import org.bukkit.entity.Player
 import java.util.UUID
 
 data class TumblingPlayer(
-    var bukkitPlayer: Player?,
     val uuid: UUID,
-    var name: String,
-    var team: Team,
-    var score: Int
-)
+) {
+    var bukkitPlayer: Player? = null
+    lateinit var team: Team
+    lateinit var name: String
+    var score: Int = 0
+}
