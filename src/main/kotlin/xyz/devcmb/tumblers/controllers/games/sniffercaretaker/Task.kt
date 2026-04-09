@@ -16,8 +16,8 @@ interface Task : Listener {
 
     var display: TextDisplay?
 
-    fun getDisplayText(): Component {
-        return Component.empty()
+    fun getDisplayText(): String {
+        return ""
     }
 
     fun init() {

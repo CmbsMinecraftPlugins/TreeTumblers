@@ -444,6 +444,31 @@ class SnifferCaretakerController : GameBase(
 
     }
 
+    fun taskDisplayTextStars(task: Task): Component {
+        var text = Format.mm(task.getDisplayText())
+
+        val starSprite = when(task.stars) {
+            1 -> "\uEF00"
+            2 -> "\uEF01"
+            3 -> "\uEF02"
+            4 -> "\uEF03"
+            5 -> "\uEF04"
+            else -> "\uEF00"
+        }
+
+        text = text.append(Component.text(" "))
+
+        for (i in (1..task.stars)) {
+            text = text.append(Component.text(starSprite).font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
+        }
+
+        val score = scores.get(SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+
+        text = text.append(Format.mm(" <gold>[+${score}]</gold>"))
+
+        return text
+    }
+
     fun createNewTask(team: Team, task: String) {
         val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
             if (
@@ -514,7 +539,7 @@ class SnifferCaretakerController : GameBase(
         val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
             it.alignment = TextDisplay.TextAlignment.LEFT
             it.lineWidth = 400
-            it.text(createdTask.getDisplayText())
+            it.text(taskDisplayTextStars(createdTask))
         })
 
         createdTask.display = display
@@ -524,7 +549,7 @@ class SnifferCaretakerController : GameBase(
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
         team.getOnlinePlayers().forEach { player ->
-            player.sendMessage(createdTask.getDisplayText())
+            player.sendMessage(taskDisplayTextStars(createdTask))
         }
     }
 
@@ -560,7 +585,7 @@ class SnifferCaretakerController : GameBase(
         }
 
         currentTasks[team]!!.forEach {
-            it.display?.text(it.getDisplayText())
+            it.display?.text(taskDisplayTextStars(it))
         }
     }
 

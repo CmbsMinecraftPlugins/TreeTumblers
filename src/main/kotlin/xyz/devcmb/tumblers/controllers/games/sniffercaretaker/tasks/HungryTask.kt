@@ -29,12 +29,10 @@ class HungryTask(
     override var display: TextDisplay? = null
     override var count = 1
 
-    override fun getDisplayText(): Component {
-        return Format.mm(
-            "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+    override fun getDisplayText(): String {
+        return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
                     "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
-        )
     }
 
     @EventHandler
