@@ -361,7 +361,7 @@ class SnifferCaretakerController : GameBase(
                     currentMap.world.fill(
                         floorMin,
                         floorMax,
-                        if (i % 2 == 0) Material.BAMBOO_MOSAIC else Material.SMOOTH_STONE
+                        if (i % 2 == 0) Material.LAPIS_ORE else Material.SMOOTH_STONE
                     )
                 }
             }
