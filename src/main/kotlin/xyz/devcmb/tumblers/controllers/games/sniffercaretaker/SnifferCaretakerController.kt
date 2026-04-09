@@ -56,6 +56,7 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
 import kotlin.collections.forEach
 import kotlin.math.max
+import kotlin.math.min
 
 @EventGame
 class SnifferCaretakerController : GameBase(
@@ -621,6 +622,14 @@ class SnifferCaretakerController : GameBase(
 
         //session.close()
 
+        var smallestTeam = 9999
+
+        Team.entries.forEach {
+            if (it.playingTeam) {
+                smallestTeam = min(smallestTeam, it.getOnlinePlayers().size)
+            }
+        }
+
         val tasks: List<String> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
             if (
                 it !is HashMap<*, *>
@@ -636,9 +645,10 @@ class SnifferCaretakerController : GameBase(
 
         fun pickTask(): String {
             val chosen = tasks.random()
-
+            // removes the cake task from the pool if any team doesn't have at least 3 players
+            // bc you need 3 players and 3 buckets to make a cake..!
+            if (smallestTeam < 3 && chosen == "hungry_cake") return pickTask()
             if (taskQueue.isEmpty()) return chosen
-
             val min = max(0, taskQueue.size - 10)
             val max = taskQueue.size - 1
 
