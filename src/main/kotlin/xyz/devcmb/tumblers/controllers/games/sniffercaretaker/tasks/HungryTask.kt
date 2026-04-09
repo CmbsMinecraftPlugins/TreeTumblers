@@ -1,6 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.Sound
@@ -14,7 +13,6 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerCo
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.random.Random
 
@@ -30,9 +28,11 @@ class HungryTask(
     override var count = 1
 
     override fun getDisplayText(): String {
+        val atlas = if (item == Material.BROWN_MUSHROOM || item == Material.RED_MUSHROOM) "block" else "item"
+
         return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
-                    "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
+                    "<sprite:${atlas}s:${atlas}/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
     }
 
     @EventHandler
