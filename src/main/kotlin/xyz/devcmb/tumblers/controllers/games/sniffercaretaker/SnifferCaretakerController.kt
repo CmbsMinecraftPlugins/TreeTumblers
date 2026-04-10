@@ -538,9 +538,9 @@ class SnifferCaretakerController : GameBase(
             .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
 
         val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
+            it.text(taskDisplayTextStars(createdTask))
             it.alignment = TextDisplay.TextAlignment.LEFT
             it.lineWidth = 400
-            it.text(taskDisplayTextStars(createdTask))
         })
 
         createdTask.display = display
@@ -560,12 +560,12 @@ class SnifferCaretakerController : GameBase(
 
         val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
 
-        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
             it.alignment = TextDisplay.TextAlignment.CENTER
             it.lineWidth = 400
             it.isPersistent = true
             it.text(Format.mm("loading..."))
-        })
+        }
 
         return display
     }
@@ -674,14 +674,14 @@ class SnifferCaretakerController : GameBase(
                     ?: throw GameControllerException("Sniffer spawns not found")
 
                 val snifferLocation = offsetLocation(snifferSpawn.unpackCoordinates(map.world), it)
-                val sniffer = map.world.spawn(snifferLocation, Sniffer::class.java, { mob ->
+                val sniffer = map.world.spawn(snifferLocation, Sniffer::class.java) { mob ->
                     mob.isInvulnerable = true
                     mob.persistentDataContainer.set(
                         snifferTeamKey,
                         PersistentDataType.STRING,
                         it.name
                     )
-                })
+                }
 
                 sniffers[it] = sniffer
             }
