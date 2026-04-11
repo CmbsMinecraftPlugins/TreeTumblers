@@ -25,6 +25,7 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
+import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
@@ -856,6 +857,23 @@ class SnifferCaretakerController : GameBase(
         if (event.entity.type == EntityType.SPIDER) {
             event.drops.clear()
             currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.SPIDER_EYE, 1))
+        }
+    }
+
+    @EventHandler
+    fun playerRespawnEvent(event: PlayerRespawnEvent) {
+        val player = event.player
+        val tumblingPlayer = player.tumblingPlayer
+
+        val playerSpawn = currentMap.data.getList("spawn")?.validateCoordinates()
+            ?: throw GameControllerException("Spawn not found")
+
+        val playerLocation = offsetLocation(playerSpawn.unpackCoordinates(currentMap.world), tumblingPlayer.team)
+
+        event.respawnLocation = playerLocation
+
+        kit.forEach { item ->
+            player.inventory.addItem(item)
         }
     }
 
