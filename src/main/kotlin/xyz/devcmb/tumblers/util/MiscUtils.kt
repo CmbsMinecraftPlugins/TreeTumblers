@@ -175,7 +175,7 @@ object MiscUtils {
     // Source - https://stackoverflow.com/a/73494554
     // Posted by SecretX, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-03-05, License - CC BY-SA 4.0
-    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(10000L) {
+    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(100000L) {
         // Context: The current coroutine context
         suspendCancellableCoroutine { cont ->
             // Context: The current coroutine context

@@ -156,7 +156,9 @@ class SnifferCaretakerController : GameBase(
         Material.MUD,
         Material.GRAVEL,
         Material.SAND,
-        Material.COARSE_DIRT
+        Material.COARSE_DIRT,
+        Material.PUMPKIN,
+        Material.PUMPKIN_STEM
     )
 
     val kit: List<ItemStack> = listOf(
@@ -654,11 +656,12 @@ class SnifferCaretakerController : GameBase(
 
         fun pickTask(): String {
             val chosen = tasks.random()
+
             // removes the cake task from the pool if any team doesn't have at least 3 players
             // bc you need 3 players and 3 buckets to make a cake..!
             if (smallestTeam < 3 && chosen == "hungry_cake") return pickTask()
             if (taskQueue.isEmpty()) return chosen
-            val min = max(0, taskQueue.size - 10)
+            val min = max(0, taskQueue.size - 6)
             val max = taskQueue.size - 1
 
             for (i in min..max) {
@@ -683,6 +686,17 @@ class SnifferCaretakerController : GameBase(
                     ?: throw GameControllerException("Sniffer spawns not found")
 
                 val snifferLocation = offsetLocation(snifferSpawn.unpackCoordinates(map.world), it)
+
+                snifferLocation.chunk.load()
+
+                chestItems.forEach { key, _ ->
+                    val chestPosition = currentMap.data.getList(key)?.validateCoordinates()
+                        ?: throw GameControllerException("Chest position not found")
+
+                    val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), it)
+                    chestLocation.chunk.load()
+                }
+
                 val sniffer = map.world.spawn(snifferLocation, Sniffer::class.java) { mob ->
                     mob.isInvulnerable = true
                     mob.persistentDataContainer.set(
@@ -698,6 +712,11 @@ class SnifferCaretakerController : GameBase(
     }
 
     override suspend fun gamePregame() {
+        spawn(SpawnCycle.PRE_ROUND)
+        gamePlayers.forEach {
+            it.enableBossBar("countdownBossbar")
+        }
+        countdown(5)
     }
 
     /**
@@ -736,12 +755,6 @@ class SnifferCaretakerController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        spawn(SpawnCycle.PRE_ROUND)
-        gamePlayers.forEach {
-            it.enableBossBar("countdownBossbar")
-        }
-
-
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
                 setupSigns(it)
@@ -926,7 +939,6 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun inventoryClickEvent(event: InventoryClickEvent) {
-        DebugUtil.info("${event.clickedInventory}, ${event.inventory}, ${event.whoClicked}")
         if (event.clickedInventory?.holder is Player && event.inventory.holder is Chest) {
             event.isCancelled = true
         }
