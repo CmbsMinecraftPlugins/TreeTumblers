@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
 
+import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -12,6 +13,7 @@ import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
+import org.bukkit.block.data.type.TrapDoor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
@@ -22,7 +24,13 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.block.BlockExpEvent
 import org.bukkit.event.entity.EntityDeathEvent
+import org.bukkit.event.inventory.CraftItemEvent
+import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerBucketEmptyEvent
+import org.bukkit.event.player.PlayerBucketFillEvent
+import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerRespawnEvent
@@ -660,7 +668,7 @@ class SnifferCaretakerController : GameBase(
             return chosen
         }
 
-        repeat(500) {
+        repeat(100) {
             taskQueue.add(pickTask())
         }
 
@@ -841,8 +849,40 @@ class SnifferCaretakerController : GameBase(
             event.clickedBlock?.applyBoneMeal(event.blockFace)
         }
 
+        // prevent opening trapdoors !!
+        if (event.action == Action.RIGHT_CLICK_BLOCK && event.clickedBlock?.blockData is TrapDoor) {
+            event.isCancelled = true
+        }
+
         // prevent farmland trampling!
         if (event.action == Action.PHYSICAL && event.clickedBlock?.type == Material.FARMLAND) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerBucketFillEvent(event: PlayerBucketFillEvent) {
+        event.isCancelled = true
+        event.player.inventory.setItem(event.hand, ItemStack(Material.WATER_BUCKET))
+    }
+
+    @EventHandler
+    fun playerBucketEmptyEvent(event: PlayerBucketEmptyEvent) {
+        event.isCancelled = true // prevents you from spilling water everywhere and being evil which is bad and evil
+    }
+
+    @EventHandler
+    fun playerInteractEntityEvent(event: PlayerInteractEntityEvent) {
+        if (event.rightClicked.type == EntityType.COW || event.rightClicked.type == EntityType.CHICKEN) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun craftItemEvent(event: CraftItemEvent) {
+        // prevent the bone meal from being turned into dye...
+
+        if (event.recipe.result.type == Material.WHITE_DYE) {
             event.isCancelled = true
         }
     }
@@ -854,9 +894,41 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun entityDeathEvent(event: EntityDeathEvent) {
-        if (event.entity.type == EntityType.SPIDER) {
-            event.drops.clear()
-            currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.SPIDER_EYE, 1))
+        event.droppedExp = 0
+
+        when(event.entity.type) {
+            EntityType.SPIDER -> {
+                event.drops.clear()
+                currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.SPIDER_EYE, 1))
+            }
+            EntityType.COW -> {
+                event.drops.clear()
+                currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.BEEF, 1))
+            }
+            EntityType.CHICKEN -> {
+                event.drops.clear()
+                currentMap.world.dropItemNaturally(event.entity.location, ItemStack.of(Material.CHICKEN, 1))
+            }
+            else -> {}
+        }
+    }
+
+    @EventHandler
+    fun playerPickupExperienceEvent(event: PlayerPickupExperienceEvent) {
+        event.experienceOrb.remove()
+        event.isCancelled = true
+    }
+
+    @EventHandler
+    fun blockExpEvent(event: BlockExpEvent) {
+        event.expToDrop = 0
+    }
+
+    @EventHandler
+    fun inventoryClickEvent(event: InventoryClickEvent) {
+        DebugUtil.info("${event.clickedInventory}, ${event.inventory}, ${event.whoClicked}")
+        if (event.clickedInventory?.holder is Player && event.inventory.holder is Chest) {
+            event.isCancelled = true
         }
     }
 
