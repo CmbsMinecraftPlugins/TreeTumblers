@@ -28,6 +28,7 @@ import org.bukkit.event.block.BlockExpEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.inventory.CraftItemEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryType
 import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
@@ -893,9 +894,9 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun craftItemEvent(event: CraftItemEvent) {
-        // prevent the bone meal from being turned into dye...
+        // prevent the bone meal from being turned into dye... or bone blocks...
 
-        if (event.recipe.result.type == Material.WHITE_DYE) {
+        if (event.recipe.result.type == Material.WHITE_DYE || event.recipe.result.type == Material.BONE_BLOCK) {
             event.isCancelled = true
         }
     }
@@ -940,6 +941,13 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun inventoryClickEvent(event: InventoryClickEvent) {
         if (event.clickedInventory?.holder is Player && event.inventory.holder is Chest) {
+            event.isCancelled = true
+        }
+
+        if (event.clickedInventory?.holder is Player && event.inventory.type == InventoryType.FURNACE &&
+            (event.currentItem?.type == Material.BOWL || event.currentItem?.type == Material.WOODEN_SWORD) ||
+            (event.cursor.type == Material.BOWL || event.cursor.type == Material.WOODEN_SWORD)
+            ) {
             event.isCancelled = true
         }
     }
