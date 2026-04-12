@@ -23,6 +23,7 @@ templates:
   # The path where all the template worlds are contained
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
   world_root: "&/templates/worlds"
+  party_games: "&/templates/party"
 
 lobby:
   world: hub
@@ -209,3 +210,12 @@ games:
                   - [56.78,57.97,19.16]
                   - [62.36,58.03,10.16]
                   - [69.24,56.90,14.04]
+  party:
+    worlds_folder: "party"
+    maps:
+      main:
+        world: "main"
+        data:
+          cutscene:
+            start: [-0.5,74.5,-7.5,27.8,5.5]
+          pregame_spawn: [0.5,72.0,-0.5]
