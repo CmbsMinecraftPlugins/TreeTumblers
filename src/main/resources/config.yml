@@ -216,6 +216,7 @@ games:
       main:
         world: "main"
         data:
+          game_pivot: [-100000,128,0]
           cutscene:
             start: [-0.5,74.5,-7.5,27.8,5.5]
           pregame_spawn: [0.5,72.0,-0.5]
