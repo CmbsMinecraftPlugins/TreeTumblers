@@ -11,24 +11,32 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.party.games.individual.StandardSwordDuels
+import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardSwordDuels
+import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
 import java.nio.file.Files
@@ -85,20 +93,25 @@ class PartyController : GameBase(
     icon = Component.empty(),
     scoreboard = "partyScoreboard"
 ) {
-    data class PartyGame(val id: String)
+    data class PartyGameIdentifier(val id: String)
     data class PartyGameSchematic(val file: File)
 
     companion object {
-        val individualGames: ArrayList<Class<out IndividualPartyGame>> = arrayListOf(
+        val games: ArrayList<Class<out PartyGame>> = arrayListOf(
             StandardSwordDuels::class.java
         )
-        val teamGames: ArrayList<Class<out TeamPartyGame>> = arrayListOf()
 
-        val individualIds: List<String> = individualGames.map {
-            it.getDeclaredConstructor().newInstance().id
-        }
+        val individualGames: List<Class<out PartyGame>>
+            get() {
+                return games.filter { it.getDeclaredConstructor().newInstance().individual }
+            }
 
-        val teamIds: List<String> = teamGames.map {
+        val teamGames: List<Class<out PartyGame>>
+            get() {
+                return games.filter { it.getDeclaredConstructor().newInstance().team }
+            }
+
+        val gameIds: List<String> = games.map {
             it.getDeclaredConstructor().newInstance().id
         }
 
@@ -112,7 +125,8 @@ class PartyController : GameBase(
     lateinit var map: LoadedMap
     lateinit var pivot: Location
     var nextXPosition: Int = 0
-    val activeIndividualGames: ArrayList<IndividualPartyGame> = ArrayList()
+    val activeGames: ArrayList<PartyGame> = ArrayList()
+    var currentGameType = PartyGameType.INDIVIDUAL
 
     /**
      * The load sequence that each individual game should do
@@ -188,8 +202,8 @@ class PartyController : GameBase(
         asyncCountdown(10 * 60)
         while(true) {
             // TODO: remove for obvious reasons
-            runIndividualGame(Bukkit.getOnlinePlayers().first(), null, individualGames.random())
-            delay(5000)
+            runGame(PartyMatchup.IndividualMatchup(Bukkit.getOnlinePlayers().first(), null), individualGames.random())
+            delay(20000)
         }
     }
 
@@ -200,11 +214,16 @@ class PartyController : GameBase(
         delay(10000)
     }
 
-    suspend fun runIndividualGame(player1: Player, player2: Player?, game: Class<out IndividualPartyGame>) {
+    suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>) {
         val gameClass = game
-            .getDeclaredConstructor(Player::class.java, Player::class.java)
-            .newInstance(player1, player2)
-        activeIndividualGames.add(gameClass)
+            .getDeclaredConstructor(PartyGameType::class.java, PartyMatchup::class.java)
+            .newInstance(currentGameType, matchup)
+        activeGames.add(gameClass)
+
+        if(
+            (currentGameType == PartyGameType.INDIVIDUAL && !gameClass.individual)
+            || (currentGameType == PartyGameType.TEAM && !gameClass.team)
+        ) throw GameControllerException("Attempted to start a game mismatched with the current game type. Expected $currentGameType")
 
         val schematicFolder = File(partyGamesDirectory, gameClass.id)
         if(!schematicFolder.exists() || !schematicFolder.isDirectory) throw GameControllerException("Game ${gameClass.id} does not have any schematic files")
@@ -238,5 +257,164 @@ class PartyController : GameBase(
         Operations.complete(operation)
         editSession.flushQueue()
         editSession.close()
+
+        DebugUtil.success("Loaded party arena $chosenSchematic successfully")
+
+        val firstSideSpawns: ArrayList<Location> = ArrayList()
+        val secondSideSpawns: ArrayList<Location> = ArrayList()
+
+        clipboard.region.forEach {
+            val worldPos = pos.add(it.subtract(clipboard.origin))
+            val block = map.world.getBlockAt(worldPos.x(), worldPos.y(), worldPos.z())
+
+            if(block.type == Material.WHITE_WOOL) {
+                firstSideSpawns.add(block.location.add(0.0,1.5,0.0).toCenterLocation())
+            } else if (block.type == Material.BLACK_WOOL) {
+                secondSideSpawns.add(block.location.add(0.0,1.5,0.0).toCenterLocation())
+            }
+        }
+
+        if(firstSideSpawns.isEmpty() || secondSideSpawns.isEmpty())
+            throw GameControllerException("One or both sets of spawns are not marked through either black or white wool.")
+
+        suspendSync {
+            matchup.spawn(firstSideSpawns, secondSideSpawns)
+        }
+        matchup.kitPlayers(gameClass.kit)
+        gameClass.postSpawn()
+        matchup.announce()
+    }
+
+    enum class PartyGameType {
+        INDIVIDUAL,
+        TEAM
+    }
+
+    sealed interface PartyMatchup {
+        fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>)
+        fun kitPlayers(kit: Kit.KitDefinition)
+        suspend fun announce()
+
+        class IndividualMatchup(val player1: Player?, val player2: Player?) : PartyMatchup {
+            override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
+                player1!!.teleport(spawns1.first())
+                player1.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
+                player2?.teleport(spawns2.first())
+                player2?.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
+            }
+
+            override fun kitPlayers(kit: Kit.KitDefinition) {
+                player1!!.giveKit(kit)
+                player2?.giveKit(kit)
+            }
+
+            override suspend fun announce() {
+                val startingTitle = Title.title(
+                    Component.empty(),
+                    Format.mm(
+                        "<white><player1> vs. <player2></white>",
+                        Placeholder.component("player1", Format.formatPlayerName(player1)),
+                        Placeholder.component("player2", Format.formatPlayerName(player2))
+                    ),
+                    Title.Times.times(Tick.of(5), Tick.of(100), Tick.of(0))
+                )
+
+                player1!!.showTitle(startingTitle)
+                player2?.showTitle(startingTitle)
+
+                delay(1300)
+                repeat(3) {
+                    val color = when(it) {
+                        0 -> NamedTextColor.GREEN
+                        1 -> NamedTextColor.YELLOW
+                        2 -> NamedTextColor.RED
+                        else -> NamedTextColor.WHITE
+                    }
+
+                    val title = Title.title(
+                        Format.mm("<b>> ${3 - it} <</b>").color(color),
+                        Format.mm(
+                            "<white><player1> vs. <player2></white>",
+                            Placeholder.component("player1", Format.formatPlayerName(player1)),
+                            Placeholder.component("player2", Format.formatPlayerName(player2))
+                        ),
+                        Title.Times.times(Tick.of(0), Tick.of(100), Tick.of(0))
+                    )
+
+                    player1.showTitle(title)
+                    player2?.showTitle(title)
+
+                    delay(400)
+                }
+
+                player1.resetTitle()
+                player2?.resetTitle()
+
+                suspendSync {
+                    player1.removePotionEffect(PotionEffectType.BLINDNESS)
+                    player2?.removePotionEffect(PotionEffectType.BLINDNESS)
+                }
+            }
+        }
+
+        class TeamMatchup(val team1: Team, val team2: Team) : PartyMatchup {
+            override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
+                team1.getOnlinePlayers().forEachIndexed { i, it ->
+                    it.teleport(spawns1[i % spawns1.size])
+                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                }
+
+                team2.getOnlinePlayers().forEachIndexed { i, it ->
+                    it.teleport(spawns2[i % spawns1.size])
+                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                }
+            }
+
+            override fun kitPlayers(kit: Kit.KitDefinition) {
+                Kit.giveKits(team1.getOnlinePlayers() + team2.getOnlinePlayers(), kit)
+            }
+
+            override suspend fun announce() {
+                val startingTitle = Title.title(
+                    Component.empty(),
+                    Format.mm(
+                        "<white><team1> vs. <team2></white>",
+                        Placeholder.component("team1", team1.formattedName),
+                        Placeholder.component("team2", team2.formattedName)
+                    )
+                )
+
+                team1.audience.showTitle(startingTitle)
+                team2.audience.showTitle(startingTitle)
+
+                delay(1000)
+                repeat(3) {
+                    val color = when(it) {
+                        0 -> NamedTextColor.GREEN
+                        1 -> NamedTextColor.YELLOW
+                        2 -> NamedTextColor.RED
+                        else -> NamedTextColor.WHITE
+                    }
+
+                    val title = Title.title(
+                        Format.mm("<b>> ${3 - it} <</b>").color(color),
+                        Format.mm(
+                            "<white><team1> vs. <team2></white>",
+                            Placeholder.component("team1", team1.formattedName),
+                            Placeholder.component("team2", team2.formattedName)
+                        )
+                    )
+
+                    team1.audience.showTitle(title)
+                    team2.audience.showTitle(title)
+
+                    delay(400)
+                }
+
+                suspendSync {
+                    (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach { it.removePotionEffect(PotionEffectType.BLINDNESS) }
+                }
+            }
+        }
     }
 }

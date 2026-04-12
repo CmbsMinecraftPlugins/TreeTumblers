@@ -28,9 +28,20 @@ object Format {
         return miniMessage.deserialize(text, *placeholder)
     }
 
-    fun formatPlayerName(player: Player) = formatPlayerName(player.tumblingPlayer)
+    fun formatPlayerName(player: Player?) = formatPlayerName(player?.tumblingPlayer)
 
-    fun formatPlayerName(player: TumblingPlayer): Component {
+    fun formatPlayerName(player: TumblingPlayer?): Component {
+        if(player == null) {
+            val team = Team.SPECTATORS
+            return Component.empty()
+                .append(
+                    Component.text(team.icon, NamedTextColor.WHITE)
+                        .font(NamespacedKey("tumbling", "icons"))
+                )
+                .append(Component.text(" "))
+                .append(Component.text("Player", team.color))
+        }
+
         val team = player.team
         return Component.empty()
             .append(

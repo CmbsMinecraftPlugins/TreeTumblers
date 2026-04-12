@@ -28,7 +28,7 @@ import kotlin.io.path.Path
 @Command(name = "party")
 class PartyCommand {
     @Execute(name = "template save")
-    fun executeTemplateSave(@Context player: Player, @Arg("party game") partyGame: PartyController.PartyGame, @Arg("identifier") identifier: String) {
+    fun executeTemplateSave(@Context player: Player, @Arg("party game") partyGame: PartyController.PartyGameIdentifier, @Arg("identifier") identifier: String) {
         val worldEdit = WorldEdit.getInstance()
         val sessionManager = worldEdit.sessionManager
 

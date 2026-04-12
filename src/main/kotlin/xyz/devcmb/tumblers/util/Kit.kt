@@ -21,6 +21,7 @@ object Kit {
     )
 
     fun giveKit(player: Player, kit: KitDefinition) {
+        player.inventory.clear()
         player.inventory.addItem(*kit.items.map { it.clone() }.toTypedArray())
 
         if(kit.teamArmorSlot != null) {
@@ -37,4 +38,10 @@ object Kit {
             override val items: ArrayList<ItemStack> = items
             override val teamArmorSlot: EquipmentSlot? = teamArmorSlot
         })
+
+    fun giveKits(players: Set<Player>, kit: KitDefinition) {
+        players.forEach {
+            giveKit(it, kit)
+        }
+    }
 }

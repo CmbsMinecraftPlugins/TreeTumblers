@@ -9,25 +9,24 @@ import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 
-class PartyGameArgument: ArgumentResolver<CommandSender, PartyController.PartyGame>() {
+class PartyGameArgument: ArgumentResolver<CommandSender, PartyController.PartyGameIdentifier>() {
     override fun parse(
         invocation: Invocation<CommandSender>,
-        context: Argument<PartyController.PartyGame>,
+        context: Argument<PartyController.PartyGameIdentifier>,
         argument: String
-    ): ParseResult<PartyController.PartyGame> {
-        val ids = PartyController.teamIds + PartyController.individualIds
-        if(argument !in ids) {
+    ): ParseResult<PartyController.PartyGameIdentifier> {
+        if(argument !in PartyController.gameIds) {
             return ParseResult.failure("Invalid party game id!")
         }
 
-        return ParseResult.success(PartyController.PartyGame(argument))
+        return ParseResult.success(PartyController.PartyGameIdentifier(argument))
     }
 
     override fun suggest(
         invocation: Invocation<CommandSender?>?,
-        argument: Argument<PartyController.PartyGame?>?,
+        argument: Argument<PartyController.PartyGameIdentifier?>?,
         context: SuggestionContext?
     ): SuggestionResult? {
-        return (PartyController.teamIds + PartyController.individualIds).stream().collect(SuggestionResult.collector())
+        return PartyController.gameIds.stream().collect(SuggestionResult.collector())
     }
 }

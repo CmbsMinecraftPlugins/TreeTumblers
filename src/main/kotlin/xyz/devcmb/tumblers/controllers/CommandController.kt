@@ -40,7 +40,7 @@ class CommandController : IController {
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
             .argument(Timer::class.java, TimerArgument())
-            .argument(PartyController.PartyGame::class.java, PartyGameArgument())
+            .argument(PartyController.PartyGameIdentifier::class.java, PartyGameArgument())
             .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
             .invalidUsage(InvalidUsageHandler())
             .build()
