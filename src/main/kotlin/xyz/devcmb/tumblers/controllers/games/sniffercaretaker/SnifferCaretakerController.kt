@@ -134,7 +134,7 @@ class SnifferCaretakerController : GameBase(
                 delay(200)
             }
 
-            delay(3000)
+            delay(1500)
 
             map.data.getList("cutscene.farm_wheat")?.forEach {
                 if (it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
@@ -155,7 +155,7 @@ class SnifferCaretakerController : GameBase(
             }
 
             teleportConfig("cutscene.blocks")
-            delay(3000)
+            delay(2000)
         },
         CutsceneStep(Format.mm("To quenching the sniffer's thirst...")
         ) { map ->
@@ -171,7 +171,7 @@ class SnifferCaretakerController : GameBase(
                 map.world.playSound(cauldron, Sound.ITEM_BUCKET_EMPTY, 1.0f, 1.0f)
             }
 
-            delay(2000)
+            delay(1500)
 
             suspendSync {
                 cauldron.block.type = Material.CAULDRON
@@ -218,7 +218,11 @@ class SnifferCaretakerController : GameBase(
         CutsceneStep(Format.mm("But remember, your only goal is to keep the sniffer happy, and complete as many tasks as you can!")
         ) { map ->
             teleportConfig("cutscene.end")
-            delay(5000)
+            delay(4000)
+        },
+        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")
+        ) { map ->
+            delay(3000)
         }
     ),
     flags = emptySet(),
@@ -295,7 +299,11 @@ class SnifferCaretakerController : GameBase(
         Material.SAND,
         Material.COARSE_DIRT,
         Material.PUMPKIN,
-        Material.PUMPKIN_STEM
+        Material.PUMPKIN_STEM,
+        Material.BROWN_MUSHROOM,
+        Material.RED_MUSHROOM,
+        Material.LADDER, // because you can craft them, and im not stopping you!
+        Material.GLASS
     )
 
     val kit: List<ItemStack> = listOf(
