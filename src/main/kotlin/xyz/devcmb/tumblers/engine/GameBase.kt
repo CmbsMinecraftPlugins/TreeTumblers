@@ -39,8 +39,6 @@ import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
-import java.util.UUID
-
 /**
  * Base class for all games
  * @param id The unique identifier of the game
@@ -300,10 +298,12 @@ abstract class GameBase(
      * @param time How long to run the countdown for
      * @return If the timer wasn't ended early
      */
-    suspend fun countdown(time: Int, id: String? = null, async: Boolean = false): Boolean {
-        currentTimer = Timer(id ?: "${id}_${if(async) "async_" else ""}countdown_${UUID.randomUUID().toString().take(5)}", time)
+    suspend fun countdown(time: Int, id: String? = null): Boolean {
+        currentTimer = Timer(time) {
+            this.id = id ?: this.id
+            joined = true
+        }
         currentTimer!!.start()
-        currentTimer!!.join()
         return (currentTimer?.endedEarly == false)
     }
 
@@ -313,8 +313,11 @@ abstract class GameBase(
      * @param onComplete The function to invoke when the countdown finishes executing
      */
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
-        val success = countdown(time, id, true)
-        if(onComplete != null) onComplete(!success)
+        currentTimer = Timer(time) {
+            this.id = id ?: this.id
+            this.onComplete = onComplete
+        }
+        currentTimer!!.start()
     }
 
     /**

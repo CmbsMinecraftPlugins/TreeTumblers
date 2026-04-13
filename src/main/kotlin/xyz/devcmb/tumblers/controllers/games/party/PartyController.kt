@@ -30,6 +30,7 @@ import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardSwordDue
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
@@ -131,7 +132,10 @@ class PartyController : GameBase(
     val activeGames: ArrayList<PartyGame> = ArrayList()
     var currentGameType = PartyGameType.INDIVIDUAL
 
-    val frozenPlayers: ArrayList<Player> = ArrayList()
+    val waitingPlayers: MutableSet<Player> = HashSet()
+    val frozenPlayers: MutableSet<Player> = HashSet()
+
+    lateinit var teamGamesTimer: Timer
 
     /**
      * The load sequence that each individual game should do
@@ -205,11 +209,15 @@ class PartyController : GameBase(
      */
     override suspend fun gameOn() {
         asyncCountdown(10 * 60)
-        while(true) {
-            // TODO: remove for obvious reasons
-            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
-            delay(20000)
-        }
+
+//        teamGamesTimer = Timer("party_team_games_switchover_timer", 5 * 60) {
+//
+//        }
+
+//        while(true) {
+//            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
+//            delay(20000)
+//        }
     }
 
     /**
@@ -220,6 +228,8 @@ class PartyController : GameBase(
     }
 
     suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>) {
+        matchup.announceLoading()
+
         val gameClass = game
             .getDeclaredConstructor(PartyGameType::class.java, PartyMatchup::class.java)
             .newInstance(currentGameType, matchup)
@@ -285,9 +295,10 @@ class PartyController : GameBase(
         suspendSync {
             matchup.spawn(firstSideSpawns, secondSideSpawns)
         }
+        matchup.concludeLoading()
         matchup.kitPlayers(gameClass.kit)
         gameClass.postSpawn()
-        matchup.announce()
+        matchup.announceMatchup()
     }
 
     enum class PartyGameType {
@@ -298,7 +309,9 @@ class PartyController : GameBase(
     sealed interface PartyMatchup {
         fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>)
         fun kitPlayers(kit: Kit.KitDefinition)
-        suspend fun announce()
+        fun announceLoading()
+        fun concludeLoading()
+        suspend fun announceMatchup()
 
         class IndividualMatchup(val partyController: PartyController?, val player1: Player?, val player2: Player?) : PartyMatchup {
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
@@ -316,7 +329,23 @@ class PartyController : GameBase(
                 player2?.giveKit(kit)
             }
 
-            override suspend fun announce() {
+            override fun announceLoading() {
+                val title = Title.title(
+                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("Loading...", NamedTextColor.AQUA),
+                    Title.Times.times(Tick.of(0), Tick.of(9999999), Tick.of(0))
+                )
+
+                player1!!.showTitle(title)
+                player2?.showTitle(title)
+            }
+
+            override fun concludeLoading() {
+                player1!!.resetTitle()
+                player2?.resetTitle()
+            }
+
+            override suspend fun announceMatchup() {
                 val startingTitle = Title.title(
                     Component.empty(),
                     Format.mm(
@@ -386,7 +415,23 @@ class PartyController : GameBase(
                 Kit.giveKits(team1.getOnlinePlayers() + team2.getOnlinePlayers(), kit)
             }
 
-            override suspend fun announce() {
+            override fun announceLoading() {
+                val title = Title.title(
+                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("Loading...", NamedTextColor.AQUA),
+                    Title.Times.times(Tick.of(0), Tick.of(9999999), Tick.of(0))
+                )
+
+                team1.audience.showTitle(title)
+                team2.audience.showTitle(title)
+            }
+
+            override fun concludeLoading() {
+                team1.audience.resetTitle()
+                team2.audience.resetTitle()
+            }
+
+            override suspend fun announceMatchup() {
                 val startingTitle = Title.title(
                     Component.empty(),
                     Format.mm(
