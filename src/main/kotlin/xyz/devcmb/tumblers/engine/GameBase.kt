@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -14,9 +15,9 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.vehicle.VehicleExitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -29,17 +30,21 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import java.util.UUID
 
 /**
  * Base class for all games
  * @param id The unique identifier of the game
+ * @param name The name of the game for public-facing events (voting, etc.)
  * @param votable Whether this game is available for voting during the voting stage
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
@@ -57,6 +62,7 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
  */
 abstract class GameBase(
     val id: String,
+    val name: String,
     val votable: Boolean,
     val maps: Set<Map>,
     val cutsceneSteps: ArrayList<CutsceneStep>,
@@ -84,7 +90,7 @@ abstract class GameBase(
     val gameParticipants: MutableSet<Player> = HashSet()
 
     val teamScores: HashMap<Team, Int> = HashMap()
-    val playerScores: HashMap<Player, Int> = HashMap()
+    val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
 
     open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
@@ -94,7 +100,11 @@ abstract class GameBase(
 
     open val debugToolkit: DebugToolkit? = null
 
-    var countdownTime: Int = 0
+    val countdownTime: Int
+        get() {
+            return currentTimer?.currentTime ?: 0
+        }
+    var currentTimer: Timer? = null
 
     companion object {
         @Configurable("lobby.world")
@@ -110,10 +120,11 @@ abstract class GameBase(
     suspend fun load() {
         currentState = State.LOADING
 
+        Bukkit.getOnlinePlayers().forEach { it.deactivateScoreboard("intermissionScoreboard") }
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
         gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
         gameParticipants.forEach {
-            playerScores.put(it, 0)
+            playerScores.put(it.tumblingPlayer, 0)
         }
         Team.entries.filter { it.playingTeam }.forEach {
             teamScores.put(it, 0)
@@ -187,7 +198,7 @@ abstract class GameBase(
         currentState = State.CUTSCENE
 
         cutsceneSteps.forEach {
-            it.run(gamePlayers, loadedMaps.first())
+            it.run(gamePlayers, loadedMaps.first(), this)
             it.cleanup(gamePlayers)
         }
     }
@@ -260,9 +271,10 @@ abstract class GameBase(
                 it.foodLevel = 20
 
                 it.deactivateScoreboard(scoreboard)
+                it.activateScoreboard("intermissionScoreboard")
 
                 if(it.gameMode != GameMode.CREATIVE) {
-                    it.gameMode = GameMode.SURVIVAL
+                    it.gameMode = GameMode.ADVENTURE
                     it.isFlying = false
                     it.allowFlight = false
                 }
@@ -276,6 +288,8 @@ abstract class GameBase(
         loadedMaps.forEach {
             it.cleanup()
         }
+
+        eventController.replicateScores()
     }
 
     private var countdownJob: Job? = null
@@ -284,32 +298,23 @@ abstract class GameBase(
     /**
      * Perform a countdown synchronously, stored in the [countdownTime] field
      * @param time How long to run the countdown for
-     * @return Whether the timer fully completed or was abruptly ended
+     * @return If the timer wasn't ended early
      */
-    suspend fun countdown(time: Int): Boolean {
-        countdownJob?.cancel()
-        countdownJob = TreeTumblers.pluginScope.launch {
-            countdownTime = time
-            while(true) {
-                delay(1000)
-                if (countdownTime <= 0) return@launch
-                countdownTime--
-            }
-        }
-        countdownJob!!.join()
-        val result = !countdownCancelled
-        countdownCancelled = false
-        return result
+    suspend fun countdown(time: Int, id: String? = null, async: Boolean = false): Boolean {
+        currentTimer = Timer(id ?: "${id}_${if(async) "async_" else ""}countdown_${UUID.randomUUID().toString().take(5)}", time)
+        currentTimer!!.start()
+        currentTimer!!.join()
+        return (currentTimer?.endedEarly == false)
     }
 
     /**
      * Runs the [countdown] method asynchronously
      * @param time How long to run the countdown for
-     * @param onComplete The function to invoke when/if the countdown fully finishes
+     * @param onComplete The function to invoke when the countdown finishes executing
      */
-    fun asyncCountdown(time: Int, onComplete: (suspend () -> Unit)? = null) = TreeTumblers.pluginScope.launch {
-        val success = countdown(time)
-        if(onComplete != null && success) onComplete()
+    fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
+        val success = countdown(time, id, true)
+        if(onComplete != null) onComplete(!success)
     }
 
     /**
@@ -332,23 +337,30 @@ abstract class GameBase(
     }
 
     /**
-     * Grants score to a [Player] and their team
-     * @param player The player to give score to
+     * Grants score to a [TumblingPlayer] and their team
+     * @param player The tumbling player to give score to
      * @param source The source of score
      */
-    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) {
+    fun grantScore(player: TumblingPlayer, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
-        val team = player.tumblingPlayer.team
+        val team = player.team
 
         teamScores.put(team, teamScores[team]!! + amount)
         playerScores.put(player, (playerScores[player] ?: 0) + amount)
 
-        if(scoreMessages.contains(source))
-            player.sendMessage(scoreMessages[source]!!(amount))
+        if(scoreMessages.contains(source) && player.bukkitPlayer != null)
+            player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
 
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
         eventController.grantScore(player, amount)
     }
+
+    /**
+     * Grants score to a [Player] and their team
+     * @param player The player to give score to
+     * @param source The source of score
+     */
+    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) = grantScore(player.tumblingPlayer, source, amountOverride)
 
     /**
      * Grants a score equally amongst a team
@@ -358,13 +370,13 @@ abstract class GameBase(
 
     fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
         val amount = amountOverride ?: getScoreSource(source)
-        val playerCount = team.getOnlinePlayers().size
+        val playerCount = team.getAllPlayers().size
 
         if (amount % playerCount != 0) {
             DebugUtil.warning("Attempted to give team ${team.name} ($playerCount players) $amount score, which cannot be divided equally, giving ${(amount / playerCount) * playerCount} score instead of $amount")
         }
 
-        team.getOnlinePlayers().forEach {
+        team.getAllPlayers().forEach {
             grantScore(it, source, amount / playerCount)
         }
     }
@@ -374,9 +386,9 @@ abstract class GameBase(
      */
     fun gameMessage(text: Component): Component {
         return Component.empty()
-            .append(Component.text("[", NamedTextColor.YELLOW))
+            .append(Component.text("(", NamedTextColor.YELLOW))
             .append(icon)
-            .append(Component.text("] ", NamedTextColor.YELLOW))
+            .append(Component.text(") ", NamedTextColor.YELLOW))
             .append(text)
     }
 
@@ -395,19 +407,86 @@ abstract class GameBase(
      * Get the current individual placements for all playing players
      * @return An ArrayList of players sorted by score (descending) with ties broken by team priority (ascending)
      */
-    fun getIndividualPlacements(): ArrayList<Pair<Player, Int>> {
+    fun getIndividualPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val sorted = playerScores.entries
-            .sortedWith(compareBy({ -it.value }, { it.key.tumblingPlayer.team.priority }))
+            .sortedWith(compareBy({ -it.value }, { it.key.team.priority }))
         
         return MiscUtils.calculatePlacements(sorted)
     }
 
-    @EventHandler
-    fun playerDismountEvent(event: VehicleExitEvent) {
-        val player = event.exited
-        if(player !is Player || currentState != State.CUTSCENE) return
+    /**
+     * Announce the team standings for this game
+     */
+    fun announceTeamScores() {
+        var teamScoresComponent = Component.empty()
+            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
 
-        event.isCancelled = true
+        val teamPlacements = getTeamPlacements()
+        teamPlacements.forEach {
+            teamScoresComponent = teamScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+        teamScoresComponent = teamScoresComponent.appendNewline()
+        Bukkit.broadcast(teamScoresComponent)
+    }
+
+    /**
+     * Announce the individual standings for this game
+     */
+    fun announceIndivScores() {
+        var individualScoresComponent = Component.empty()
+            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val indivPlacements = getIndividualPlacements()
+        indivPlacements.forEach {
+            individualScoresComponent = individualScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(Format.formatPlayerName(it.first))
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(playerScores[it.first] ?: 0, NamedTextColor.YELLOW))
+            )
+        }
+
+        individualScoresComponent = individualScoresComponent.appendNewline()
+        Bukkit.broadcast(individualScoresComponent)
+    }
+
+    /**
+     * Announce the event team scores
+     */
+    fun announceOverallTeamScores() {
+        var eventPlacementsComponent = Component.empty()
+            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val eventPlacements = eventController.getEventTeamPlacements()
+        eventPlacements.forEach {
+            eventPlacementsComponent = eventPlacementsComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+
+        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
+        Bukkit.broadcast(eventPlacementsComponent)
+
+        if(!EventController.eventMode) {
+            Bukkit.broadcast(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
+        }
     }
 
     @EventHandler
@@ -426,6 +505,12 @@ abstract class GameBase(
         if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || flags.contains(Flag.DISABLE_PVP)) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
+            event.isCancelled = true
     }
 
     /**

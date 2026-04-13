@@ -63,6 +63,10 @@ class Map(
             world.setGameRule(GameRules.FALL_DAMAGE, !game.flags.contains(Flag.DISABLE_FALL_DAMAGE))
             world.setGameRule(GameRules.PVP, !game.flags.contains(Flag.DISABLE_PVP))
             world.setGameRule(GameRules.LOCATOR_BAR, game.flags.contains(Flag.ENABLE_LOCATOR_BAR))
+            world.setGameRule(
+                GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER,
+                if(game.flags.contains(Flag.ENABLE_FIRE_SPREAD)) 128 else 0
+            )
         }
 
         val dataPath = "${game.configRoot}.maps.$id.data"

@@ -6,6 +6,7 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
+import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -95,7 +96,8 @@ class SnifferCaretakerController : GameBase(
         SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
     icon = Component.empty(),
-    scoreboard = "snifferCaretakerScoreboard"
+    scoreboard = "snifferCaretakerScoreboard",
+    name = "Sniffer Caretaker"
 ) {
     companion object {
         val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
@@ -734,6 +736,7 @@ class SnifferCaretakerController : GameBase(
         suspendSync {
             gamePlayers.forEach {
                 it.spigot().respawn()
+                it.gameMode = GameMode.SURVIVAL
                 val tumblingPlayer = it.tumblingPlayer
 
                 val playerSpawn = currentMap.data.getList("spawn")?.validateCoordinates()
@@ -840,7 +843,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     @EventHandler
-    fun blockBreakEvent(event: BlockBreakEvent) {
+    fun blockBreakEventSnifferCaretaker(event: BlockBreakEvent) {
         if (!breakableBlocks.contains(event.block.type)) {
             event.isCancelled = true
         }

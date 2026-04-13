@@ -1,9 +1,11 @@
 package xyz.devcmb.tumblers.controllers
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
@@ -24,7 +26,12 @@ class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
 
-    data class RegisteredGame(val id: String, val game: Class<out GameBase>)
+    data class RegisteredGame(
+        val id: String,
+        val name: String,
+        val votable: Boolean,
+        val game: Class<out GameBase>
+    )
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -37,13 +44,24 @@ class GameController : IController {
             .filter { GameBase::class.java.isAssignableFrom(it) }
             .forEach { clazz ->
                 val gameClass = clazz as Class<out GameBase>
-                val gameId = gameClass.getDeclaredConstructor().newInstance().id
+                val templateInstance = gameClass.getDeclaredConstructor().newInstance()
 
-                games.add(RegisteredGame(gameId, gameClass))
+                games.add(RegisteredGame(
+                    templateInstance.id,
+                    templateInstance.name,
+                    templateInstance.votable,
+                    gameClass
+                ))
             }
     }
 
-    fun startGame(id: String) {
+    fun startGameAsync(id: String) {
+        TreeTumblers.pluginScope.launch {
+            startGame(id)
+        }
+    }
+
+    suspend fun startGame(id: String) {
         if(activeGame != null) throw GameOperatorException("Cannot start a game while one is currently active")
 
         val gameClass = games.find { it.id == id }?.game
@@ -54,18 +72,17 @@ class GameController : IController {
         activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
-        TreeTumblers.pluginScope.launch {
-            game.load()
-            game.finishLoading()
-            game.runCutscene()
-            game.pregame()
-            game.gameMain()
-            game.postGame()
+        game.load()
+        game.finishLoading()
+        game.runCutscene()
+        game.pregame()
+        game.gameMain()
+        game.postGame()
+        TreeTumblers.pluginScope.async {
             game.cleanup()
-
-            HandlerList.unregisterAll(game)
-            activeGame = null
         }
+        HandlerList.unregisterAll(game)
+        activeGame = null
     }
 
     @EventHandler
@@ -79,7 +96,7 @@ class GameController : IController {
         event.isCancelled = true
     }
 
-    @EventHandler
+    @EventHandler(priority = EventPriority.HIGH)
     fun playerJoin(event: PlayerJoinEvent) {
         if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) {
             val player = event.player
@@ -90,7 +107,7 @@ class GameController : IController {
     }
 
     class Game(val id: String) {
-        fun get(): GameBase {
+        fun getTemplate(): GameBase {
             val gameController = ControllerDelegate.getController("gameController") as GameController
             val gameType = gameController.games.find { it.id == id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")

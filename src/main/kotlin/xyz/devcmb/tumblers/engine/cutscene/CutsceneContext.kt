@@ -1,15 +1,31 @@
 package xyz.devcmb.tumblers.engine.cutscene
 
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.Title
 import org.bukkit.Location
+import org.bukkit.World
+import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Pig
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
+import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
-class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: CutsceneStep) {
+class CutsceneContext(
+    val observers: Set<Player>,
+    val map: LoadedMap,
+    val step: CutsceneStep,
+    val game: GameBase?,
+): Listener {
+    constructor(observers: Set<Player>, world: World, config: ConfigurationSection, step: CutsceneStep):
+        this(observers, LoadedMap(world.name, world, config), step, null)
+
     suspend fun teleport(x: Double, y: Double, z: Double, pitch: Float, yaw: Float) {
         suspendSync {
             observers.forEach {
@@ -31,6 +47,16 @@ class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: 
         }
     }
 
+    fun title(title: Component? = null, subtitle: Component? = null, times: Title.Times? = null) {
+        observers.forEach {
+            it.showTitle(Title.title(
+                title ?: Component.empty(),
+                subtitle ?: Component.empty(),
+                times
+            ))
+        }
+    }
+
     fun getLocation(path: String): Location {
         val config = map.data.getList(path) ?: throw GameControllerException("Teleport config path did not resolve to a valid list")
         val location: List<Double> = config.map {
@@ -49,5 +75,13 @@ class CutsceneContext(val observers: Set<Player>, val map: LoadedMap, val step: 
         pig.addPassenger(player)
 
         step.pigs.put(player, pig)
+    }
+
+    @EventHandler
+    fun playerDismountEvent(event: VehicleExitEvent) {
+        val player = event.exited
+        if(player !is Player) return
+
+        event.isCancelled = true
     }
 }

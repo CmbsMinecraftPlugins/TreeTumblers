@@ -7,6 +7,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
+import xyz.devcmb.tumblers.util.DebugUtil
 import kotlin.math.roundToInt
 
 class AliveTeamsBossbar(
@@ -16,7 +17,7 @@ class AliveTeamsBossbar(
 ) : HandledBossbar {
     override fun getComponent(): Component {
         val activeGame = gameController.activeGame
-        if(activeGame == null || activeGame !is CrumbleController) return Component.text("\uEF00").font(UserInterfaceUtility.ICONS)
+        if(activeGame == null || activeGame !is CrumbleController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
 
         val playingTeams = Team.entries.filter { it.playingTeam }
 

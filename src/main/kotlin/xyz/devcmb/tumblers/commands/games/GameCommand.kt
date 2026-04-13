@@ -4,7 +4,9 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
+import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameOperatorException
@@ -30,7 +32,7 @@ class GameCommand {
         }
 
         try {
-            gameController.startGame(game.id)
+            gameController.startGameAsync(game.id)
             sender.sendMessage(Format.success("Started game successfully!"))
         } catch(e: GameOperatorException) {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))
@@ -69,13 +71,31 @@ class GameCommand {
             return
         }
 
+        if(activeGame.currentTimer == null) {
+            sender.sendMessage(Format.warning("There is no current game timer!"))
+            return
+        }
+
         val value = value.getOrNull()
         if(value == null) {
             sender.sendMessage(Format.info("The current game timer is ${activeGame.countdownTime}"))
             return
         }
 
-        activeGame.countdownTime = value
+
+        activeGame.currentTimer!!.currentTime = value
         sender.sendMessage(Format.success("Timer set successfully!"))
+    }
+
+    @Execute(name = "message")
+    fun executeMessage(@Context sender: CommandSender, @Join("message") msg: String) {
+        val activeGame = gameController.activeGame
+        if(activeGame == null) {
+            sender.sendMessage(Format.error("Game messages can only be sent if a game is active!"))
+            return
+        }
+
+        sender.sendMessage(activeGame.gameMessage(Component.text(msg)))
+        sender.sendMessage(Format.success("Game message sent successfully!"))
     }
 }
