@@ -14,6 +14,7 @@ import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
+import org.bukkit.block.data.Levelled
 import org.bukkit.block.data.type.TrapDoor
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Entity
@@ -65,6 +66,7 @@ import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 import kotlin.collections.forEach
 import kotlin.math.max
 import kotlin.math.min
@@ -86,6 +88,138 @@ class SnifferCaretakerController : GameBase(
             teleportConfig("cutscene.start")
             delay(5000)
         },
+        CutsceneStep(Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the task board. Tasks will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has.")
+        ) { map ->
+            val game = game as SnifferCaretakerController
+            teleportConfig("cutscene.tasks")
+
+            val exampleTasks: List<String> = listOf(
+                "hungry_wheat",
+                "bored_moss_block",
+                "lonely_cow",
+                "hungry_pumpkin_pie",
+                "hungry_cake"
+            )
+
+            for (task in exampleTasks) {
+                suspendSync {
+                    game.createNewTask(Team.RED, task, true)
+                }
+                delay(500)
+            }
+
+            delay(5000)
+        },
+        CutsceneStep(Format.mm("Tasks range from feeding the sniffer various foods...")
+        ) { map ->
+            val game = game as SnifferCaretakerController
+
+            suspendSync {
+                game.currentTasks[Team.RED]!!.forEach {
+                    game.completeTask(Team.RED, it, true)
+                }
+            }
+
+            teleportConfig("cutscene.farm")
+
+            map.data.getList("cutscene.farm_wheat")?.forEach {
+                if(it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
+                val location = it.validateLocation(map.world) ?: throw GameControllerException("Cutscene farm wheat locations are not valid")
+
+                suspendSync {
+                    location.block.type = Material.WHEAT
+                    map.world.playSound(location, Sound.ITEM_CROP_PLANT, 1.0f, 1.0f)
+                }
+
+                delay(200)
+            }
+
+            delay(3000)
+
+            map.data.getList("cutscene.farm_wheat")?.forEach {
+                if (it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
+                val location = it.validateLocation(map.world)
+                    ?: throw GameControllerException("Cutscene farm wheat locations are not valid")
+
+                suspendSync {
+                    location.block.type = Material.AIR
+                }
+            }
+        },
+        CutsceneStep(Format.mm("To giving the sniffer things to sniff...")
+        ) { map ->
+            val game = game as SnifferCaretakerController
+
+            suspendSync {
+                game.stockBlocks(Team.RED)
+            }
+
+            teleportConfig("cutscene.blocks")
+            delay(3000)
+        },
+        CutsceneStep(Format.mm("To quenching the sniffer's thirst...")
+        ) { map ->
+            teleportConfig("cutscene.thirst")
+            delay(1000)
+
+            val cauldron = getLocation("cutscene.thirst_cauldron")
+            suspendSync {
+                cauldron.block.type = Material.WATER_CAULDRON
+                cauldron.block.blockData = (cauldron.block.blockData as Levelled).also {
+                    it.level = it.maximumLevel
+                }
+                map.world.playSound(cauldron, Sound.ITEM_BUCKET_EMPTY, 1.0f, 1.0f)
+            }
+
+            delay(2000)
+
+            suspendSync {
+                cauldron.block.type = Material.CAULDRON
+            }
+        },
+        CutsceneStep(Format.mm("To bringing it a friend!")
+        ) { map ->
+            teleportConfig("cutscene.mobs")
+
+            val cowLocation = getLocation("cutscene.mobs_cow")
+            val chickenLocation = getLocation("cutscene.mobs_chicken")
+            lateinit var cow: Entity
+            lateinit var chicken: Entity
+
+            suspendSync {
+                cow = map.world.spawnEntity(cowLocation, EntityType.COW)
+                chicken = map.world.spawnEntity(chickenLocation, EntityType.CHICKEN)
+            }
+
+            delay(3000)
+
+            suspendSync {
+                cow.remove()
+                chicken.remove()
+            }
+        },
+        CutsceneStep(Format.mm("The sniffer may also have some rather odd desires, which can be found in the back of the facility in the <red>basement...</red>")
+        ) { map ->
+            teleportConfig("cutscene.basement")
+
+            val spiderLocation = getLocation("cutscene.basement_spider")
+            lateinit var spider: Entity
+
+            suspendSync {
+                spider = map.world.spawnEntity(spiderLocation, EntityType.SPIDER)
+            }
+
+            delay(5000)
+
+            suspendSync {
+                spider.remove()
+            }
+        },
+        CutsceneStep(Format.mm("But remember, your only goal is to keep the sniffer happy, and complete as many tasks as you can!")
+        ) { map ->
+            teleportConfig("cutscene.end")
+            delay(5000)
+        }
     ),
     flags = emptySet(),
     scores = hashMapOf(
@@ -421,7 +555,14 @@ class SnifferCaretakerController : GameBase(
         currentMap.world.spawnEntity(spiderMobLocation, EntityType.SPIDER)
     }
 
-    fun completeTask(team: Team, task: Task) {
+    fun completeTask(team: Team, task: Task, isCutsceneStep: Boolean = false) {
+        if (isCutsceneStep) {
+            task.display?.remove()
+            task.destroy()
+            HandlerList.unregisterAll(task)
+            return
+        }
+
         task.count -= 1
 
         if (task.count > 0) return
@@ -484,7 +625,7 @@ class SnifferCaretakerController : GameBase(
         return text
     }
 
-    fun createNewTask(team: Team, task: String) {
+    fun createNewTask(team: Team, task: String, isCutsceneStep: Boolean = false) {
         val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
             if (
                 it !is HashMap<*, *>
@@ -563,8 +704,10 @@ class SnifferCaretakerController : GameBase(
         currentTasks.get(team)!!.add(createdTask)
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
-        team.getOnlinePlayers().forEach { player ->
-            player.sendMessage(taskDisplayTextStars(createdTask))
+        if (!isCutsceneStep) {
+            team.getOnlinePlayers().forEach { player ->
+                player.sendMessage(taskDisplayTextStars(createdTask))
+            }
         }
     }
 
