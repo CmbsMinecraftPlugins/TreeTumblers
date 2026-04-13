@@ -18,6 +18,8 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
@@ -123,10 +125,13 @@ class PartyController : GameBase(
     }
 
     lateinit var map: LoadedMap
+
     lateinit var pivot: Location
     var nextXPosition: Int = 0
     val activeGames: ArrayList<PartyGame> = ArrayList()
     var currentGameType = PartyGameType.INDIVIDUAL
+
+    val frozenPlayers: ArrayList<Player> = ArrayList()
 
     /**
      * The load sequence that each individual game should do
@@ -202,7 +207,7 @@ class PartyController : GameBase(
         asyncCountdown(10 * 60)
         while(true) {
             // TODO: remove for obvious reasons
-            runGame(PartyMatchup.IndividualMatchup(Bukkit.getOnlinePlayers().first(), null), individualGames.random())
+            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
             delay(20000)
         }
     }
@@ -268,9 +273,9 @@ class PartyController : GameBase(
             val block = map.world.getBlockAt(worldPos.x(), worldPos.y(), worldPos.z())
 
             if(block.type == Material.WHITE_WOOL) {
-                firstSideSpawns.add(block.location.add(0.0,1.5,0.0).toCenterLocation())
+                firstSideSpawns.add(block.location.add(0.5,1.0,0.5))
             } else if (block.type == Material.BLACK_WOOL) {
-                secondSideSpawns.add(block.location.add(0.0,1.5,0.0).toCenterLocation())
+                secondSideSpawns.add(block.location.add(0.5,1.0,0.5))
             }
         }
 
@@ -295,12 +300,15 @@ class PartyController : GameBase(
         fun kitPlayers(kit: Kit.KitDefinition)
         suspend fun announce()
 
-        class IndividualMatchup(val player1: Player?, val player2: Player?) : PartyMatchup {
+        class IndividualMatchup(val partyController: PartyController?, val player1: Player?, val player2: Player?) : PartyMatchup {
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 player1!!.teleport(spawns1.first())
                 player1.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
                 player2?.teleport(spawns2.first())
                 player2?.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
+
+                partyController!!.frozenPlayers.add(player1)
+                if(player2 != null) partyController.frozenPlayers.add(player2)
             }
 
             override fun kitPlayers(kit: Kit.KitDefinition) {
@@ -353,20 +361,24 @@ class PartyController : GameBase(
                 suspendSync {
                     player1.removePotionEffect(PotionEffectType.BLINDNESS)
                     player2?.removePotionEffect(PotionEffectType.BLINDNESS)
+                    partyController!!.frozenPlayers.remove(player1)
+                    if(player2 != null) partyController.frozenPlayers.remove(player2)
                 }
             }
         }
 
-        class TeamMatchup(val team1: Team, val team2: Team) : PartyMatchup {
+        class TeamMatchup(val partyController: PartyController?, val team1: Team, val team2: Team) : PartyMatchup {
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 team1.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns1[i % spawns1.size])
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                    partyController!!.frozenPlayers.add(it)
                 }
 
                 team2.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns2[i % spawns1.size])
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                    partyController!!.frozenPlayers.add(it)
                 }
             }
 
@@ -412,9 +424,17 @@ class PartyController : GameBase(
                 }
 
                 suspendSync {
-                    (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach { it.removePotionEffect(PotionEffectType.BLINDNESS) }
+                    (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
+                        it.removePotionEffect(PotionEffectType.BLINDNESS)
+                        partyController!!.frozenPlayers.remove(it)
+                    }
                 }
             }
         }
+    }
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        if(event.player in frozenPlayers) event.isCancelled = true
     }
 }

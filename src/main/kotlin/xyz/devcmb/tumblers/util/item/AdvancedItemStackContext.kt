@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.util.item
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataContainer
@@ -65,6 +66,10 @@ class AdvancedItemStackContext(
         )
 
         item.itemMeta = meta
+
+        if(Enchantment.BINDING_CURSE.canEnchantItem(item) && !droppable) {
+            item.addEnchantment(Enchantment.BINDING_CURSE, 1)
+        }
 
         AdvancedItemRegistry.register(this)
         return item

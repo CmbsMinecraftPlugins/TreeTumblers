@@ -12,7 +12,10 @@ class StandardSwordDuels(
     val matchup: PartyController.PartyMatchup
 ) : PartyGame {
     // for templates
-    constructor() : this(PartyController.PartyGameType.INDIVIDUAL, PartyController.PartyMatchup.IndividualMatchup(null, null))
+    constructor() : this(
+        PartyController.PartyGameType.INDIVIDUAL,
+        PartyController.PartyMatchup.IndividualMatchup(null, null, null)
+    )
 
     override val id: String = "shared_standard_sword_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
