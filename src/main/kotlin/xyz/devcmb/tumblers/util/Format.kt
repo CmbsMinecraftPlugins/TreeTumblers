@@ -8,12 +8,18 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object Format {
+    val gameController by lazy {
+        ControllerDelegate.getController<GameController>()
+    }
+
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
             .resolver(StandardTags.defaults())
@@ -26,6 +32,10 @@ object Format {
 
     fun mm(text: String, vararg placeholder: TagResolver): Component {
         return miniMessage.deserialize(text, *placeholder)
+    }
+
+    fun format(message: Component, format: MessageFormatter): Component {
+        return format.formatMessage(message)
     }
 
     fun formatPlayerName(player: Player?) = formatPlayerName(player?.tumblingPlayer)
@@ -137,5 +147,25 @@ object Format {
             .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
             .append(Component.text(" "))
             .append(text).color(level.color)
+    }
+
+    enum class MessageFormatter(val id: String) {
+        DEFAULT("default") {
+            override fun formatMessage(message: Component): Component {
+                return message
+            }
+        },
+
+        GAME_MESSAGE("game") {
+            override fun formatMessage(message: Component): Component {
+                return mm(
+                    "<yellow>(<white><icon></white><yellow>)</yellow> <message>",
+                    Placeholder.component("icon", gameController.activeGame!!.icon),
+                    Placeholder.component("message", message)
+                )
+            }
+        };
+
+        abstract fun formatMessage(message: Component): Component
     }
 }

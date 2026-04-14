@@ -20,10 +20,6 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         this.onComplete = onComplete
     }
 
-    init {
-        this.init()
-    }
-
     var currentTime = time
     var job: Job? = null
     var endedEarly: Boolean? = null
@@ -42,8 +38,12 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     }
     var joined: Boolean = false
 
-    val intervalBroadcasts: HashMap<Int, String> = hashMapOf()
-    val timeBroadcasts: HashMap<Int, String> = hashMapOf()
+    val intervalBroadcasts: HashMap<Int, Pair<String, Format.MessageFormatter>> = HashMap()
+    val timeBroadcasts: HashMap<Int, Pair<String, Format.MessageFormatter>> = HashMap()
+
+    init {
+        this.init()
+    }
 
     fun onComplete(onComplete: (suspend (interrupted: Boolean) -> Unit)? = null) {
         this.onComplete = onComplete
@@ -58,8 +58,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      *
      * time - The formatted time string (defined by the [format] method)
      */
-    fun intervalBroadcast(interval: Int, message: String) {
-        intervalBroadcasts[interval] = message
+    fun intervalBroadcast(interval: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT) {
+        intervalBroadcasts[interval] = Pair(message, formatter)
     }
 
     /**
@@ -71,8 +71,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      *
      * time - The formatted time string (defined by the [format] method)
      */
-    fun timeBroadcast(time: Int, message: String) {
-        timeBroadcasts[time] = message
+    fun timeBroadcast(time: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT) {
+        timeBroadcasts[time] = Pair(message, formatter)
     }
 
     suspend fun start() {
@@ -90,21 +90,22 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
                 val intervalMessages = intervalBroadcasts.filter { currentTime % it.key == 0 }
                 intervalMessages.forEach {
-                    Bukkit.broadcast(Format.mm(
-                        it.value,
+                    Bukkit.broadcast(it.value.second.formatMessage(Format.mm(
+                        it.value.first,
                         Placeholder.unparsed("minutes", (currentTime % 60).toString()),
                         Placeholder.unparsed("seconds", currentTime.toString()),
                         Placeholder.component("time", format())
-                    ))
+                    )))
                 }
 
                 if(timeBroadcasts.containsKey(currentTime)) {
-                    Bukkit.broadcast(Format.mm(
-                        timeBroadcasts[currentTime]!!,
+                    val broadcastPair = timeBroadcasts[currentTime]!!
+                    Bukkit.broadcast(broadcastPair.second.formatMessage(Format.mm(
+                        broadcastPair.first,
                         Placeholder.unparsed("minutes", (currentTime % 60).toString()),
                         Placeholder.unparsed("seconds", currentTime.toString()),
                         Placeholder.component("time", format())
-                    ))
+                    )))
                 }
             }
 

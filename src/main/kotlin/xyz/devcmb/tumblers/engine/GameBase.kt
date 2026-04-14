@@ -314,7 +314,7 @@ abstract class GameBase(
      */
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         currentTimer = Timer(time) {
-            this.id = id ?: this.id
+            id?.let { this.id = it }
             this.onComplete = onComplete
         }
         currentTimer!!.start()
@@ -388,11 +388,7 @@ abstract class GameBase(
      * Gets a message formatted with the icon of the game
      */
     fun gameMessage(text: Component): Component {
-        return Component.empty()
-            .append(Component.text("(", NamedTextColor.YELLOW))
-            .append(icon)
-            .append(Component.text(") ", NamedTextColor.YELLOW))
-            .append(text)
+        return Format.format(text, Format.MessageFormatter.GAME_MESSAGE)
     }
 
     /**

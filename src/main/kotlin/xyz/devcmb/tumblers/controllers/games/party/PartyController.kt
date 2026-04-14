@@ -52,9 +52,6 @@ import java.nio.file.Path
  * For the first 5m of the game, all games are individual, so you get individual score which overall contributes to the team
  * For the last 5m of the game, all games are team-based, so you get team score which is evenly distributed to everyone on the team
  *
- * Misc stuff to keep in mind
- * [ ] All minigames should give team boots
- *
  * Individual game ideas:
  * [ ] Standard sword duels (stone sword)
  * [ ] Standard axe duels (stone axe)
@@ -93,7 +90,7 @@ class PartyController : GameBase(
     ),
     flags = setOf(Flag.DISABLE_FALL_DAMAGE, Flag.DISABLE_BLOCK_BREAKING),
     scores = hashMapOf(),
-    icon = Component.empty(),
+    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
     scoreboard = "partyScoreboard"
 ) {
     data class PartyGameIdentifier(val id: String)
@@ -210,14 +207,20 @@ class PartyController : GameBase(
     override suspend fun gameOn() {
         asyncCountdown(10 * 60)
 
-//        teamGamesTimer = Timer("party_team_games_switchover_timer", 5 * 60) {
-//
-//        }
+        teamGamesTimer = Timer(5 * 60) {
+            id = "party_team_games_switchover_timer"
+            timeBroadcast(
+                20,
+                "Individual games are going to switch to team games in 20 seconds! Game starting has been disabled!",
+                Format.MessageFormatter.GAME_MESSAGE
+            )
+        }
+        teamGamesTimer.start()
 
-//        while(true) {
-//            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
-//            delay(20000)
-//        }
+        while(true) {
+            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
+            delay(20000)
+        }
     }
 
     /**
