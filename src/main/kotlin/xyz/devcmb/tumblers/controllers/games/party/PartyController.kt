@@ -7,7 +7,9 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.session.ClipboardHolder
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -19,6 +21,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.HandlerList
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -34,12 +37,16 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
+import xyz.devcmb.tumblers.util.hideToAll
+import xyz.devcmb.tumblers.util.showToAll
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
 import java.nio.file.Files
@@ -53,7 +60,7 @@ import java.nio.file.Path
  * For the last 5m of the game, all games are team-based, so you get team score which is evenly distributed to everyone on the team
  *
  * Individual game ideas:
- * [ ] Standard sword duels (stone sword)
+ * [x] Standard sword duels (stone sword)
  * [ ] Standard axe duels (stone axe)
  * [ ] Standard bow duels (crossbow duels, 3-shot kill)
  * [ ] Mace duels (wind charge, 1 hit kill, mace)
@@ -66,7 +73,7 @@ import java.nio.file.Path
  * [ ] Riptide trident race (fastest one to complete a short trident course wins)
  *
  * Team game ideas:
- * [ ] Standard sword duels
+ * [x] Standard sword duels
  * [ ] Standard axe duels
  * [ ] Standard bow duels
  */
@@ -88,8 +95,15 @@ class PartyController : GameBase(
             delay(5000)
         },
     ),
+    scores = hashMapOf(
+        PartyScoreSource.INDIVIDUAL_GAME_WIN to 80,
+        PartyScoreSource.INDIVIDUAL_GAME_DRAW to 40,
+        PartyScoreSource.INDIVIDUAL_GAME_LOSE to 10,
+        PartyScoreSource.TEAM_GAME_WIN to 240,
+        PartyScoreSource.TEAM_GAME_DRAW to 160,
+        PartyScoreSource.TEAM_GAME_LOSE to 40
+    ),
     flags = setOf(Flag.DISABLE_FALL_DAMAGE, Flag.DISABLE_BLOCK_BREAKING),
-    scores = hashMapOf(),
     icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
     scoreboard = "partyScoreboard"
 ) {
@@ -120,7 +134,31 @@ class PartyController : GameBase(
             get() {
                 return field.replace("&", TreeTumblers.plugin.dataPath.toString())
             }
+
+        @field:Configurable("games.party.allow_solos")
+        var allowSolos: Boolean = false
     }
+
+    override val scoreMessages: HashMap<ScoreSource, (Int) -> Component> = hashMapOf(
+        PartyScoreSource.INDIVIDUAL_GAME_WIN to {
+            gameMessage(Format.mm("<white>Game won! <gold>[+${it}]</gold></white>"))
+        },
+        PartyScoreSource.TEAM_GAME_WIN to {
+            gameMessage(Format.mm("<white>Game won! <gold>[+${it}]</gold></white>"))
+        },
+        PartyScoreSource.INDIVIDUAL_GAME_DRAW to {
+            gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
+        },
+        PartyScoreSource.TEAM_GAME_DRAW to {
+            gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
+        },
+        PartyScoreSource.INDIVIDUAL_GAME_LOSE to {
+            gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
+        },
+        PartyScoreSource.TEAM_GAME_LOSE to {
+            gameMessage(Format.mm("<white>Game lost! <gold>[+${it}]</gold></white>"))
+        }
+    )
 
     lateinit var map: LoadedMap
 
@@ -161,15 +199,22 @@ class PartyController : GameBase(
     override suspend fun spawn(cycle: SpawnCycle) {
         if(cycle != SpawnCycle.PREGAME) return
 
+        suspendSync {
+            gameParticipants.forEach {
+                it.enableBossBar("countdownBossbar")
+                spawnPlayer(it, true)
+            }
+        }
+    }
+
+    fun spawnPlayer(player: Player, preGame: Boolean) {
         val spawn = map.data.getList("pregame_spawn")
             ?.validateLocation(map.world)
             ?: throw GameControllerException("Game world does does not contain a valid pregame spawn")
 
-        suspendSync {
-            gameParticipants.forEach {
-                it.enableBossBar("countdownBossbar")
-                it.teleport(spawn)
-            }
+        player.teleport(spawn)
+        if(!preGame) {
+            player.hideToAll()
         }
     }
 
@@ -205,7 +250,9 @@ class PartyController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        asyncCountdown(10 * 60)
+        gameParticipants.shuffled().forEach {
+            addWaitingPlayer(it)
+        }
 
         teamGamesTimer = Timer(5 * 60) {
             id = "party_team_games_switchover_timer"
@@ -213,14 +260,17 @@ class PartyController : GameBase(
                 20,
                 "Individual games are going to switch to team games in 20 seconds! Game starting has been disabled!",
                 Format.MessageFormatter.GAME_MESSAGE
-            )
+            ) {
+                currentGameType = PartyGameType.DISABLED
+            }
+
+            onComplete {
+                currentGameType = PartyGameType.TEAM
+            }
         }
         teamGamesTimer.start()
 
-        while(true) {
-            runGame(PartyMatchup.IndividualMatchup(this, Bukkit.getOnlinePlayers().first(), null), individualGames.random())
-            delay(20000)
-        }
+        countdown(10 * 60)
     }
 
     /**
@@ -230,17 +280,47 @@ class PartyController : GameBase(
         delay(10000)
     }
 
+    fun addWaitingPlayer(player: Player) {
+        if(currentGameType != PartyGameType.INDIVIDUAL) throw GameControllerException("Attempted to add player to player waitlist while party was not in individual mode")
+
+        DebugUtil.info("Adding ${player.name} to the individual wait queue")
+        waitingPlayers.add(player)
+
+        val opponent = try {
+            waitingPlayers.first { it != player && it.tumblingPlayer.team != player.tumblingPlayer.team }
+        } catch(e: NoSuchElementException) {
+            null
+        }
+
+        if(opponent != null || allowSolos) {
+            DebugUtil.info("Found opponent for ${player.name}: ${opponent?.name}")
+
+            waitingPlayers.remove(player)
+            waitingPlayers.remove(opponent)
+
+            TreeTumblers.pluginScope.async {
+                runGame(
+                    PartyMatchup.IndividualMatchup(this@PartyController, player, opponent),
+                    individualGames.random()
+                )
+            }
+        }
+    }
+
     suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>) {
         matchup.announceLoading()
 
         val gameClass = game
-            .getDeclaredConstructor(PartyGameType::class.java, PartyMatchup::class.java)
-            .newInstance(currentGameType, matchup)
+            .getDeclaredConstructor(PartyController::class.java, PartyMatchup::class.java)
+            .newInstance(this, matchup)
+
+        Bukkit.getPluginManager().registerEvents(gameClass, TreeTumblers.plugin)
         activeGames.add(gameClass)
 
         if(
             (currentGameType == PartyGameType.INDIVIDUAL && !gameClass.individual)
             || (currentGameType == PartyGameType.TEAM && !gameClass.team)
+            || currentGameType == PartyGameType.DISABLED
         ) throw GameControllerException("Attempted to start a game mismatched with the current game type. Expected $currentGameType")
 
         val schematicFolder = File(partyGamesDirectory, gameClass.id)
@@ -304,12 +384,28 @@ class PartyController : GameBase(
         matchup.announceMatchup()
     }
 
+    fun endGame(game: PartyGame) = TreeTumblers.pluginScope.launch {
+        HandlerList.unregisterAll(game)
+        delay(2000)
+        suspendSync {
+            game.matchup.players.forEach {
+                spawnPlayer(it, false)
+
+                if(currentGameType == PartyGameType.INDIVIDUAL) {
+                    addWaitingPlayer(it)
+                }
+            }
+        }
+    }
+
     enum class PartyGameType {
         INDIVIDUAL,
+        DISABLED,
         TEAM
     }
 
     sealed interface PartyMatchup {
+        val players: Set<Player>
         fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>)
         fun kitPlayers(kit: Kit.KitDefinition)
         fun announceLoading()
@@ -317,6 +413,8 @@ class PartyController : GameBase(
         suspend fun announceMatchup()
 
         class IndividualMatchup(val partyController: PartyController?, val player1: Player?, val player2: Player?) : PartyMatchup {
+            override val players: Set<Player> = listOfNotNull(player1, player2).toSet()
+
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 player1!!.teleport(spawns1.first())
                 player1.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
@@ -346,6 +444,9 @@ class PartyController : GameBase(
             override fun concludeLoading() {
                 player1!!.resetTitle()
                 player2?.resetTitle()
+
+                player1.showToAll()
+                player2?.showToAll()
             }
 
             override suspend fun announceMatchup() {
@@ -400,6 +501,8 @@ class PartyController : GameBase(
         }
 
         class TeamMatchup(val partyController: PartyController?, val team1: Team, val team2: Team) : PartyMatchup {
+            override val players: Set<Player> = setOf(*team1.getOnlinePlayers().toTypedArray(), *team2.getOnlinePlayers().toTypedArray())
+
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 team1.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns1[i % spawns1.size])
@@ -432,6 +535,10 @@ class PartyController : GameBase(
             override fun concludeLoading() {
                 team1.audience.resetTitle()
                 team2.audience.resetTitle()
+
+                (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
+                    it.showToAll()
+                }
             }
 
             override suspend fun announceMatchup() {
@@ -484,5 +591,14 @@ class PartyController : GameBase(
     @EventHandler
     fun playerMoveEvent(event: PlayerMoveEvent) {
         if(event.player in frozenPlayers) event.isCancelled = true
+    }
+
+    enum class PartyScoreSource(override val id: String) : ScoreSource {
+        INDIVIDUAL_GAME_WIN("individual_party_game_win"),
+        INDIVIDUAL_GAME_LOSE("individual_party_game_lose"),
+        INDIVIDUAL_GAME_DRAW("individual_party_game_draw"),
+        TEAM_GAME_WIN("team_party_game_win"),
+        TEAM_GAME_LOSE("team_party_game_lose"),
+        TEAM_GAME_DRAW("team_party_game_draw")
     }
 }

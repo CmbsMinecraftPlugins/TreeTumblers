@@ -160,7 +160,7 @@ object Format {
             override fun formatMessage(message: Component): Component {
                 return mm(
                     "<yellow>(<white><icon></white><yellow>)</yellow> <message>",
-                    Placeholder.component("icon", gameController.activeGame!!.icon),
+                    Placeholder.component("icon", gameController.activeGame?.icon ?: Component.empty()),
                     Placeholder.component("message", message)
                 )
             }

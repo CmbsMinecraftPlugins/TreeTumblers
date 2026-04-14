@@ -38,8 +38,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     }
     var joined: Boolean = false
 
-    val intervalBroadcasts: HashMap<Int, Pair<String, Format.MessageFormatter>> = HashMap()
-    val timeBroadcasts: HashMap<Int, Pair<String, Format.MessageFormatter>> = HashMap()
+    val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
+    val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()
 
     init {
         this.init()
@@ -58,8 +58,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      *
      * time - The formatted time string (defined by the [format] method)
      */
-    fun intervalBroadcast(interval: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT) {
-        intervalBroadcasts[interval] = Pair(message, formatter)
+    fun intervalBroadcast(interval: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT, onBroadcast: ((time: Int) -> Unit)? = null) {
+        intervalBroadcasts[interval] = Triple(message, formatter, onBroadcast)
     }
 
     /**
@@ -71,8 +71,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      *
      * time - The formatted time string (defined by the [format] method)
      */
-    fun timeBroadcast(time: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT) {
-        timeBroadcasts[time] = Pair(message, formatter)
+    fun timeBroadcast(time: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT, onBroadcast: (() -> Unit)? = null) {
+        timeBroadcasts[time] = Triple(message, formatter, onBroadcast)
     }
 
     suspend fun start() {
@@ -90,6 +90,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
                 val intervalMessages = intervalBroadcasts.filter { currentTime % it.key == 0 }
                 intervalMessages.forEach {
+                    it.value.third?.invoke(currentTime)
                     Bukkit.broadcast(it.value.second.formatMessage(Format.mm(
                         it.value.first,
                         Placeholder.unparsed("minutes", (currentTime % 60).toString()),
@@ -100,6 +101,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
                 if(timeBroadcasts.containsKey(currentTime)) {
                     val broadcastPair = timeBroadcasts[currentTime]!!
+                    broadcastPair.third?.invoke()
                     Bukkit.broadcast(broadcastPair.second.formatMessage(Format.mm(
                         broadcastPair.first,
                         Placeholder.unparsed("minutes", (currentTime % 60).toString()),

@@ -296,15 +296,13 @@ abstract class GameBase(
     /**
      * Perform a countdown synchronously, stored in the [countdownTime] field
      * @param time How long to run the countdown for
-     * @return If the timer wasn't ended early
      */
-    suspend fun countdown(time: Int, id: String? = null): Boolean {
+    suspend fun countdown(time: Int, id: String? = null) {
         currentTimer = Timer(time) {
-            this.id = id ?: this.id
+            id?.let { this.id = id }
             joined = true
         }
         currentTimer!!.start()
-        return (currentTimer?.endedEarly == false)
     }
 
     /**

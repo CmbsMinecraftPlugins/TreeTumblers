@@ -212,6 +212,7 @@ games:
                   - [69.24,56.90,14.04]
   party:
     worlds_folder: "party"
+    allow_solos: false
     maps:
       main:
         world: "main"

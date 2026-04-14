@@ -8,12 +8,12 @@ import xyz.devcmb.tumblers.controllers.games.party.PartyGame
 import xyz.devcmb.tumblers.util.Kit
 
 class StandardSwordDuels(
-    val currentType: PartyController.PartyGameType,
-    val matchup: PartyController.PartyMatchup
-) : PartyGame {
+    party: PartyController?,
+    currentMatchup: PartyController.PartyMatchup
+) : PartyGame(party, currentMatchup) {
     // for templates
     constructor() : this(
-        PartyController.PartyGameType.INDIVIDUAL,
+        null,
         PartyController.PartyMatchup.IndividualMatchup(null, null, null)
     )
 
