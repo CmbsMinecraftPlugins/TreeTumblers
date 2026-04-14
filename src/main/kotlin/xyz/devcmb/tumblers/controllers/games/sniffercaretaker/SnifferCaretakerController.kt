@@ -2,9 +2,13 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
 
 import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
@@ -105,10 +109,10 @@ class SnifferCaretakerController : GameBase(
                 suspendSync {
                     game.createNewTask(Team.RED, task, true)
                 }
-                delay(500)
+                delay(750)
             }
 
-            delay(5000)
+            delay(4000)
         },
         CutsceneStep(Format.mm("Tasks range from feeding the sniffer various foods...")
         ) { map ->
@@ -118,6 +122,8 @@ class SnifferCaretakerController : GameBase(
                 game.currentTasks[Team.RED]!!.forEach {
                     game.completeTask(Team.RED, it, true)
                 }
+
+                game.currentTasks[Team.RED]!!.clear()
             }
 
             teleportConfig("cutscene.farm")
@@ -222,6 +228,7 @@ class SnifferCaretakerController : GameBase(
         },
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")
         ) { map ->
+            teleportConfig("cutscene.end")
             delay(3000)
         }
     ),
@@ -710,6 +717,7 @@ class SnifferCaretakerController : GameBase(
         createdTask.init()
 
         currentTasks.get(team)!!.add(createdTask)
+        currentMap.world.playSound(displayLocation, Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, (createdTask.stars.toFloat() / 12f) + 0.7f)
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
         if (!isCutsceneStep) {
@@ -858,6 +866,7 @@ class SnifferCaretakerController : GameBase(
                         PersistentDataType.STRING,
                         it.name
                     )
+                    mob.setAI(false) // for cutscenes sake
                 }
 
                 sniffers[it] = sniffer
@@ -910,67 +919,68 @@ class SnifferCaretakerController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
+        val chestTask = object : BukkitRunnable() {
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    stockChests(it)
+                }
+            }
+        }
+
+        val blockTask = object : BukkitRunnable() {
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    stockBlocks(it)
+                }
+            }
+        }
+
+        val blockContainmentClosingTask = object : BukkitRunnable() {
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    closeBlockContainments(it)
+                }
+            }
+        }
+
+        val mobTask = object : BukkitRunnable() {
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    stockMobs(it)
+                }
+            }
+        }
+
+        val tickTask = object : BukkitRunnable() {
+            override fun run() {
+                timers.forEach { key, it ->
+                    timers[key] = timers[key]!! - 1
+                    if (timers[key]!! < 0) {
+                        timers[key] = timerBases[key]!!
+                    }
+                }
+
+                Team.entries.filter { it.playingTeam }.forEach { team ->
+                    updateSigns(team)
+                }
+            }
+        }
+
+        val taskTask = object : BukkitRunnable() { // don't you just love running tasks to create tasks which requires tasks to finish the tasks :D
+            override fun run() {
+                Team.entries.filter { it.playingTeam }.forEach {
+                    if (currentTasks[it]!!.size <= 5) {
+                        createNewTask(it, taskQueue[taskIndexes[it]!!])
+                        taskIndexes[it] = taskIndexes[it]!! + 1
+                    }
+                }
+            }
+        }
+
         suspendSync {
             Team.entries.filter { it.playingTeam }.forEach {
                 setupSigns(it)
-            }
-
-            val chestTask = object : BukkitRunnable() {
-                override fun run() {
-                    Team.entries.filter { it.playingTeam }.forEach {
-                        stockChests(it)
-                    }
-                }
-            }
-
-            val blockTask = object : BukkitRunnable() {
-                override fun run() {
-                    Team.entries.filter { it.playingTeam }.forEach {
-                        stockBlocks(it)
-                    }
-                }
-            }
-
-            val blockContainmentClosingTask = object : BukkitRunnable() {
-                override fun run() {
-                    Team.entries.filter { it.playingTeam }.forEach {
-                        closeBlockContainments(it)
-                    }
-                }
-            }
-
-            val mobTask = object : BukkitRunnable() {
-                override fun run() {
-                    Team.entries.filter { it.playingTeam }.forEach {
-                        stockMobs(it)
-                    }
-                }
-            }
-
-            val tickTask = object : BukkitRunnable() {
-                override fun run() {
-                    timers.forEach { key, it ->
-                        timers[key] = timers[key]!! - 1
-                        if (timers[key]!! < 0) {
-                            timers[key] = timerBases[key]!!
-                        }
-                    }
-
-                    Team.entries.filter { it.playingTeam }.forEach { team ->
-                        updateSigns(team)
-                    }
-                }
-            }
-
-            val taskTask = object : BukkitRunnable() { // don't you just love running tasks to create tasks which requires tasks to finish the tasks :D
-                override fun run() {
-                    Team.entries.filter { it.playingTeam }.forEach {
-                        if (currentTasks[it]!!.size <= 5) {
-                            createNewTask(it, taskQueue[taskIndexes[it]!!])
-                            taskIndexes[it] = taskIndexes[it]!! + 1
-                        }
-                    }
-                }
+                sniffers[it]!!.setAI(true)
             }
 
             chestTask.runTaskTimer(TreeTumblers.plugin, 0, 20*chestRefresh)
@@ -981,16 +991,62 @@ class SnifferCaretakerController : GameBase(
             taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
+        countdown(20)
 
-
-        countdown(gameLength)
+        suspendSync {
+            chestTask.cancel()
+            blockTask.cancel()
+            blockContainmentClosingTask.cancel()
+            mobTask.cancel()
+            tickTask.cancel()
+            taskTask.cancel()
+        }
     }
 
     /**
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        delay(1000)
+        suspendSync {
+            currentTasks.forEach { team, tasks ->
+                tasks.forEach { task ->
+                    completeTask(
+                        team,
+                        task,
+                        true
+                    ) // the value may be "is cutscene step" but it does already destroy the task without giving points. Yay!
+                }
+            }
+        }
+
+        val placements = getTeamPlacements()
+
+        gameParticipants.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        delay(5000)
+        announceTeamScores()
+        delay(5000)
+        announceIndivScores()
+
+        delay(5000)
+        announceOverallTeamScores()
+        delay(5000)
     }
 
     @EventHandler
