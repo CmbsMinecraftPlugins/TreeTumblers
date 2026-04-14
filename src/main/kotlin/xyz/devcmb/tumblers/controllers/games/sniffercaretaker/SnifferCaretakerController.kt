@@ -2,6 +2,12 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
 
 import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.regions.CuboidRegion
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
@@ -284,7 +290,39 @@ class SnifferCaretakerController : GameBase(
                 }
 
                 sender.sendMessage(Format.success("Created a new task!"))
-            }
+            },
+            "setup_facility" to { sender ->
+                if(sender !is Player) {
+                    sender.sendMessage(Format.error("Only players can trigger this event!"))
+                    return@to
+                }
+
+                val worldEdit = WorldEdit.getInstance()
+                val sessionManager = worldEdit.sessionManager
+
+                val playerSession = sessionManager.get(BukkitAdapter.adapt(sender))
+                var clipboard: Clipboard
+                try {
+                    clipboard = playerSession.clipboard.clipboards.lastOrNull()
+                        ?: throw IllegalStateException("No clipboard loaded for this session")
+                } catch(e: Exception) {
+                    sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
+                    return@to
+                }
+
+                if(clipboard.region.volume == 0L) {
+                    sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
+                    return@to
+                }
+
+                val region = CuboidRegion(clipboard.region.minimumPoint, clipboard.region.maximumPoint)
+
+                repeat(7) {
+                    val forwardExtentCopy = ForwardExtentCopy(playerSession.selectionWorld, region, playerSession.selectionWorld, region.minimumPoint.add((it + 1) * 1000, 0, 0))
+                    Operations.complete(forwardExtentCopy)
+                    sender.sendMessage(Format.success("Pasted $it successfully!"))
+                }
+            },
         )
 
         override fun killEvent(killer: Player?, killed: Player?) {}
@@ -707,11 +745,11 @@ class SnifferCaretakerController : GameBase(
         val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
             .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
 
-        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java, {
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
             it.text(taskDisplayTextStars(createdTask))
             it.alignment = TextDisplay.TextAlignment.LEFT
             it.lineWidth = 400
-        })
+        }
 
         createdTask.display = display
         createdTask.init()
@@ -772,28 +810,6 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun gameLoad() {
         val map = loadMap(maps.random(), 1)
-
-
-
-        // TODO: REMEMBER! USE THIS CODE TO GENERATE THE MAP AS THE ACTUAL MAP DATA ITSELF, SO IT DOESNT NEED TO SPEND
-//        val adaptedWorld = BukkitAdapter.adapt(map.world)
-//        val session = WorldEdit.getInstance().newEditSession(adaptedWorld)
-//
-//        val mapBounds = map.data.getList("base_map")!!.map { it as List<*>
-//            it.validateCoordinates()
-//        }
-//
-//        val mapBound1 = mapBounds[0]!!.unpackCoordinates(map.world)
-//        val mapBound2 = mapBounds[1]!!.unpackCoordinates(map.world)
-//
-//        val region = CuboidRegion(mapBound1.toBlockVector3(), mapBound2.toBlockVector3())
-//
-//        repeat(7) {
-//            val forwardExtentCopy = ForwardExtentCopy(adaptedWorld, region, adaptedWorld, region.minimumPoint.add((it + 1) * 1000, 0, 0))
-//            Operations.complete(forwardExtentCopy)
-//        }
-
-        //session.close()
 
         var smallestTeam = 9999
 
@@ -991,7 +1007,7 @@ class SnifferCaretakerController : GameBase(
             taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
-        countdown(20)
+        countdown(gameLength)
 
         suspendSync {
             chestTask.cancel()
