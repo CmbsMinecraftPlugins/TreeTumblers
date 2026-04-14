@@ -86,7 +86,7 @@ class SnifferCaretakerController : GameBase(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
                 .append(Component.text(" Sniffer Caretaker"))
         ) { map ->
             teleportConfig("cutscene.start")
@@ -240,7 +240,7 @@ class SnifferCaretakerController : GameBase(
         SnifferCaretakerScoreSource.TASK_4_STAR to 80,
         SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
-    icon = Component.empty(),
+    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")),
     scoreboard = "snifferCaretakerScoreboard",
     name = "Sniffer Caretaker"
 ) {
