@@ -346,6 +346,9 @@ class PartyController : GameBase(
             inGamePlayers.add(player)
             opponent?.let { inGamePlayers.add(it) }
 
+            // without this, it would load multiple arenas at the same point
+            nextXPosition += 80
+
             TreeTumblers.pluginScope.async {
                 runGame(
                     PartyMatchup.IndividualMatchup(this@PartyController, player, opponent),
@@ -376,6 +379,8 @@ class PartyController : GameBase(
 
             waitingTeams.remove(team)
             waitingTeams.remove(opponent)
+
+            nextXPosition += 80
 
             TreeTumblers.pluginScope.async {
                 runGame(PartyMatchup.TeamMatchup(this@PartyController, team, opponent), teamGames.random())
@@ -413,14 +418,13 @@ class PartyController : GameBase(
             clipboard = reader.read()
         }
 
+        val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(nextXPosition)
+
         val editSession = WorldEdit.getInstance()
             .newEditSessionBuilder()
             .world(BukkitAdapter.adapt(map.world))
             .fastMode(true)
             .build()
-
-        val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(nextXPosition)
-        nextXPosition += clipboard.maximumPoint.x() + 3
 
         val operation = ClipboardHolder(clipboard)
             .createPaste(editSession)
@@ -434,7 +438,6 @@ class PartyController : GameBase(
 
         DebugUtil.success("Loaded party arena $chosenSchematic successfully")
 
-        // TODO: When solo is enabled (and likely with more than 2 people), these spawns place players in the same arena
         val firstSideSpawns: ArrayList<Location> = ArrayList()
         val secondSideSpawns: ArrayList<Location> = ArrayList()
 
