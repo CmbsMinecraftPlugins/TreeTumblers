@@ -364,7 +364,7 @@ class EventController : IController {
         delay(2000)
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
-            Component.text(winningGame.first.name, votingTextColors[winningGame.second]),
+            winningGame.first.logo,
             Component.text("And the game is..."),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))

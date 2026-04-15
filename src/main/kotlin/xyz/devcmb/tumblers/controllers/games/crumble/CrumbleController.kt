@@ -149,7 +149,9 @@ class CrumbleController : GameBase(
         CommonScoreSource.TEAM_ROUND_DRAW to 240,
         CommonScoreSource.TEAM_ROUND_LOSE to 120,
     ),
-    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")),
+    icon = Component.text("\uEA00").font(font),
+    logo = Component.text("\uEA01").font(font)
+        .shadowColor(ShadowColor.none()),
     scoreboard = "crumbleScoreboard"
 ) {
     companion object {

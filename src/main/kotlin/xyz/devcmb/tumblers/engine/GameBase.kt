@@ -69,6 +69,7 @@ abstract class GameBase(
     val flags: Set<Flag>,
     val scores: HashMap<ScoreSource, Int>,
     val icon: Component,
+    val logo: Component,
     val scoreboard: String
 ): Listener {
     init {
