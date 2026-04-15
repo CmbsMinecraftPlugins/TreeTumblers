@@ -7,6 +7,7 @@ import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
@@ -99,6 +100,8 @@ abstract class PartyGame(
     fun playerKillEvent(event: PlayerDeathEvent) {
         val player = event.player
 
+        if(player !in matchup.players) return
+
         player.hideToAll()
         player.heal(20.0)
         player.inventory.clear()
@@ -139,6 +142,19 @@ abstract class PartyGame(
                 }
             }
             partyController!!.endGame(this)
+        }
+    }
+
+    @EventHandler
+    fun entityDamageEvent(event: EntityDamageByEntityEvent) {
+        val damager = event.damager as? Player ?: return
+        val entity = event.entity as? Player ?: return
+
+        if(
+            (damager in matchup.players && damager !in alivePlayers)
+            || (entity in matchup.players && entity !in alivePlayers)
+        ) {
+            event.isCancelled = true
         }
     }
 

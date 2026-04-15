@@ -22,9 +22,11 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -167,10 +169,16 @@ class PartyController : GameBase(
     val activeGames: ArrayList<PartyGame> = ArrayList()
     var currentGameType = PartyGameType.INDIVIDUAL
 
-    val waitingPlayers: MutableSet<Player> = HashSet()
+    val waitingIndividualPlayers: MutableSet<Player> = HashSet()
+    val waitingTeams: MutableSet<Team> = HashSet()
+    val waitingTeamPlayers: HashMap<Team, MutableSet<Player>> = HashMap()
+    val inGamePlayers: MutableSet<Player> = HashSet()
+    val disabledGameWaitingPlayers: MutableSet<Player> = HashSet()
+
     val frozenPlayers: MutableSet<Player> = HashSet()
 
     lateinit var teamGamesTimer: Timer
+    lateinit var actionBarRunnable: BukkitRunnable
 
     /**
      * The load sequence that each individual game should do
@@ -185,8 +193,30 @@ class PartyController : GameBase(
             ?.validateLocation(map.world)
             ?: throw GameControllerException("Game pivot location not provided in map data")
 
+        Team.entries.forEach {
+            waitingTeamPlayers[it] = HashSet()
+        }
+
         pivot = pivotLocation
         nextXPosition = pivotLocation.x.toInt()
+
+        actionBarRunnable = object : BukkitRunnable() {
+            override fun run() {
+                gameParticipants.forEach {
+                    var message: Component = Component.empty()
+                    if(it in disabledGameWaitingPlayers) {
+                        message = Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
+                    } else if (it in waitingTeamPlayers[it.tumblingPlayer.team]!!) {
+                        message = Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
+                    } else if (it in waitingIndividualPlayers || it.tumblingPlayer.team in waitingTeams) {
+                        message = Format.mm("<aqua>Waiting for a match...</aqua>")
+                    }
+
+                    it.sendActionBar(message)
+                }
+            }
+        }
+        actionBarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 10)
     }
 
     /**
@@ -215,6 +245,10 @@ class PartyController : GameBase(
         player.teleport(spawn)
         if(!preGame) {
             player.hideToAll()
+            player.isFlying = false
+            player.heal(20.0)
+            player.inventory.clear()
+            player.allowFlight = false
         }
     }
 
@@ -266,6 +300,11 @@ class PartyController : GameBase(
 
             onComplete {
                 currentGameType = PartyGameType.TEAM
+                disabledGameWaitingPlayers.forEach {
+                    addWaitingTeamPlayer(it)
+                }
+                disabledGameWaitingPlayers.clear()
+                Bukkit.broadcast(gameMessage(Component.text("Team games are now active!")))
             }
         }
         teamGamesTimer.start()
@@ -280,14 +319,20 @@ class PartyController : GameBase(
         delay(10000)
     }
 
+    override suspend fun cleanup() {
+        actionBarRunnable.cancel()
+
+        super.cleanup()
+    }
+
     fun addWaitingPlayer(player: Player) {
         if(currentGameType != PartyGameType.INDIVIDUAL) throw GameControllerException("Attempted to add player to player waitlist while party was not in individual mode")
 
         DebugUtil.info("Adding ${player.name} to the individual wait queue")
-        waitingPlayers.add(player)
+        waitingIndividualPlayers.add(player)
 
         val opponent = try {
-            waitingPlayers.first { it != player && it.tumblingPlayer.team != player.tumblingPlayer.team }
+            waitingIndividualPlayers.first { it != player && it.tumblingPlayer.team != player.tumblingPlayer.team }
         } catch(e: NoSuchElementException) {
             null
         }
@@ -295,14 +340,45 @@ class PartyController : GameBase(
         if(opponent != null || allowSolos) {
             DebugUtil.info("Found opponent for ${player.name}: ${opponent?.name}")
 
-            waitingPlayers.remove(player)
-            waitingPlayers.remove(opponent)
+            waitingIndividualPlayers.remove(player)
+            waitingIndividualPlayers.remove(opponent)
+
+            inGamePlayers.add(player)
+            opponent?.let { inGamePlayers.add(it) }
 
             TreeTumblers.pluginScope.async {
                 runGame(
                     PartyMatchup.IndividualMatchup(this@PartyController, player, opponent),
                     individualGames.random()
                 )
+            }
+        }
+    }
+
+    fun addWaitingTeamPlayer(player: Player) {
+        if(currentGameType != PartyGameType.TEAM) throw GameControllerException("Attempted to add player to team waitlist while party was not in team mode")
+
+        val team = player.tumblingPlayer.team
+        if((waitingTeamPlayers[team]!!.size + 1) >= team.getOnlinePlayers().size) {
+            addWaitingTeam(team)
+            waitingTeamPlayers[team]!!.clear()
+        } else {
+            waitingTeamPlayers[team]!!.add(player)
+        }
+    }
+
+    fun addWaitingTeam(team: Team) {
+        waitingTeams.add(team)
+        if(waitingTeams.size >= 2 || allowSolos) {
+            val opponent =
+                if(allowSolos) Team.entries.filter { it != team && it.playingTeam }.random()
+                else waitingTeams.first { it != team }
+
+            waitingTeams.remove(team)
+            waitingTeams.remove(opponent)
+
+            TreeTumblers.pluginScope.async {
+                runGame(PartyMatchup.TeamMatchup(this@PartyController, team, opponent), teamGames.random())
             }
         }
     }
@@ -358,6 +434,7 @@ class PartyController : GameBase(
 
         DebugUtil.success("Loaded party arena $chosenSchematic successfully")
 
+        // TODO: When solo is enabled (and likely with more than 2 people), these spawns place players in the same arena
         val firstSideSpawns: ArrayList<Location> = ArrayList()
         val secondSideSpawns: ArrayList<Location> = ArrayList()
 
@@ -377,23 +454,37 @@ class PartyController : GameBase(
 
         suspendSync {
             matchup.spawn(firstSideSpawns, secondSideSpawns)
+            matchup.concludeLoading()
+            matchup.kitPlayers(gameClass.kit)
+            gameClass.postSpawn()
         }
-        matchup.concludeLoading()
-        matchup.kitPlayers(gameClass.kit)
-        gameClass.postSpawn()
         matchup.announceMatchup()
     }
 
     fun endGame(game: PartyGame) = TreeTumblers.pluginScope.launch {
-        HandlerList.unregisterAll(game)
         delay(2000)
+
+        HandlerList.unregisterAll(game)
         suspendSync {
             game.matchup.players.forEach {
+                inGamePlayers.remove(it)
                 spawnPlayer(it, false)
+            }
+        }
 
-                if(currentGameType == PartyGameType.INDIVIDUAL) {
-                    addWaitingPlayer(it)
+        delay(2000)
+        game.matchup.players.forEach {
+            if(currentGameType == PartyGameType.INDIVIDUAL) {
+                addWaitingPlayer(it)
+            } else if(currentGameType == PartyGameType.TEAM) {
+                if(game.matchup is PartyMatchup.IndividualMatchup) {
+                    addWaitingTeamPlayer(it)
+                } else {
+                    if(waitingTeams.contains(it.tumblingPlayer.team)) return@forEach
+                    addWaitingTeam(it.tumblingPlayer.team)
                 }
+            } else {
+                disabledGameWaitingPlayers.add(it)
             }
         }
     }
@@ -420,6 +511,9 @@ class PartyController : GameBase(
                 player1.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
                 player2?.teleport(spawns2.first())
                 player2?.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
+
+                player1.heal(20.0)
+                player2?.heal(20.0)
 
                 partyController!!.frozenPlayers.add(player1)
                 if(player2 != null) partyController.frozenPlayers.add(player2)
@@ -506,12 +600,14 @@ class PartyController : GameBase(
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 team1.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns1[i % spawns1.size])
+                    it.heal(20.0)
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
                     partyController!!.frozenPlayers.add(it)
                 }
 
                 team2.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns2[i % spawns1.size])
+                    it.heal(20.0)
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
                     partyController!!.frozenPlayers.add(it)
                 }
@@ -548,7 +644,8 @@ class PartyController : GameBase(
                         "<white><team1> vs. <team2></white>",
                         Placeholder.component("team1", team1.formattedName),
                         Placeholder.component("team2", team2.formattedName)
-                    )
+                    ),
+                    Title.Times.times(Tick.of(5), Tick.of(100), Tick.of(0))
                 )
 
                 team1.audience.showTitle(startingTitle)
@@ -569,7 +666,8 @@ class PartyController : GameBase(
                             "<white><team1> vs. <team2></white>",
                             Placeholder.component("team1", team1.formattedName),
                             Placeholder.component("team2", team2.formattedName)
-                        )
+                        ),
+                        Title.Times.times(Tick.of(0), Tick.of(100), Tick.of(0))
                     )
 
                     team1.audience.showTitle(title)
@@ -577,6 +675,8 @@ class PartyController : GameBase(
 
                     delay(400)
                 }
+
+                Audience.audience(team1.audience, team2.audience).resetTitle()
 
                 suspendSync {
                     (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
@@ -590,7 +690,15 @@ class PartyController : GameBase(
 
     @EventHandler
     fun playerMoveEvent(event: PlayerMoveEvent) {
-        if(event.player in frozenPlayers) event.isCancelled = true
+        if(
+            event.player in frozenPlayers
+            && (event.to.x != event.from.x || event.to.z != event.from.z)
+        ) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun entityDamageEvent(event: EntityDamageByEntityEvent) {
+        if(event.damager !in inGamePlayers || event.entity !in inGamePlayers) event.isCancelled = true
     }
 
     enum class PartyScoreSource(override val id: String) : ScoreSource {
