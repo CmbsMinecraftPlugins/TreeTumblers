@@ -589,9 +589,6 @@ class DeathrunController : GameBase(
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
                 it.disableBossBar("countdownBossbar")
-                if(it.gameMode == GameMode.ADVENTURE) {
-                    it.gameMode = GameMode.SURVIVAL
-                }
             }
         }
         super.cleanup()

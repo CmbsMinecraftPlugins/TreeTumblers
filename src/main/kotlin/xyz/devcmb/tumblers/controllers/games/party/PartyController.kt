@@ -13,6 +13,8 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
@@ -43,7 +45,9 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.hideToAll
@@ -204,7 +208,9 @@ class PartyController : GameBase(
             override fun run() {
                 gameParticipants.forEach {
                     var message: Component = Component.empty()
-                    if(it in disabledGameWaitingPlayers) {
+                    if(currentGameType == PartyGameType.GAME_OVER) {
+                        message = Format.mm("<red>Game Over!</red>")
+                    } else if(it in disabledGameWaitingPlayers) {
                         message = Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
                     } else if (it in waitingTeamPlayers[it.tumblingPlayer.team]!!) {
                         message = Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
@@ -310,17 +316,56 @@ class PartyController : GameBase(
         teamGamesTimer.start()
 
         countdown(10 * 60)
+
+        currentGameType = PartyGameType.GAME_OVER
     }
 
     /**
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        delay(10000)
+        gameParticipants.forEach {
+            it.inventory.clear()
+        }
+
+        activeGames.forEach {
+            endGame(it)
+        }
+
+        val placements = getTeamPlacements()
+        gameParticipants.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        delay(5000)
+        announceTeamScores()
+        delay(5000)
+        announceIndivScores()
+
+        delay(5000)
+        announceOverallTeamScores()
+        delay(5000)
     }
 
     override suspend fun cleanup() {
         actionBarRunnable.cancel()
+        Bukkit.getOnlinePlayers().forEach {
+            it.disableBossBar("countdownBossbar")
+        }
 
         super.cleanup()
     }
@@ -467,6 +512,9 @@ class PartyController : GameBase(
     fun endGame(game: PartyGame) = TreeTumblers.pluginScope.launch {
         delay(2000)
 
+        if(!activeGames.contains(game)) return@launch
+        activeGames.remove(game)
+
         HandlerList.unregisterAll(game)
         suspendSync {
             game.matchup.players.forEach {
@@ -486,7 +534,7 @@ class PartyController : GameBase(
                     if(waitingTeams.contains(it.tumblingPlayer.team)) return@forEach
                     addWaitingTeam(it.tumblingPlayer.team)
                 }
-            } else {
+            } else if(currentGameType == PartyGameType.DISABLED) {
                 disabledGameWaitingPlayers.add(it)
             }
         }
@@ -495,7 +543,8 @@ class PartyController : GameBase(
     enum class PartyGameType {
         INDIVIDUAL,
         DISABLED,
-        TEAM
+        TEAM,
+        GAME_OVER
     }
 
     sealed interface PartyMatchup {
