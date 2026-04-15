@@ -10,6 +10,7 @@ import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.regions.CuboidRegion
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -98,7 +99,7 @@ class SnifferCaretakerController : GameBase(
             teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the task board. Tasks will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has.")
+        CutsceneStep(Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has.")
         ) { map ->
             val game = game as SnifferCaretakerController
             teleportConfig("cutscene.tasks")
@@ -118,9 +119,9 @@ class SnifferCaretakerController : GameBase(
                 delay(750)
             }
 
-            delay(4000)
+            delay(3000)
         },
-        CutsceneStep(Format.mm("Tasks range from feeding the sniffer various foods...")
+        CutsceneStep(Format.mm("<blue>Tasks</blue> range from feeding the sniffer various foods...")
         ) { map ->
             val game = game as SnifferCaretakerController
 
@@ -143,7 +144,7 @@ class SnifferCaretakerController : GameBase(
                     map.world.playSound(location, Sound.ITEM_CROP_PLANT, 1.0f, 1.0f)
                 }
 
-                delay(200)
+                delay(100)
             }
 
             delay(1500)
@@ -172,7 +173,7 @@ class SnifferCaretakerController : GameBase(
         CutsceneStep(Format.mm("To quenching the sniffer's thirst...")
         ) { map ->
             teleportConfig("cutscene.thirst")
-            delay(1000)
+            delay(500)
 
             val cauldron = getLocation("cutscene.thirst_cauldron")
             suspendSync {
@@ -203,14 +204,14 @@ class SnifferCaretakerController : GameBase(
                 chicken = map.world.spawnEntity(chickenLocation, EntityType.CHICKEN)
             }
 
-            delay(3000)
+            delay(2500)
 
             suspendSync {
                 cow.remove()
                 chicken.remove()
             }
         },
-        CutsceneStep(Format.mm("The sniffer may also have some rather odd desires, which can be found in the back of the facility in the <red>basement...</red>")
+        CutsceneStep(Format.mm("The <red>sniffer</red> may also have some rather <i>odd</i> desires, which can be found in the back of the facility in the <red>basement...</red>")
         ) { map ->
             teleportConfig("cutscene.basement")
 
@@ -227,15 +228,13 @@ class SnifferCaretakerController : GameBase(
                 spider.remove()
             }
         },
-        CutsceneStep(Format.mm("But remember, your only goal is to keep the sniffer happy, and complete as many tasks as you can!")
+        CutsceneStep(Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!")
         ) { map ->
             teleportConfig("cutscene.end")
             delay(4000)
         },
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")
         ) { map ->
-            teleportConfig("cutscene.end")
-            delay(3000)
         }
     ),
     flags = emptySet(),
@@ -892,10 +891,15 @@ class SnifferCaretakerController : GameBase(
 
     override suspend fun gamePregame() {
         spawn(SpawnCycle.PRE_ROUND)
+
         gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }
-        countdown(5)
+        asyncCountdown(7)
+
+        delay(2000)
+
+        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 5)
     }
 
     /**

@@ -186,6 +186,26 @@ object MiscUtils {
         }
     }
 
+    suspend fun titleCountdown(audience: Audience, subtitle: Component, length: Int) {
+        repeat(length) {
+            val color = when(length - it) {
+                3 -> NamedTextColor.GREEN
+                2 -> NamedTextColor.YELLOW
+                1 -> NamedTextColor.RED
+                else -> NamedTextColor.WHITE
+            }
+
+            val title = Title.title(
+                Component.text("> ${length - it} <", color).decoration(TextDecoration.BOLD, true),
+                subtitle,
+                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+            )
+
+            audience.showTitle(title)
+            delay(1000)
+        }
+    }
+
     suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int) {
         repeat(length) {
             val color = when(length - it) {

@@ -1,6 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.entity.TextDisplay
@@ -11,7 +10,6 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerCo
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
@@ -32,7 +30,7 @@ class BoredTask(
         return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
                     "<sprite:blocks:block/${item?.name?.lowercase()}> " +
-                    "$count <yellow><lang:${item?.blockTranslationKey}>${if (count == 1) "" else "s"}</yellow> to its pen!"
+                    "$count <yellow><lang:${item?.blockTranslationKey}></yellow> to its pen!"
     }
 
     val penCoordinates = snifferCaretaker.currentMap.data.getList("pen")!!.map { it as List<*>
