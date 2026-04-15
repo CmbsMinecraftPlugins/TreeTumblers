@@ -46,6 +46,6 @@ class SnifferCaretakerScoreboard(
             *leaderboard.toTypedArray()
         ))
 
-        return emptySet()
+        return setOf(objective)
     }
 }

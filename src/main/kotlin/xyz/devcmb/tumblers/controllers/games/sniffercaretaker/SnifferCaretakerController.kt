@@ -693,7 +693,7 @@ class SnifferCaretakerController : GameBase(
 
         val chosenTask: HashMap<*, *> = (tasks.find {
             it["id"] == task
-        } ?: GameControllerException("Invalid task ID")) as HashMap<*, *>
+        } ?: throw GameControllerException("Invalid task ID"))
 
         val stars = chosenTask["stars"]
         if (stars !is Int) return
