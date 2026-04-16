@@ -633,7 +633,7 @@ class SnifferCaretakerController : GameBase(
             taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
-        countdown(60)
+        countdown(gameLength)
 
         suspendSync {
             chestTask.cancel()
