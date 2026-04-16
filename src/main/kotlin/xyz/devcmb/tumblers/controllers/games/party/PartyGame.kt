@@ -120,8 +120,10 @@ abstract class PartyGame(
                         (winningSide == MatchupSide.FIRST && matchup.player1 !in alivePlayers)
                         || (winningSide == MatchupSide.SECOND && (matchup.player2 == null || matchup.player2 !in alivePlayers))
                     ) {
+                        partyController!!.endGame(this, null)
                         draw()
                     } else {
+                        partyController!!.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }
@@ -130,18 +132,20 @@ abstract class PartyGame(
                     val winningSide = if(player in matchup.team1.getOnlinePlayers()) MatchupSide.SECOND else MatchupSide.FIRST
                     val otherSide = if(winningSide == MatchupSide.FIRST) MatchupSide.SECOND else MatchupSide.FIRST
 
+
                     if(
                         (winningSide == MatchupSide.FIRST && !matchup.team1.getOnlinePlayers().any { it in alivePlayers })
                         || (winningSide == MatchupSide.SECOND && !matchup.team2.getOnlinePlayers().any { it in alivePlayers })
                     ) {
+                        partyController!!.endGame(this, null)
                         draw()
                     } else {
+                        partyController!!.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }
                 }
             }
-            partyController!!.endGame(this)
         }
     }
 

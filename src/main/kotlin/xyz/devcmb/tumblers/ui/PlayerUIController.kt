@@ -57,7 +57,7 @@ class PlayerUIController(val player: Player) {
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
-        registerScoreboard(PartyScoreboard())
+        registerScoreboard(PartyScoreboard(gameController, player))
         registerScoreboard(IntermissionScoreboard(eventController, player))
 
         if(gameController.activeGame == null) {

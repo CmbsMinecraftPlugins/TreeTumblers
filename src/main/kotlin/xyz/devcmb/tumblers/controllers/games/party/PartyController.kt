@@ -179,10 +179,12 @@ class PartyController : GameBase(
     val inGamePlayers: MutableSet<Player> = HashSet()
     val disabledGameWaitingPlayers: MutableSet<Player> = HashSet()
 
+    val gameOutcomes: HashMap<Player, ArrayList<PartyGameResult>> = HashMap()
+
     val frozenPlayers: MutableSet<Player> = HashSet()
 
-    lateinit var teamGamesTimer: Timer
-    lateinit var actionBarRunnable: BukkitRunnable
+    var teamGamesTimer: Timer? = null
+    var actionBarRunnable: BukkitRunnable? = null
 
     /**
      * The load sequence that each individual game should do
@@ -201,28 +203,33 @@ class PartyController : GameBase(
             waitingTeamPlayers[it] = HashSet()
         }
 
+        gameParticipants.forEach {
+            gameOutcomes.put(it, ArrayList())
+        }
+
         pivot = pivotLocation
         nextXPosition = pivotLocation.x.toInt()
 
         actionBarRunnable = object : BukkitRunnable() {
             override fun run() {
                 gameParticipants.forEach {
-                    var message: Component = Component.empty()
-                    if(currentGameType == PartyGameType.GAME_OVER) {
-                        message = Format.mm("<red>Game Over!</red>")
+                    val message: Component = if(currentGameType == PartyGameType.GAME_OVER) {
+                        Format.mm("<red>Game Over!</red>")
                     } else if(it in disabledGameWaitingPlayers) {
-                        message = Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
+                        Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
                     } else if (it in waitingTeamPlayers[it.tumblingPlayer.team]!!) {
-                        message = Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
-                    } else if (it in waitingIndividualPlayers || it.tumblingPlayer.team in waitingTeams) {
-                        message = Format.mm("<aqua>Waiting for a match...</aqua>")
+                        Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
+                    } else if(it !in inGamePlayers) {
+                        Format.mm("<aqua>Waiting for a match...</aqua>")
+                    } else {
+                        Component.empty()
                     }
 
                     it.sendActionBar(message)
                 }
             }
         }
-        actionBarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 10)
+        actionBarRunnable!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
     }
 
     /**
@@ -304,7 +311,9 @@ class PartyController : GameBase(
                 currentGameType = PartyGameType.DISABLED
             }
 
-            onComplete {
+            onComplete { early ->
+                if(early || currentGameType == PartyGameType.GAME_OVER) return@onComplete
+
                 currentGameType = PartyGameType.TEAM
                 disabledGameWaitingPlayers.forEach {
                     addWaitingTeamPlayer(it)
@@ -313,7 +322,7 @@ class PartyController : GameBase(
                 Bukkit.broadcast(gameMessage(Component.text("Team games are now active!")))
             }
         }
-        teamGamesTimer.start()
+        teamGamesTimer!!.start()
 
         countdown(10 * 60)
 
@@ -329,7 +338,7 @@ class PartyController : GameBase(
         }
 
         activeGames.forEach {
-            endGame(it)
+            endGame(it, null)
         }
 
         val placements = getTeamPlacements()
@@ -362,7 +371,7 @@ class PartyController : GameBase(
     }
 
     override suspend fun cleanup() {
-        actionBarRunnable.cancel()
+        actionBarRunnable?.cancel()
         Bukkit.getOnlinePlayers().forEach {
             it.disableBossBar("countdownBossbar")
         }
@@ -509,7 +518,37 @@ class PartyController : GameBase(
         matchup.announceMatchup()
     }
 
-    fun endGame(game: PartyGame) = TreeTumblers.pluginScope.launch {
+    fun endGame(game: PartyGame, winningSide: PartyGame.MatchupSide?) = TreeTumblers.pluginScope.launch {
+        when(game.matchup) {
+            is PartyMatchup.IndividualMatchup -> {
+                gameOutcomes[game.matchup.player1]?.add(
+                    when (winningSide) {
+                        PartyGame.MatchupSide.FIRST -> PartyGameResult.WIN
+                        PartyGame.MatchupSide.SECOND -> PartyGameResult.LOSS
+                        else -> PartyGameResult.DRAW
+                    }
+                )
+
+                gameOutcomes[game.matchup.player2]?.add(
+                    when (winningSide) {
+                        PartyGame.MatchupSide.FIRST -> PartyGameResult.LOSS
+                        PartyGame.MatchupSide.SECOND -> PartyGameResult.WIN
+                        else -> PartyGameResult.DRAW
+                    }
+                )
+            }
+            is PartyMatchup.TeamMatchup -> {
+                game.matchup.players.forEach {
+                    gameOutcomes[it]?.add(
+                        when (winningSide) {
+                            PartyGame.MatchupSide.FIRST -> (if(it.tumblingPlayer.team == game.matchup.team1) PartyGameResult.WIN else PartyGameResult.LOSS)
+                            PartyGame.MatchupSide.SECOND -> (if(it.tumblingPlayer.team == game.matchup.team1) PartyGameResult.LOSS else PartyGameResult.WIN)
+                            else -> PartyGameResult.DRAW
+                        }
+                    )
+                }
+            }
+        }
         delay(2000)
 
         if(!activeGames.contains(game)) return@launch
@@ -760,5 +799,11 @@ class PartyController : GameBase(
         TEAM_GAME_WIN("team_party_game_win"),
         TEAM_GAME_LOSE("team_party_game_lose"),
         TEAM_GAME_DRAW("team_party_game_draw")
+    }
+
+    enum class PartyGameResult {
+        WIN,
+        LOSS,
+        DRAW
     }
 }

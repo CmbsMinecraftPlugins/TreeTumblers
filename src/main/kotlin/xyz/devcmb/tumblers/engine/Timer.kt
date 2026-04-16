@@ -24,6 +24,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var job: Job? = null
     var endedEarly: Boolean? = null
     var paused: Boolean = false
+    var isRunning: Boolean = false
 
     val timerController by lazy {
         ControllerDelegate.getController("timerController") as TimerController
@@ -33,7 +34,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var id: String = "timer_${UUID.randomUUID().toString().take(8)}"
     var onComplete: (suspend (interrupted: Boolean) -> Unit)? = null
     var format: () -> Component = format@{
-        if(paused) return@format Format.mm("<yellow></yellow>")
+        if(paused) return@format Format.mm("<yellow>PAUSED</yellow>")
         Component.text(MiscUtils.formatToMSS(currentTime))
     }
     var joined: Boolean = false
@@ -112,9 +113,11 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
             }
 
             endedEarly = false
+            isRunning = false
             onComplete?.invoke(false)
             timerController.unregister(this@Timer)
         }
+        isRunning = true
         if(joined) job!!.join()
     }
 
@@ -129,6 +132,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         endedEarly = true
         job!!.cancel()
         onComplete?.invoke(true)
+        isRunning = false
         timerController.unregister(this)
         job = null
     }
