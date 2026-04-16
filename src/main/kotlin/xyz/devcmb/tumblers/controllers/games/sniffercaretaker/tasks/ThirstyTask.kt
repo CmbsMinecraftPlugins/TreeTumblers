@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.data.Levelled
+import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
@@ -25,6 +26,7 @@ class ThirstyTask(
     override val feeling = "thirsty"
     override var display: TextDisplay? = null
     override var count = 1
+    override var completer: Player? = null
 
     override var displayText = ""
         get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
@@ -81,6 +83,8 @@ class ThirstyTask(
                 )
             }
         }
+
+        this.completer = event.player
 
         snifferCaretaker.completeTask(this.team, this)
 

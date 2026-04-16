@@ -4,6 +4,7 @@ import org.bukkit.Material
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerInteractEntityEvent
@@ -26,6 +27,7 @@ class HungryTask(
     override val feeling = "hungry"
     override var display: TextDisplay? = null
     override var count = 1
+    override var completer: Player? = null
 
     val atlas = if (item == Material.BROWN_MUSHROOM || item == Material.RED_MUSHROOM) "block" else "item"
 
@@ -63,6 +65,9 @@ class HungryTask(
             0.15,
             ItemStack.of(item)
         )
+
+        this.completer = event.player
+
         snifferCaretaker.completeTask(this.team, this)
     }
 }

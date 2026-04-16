@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import org.bukkit.Material
 import org.bukkit.Particle
+import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
@@ -24,6 +25,7 @@ class BoredTask(
     override val feeling = "bored"
     override var display: TextDisplay? = null
     override var count = 5
+    override var completer: Player? = null
 
     override var displayText = ""
         get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
@@ -51,7 +53,7 @@ class BoredTask(
         if (block.y < penMin.y || block.y > penMax.y) return
         if (block.z < penMin.z || block.z > penMax.z) return
 
-
+        this.completer = event.player
 
         snifferCaretaker.completeTask(this.team, this)
 

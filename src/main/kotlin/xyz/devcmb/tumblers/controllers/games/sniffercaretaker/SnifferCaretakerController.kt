@@ -633,7 +633,7 @@ class SnifferCaretakerController : GameBase(
             taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
-        countdown(gameLength)
+        countdown(60)
 
         suspendSync {
             chestTask.cancel()
@@ -692,7 +692,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun offsetLocation(location: Location, team: Team): Location {
-        return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
+        return location.clone().add((team.priority - 1) * 1000.0, 0.0, 0.0)
     }
 
     fun stockChests(team: Team) {
@@ -892,32 +892,25 @@ class SnifferCaretakerController : GameBase(
         currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
         currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
 
-        grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+        if (task.completer != null) {
+            grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+        } else {
+            grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+        }
 
         task.display?.remove()
         task.destroy()
         HandlerList.unregisterAll(task)
 
-        val taskIndex = currentTasks[team]!!.indexOfFirst {
-            it.id == task.id
-        }
-
-        DebugUtil.info("$taskIndex")
-
-        if (taskIndex == -1) return
-
-        currentTasks[team]!!.removeAt(taskIndex)
+        currentTasks[team]!!.remove(task)
 
         val displaySpawn = currentMap.data.getList("task_board")?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Task board spawn not found")
 
         currentTasks[team]!!.forEachIndexed { index, it ->
-            val displayLocation = offsetLocation(displaySpawn, team)
-                .add(0.0, index * 0.5, 0.0)
-
+            val displayLocation = offsetLocation(displaySpawn, team).add(0.0, index * 0.5, 0.0)
             it.display?.teleport(displayLocation)
         }
-
     }
 
     fun taskDisplayTextStars(task: Task): Component {
@@ -1009,8 +1002,7 @@ class SnifferCaretakerController : GameBase(
         val displaySpawn = currentMap.data.getList("task_board")?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Task board spawn not found")
 
-        val displayLocation = offsetLocation(displaySpawn, team)
-            .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
+        val displayLocation = offsetLocation(displaySpawn, team).add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
 
         val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
             it.text(taskDisplayTextStars(createdTask))

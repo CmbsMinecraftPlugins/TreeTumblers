@@ -2,7 +2,10 @@ package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
+import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.EntityTargetEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
@@ -21,6 +24,7 @@ class LonelyTask(
     override val feeling = "lonely"
     override var display: TextDisplay? = null
     override var count = 10
+    override var completer: Player? = null
 
     override var displayText = ""
         get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
@@ -64,5 +68,14 @@ class LonelyTask(
 
     override fun destroy() {
         task.cancel()
+    }
+
+    @EventHandler
+    fun entityTargetEvent(event: EntityTargetEvent) {
+        if (event.reason != EntityTargetEvent.TargetReason.TEMPT) return
+        if (event.target?.type != EntityType.PLAYER) return
+        if (event.entity.type != item) return
+
+        this.completer = event.target as Player
     }
 }
