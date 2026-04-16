@@ -155,40 +155,40 @@ games:
         world: "forest"
         data:
           spawns:
-            main: [-4.5,63.0,15.5,-90.0,0.0]
-            attacker: [2.5,67.0,2.5]
+            main: [ -4.5,63.0,15.5,-90.0,0.0 ]
+            attacker: [ 2.5,67.0,2.5 ]
           cutscene:
-            start: [36.84,61.84,21.5,155.7,9.3]
-            trapper_showcase: [6.15,66.9,7.89,179.2,6.3]
+            start: [ 36.84,61.84,21.5,155.7,9.3 ]
+            trapper_showcase: [ 6.15,66.9,7.89,179.2,6.3 ]
             # Must be the first trap
-            trap_showcase: [8.78,68.6,9.0,0.2,48.6]
+            trap_showcase: [ 8.78,68.6,9.0,0.2,48.6 ]
             armor_stands:
-              - [3,67,1]
-              - [5,67,1]
-              - [7,67,1]
-              - [9,67,1]
-            runner_score_showcase: [64.119,62.36,19.425,-122.6,5.7]
-          gate_start: [-2,62,8]
-          gate_end: [-2,62,21]
+              - [ 3,67,1 ]
+              - [ 5,67,1 ]
+              - [ 7,67,1 ]
+              - [ 9,67,1 ]
+            runner_score_showcase: [ 64.119,62.36,19.425,-122.6,5.7 ]
+          gate_start: [ -2,62,8 ]
+          gate_end: [ -2,62,21 ]
           point_display:
             pos: [ 71.25,63.12,14.81 ]
             yaw: 90
             scale: 5.0
-          win_zone_start: [71,66,23]
-          win_zone_end: [71,61,6]
+          win_zone_start: [ 71,66,23 ]
+          win_zone_end: [ 71,61,6 ]
           void_height: 48
           checkpoints:
-            - start: [45,68,22]
-              end: [45,61,7]
-              respawn: [45,63,15,-90.0,0.0]
+            - start: [ 45,68,22 ]
+              end: [ 45,61,7 ]
+              respawn: [ 45,63,15,-90.0,0.0 ]
           traps:
             - id: "magma_fall"
-              start: [-1,70,-2]
-              end: [18,65,4]
+              start: [ -1,70,-2 ]
+              end: [ 18,65,4 ]
               data:
                 replace_type: STONE
-                replace_start: [-1,61,22]
-                replace_end: [18,61,7]
+                replace_start: [ -1,61,22 ]
+                replace_end: [ 18,61,7 ]
             - id: "beam_run"
               start: [ 19,70,-2 ]
               end: [ 43,65,4 ]
@@ -201,11 +201,92 @@ games:
                   - [ 29,61,17 ]
                   - [ 29,61,16 ]
             - id: "happy_ghast"
-              start: [43,70,-2]
-              end: [67,65,4]
+              start: [ 43,70,-2 ]
+              end: [ 67,65,4 ]
               data:
                 ghasts:
-                  - [50.47,57.71,10.05]
-                  - [56.78,57.97,19.16]
-                  - [62.36,58.03,10.16]
-                  - [69.24,56.90,14.04]
+                  - [ 50.47,57.71,10.05 ]
+                  - [ 56.78,57.97,19.16 ]
+                  - [ 62.36,58.03,10.16 ]
+                  - [ 69.24,56.90,14.04 ]
+  snifferCaretaker:
+    worlds_folder: "snifferCaretaker"
+    game_length: 600
+    chest_refresh: 20
+    block_refresh: 15
+    mob_refresh: 30
+    task_interval: 8
+    tasks: [
+      { id: "hungry_bread", type: "HUNGRY", item: "BREAD", stars: 2 },
+      { id: "hungry_wheat", type: "HUNGRY", item: "WHEAT", stars: 1 },
+      { id: "hungry_pumpkin_pie", type: "HUNGRY", item: "PUMPKIN_PIE", stars: 4 },
+      { id: "hungry_cake", type: "HUNGRY", item: "CAKE", stars: 5 },
+      { id: "hungry_beef", type: "HUNGRY", item: "BEEF", stars: 2 },
+      { id: "hungry_cooked_beef", type: "HUNGRY", item: "COOKED_BEEF", stars: 3 },
+      { id: "hungry_chicken", type: "HUNGRY", item: "CHICKEN", stars: 2 },
+      { id: "hungry_cooked_chicken", type: "HUNGRY", item: "COOKED_CHICKEN", stars: 3 },
+      { id: "hungry_spider_eye", type: "HUNGRY", item: "SPIDER_EYE", stars: 3 },
+      { id: "hungry_fermented_spider_eye", type: "HUNGRY", item: "FERMENTED_SPIDER_EYE", stars: 4 },
+      { id: "hungry_brown_mushroom", type: "HUNGRY", item: "BROWN_MUSHROOM", stars: 1 },
+      { id: "hungry_red_mushroom", type: "HUNGRY", item: "RED_MUSHROOM", stars: 1 },
+      { id: "hungry_mushroom_stew", type: "HUNGRY", item: "MUSHROOM_STEW", stars: 2 },
+
+      { id: "thirsty_water", type: "THIRSTY", item: "WATER_BUCKET", stars: 1 },
+      { id: "thirsty_milk", type: "THIRSTY", item: "MILK_BUCKET", stars: 2 },
+
+      { id: "bored_dirt", type: "BORED", item: "DIRT", stars: 1 },
+      { id: "bored_sand", type: "BORED", item: "SAND", stars: 1 },
+      { id: "bored_gravel", type: "BORED", item: "GRAVEL", stars: 1 },
+      { id: "bored_mud", type: "BORED", item: "MUD", stars: 3 },
+      { id: "bored_moss_block", type: "BORED", item: "MOSS_BLOCK", stars: 2 },
+      { id: "bored_coarse_dirt", type: "BORED", item: "COARSE_DIRT", stars: 3 },
+      { id: "bored_glass", type: "BORED", item: "GLASS", stars: 4 },
+
+      { id: "lonely_chicken", type: "LONELY", item: "CHICKEN", stars: 3 },
+      { id: "lonely_cow", type: "LONELY", item: "COW", stars: 3 }
+    ]
+    maps:
+      facility:
+        world: "facility"
+        data:
+          cutscene:
+            start: [6.7, 71.1, 4.0, 131.0, 26.0]
+            tasks: [-3.0, 67.5, 8.0, 0.0, 0.0]
+            farm: [-4.5, 66.7, -3.0, 50.0, 37.0]
+            farm_wheat: [
+              [-8.0, 65.0, 2.0], [-8.0, 65.0, 0.0], [-8.0, 65.0, -2.0],
+              [-10.0, 65.0, 2.0], [-10.0, 65.0, 0.0], [-10.0, 65.0, -2.0]
+            ]
+            blocks: [-12.5, 66.7, -2.3, 180.0, 20.0]
+            thirst: [1.4, 65.3, 1.3, 135.0, 35.6]
+            thirst_cauldron: [-1.0, 64.0, -1.0]
+            mobs: [-1.0, 66.0, -5.0, -130.0, 10.0]
+            mobs_cow: [4.6, 65.0, -9.0]
+            mobs_chicken: [2.4, 65.0, -10.0]
+            basement: [1.2, 58.4, 4.3, 144.5, 16.1]
+            basement_spider: [-2.0, 57.2, -13.2]
+            end: [2.5, 65.0, 5.0, 180.0, 0.0]
+          base_map: [[-27.0, 49.0, -23.0], [29.0, 75.0, 11.0]]
+          sniffer_spawn: [2.5, 65.0, -1.0]
+          pen: [[-2.0, 64.0, -2.2], [6.5, 67.0, 5.0]]
+          spawn: [-8.0, 66.0, 8.0]
+          supply_chest: [-17.0, 65.0, 1.0]
+          supply_chest_sign: [-13.9, 68.4, 1.5, -90.0, 0.0]
+          basement_supply_chest: [4.0, 54.0, -1.0]
+          basement_supply_chest_sign: [0.93, 57.5, -0.5, 90.0, 0.0]
+
+          block_containments:
+            dirt:
+              area: [ [ -18.0, 64.0, -12.0 ], [ -14.0, 64.0, -8.0 ] ]
+              floor: [ [ -18.0, 63.0, -12.0 ], [ -14.0, 63.0, -8.0 ] ]
+              door: [ [ -18.0, 65.0, -7.0 ], [ -14.0, 67.0, -7.0 ] ]
+              sign: [ -15.5, 68.4, -5.9 ]
+            moss:
+              area: [ [ -12.0, 64.0, -12.0 ], [ -8.0, 64.0, -8.0 ] ]
+              floor: [ [ -12.0, 63.0, -12.0 ], [ -8.0, 63.0, -8.0 ] ]
+              door: [ [ -12.0, 65.0, -7.0 ], [ -8.0, 67.0, -7.0 ] ]
+              sign: [ -9.5, 68.4, -5.9 ]
+          task_board: [ -3.0, 67.3, 11.7, 180.0, 0.0 ]
+          mob_spawn: [ 20.0, 70.0, -9.0 ]
+          mob_spawn_sign: [ 3.0, 65.7, -10.9, 0.0, 0.0 ]
+          spider_spawn: [ -2.25, 60.0, -18.25 ]

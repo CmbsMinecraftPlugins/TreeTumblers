@@ -1,0 +1,102 @@
+package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
+
+import org.bukkit.Material
+import org.bukkit.Sound
+import org.bukkit.block.data.Levelled
+import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
+import org.bukkit.event.Event
+import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.tumblingPlayer
+
+class ThirstyTask(
+    override val team: Team,
+    override val id: String,
+    override val snifferCaretaker: SnifferCaretakerController,
+    override val stars: Int,
+    val item: Material?
+) : Task {
+    override val feeling = "thirsty"
+    override var display: TextDisplay? = null
+    override var count = 1
+    override var completer: Player? = null
+
+    override var displayText = ""
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
+                    "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}></yellow> to its cauldron!"
+
+    @EventHandler
+    fun playerInteract(event: PlayerInteractEvent) {
+        val tumblingPlayer = event.player.tumblingPlayer
+        if (tumblingPlayer.team != team) return
+
+        val cauldron = event.clickedBlock
+        if (cauldron == null) return
+        if (cauldron.type != Material.CAULDRON) return
+
+        val playerItem = event.item
+        if (playerItem?.type != item) return
+
+        if (event.hand == null) return
+
+        event.isCancelled = true
+        event.setUseItemInHand(Event.Result.DENY)
+        event.setUseInteractedBlock(Event.Result.DENY)
+
+        // the item in this task will always be a bucket, so..
+
+        event.player.inventory.setItem(event.hand!!, ItemStack(Material.BUCKET))
+
+        when (item) {
+            Material.WATER_BUCKET -> {
+                cauldron.type = Material.WATER_CAULDRON
+            }
+            Material.MILK_BUCKET -> {
+                cauldron.type = Material.POWDER_SNOW_CAULDRON
+            }
+            else -> {}
+        }
+
+
+        cauldron.blockData = (cauldron.blockData as Levelled).also {
+            it.level = it.maximumLevel
+        }
+
+        repeat(2) {
+            runTaskLater(20L*(it + 1)) {
+                cauldron.blockData = (cauldron.blockData as Levelled).also { data ->
+                    data.level = data.maximumLevel - (it + 1)
+                }
+
+                snifferCaretaker.currentMap.world.playSound(
+                    cauldron.location,
+                    if (item == Material.MILK_BUCKET) Sound.ENTITY_WANDERING_TRADER_DRINK_MILK else Sound.ENTITY_GENERIC_DRINK,
+                    1f, 1f
+                )
+            }
+        }
+
+        this.completer = event.player
+
+        snifferCaretaker.completeTask(this.team, this)
+
+        runTaskLater(20*3) {
+            cauldron.type = Material.CAULDRON
+
+            snifferCaretaker.currentMap.world.playSound(
+                cauldron.location,
+                if (item == Material.MILK_BUCKET) Sound.ENTITY_WANDERING_TRADER_DRINK_MILK else Sound.ENTITY_GENERIC_DRINK,
+                1f, 1f
+            )
+        }
+
+    }
+}

@@ -186,6 +186,26 @@ object MiscUtils {
         }
     }
 
+    suspend fun titleCountdown(audience: Audience, subtitle: Component, length: Int) {
+        repeat(length) {
+            val color = when(length - it) {
+                3 -> NamedTextColor.GREEN
+                2 -> NamedTextColor.YELLOW
+                1 -> NamedTextColor.RED
+                else -> NamedTextColor.WHITE
+            }
+
+            val title = Title.title(
+                Component.text("> ${length - it} <", color).decoration(TextDecoration.BOLD, true),
+                subtitle,
+                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+            )
+
+            audience.showTitle(title)
+            delay(1000)
+        }
+    }
+
     suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int) {
         repeat(length) {
             val color = when(length - it) {
@@ -225,7 +245,7 @@ object MiscUtils {
     // Source - https://stackoverflow.com/a/73494554
     // Posted by SecretX, modified by community. See post 'Timeline' for change history
     // Retrieved 2026-03-05, License - CC BY-SA 4.0
-    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(10000L) {
+    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(100000L) {
         // Context: The current coroutine context
         suspendCancellableCoroutine { cont ->
             // Context: The current coroutine context
