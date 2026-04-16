@@ -243,7 +243,7 @@ games:
       { id: "bored_glass", type: "BORED", item: "GLASS", stars: 4 },
 
       { id: "lonely_chicken", type: "LONELY", item: "CHICKEN", stars: 3 },
-      { id: "lonely_cow", type: "LONELY", item: "COW", stars: 3 },
+      { id: "lonely_cow", type: "LONELY", item: "COW", stars: 3 }
     ]
     maps:
       facility:

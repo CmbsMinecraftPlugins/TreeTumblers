@@ -1,6 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
-import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.data.Levelled
@@ -13,7 +12,6 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerCo
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
@@ -28,12 +26,10 @@ class ThirstyTask(
     override var display: TextDisplay? = null
     override var count = 1
 
-
-    override fun getDisplayText(): String {
-        return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+    override var displayText = ""
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
                     "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}></yellow> to its cauldron!"
-    }
 
     @EventHandler
     fun playerInteract(event: PlayerInteractEvent) {

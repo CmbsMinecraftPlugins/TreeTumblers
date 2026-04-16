@@ -1,6 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
 
-import net.kyori.adventure.text.Component
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.Listener
 import xyz.devcmb.tumblers.data.Team
@@ -15,10 +14,7 @@ interface Task : Listener {
     var count: Int
 
     var display: TextDisplay?
-
-    fun getDisplayText(): String {
-        return ""
-    }
+    var displayText: String
 
     fun init() {
 

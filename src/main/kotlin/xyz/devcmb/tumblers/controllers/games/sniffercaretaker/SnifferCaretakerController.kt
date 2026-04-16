@@ -75,8 +75,6 @@ import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.unpackCoordinates
-import xyz.devcmb.tumblers.util.validateCoordinates
 import xyz.devcmb.tumblers.util.validateLocation
 import kotlin.collections.forEach
 import kotlin.math.max
@@ -112,9 +110,9 @@ class SnifferCaretakerController : GameBase(
                 "hungry_cake"
             )
 
-            for (task in exampleTasks) {
+            exampleTasks.forEach {
                 suspendSync {
-                    game.createNewTask(Team.RED, task, true)
+                    game.createNewTask(Team.RED, it, true)
                 }
                 delay(750)
             }
@@ -149,12 +147,12 @@ class SnifferCaretakerController : GameBase(
 
             delay(1500)
 
-            map.data.getList("cutscene.farm_wheat")?.forEach {
-                if (it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
-                val location = it.validateLocation(map.world)
-                    ?: throw GameControllerException("Cutscene farm wheat locations are not valid")
+            suspendSync {
+                map.data.getList("cutscene.farm_wheat")?.forEach {
+                    if (it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
+                    val location = it.validateLocation(map.world)
+                        ?: throw GameControllerException("Cutscene farm wheat locations are not valid")
 
-                suspendSync {
                     location.block.type = Material.AIR
                 }
             }
@@ -278,7 +276,7 @@ class SnifferCaretakerController : GameBase(
 
     override val debugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
-            "createtask" to { sender ->
+            "create_task" to { sender ->
                 if (sender !is Player) {
                     sender.sendMessage(Format.error("Only players can trigger this event!"))
                     return@to
@@ -423,383 +421,6 @@ class SnifferCaretakerController : GameBase(
     val sniffers: HashMap<Team, Sniffer> = hashMapOf()
     val spawnedMobs: HashMap<Team, MutableList<Entity>> = hashMapOf()
 
-    fun offsetLocation(location: Location, team: Team): Location {
-        return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
-    }
-
-    fun stockChests(team: Team) {
-        chestItems.forEach { key, it ->
-            val chestPosition = currentMap.data.getList(key)?.validateCoordinates()
-                ?: throw GameControllerException("Chest position not found")
-
-            val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), team)
-            currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
-
-            val chest = chestLocation.block.state as Chest
-            val inventory = chest.inventory
-
-            inventory.clear()
-
-            it.forEach { item ->
-                val material = item.first
-                val amount = item.second
-
-                fun chooseIndex() : Int {
-                    val index = (0..26).random()
-                    val slot = inventory.getItem(index)
-
-                    if (slot == null) return index
-                    if (slot.type != material) return chooseIndex()
-
-                    return index
-                }
-
-                repeat(amount) {
-                    val index = chooseIndex()
-                    val slot = inventory.getItem(index)
-
-                    if (slot == null) {
-                        inventory.setItem(index, ItemStack(material))
-                    } else {
-                        slot.add(1)
-                    }
-                }
-            }
-        }
-    }
-
-    fun stockBlocks(team: Team) {
-        blockItems.forEach { (key, it) ->
-            val floor = currentMap.data.getList("block_containments.$key.floor")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val area = currentMap.data.getList("block_containments.$key.area")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val floorMin = offsetLocation(floor[0]!!.unpackCoordinates(currentMap.world), team)
-            val floorMax = offsetLocation(floor[1]!!.unpackCoordinates(currentMap.world), team)
-
-            val areaMin = offsetLocation(area[0]!!.unpackCoordinates(currentMap.world), team)
-            val areaMax = offsetLocation(area[1]!!.unpackCoordinates(currentMap.world), team)
-
-            val doorMin = offsetLocation(door[0]!!.unpackCoordinates(currentMap.world), team)
-            val doorMax = offsetLocation(door[1]!!.unpackCoordinates(currentMap.world), team)
-
-            var i = 0
-
-            for (it in (doorMin.y.toInt()..doorMax.y.toInt())) {
-                runTaskLater((i * 3).toLong()) {
-                    currentMap.world.fill(
-                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
-                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
-                        Material.AIR
-                    )
-                }
-
-                i++
-            }
-
-            currentMap.world.fill(
-                floorMin,
-                floorMax,
-                Material.SMOOTH_STONE
-            )
-
-            currentMap.world.fill(areaMin, areaMax, Material.AIR)
-
-            it.forEach { value ->
-                val material = value[0] as Material
-                val amount = value[1] as Int
-
-                fun choosePosition(): Location {
-                    val pos = areaMin.randomBetween(areaMax)
-                    val block = pos.block
-                    if (block.type != material && block.type != Material.AIR) return choosePosition()
-
-                    return pos
-                }
-
-                repeat(amount) {
-                    val pos = choosePosition()
-                    pos.block.type = material
-                }
-            }
-        }
-    }
-
-    fun closeBlockContainments(team: Team) {
-        blockItems.forEach { (key, _) ->
-            val floor = currentMap.data.getList("block_containments.$key.floor")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val area = currentMap.data.getList("block_containments.$key.area")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val door = currentMap.data.getList("block_containments.$key.door")!!.map { it as List<*>
-                it.validateCoordinates()
-            }
-
-            val floorMin = offsetLocation(floor[0]!!.unpackCoordinates(currentMap.world), team)
-            val floorMax = offsetLocation(floor[1]!!.unpackCoordinates(currentMap.world), team)
-
-            val areaMin = offsetLocation(area[0]!!.unpackCoordinates(currentMap.world), team)
-            val areaMax = offsetLocation(area[1]!!.unpackCoordinates(currentMap.world), team)
-
-            val doorMin = offsetLocation(door[0]!!.unpackCoordinates(currentMap.world), team)
-            val doorMax = offsetLocation(door[1]!!.unpackCoordinates(currentMap.world), team)
-
-            for (i in (0..6)) {
-                runTaskLater((i * 10).toLong()) {
-                    currentMap.world.fill(
-                        floorMin,
-                        floorMax,
-                        if (i % 2 == 0) Material.LAPIS_ORE else Material.SMOOTH_STONE
-                    )
-                }
-            }
-
-            var i = 0
-
-            for (it in (doorMin.y.toInt()..doorMax.y.toInt()).reversed()) {
-                runTaskLater((i * 3).toLong() + 70) {
-                    currentMap.world.fill(
-                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
-                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
-                        Material.WAXED_OXIDIZED_COPPER_GRATE
-                    )
-                }
-
-                i++
-            }
-
-            runTaskLater(70) {
-                currentMap.world.fill(floorMin, floorMax, Material.AIR)
-                currentMap.world.fill(areaMin, areaMax, Material.AIR)
-            }
-        }
-    }
-
-    fun stockMobs(team: Team) {
-        val mobCoordinates = currentMap.data.getList("mob_spawn")?.validateCoordinates()
-            ?: throw GameControllerException("Mob spawn not found")
-
-        val mobLocation = offsetLocation(mobCoordinates.unpackCoordinates(currentMap.world), team)
-
-        mobSpawns.forEach {
-            val entity = currentMap.world.spawnEntity(mobLocation, it)
-            spawnedMobs[team]!!.add(entity)
-        }
-
-
-        val spiderMobCoordinates = currentMap.data.getList("spider_spawn")?.validateCoordinates()
-            ?: throw GameControllerException("Spider spawn not found")
-
-        val spiderMobLocation = offsetLocation(spiderMobCoordinates.unpackCoordinates(currentMap.world), team)
-
-        currentMap.world.spawnEntity(spiderMobLocation, EntityType.SPIDER)
-    }
-
-    fun completeTask(team: Team, task: Task, isCutsceneStep: Boolean = false) {
-        if (isCutsceneStep) {
-            task.display?.remove()
-            task.destroy()
-            HandlerList.unregisterAll(task)
-            return
-        }
-
-        task.count -= 1
-
-        if (task.count > 0) return
-
-        val sniffer = sniffers[team]!!
-
-        currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
-        currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
-
-        grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
-
-        task.display?.remove()
-        task.destroy()
-        HandlerList.unregisterAll(task)
-
-        val taskIndex = currentTasks[team]!!.indexOfFirst {
-            it.id == task.id
-        }
-
-        DebugUtil.info("$taskIndex")
-
-        if (taskIndex == -1) return
-
-        currentTasks[team]!!.removeAt(taskIndex)
-
-        val displaySpawn = currentMap.data.getList("task_board")?.validateCoordinates()
-            ?: throw GameControllerException("Task board spawn not found")
-
-        currentTasks[team]!!.forEachIndexed { index, it ->
-            val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
-                .add(0.0, index * 0.5, 0.0)
-
-            it.display?.teleport(displayLocation)
-        }
-
-    }
-
-    fun taskDisplayTextStars(task: Task): Component {
-        var text = Format.mm(task.getDisplayText())
-
-        val starSprite = when(task.stars) {
-            1 -> "\uEF00"
-            2 -> "\uEF01"
-            3 -> "\uEF02"
-            4 -> "\uEF03"
-            5 -> "\uEF04"
-            else -> "\uEF00"
-        }
-
-        text = text.append(Component.text(" "))
-
-        for (i in (1..task.stars)) {
-            text = text.append(Component.text(starSprite).font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
-        }
-
-        val score = scores.get(SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
-
-        text = text.append(Format.mm(" <gold>[+${score}]</gold>"))
-
-        return text
-    }
-
-    fun createNewTask(team: Team, task: String, isCutsceneStep: Boolean = false) {
-        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
-            if (
-                it !is HashMap<*, *>
-                || it["id"] == null
-                || it["id"] !is String
-                || it["stars"] == null
-                || it["stars"] !is Int
-                || it["item"] == null
-                || it["item"] !is String
-            ) throw GameControllerException("Task contains invalid data")
-            it
-        } ?: throw GameControllerException("Task list not found")
-
-        val chosenTask: HashMap<*, *> = (tasks.find {
-            it["id"] == task
-        } ?: throw GameControllerException("Invalid task ID"))
-
-        val stars = chosenTask["stars"]
-        if (stars !is Int) return
-
-        val id = chosenTask["id"]
-        if (id !is String) return
-
-        val item = chosenTask["item"]
-        if (item !is String) return
-
-        DebugUtil.info("Creating Task $id : Stars $stars Item $item")
-
-        val createdTask = when (chosenTask["type"]) {
-            "HUNGRY" -> HungryTask(
-                team,
-                id,
-                this,
-                stars,
-                Material.getMaterial(item)
-            )
-            "THIRSTY" -> ThirstyTask(
-                team,
-                id,
-                this,
-                stars,
-                Material.getMaterial(item)
-            )
-            "BORED" -> BoredTask(
-                team,
-                id,
-                this,
-                stars,
-                Material.getMaterial(item)
-            )
-            "LONELY" -> LonelyTask(
-                team,
-                id,
-                this,
-                stars,
-                EntityType.valueOf(item)
-            )
-            else -> throw GameControllerException("Task type invalid")
-        }
-
-        val displaySpawn = currentMap.data.getList("task_board")?.validateCoordinates()
-            ?: throw GameControllerException("Task board spawn not found")
-
-        val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
-            .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
-
-        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
-            it.text(taskDisplayTextStars(createdTask))
-            it.alignment = TextDisplay.TextAlignment.LEFT
-            it.lineWidth = 400
-        }
-
-        createdTask.display = display
-        createdTask.init()
-
-        currentTasks.get(team)!!.add(createdTask)
-        currentMap.world.playSound(displayLocation, Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, (createdTask.stars.toFloat() / 12f) + 0.7f)
-        Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
-
-        if (!isCutsceneStep) {
-            team.getOnlinePlayers().forEach { player ->
-                player.sendMessage(taskDisplayTextStars(createdTask))
-            }
-        }
-    }
-
-    fun setupSign(key: String, team: Team) : TextDisplay {
-        val displaySpawn = currentMap.data.getList(key)?.validateCoordinates()
-            ?: throw GameControllerException("Sign spawn not found at $key")
-
-        val displayLocation = offsetLocation(displaySpawn.unpackCoordinates(currentMap.world), team)
-
-        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
-            it.alignment = TextDisplay.TextAlignment.CENTER
-            it.lineWidth = 400
-            it.isPersistent = true
-            it.text(Format.mm("loading..."))
-        }
-
-        return display
-    }
-
-    fun setupSigns(team: Team) {
-        signs[team]!!["supply_chest"] = setupSign("supply_chest_sign", team)
-        signs[team]!!["basement_supply_chest"] = setupSign("basement_supply_chest_sign", team)
-        signs[team]!!["dirt"] = setupSign("block_containments.dirt.sign", team)
-        signs[team]!!["moss"] = setupSign("block_containments.moss.sign", team)
-        signs[team]!!["mob"] = setupSign("mob_spawn_sign", team)
-    }
-
-    fun updateSigns(team: Team) {
-        signs[team]!!.forEach { key, it ->
-            it.interpolationDelay = 0
-            it.interpolationDuration = 0
-            it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))
-        }
-
-        currentTasks[team]!!.forEach {
-            it.display?.text(taskDisplayTextStars(it))
-        }
-    }
-
     /**
      * The load sequence that each individual game should do
      *
@@ -859,18 +480,18 @@ class SnifferCaretakerController : GameBase(
                 signs[it] = hashMapOf()
                 spawnedMobs[it] = mutableListOf()
 
-                val snifferSpawn = map.data.getList("sniffer_spawn")?.validateCoordinates()
+                val snifferSpawn = map.data.getList("sniffer_spawn")?.validateLocation(map.world)
                     ?: throw GameControllerException("Sniffer spawns not found")
 
-                val snifferLocation = offsetLocation(snifferSpawn.unpackCoordinates(map.world), it)
+                val snifferLocation = offsetLocation(snifferSpawn, it)
 
                 snifferLocation.chunk.load()
 
                 chestItems.forEach { key, _ ->
-                    val chestPosition = currentMap.data.getList(key)?.validateCoordinates()
+                    val chestPosition = currentMap.data.getList(key)?.validateLocation(map.world)
                         ?: throw GameControllerException("Chest position not found")
 
-                    val chestLocation = offsetLocation(chestPosition.unpackCoordinates(currentMap.world), it)
+                    val chestLocation = offsetLocation(chestPosition, it)
                     chestLocation.chunk.load()
                 }
 
@@ -919,10 +540,10 @@ class SnifferCaretakerController : GameBase(
                 it.gameMode = GameMode.SURVIVAL
                 val tumblingPlayer = it.tumblingPlayer
 
-                val playerSpawn = currentMap.data.getList("spawn")?.validateCoordinates()
+                val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
                     ?: throw GameControllerException("Spawn not found")
 
-                val playerLocation = offsetLocation(playerSpawn.unpackCoordinates(map.world), tumblingPlayer.team)
+                val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
 
                 it.teleport(playerLocation)
 
@@ -982,6 +603,7 @@ class SnifferCaretakerController : GameBase(
 
                 Team.entries.filter { it.playingTeam }.forEach { team ->
                     updateSigns(team)
+                    sniffers[team]!!.setAI(true) // its beiung stupid aand im mad
                 }
             }
         }
@@ -1067,6 +689,383 @@ class SnifferCaretakerController : GameBase(
         delay(5000)
         announceOverallTeamScores()
         delay(5000)
+    }
+
+    fun offsetLocation(location: Location, team: Team): Location {
+        return location.add((team.priority - 1) * 1000.0, 0.0, 0.0)
+    }
+
+    fun stockChests(team: Team) {
+        chestItems.forEach { key, it ->
+            val chestPosition = currentMap.data.getList(key)?.validateLocation(currentMap.world)
+                ?: throw GameControllerException("Chest position not found")
+
+            val chestLocation = offsetLocation(chestPosition, team)
+            currentMap.world.getBlockAt(chestLocation).type = Material.CHEST
+
+            val chest = chestLocation.block.state as Chest
+            val inventory = chest.inventory
+
+            inventory.clear()
+
+            it.forEach { item ->
+                val material = item.first
+                val amount = item.second
+
+                fun chooseIndex() : Int {
+                    val index = (0..26).random()
+                    val slot = inventory.getItem(index)
+
+                    if (slot == null) return index
+                    if (slot.type != material) return chooseIndex()
+
+                    return index
+                }
+
+                repeat(amount) {
+                    val index = chooseIndex()
+                    val slot = inventory.getItem(index)
+
+                    if (slot == null) {
+                        inventory.setItem(index, ItemStack(material))
+                    } else {
+                        slot.add(1)
+                    }
+                }
+            }
+        }
+    }
+
+    fun stockBlocks(team: Team) {
+        blockItems.forEach { (key, it) ->
+            val floor = currentMap.data.getList("block_containments.$key.floor")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Floor for block containment $key must be defined")
+
+            val area = currentMap.data.getList("block_containments.$key.area")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Area for block containment $key must be defined")
+
+            val door = currentMap.data.getList("block_containments.$key.door")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Door for block containment $key must be defined")
+
+            val floorMin = offsetLocation(floor[0]!!, team)
+            val floorMax = offsetLocation(floor[1]!!, team)
+
+            val areaMin = offsetLocation(area[0]!!, team)
+            val areaMax = offsetLocation(area[1]!!, team)
+
+            val doorMin = offsetLocation(door[0]!!, team)
+            val doorMax = offsetLocation(door[1]!!, team)
+
+            var i = 0
+
+            for (it in (doorMin.y.toInt()..doorMax.y.toInt())) {
+                runTaskLater((i * 3).toLong()) {
+                    currentMap.world.fill(
+                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
+                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
+                        Material.AIR
+                    )
+                }
+
+                i++
+            }
+
+            currentMap.world.fill(
+                floorMin,
+                floorMax,
+                Material.SMOOTH_STONE
+            )
+
+            currentMap.world.fill(areaMin, areaMax, Material.AIR)
+
+            it.forEach { value ->
+                val material = value[0] as Material
+                val amount = value[1] as Int
+
+                fun choosePosition(): Location {
+                    val pos = areaMin.randomBetween(areaMax)
+                    val block = pos.block
+                    if (block.type != material && block.type != Material.AIR) return choosePosition()
+
+                    return pos
+                }
+
+                repeat(amount) {
+                    val pos = choosePosition()
+                    pos.block.type = material
+                }
+            }
+        }
+    }
+
+    fun closeBlockContainments(team: Team) {
+        blockItems.forEach { (key, _) ->
+            val floor = currentMap.data.getList("block_containments.$key.floor")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Floor for block containment $key must be defined")
+
+            val area = currentMap.data.getList("block_containments.$key.area")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Area for block containment $key must be defined")
+
+            val door = currentMap.data.getList("block_containments.$key.door")?.map { it as List<*>
+                it.validateLocation(currentMap.world)
+            } ?: throw GameControllerException("Door for block containment $key must be defined")
+
+            val floorMin = offsetLocation(floor[0]!!, team)
+            val floorMax = offsetLocation(floor[1]!!, team)
+
+            val areaMin = offsetLocation(area[0]!!, team)
+            val areaMax = offsetLocation(area[1]!!, team)
+
+            val doorMin = offsetLocation(door[0]!!, team)
+            val doorMax = offsetLocation(door[1]!!, team)
+
+            for (i in (0..6)) {
+                runTaskLater((i * 10).toLong()) {
+                    currentMap.world.fill(
+                        floorMin,
+                        floorMax,
+                        if (i % 2 == 0) Material.LAPIS_ORE else Material.SMOOTH_STONE
+                    )
+                }
+            }
+
+            var i = 0
+
+            for (it in (doorMin.y.toInt()..doorMax.y.toInt()).reversed()) {
+                runTaskLater((i * 3).toLong() + 70) {
+                    currentMap.world.fill(
+                        Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
+                        Location(currentMap.world, doorMax.x, it.toDouble(), doorMax.z),
+                        Material.WAXED_OXIDIZED_COPPER_GRATE
+                    )
+                }
+
+                i++
+            }
+
+            runTaskLater(70) {
+                currentMap.world.fill(floorMin, floorMax, Material.AIR)
+                currentMap.world.fill(areaMin, areaMax, Material.AIR)
+            }
+        }
+    }
+
+    fun stockMobs(team: Team) {
+        val mobCoordinates = currentMap.data.getList("mob_spawn")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Mob spawn not found")
+
+        val mobLocation = offsetLocation(mobCoordinates, team)
+
+        mobSpawns.forEach {
+            val entity = currentMap.world.spawnEntity(mobLocation, it)
+            spawnedMobs[team]!!.add(entity)
+        }
+
+
+        val spiderMobCoordinates = currentMap.data.getList("spider_spawn")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Spider spawn not found")
+
+        val spiderMobLocation = offsetLocation(spiderMobCoordinates, team)
+
+        currentMap.world.spawnEntity(spiderMobLocation, EntityType.SPIDER)
+    }
+
+    fun completeTask(team: Team, task: Task, isCutsceneStep: Boolean = false) {
+        if (isCutsceneStep) {
+            task.display?.remove()
+            task.destroy()
+            HandlerList.unregisterAll(task)
+            return
+        }
+
+        task.count -= 1
+
+        if (task.count > 0) return
+
+        val sniffer = sniffers[team]!!
+
+        currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
+        currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
+
+        grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+
+        task.display?.remove()
+        task.destroy()
+        HandlerList.unregisterAll(task)
+
+        val taskIndex = currentTasks[team]!!.indexOfFirst {
+            it.id == task.id
+        }
+
+        DebugUtil.info("$taskIndex")
+
+        if (taskIndex == -1) return
+
+        currentTasks[team]!!.removeAt(taskIndex)
+
+        val displaySpawn = currentMap.data.getList("task_board")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Task board spawn not found")
+
+        currentTasks[team]!!.forEachIndexed { index, it ->
+            val displayLocation = offsetLocation(displaySpawn, team)
+                .add(0.0, index * 0.5, 0.0)
+
+            it.display?.teleport(displayLocation)
+        }
+
+    }
+
+    fun taskDisplayTextStars(task: Task): Component {
+        var text = Format.mm(task.displayText)
+
+        val starSprite = when(task.stars) {
+            1 -> "\uEF00"
+            2 -> "\uEF01"
+            3 -> "\uEF02"
+            4 -> "\uEF03"
+            5 -> "\uEF04"
+            else -> "\uEF00"
+        }
+
+        text = text.append(Component.text(" "))
+
+        for (i in (1..task.stars)) {
+            text = text.append(Component.text(starSprite).font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
+        }
+
+        val score = scores.get(SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+
+        text = text.append(Format.mm(" <gold>[+${score}]</gold>"))
+
+        return text
+    }
+
+    fun createNewTask(team: Team, task: String, isCutsceneStep: Boolean = false) {
+        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
+            if (
+                it !is HashMap<*, *>
+                || it["id"] == null
+                || it["id"] !is String
+                || it["stars"] == null
+                || it["stars"] !is Int
+                || it["item"] == null
+                || it["item"] !is String
+            ) throw GameControllerException("Task contains invalid data")
+            it
+        } ?: throw GameControllerException("Task list not found")
+
+        val chosenTask: HashMap<*, *> = (tasks.find {
+            it["id"] == task
+        } ?: throw GameControllerException("Invalid task ID"))
+
+        val stars = chosenTask["stars"]
+        if (stars !is Int) return
+
+        val id = chosenTask["id"]
+        if (id !is String) return
+
+        val item = chosenTask["item"]
+        if (item !is String) return
+
+        DebugUtil.info("Creating Task $id : Stars $stars Item $item")
+
+        val createdTask = when (chosenTask["type"]) {
+            "HUNGRY" -> HungryTask(
+                team,
+                id,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            "THIRSTY" -> ThirstyTask(
+                team,
+                id,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            "BORED" -> BoredTask(
+                team,
+                id,
+                this,
+                stars,
+                Material.getMaterial(item)
+            )
+            "LONELY" -> LonelyTask(
+                team,
+                id,
+                this,
+                stars,
+                EntityType.valueOf(item)
+            )
+            else -> throw GameControllerException("Task type invalid")
+        }
+
+        val displaySpawn = currentMap.data.getList("task_board")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Task board spawn not found")
+
+        val displayLocation = offsetLocation(displaySpawn, team)
+            .add(0.0, currentTasks[team]!!.size * 0.5, 0.0)
+
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
+            it.text(taskDisplayTextStars(createdTask))
+            it.alignment = TextDisplay.TextAlignment.LEFT
+            it.lineWidth = 400
+        }
+
+        createdTask.display = display
+        createdTask.init()
+
+        currentTasks.get(team)!!.add(createdTask)
+        currentMap.world.playSound(displayLocation, Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, (createdTask.stars.toFloat() / 12f) + 0.7f)
+        Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
+
+        if (!isCutsceneStep) {
+            team.getOnlinePlayers().forEach { player ->
+                player.sendMessage(taskDisplayTextStars(createdTask))
+            }
+        }
+    }
+
+    fun setupSign(key: String, team: Team) : TextDisplay {
+        val displaySpawn = currentMap.data.getList(key)?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Sign spawn not found at $key")
+
+        val displayLocation = offsetLocation(displaySpawn, team)
+
+        val display: TextDisplay = currentMap.world.spawn(displayLocation, TextDisplay::class.java) {
+            it.alignment = TextDisplay.TextAlignment.CENTER
+            it.lineWidth = 400
+            it.isPersistent = true
+            it.text(Format.mm("loading..."))
+        }
+
+        return display
+    }
+
+    fun setupSigns(team: Team) {
+        signs[team]!!["supply_chest"] = setupSign("supply_chest_sign", team)
+        signs[team]!!["basement_supply_chest"] = setupSign("basement_supply_chest_sign", team)
+        signs[team]!!["dirt"] = setupSign("block_containments.dirt.sign", team)
+        signs[team]!!["moss"] = setupSign("block_containments.moss.sign", team)
+        signs[team]!!["mob"] = setupSign("mob_spawn_sign", team)
+    }
+
+    fun updateSigns(team: Team) {
+        signs[team]!!.forEach { key, it ->
+            it.interpolationDelay = 0
+            it.interpolationDuration = 0
+            it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))
+        }
+
+        currentTasks[team]!!.forEach {
+            it.display?.text(taskDisplayTextStars(it))
+        }
     }
 
     @EventHandler
@@ -1187,10 +1186,10 @@ class SnifferCaretakerController : GameBase(
         val player = event.player
         val tumblingPlayer = player.tumblingPlayer
 
-        val playerSpawn = currentMap.data.getList("spawn")?.validateCoordinates()
+        val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Spawn not found")
 
-        val playerLocation = offsetLocation(playerSpawn.unpackCoordinates(currentMap.world), tumblingPlayer.team)
+        val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
 
         event.respawnLocation = playerLocation
 
@@ -1200,10 +1199,10 @@ class SnifferCaretakerController : GameBase(
     }
 
     enum class SnifferCaretakerScoreSource(override val id: String) : ScoreSource {
-        TASK_1_STAR("task_1_star"),
-        TASK_2_STAR("task_2_star"),
-        TASK_3_STAR("task_3_star"),
-        TASK_4_STAR("task_4_star"),
-        TASK_5_STAR("task_5_star")
+        TASK_1_STAR("sniffer_caretaker_task_1_star"),
+        TASK_2_STAR("sniffer_caretaker_task_2_star"),
+        TASK_3_STAR("sniffer_caretaker_task_3_star"),
+        TASK_4_STAR("sniffer_caretaker_task_4_star"),
+        TASK_5_STAR("sniffer_caretaker_task_5_star")
     }
 }

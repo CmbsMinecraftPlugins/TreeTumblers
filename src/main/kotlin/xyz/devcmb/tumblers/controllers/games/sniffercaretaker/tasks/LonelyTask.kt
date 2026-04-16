@@ -1,6 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
 
-import net.kyori.adventure.text.Component
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.TextDisplay
@@ -10,9 +9,7 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerCo
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.unpackCoordinates
-import xyz.devcmb.tumblers.util.validateCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 
 class LonelyTask(
     override val team: Team,
@@ -25,18 +22,18 @@ class LonelyTask(
     override var display: TextDisplay? = null
     override var count = 10
 
-    override fun getDisplayText(): String {
-        return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+    override var displayText = ""
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring a " +
                     "<yellow><lang:${item?.translationKey()}></yellow> to its pen for $count seconds!"
-    }
+
 
     val penCoordinates = snifferCaretaker.currentMap.data.getList("pen")!!.map { it as List<*>
-        it.validateCoordinates()
+        it.validateLocation(snifferCaretaker.currentMap.world)
     }
 
-    val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
-    val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
+    val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!, team)
+    val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!, team)
 
     fun checkMob(mob: Entity): Boolean {
         val location = mob.location

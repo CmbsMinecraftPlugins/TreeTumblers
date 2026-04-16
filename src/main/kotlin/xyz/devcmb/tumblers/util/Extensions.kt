@@ -148,13 +148,6 @@ fun World.fill(location1: Location, location2: Location, material: Material) {
     }
 }
 
-fun List<*>.validateCoordinates(): List<Double>? {
-    return this.map {
-        if(it !is Double) return@validateCoordinates null
-        it
-    }
-}
-
 val Long.tickSeconds: Double
     get() {
         return ((this / 20.0) * 10.0).roundToInt() / 10.0

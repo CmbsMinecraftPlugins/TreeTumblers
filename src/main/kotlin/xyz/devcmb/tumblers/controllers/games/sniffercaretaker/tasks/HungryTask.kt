@@ -27,13 +27,13 @@ class HungryTask(
     override var display: TextDisplay? = null
     override var count = 1
 
-    override fun getDisplayText(): String {
-        val atlas = if (item == Material.BROWN_MUSHROOM || item == Material.RED_MUSHROOM) "block" else "item"
+    val atlas = if (item == Material.BROWN_MUSHROOM || item == Material.RED_MUSHROOM) "block" else "item"
 
-        return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+    override var displayText = ""
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
                     "<sprite:${atlas}s:${atlas}/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
-    }
+
 
     @EventHandler
     fun playerInteractEntity(event: PlayerInteractEntityEvent) {

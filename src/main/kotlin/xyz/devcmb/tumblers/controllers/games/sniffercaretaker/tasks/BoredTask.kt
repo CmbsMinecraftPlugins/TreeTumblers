@@ -12,8 +12,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.unpackCoordinates
-import xyz.devcmb.tumblers.util.validateCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 
 class BoredTask(
     override val team: Team,
@@ -26,19 +25,19 @@ class BoredTask(
     override var display: TextDisplay? = null
     override var count = 5
 
-    override fun getDisplayText(): String {
-        return "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
-                    "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
-                    "<sprite:blocks:block/${item?.name?.lowercase()}> " +
-                    "$count <yellow><lang:${item?.blockTranslationKey}></yellow> to its pen!"
-    }
+    override var displayText = ""
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+                "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
+                "<sprite:blocks:block/${item?.name?.lowercase()}> " +
+                "$count <yellow><lang:${item?.blockTranslationKey}></yellow> to its pen!"
+
 
     val penCoordinates = snifferCaretaker.currentMap.data.getList("pen")!!.map { it as List<*>
-        it.validateCoordinates()
+        it.validateLocation(snifferCaretaker.currentMap.world)
     }
 
-    val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
-    val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!.unpackCoordinates(snifferCaretaker.currentMap.world), team)
+    val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!, team)
+    val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!, team)
 
     @EventHandler
     fun blockPlace(event: BlockPlaceEvent) {
@@ -51,6 +50,8 @@ class BoredTask(
         if (block.x < penMin.x || block.x > penMax.x) return
         if (block.y < penMin.y || block.y > penMax.y) return
         if (block.z < penMin.z || block.z > penMax.z) return
+
+
 
         snifferCaretaker.completeTask(this.team, this)
 
@@ -87,9 +88,10 @@ class BoredTask(
         val block = event.block
         if (block.type != item) return
 
-        if (block.x < penMin.x || block.x > penMax.x) return
-        if (block.y < penMin.y || block.y > penMax.y) return
-        if (block.z < penMin.z || block.z > penMax.z) return
+        if (
+            block.x < penMin.x || block.x > penMax.x ||
+            block.y < penMin.y || block.y > penMax.y ||
+            block.z < penMin.z || block.z > penMax.z) return
 
         event.isCancelled = true
     }
