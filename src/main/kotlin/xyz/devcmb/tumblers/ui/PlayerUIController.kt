@@ -24,6 +24,7 @@ import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.PartyScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.games.SnifferCaretakerScoreboard
 import xyz.devcmb.tumblers.util.runTaskTimer
 
 class PlayerUIController(val player: Player) {
@@ -56,6 +57,7 @@ class PlayerUIController(val player: Player) {
         }
 
         registerScoreboard(CrumbleScoreboard(gameController, player))
+        registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
         registerScoreboard(PartyScoreboard(gameController, player))
         registerScoreboard(IntermissionScoreboard(eventController, player))
