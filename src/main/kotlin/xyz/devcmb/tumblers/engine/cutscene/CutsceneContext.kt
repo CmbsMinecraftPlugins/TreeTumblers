@@ -71,6 +71,7 @@ class CutsceneContext(
         val pig = map.world.spawnEntity(location, EntityType.PIG) as Pig
         pig.setAI(false)
         pig.isInvulnerable = true
+        pig.isSilent = true
         pig.isInvisible = true
         pig.addPassenger(player)
 

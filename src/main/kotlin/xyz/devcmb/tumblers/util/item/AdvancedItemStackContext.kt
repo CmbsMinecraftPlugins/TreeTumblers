@@ -38,6 +38,18 @@ class AdvancedItemStackContext(
         }
     }
 
+    fun count(amount: Int) {
+        item.amount = amount
+    }
+
+    fun enchants(enchantments: Map<Enchantment, Int>) {
+        item.itemMeta = item.itemMeta.also {
+            enchantments.forEach { enchant ->
+                it.addEnchant(enchant.key, enchant.value, true)
+            }
+        }
+    }
+
     fun rightClick(action: (Player) -> Unit) {
         rightClick = action
     }

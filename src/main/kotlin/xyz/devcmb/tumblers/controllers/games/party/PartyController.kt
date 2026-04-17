@@ -24,8 +24,11 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
+import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
@@ -33,6 +36,10 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.party.games.shared.MaceDuels
+import xyz.devcmb.tumblers.controllers.games.party.games.shared.SpearDuels
+import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardAxeDuels
+import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardBowDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardSwordDuels
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
@@ -67,9 +74,9 @@ import java.nio.file.Path
  *
  * Individual game ideas:
  * [x] Standard sword duels (stone sword)
- * [ ] Standard axe duels (stone axe)
- * [ ] Standard bow duels (crossbow duels, 3-shot kill)
- * [ ] Mace duels (wind charge, 1 hit kill, mace)
+ * [x] Standard axe duels (wooden axe)
+ * [x] Standard bow duels (crossbow duels, 3-shot kill)
+ * [x] Mace duels (wind charge, 1 hit kill, mace)
  * [ ] Sumo (Fist-fight, last man standing wins)
  * [ ] Quickdraw (single shot gun with instakill)
  * [ ] Pillars (navigate a short parkour course to reach the other side)
@@ -77,11 +84,6 @@ import java.nio.file.Path
  * [ ] Horseback spear duels (1 hit kill, netherite spears)
  * [ ] Ice boat race (small track, first to complete wins)
  * [ ] Riptide trident race (fastest one to complete a short trident course wins)
- *
- * Team game ideas:
- * [x] Standard sword duels
- * [ ] Standard axe duels
- * [ ] Standard bow duels
  */
 @EventGame
 class PartyController : GameBase(
@@ -118,7 +120,11 @@ class PartyController : GameBase(
 
     companion object {
         val games: ArrayList<Class<out PartyGame>> = arrayListOf(
-            StandardSwordDuels::class.java
+            StandardSwordDuels::class.java,
+            StandardAxeDuels::class.java,
+            StandardBowDuels::class.java,
+            MaceDuels::class.java,
+            SpearDuels::class.java
         )
 
         val individualGames: List<Class<out PartyGame>>
@@ -790,6 +796,17 @@ class PartyController : GameBase(
     @EventHandler
     fun entityDamageEvent(event: EntityDamageByEntityEvent) {
         if(event.damager !in inGamePlayers || event.entity !in inGamePlayers) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEvent) {
+        val player = event.player
+        val bow: ItemStack = player.inventory.itemInMainHand
+        val action = event.action
+
+        if (((action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) && (bow.type == Material.BOW || bow.type == Material.CROSSBOW)) && frozenPlayers.contains(player)) {
+            event.isCancelled = true
+        }
     }
 
     enum class PartyScoreSource(override val id: String) : ScoreSource {

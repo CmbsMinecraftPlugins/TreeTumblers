@@ -11,6 +11,9 @@ class AdvancedItemStack(val material: Material, val init: AdvancedItemStackConte
         if(meta.hasItemName()) name(meta.itemName())
         if(meta.hasLore()) lore(meta.lore()!!)
         if(meta.hasItemModel()) model(meta.itemModel!!)
+        if(meta.hasEnchants()) enchants(meta.enchants)
+
+        count(itemStack.amount)
 
         persistentDataContainer {
             meta.persistentDataContainer.copyTo(this, true)

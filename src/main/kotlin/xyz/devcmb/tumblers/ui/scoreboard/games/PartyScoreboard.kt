@@ -53,7 +53,6 @@ class PartyScoreboard(
             Component.empty(),
             Format.mm(" <white><green>Wins:</green> ${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.WIN }?.size ?: 0}</white>"),
             Format.mm(" <white><red>Losses:</red> ${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.LOSS }?.size ?: 0}</white>"),
-            Format.mm(" <white><yellow>Draws:</yellow> ${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.DRAW }?.size ?: 0}</white>"),
             Component.empty()
         ))
 
