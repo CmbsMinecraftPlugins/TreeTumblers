@@ -243,11 +243,14 @@ class SnifferCaretakerController : GameBase(
         SnifferCaretakerScoreSource.TASK_4_STAR to 80,
         SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
-    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")),
+    icon = Component.text("\uEA00").font(font),
+    logo = Component.text("\uEA01").font(font),
     scoreboard = "snifferCaretakerScoreboard",
     name = "Sniffer Caretaker"
 ) {
     companion object {
+        val font = NamespacedKey("tumbling", "games/sniffer_caretaker")
+
         val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
 
         @field:Configurable("games.snifferCaretaker.game_length")
@@ -1097,6 +1100,7 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun playerBucketFillEvent(event: PlayerBucketFillEvent) {
+
         event.isCancelled = true
         event.player.inventory.setItem(event.hand, ItemStack(Material.WATER_BUCKET))
     }
@@ -1109,7 +1113,9 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun playerInteractEntityEvent(event: PlayerInteractEntityEvent) {
         if (event.rightClicked.type == EntityType.COW || event.rightClicked.type == EntityType.CHICKEN) {
-            event.isCancelled = true
+            if (event.player.inventory.getItem(event.hand).type != Material.BUCKET) {
+                event.isCancelled = true
+            }
         }
     }
 
