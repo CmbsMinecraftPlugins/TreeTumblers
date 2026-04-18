@@ -206,6 +206,9 @@ class PartyController : GameBase(
     val inGamePlayers: MutableSet<Player> = HashSet()
     val disabledGameWaitingPlayers: MutableSet<Player> = HashSet()
 
+    val lastIndividualMatchups: HashMap<Player, Player> = HashMap()
+    val lastTeamMatchups: HashMap<Team, Team> = HashMap()
+
     val gameOutcomes: HashMap<Player, ArrayList<PartyGameResult>> = HashMap()
 
     val frozenPlayers: MutableSet<Player> = HashSet()
@@ -239,6 +242,8 @@ class PartyController : GameBase(
 
         actionBarRunnable = object : BukkitRunnable() {
             override fun run() {
+                if(currentState != State.GAME_ON) return
+
                 gameParticipants.forEach {
                     val message: Component = if(currentGameType == PartyGameType.GAME_OVER) {
                         Format.mm("<red>Game Over!</red>")
@@ -413,7 +418,11 @@ class PartyController : GameBase(
         waitingIndividualPlayers.add(player)
 
         val opponent = try {
-            waitingIndividualPlayers.first { it != player && it.tumblingPlayer.team != player.tumblingPlayer.team }
+            waitingIndividualPlayers.first {
+                it != player
+                && it.tumblingPlayer.team != player.tumblingPlayer.team
+                && lastIndividualMatchups[player] != it
+            }
         } catch(e: NoSuchElementException) {
             null
         }
@@ -471,6 +480,14 @@ class PartyController : GameBase(
 
     suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>) {
         matchup.announceLoading()
+
+        if(matchup is PartyMatchup.IndividualMatchup && matchup.player1 != null && matchup.player2 != null) {
+            lastIndividualMatchups.put(matchup.player1, matchup.player2)
+            lastIndividualMatchups.put(matchup.player2, matchup.player1)
+        } else if(matchup is PartyMatchup.TeamMatchup) {
+            lastTeamMatchups.put(matchup.team1, matchup.team2)
+            lastTeamMatchups.put(matchup.team2, matchup.team1)
+        }
 
         val gameClass = game
             .getDeclaredConstructor(PartyController::class.java, PartyMatchup::class.java)
@@ -538,10 +555,11 @@ class PartyController : GameBase(
 
         suspendSync {
             matchup.spawn(firstSideSpawns, secondSideSpawns)
-            matchup.concludeLoading()
             matchup.kitPlayers(gameClass.kit)
             gameClass.postSpawn()
         }
+
+        matchup.concludeLoading()
         matchup.announceMatchup()
         gameClass.start()
     }
@@ -621,7 +639,7 @@ class PartyController : GameBase(
         fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>)
         fun kitPlayers(kit: Kit.KitDefinition)
         fun announceLoading()
-        fun concludeLoading()
+        suspend fun concludeLoading()
         suspend fun announceMatchup()
 
         class IndividualMatchup(val partyController: PartyController?, val player1: Player?, val player2: Player?) : PartyMatchup {
@@ -648,20 +666,28 @@ class PartyController : GameBase(
             override fun announceLoading() {
                 val title = Title.title(
                     Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
-                    Component.text("Loading...", NamedTextColor.AQUA),
-                    Title.Times.times(Tick.of(0), Tick.of(9999999), Tick.of(0))
+                    Component.text("Loading arena...", NamedTextColor.GREEN),
+                    Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
 
                 player1!!.showTitle(title)
                 player2?.showTitle(title)
             }
 
-            override fun concludeLoading() {
-                player1!!.resetTitle()
-                player2?.resetTitle()
+            override suspend fun concludeLoading() {
+                val title = Title.title(
+                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("Loading arena...", NamedTextColor.GREEN),
+                    Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
+                )
+
+                player1!!.showTitle(title)
+                player2?.showTitle(title)
 
                 player1.showToAll()
                 player2?.showToAll()
+
+                delay(1000)
             }
 
             override suspend fun announceMatchup() {
@@ -749,13 +775,15 @@ class PartyController : GameBase(
                 team2.audience.showTitle(title)
             }
 
-            override fun concludeLoading() {
+            override suspend fun concludeLoading() {
                 team1.audience.resetTitle()
                 team2.audience.resetTitle()
 
                 (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
                     it.showToAll()
                 }
+
+                delay(1000)
             }
 
             override suspend fun announceMatchup() {
