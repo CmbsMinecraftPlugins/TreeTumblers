@@ -17,6 +17,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -510,6 +511,16 @@ abstract class GameBase(
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
             event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerHealEvent(event: EntityRegainHealthEvent) {
+        if(
+            event.entity !is Player
+            || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM
+            || !flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
+        ) return
+        event.isCancelled = true
     }
 
     /**

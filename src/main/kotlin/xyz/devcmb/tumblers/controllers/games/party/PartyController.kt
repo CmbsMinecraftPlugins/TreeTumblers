@@ -132,7 +132,11 @@ class PartyController : GameBase(
         PartyScoreSource.TEAM_GAME_DRAW to 160,
         PartyScoreSource.TEAM_GAME_LOSE to 40
     ),
-    flags = setOf(Flag.DISABLE_FALL_DAMAGE, Flag.DISABLE_BLOCK_BREAKING),
+    flags = setOf(
+        Flag.DISABLE_FALL_DAMAGE,
+        Flag.DISABLE_BLOCK_BREAKING,
+        Flag.DISABLE_NATURAL_REGENERATION
+    ),
     icon = Component.text("\uEA00").font(font),
     scoreboard = "partyScoreboard",
     logo = Component.text("\uEA01").font(font)
