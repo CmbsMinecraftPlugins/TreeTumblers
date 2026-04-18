@@ -31,7 +31,10 @@ class IntermissionScoreboard(
 
         val timer: Component = when {
             eventController.readyCheckTimer != null ->
-                Format.mm("<aqua>Ready Check: <white><team></white></aqua>")
+                Format.mm(
+                    "<aqua>Ready Check: <white><timer></white></aqua>",
+                    Placeholder.component("timer", eventController.eventTimer!!.format())
+                )
             eventController.eventTimer != null ->
                 Format.mm(
                     "<aqua>${eventController.eventTimerTitle ?: "Timer"}: <white><timer></white></aqua>",

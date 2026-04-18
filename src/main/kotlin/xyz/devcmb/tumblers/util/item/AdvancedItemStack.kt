@@ -4,7 +4,6 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
 class AdvancedItemStack(val material: Material, val init: AdvancedItemStackContext.() -> Unit) {
-    val context: AdvancedItemStackContext = AdvancedItemStackContext(material)
     constructor(itemStack: ItemStack, init: AdvancedItemStackContext.() -> Unit = {}): this(itemStack.type, {
         val meta = itemStack.itemMeta
 
@@ -23,6 +22,7 @@ class AdvancedItemStack(val material: Material, val init: AdvancedItemStackConte
     })
 
     fun build(): ItemStack {
+        val context = AdvancedItemStackContext(material)
         context.init()
         return context.build()
     }

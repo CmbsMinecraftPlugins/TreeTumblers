@@ -7,7 +7,6 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.session.ClipboardHolder
 import io.papermc.paper.util.Tick
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
@@ -97,7 +96,7 @@ class PartyController : GameBase(
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")))
+            .append(Component.text("\uEA00").font(font))
             .append(Component.text(" Party"))
         ) {
             teleportConfig("cutscene.start")
@@ -193,7 +192,7 @@ class PartyController : GameBase(
             gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
         },
         PartyScoreSource.INDIVIDUAL_GAME_LOSE to {
-            gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
+            gameMessage(Format.mm("<white>Game lost! <gold>[+${it}]</gold></white>"))
         },
         PartyScoreSource.TEAM_GAME_LOSE to {
             gameMessage(Format.mm("<white>Game lost! <gold>[+${it}]</gold></white>"))
@@ -458,7 +457,7 @@ class PartyController : GameBase(
             opponent?.let { inGamePlayers.add(it) }
 
             val xPosition = reserveArenaX()
-            TreeTumblers.pluginScope.async {
+            TreeTumblers.pluginScope.launch {
                 runGame(
                     PartyMatchup.IndividualMatchup(this@PartyController, player, opponent),
                     individualGames.random(),
@@ -499,7 +498,7 @@ class PartyController : GameBase(
             }
 
             val xPosition = reserveArenaX()
-            TreeTumblers.pluginScope.async {
+            TreeTumblers.pluginScope.launch {
                 runGame(PartyMatchup.TeamMatchup(this@PartyController, team, opponent), teamGames.random(), xPosition)
             }
         }
@@ -520,19 +519,19 @@ class PartyController : GameBase(
             .getDeclaredConstructor(PartyController::class.java, PartyMatchup::class.java)
             .newInstance(this, matchup)
 
-        Bukkit.getPluginManager().registerEvents(gameClass, TreeTumblers.plugin)
-        activeGames.add(gameClass)
-
         if(
             (currentGameType == PartyGameType.INDIVIDUAL && !gameClass.individual)
             || (currentGameType == PartyGameType.TEAM && !gameClass.team)
             || currentGameType == PartyGameType.DISABLED
         ) throw GameControllerException("Attempted to start a game mismatched with the current game type. Expected $currentGameType")
 
+        Bukkit.getPluginManager().registerEvents(gameClass, TreeTumblers.plugin)
+        activeGames.add(gameClass)
+
         val schematicFolder = File(partyGamesDirectory, gameClass.id)
         if(!schematicFolder.exists() || !schematicFolder.isDirectory) throw GameControllerException("Game ${gameClass.id} does not have any schematic files")
 
-        val chosenSchematic = Files.list(Path.of(schematicFolder.path)).toList().random()
+        val chosenSchematic = Files.list(Path.of(schematicFolder.path)).use { it.toList() }.random()
         val chosenFile = File(chosenSchematic.toString())
         val format = ClipboardFormats.findByFile(chosenFile)
 
@@ -784,7 +783,7 @@ class PartyController : GameBase(
                 }
 
                 team2.getOnlinePlayers().forEachIndexed { i, it ->
-                    it.teleport(spawns2[i % spawns1.size])
+                    it.teleport(spawns2[i % spawns2.size])
                     it.heal(20.0)
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 1))
                     partyController!!.frozenPlayers.add(it)

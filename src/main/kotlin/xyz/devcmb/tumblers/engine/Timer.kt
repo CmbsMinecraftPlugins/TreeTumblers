@@ -70,6 +70,8 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      *
      * seconds - The amount of seconds remaining
      *
+     * timeSeconds - The amount of seconds in the minute remaining
+     *
      * time - The formatted time string (defined by the [format] method)
      */
     fun timeBroadcast(time: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT, onBroadcast: (() -> Unit)? = null) {
@@ -80,11 +82,13 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         require(job == null) { "Timer has already been started." }
 
         timerController.register(this)
+        isRunning = true
         job = TreeTumblers.Companion.pluginScope.launch {
             while(true) {
+                delay(1000)
+
                 if(paused) continue
 
-                delay(1000)
                 currentTime--
 
                 if(currentTime <= 0) break
@@ -94,8 +98,9 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
                     it.value.third?.invoke(currentTime)
                     Bukkit.broadcast(it.value.second.formatMessage(Format.mm(
                         it.value.first,
-                        Placeholder.unparsed("minutes", (currentTime % 60).toString()),
+                        Placeholder.unparsed("minutes", (currentTime / 60).toString()),
                         Placeholder.unparsed("seconds", currentTime.toString()),
+                        Placeholder.unparsed("timeSeconds", (currentTime % 60).toString()),
                         Placeholder.component("time", format())
                     )))
                 }
@@ -117,7 +122,6 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
             onComplete?.invoke(false)
             timerController.unregister(this@Timer)
         }
-        isRunning = true
         if(joined) job!!.join()
     }
 
