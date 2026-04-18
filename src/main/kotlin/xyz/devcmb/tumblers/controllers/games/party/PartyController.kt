@@ -133,13 +133,16 @@ class PartyController : GameBase(
         PartyScoreSource.TEAM_GAME_LOSE to 40
     ),
     flags = setOf(Flag.DISABLE_FALL_DAMAGE, Flag.DISABLE_BLOCK_BREAKING),
-    icon = Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")),
-    scoreboard = "partyScoreboard"
+    icon = Component.text("\uEA00").font(font),
+    scoreboard = "partyScoreboard",
+    logo = Component.text("\uEA01").font(font)
 ) {
     data class PartyGameIdentifier(val id: String)
     data class PartyGameSchematic(val file: File)
 
     companion object {
+        val font = NamespacedKey("tumbling", "games/party")
+
         val games: ArrayList<Class<out PartyGame>> = arrayListOf(
             StandardSwordDuels::class.java,
             StandardAxeDuels::class.java,
