@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.party.games.shared
 
-import io.papermc.paper.event.entity.EntityMoveEvent
 import org.bukkit.Material
+import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Horse
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -40,12 +40,22 @@ class SpearDuels(
                 entity.inventory.saddle = ItemStack(Material.SADDLE)
                 entity.isInvulnerable = true
                 entity.addPassenger(it)
+
+                entity.setAI(false)
+                entity.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = 0.0
+                entity.jumpStrength = 0.0
+
                 horses.put(it, entity)
             }
         }
     }
 
     override suspend fun start() {
+        horses.forEach { player, it ->
+            it.setAI(true)
+            it.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = 0.225
+            it.jumpStrength = 0.7
+        }
     }
 
     override fun cleanup() {
@@ -56,16 +66,6 @@ class SpearDuels(
     fun playerDismountEvent(event: VehicleExitEvent) {
         val player = event.exited
         if(player !is Player || player !in matchup.players) return
-
-        event.isCancelled = true
-    }
-
-    @EventHandler
-    fun horseMoveEvent(event: EntityMoveEvent) {
-        if(event.entity !is Horse || event.entity !in horses.values) return
-
-        val player = event.entity.passengers.first { it is Player }
-        if(player == null || !partyController!!.frozenPlayers.contains(player)) return
 
         event.isCancelled = true
     }

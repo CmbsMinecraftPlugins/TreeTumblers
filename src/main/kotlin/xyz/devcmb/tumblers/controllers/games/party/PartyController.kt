@@ -522,6 +522,7 @@ class PartyController : GameBase(
             gameClass.postSpawn()
         }
         matchup.announceMatchup()
+        gameClass.start()
     }
 
     fun endGame(game: PartyGame, winningSide: PartyGame.MatchupSide?) = TreeTumblers.pluginScope.launch {
@@ -558,6 +559,8 @@ class PartyController : GameBase(
         delay(2000)
 
         if(!activeGames.contains(game)) return@launch
+
+        game.cleanup()
         activeGames.remove(game)
 
         HandlerList.unregisterAll(game)
