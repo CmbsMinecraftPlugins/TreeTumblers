@@ -59,6 +59,10 @@ fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
 }
 
+fun Player.giveKit(kit: Kit.KitDefinition) {
+    Kit.giveKit(this, kit)
+}
+
 fun List<Location>.getPlayers(heightUp: Int, heightDown: Int, condition: ((player: Player) -> Boolean)? = null): List<Player> {
     return Bukkit.getOnlinePlayers().filter { condition?.invoke(it) ?: true }.filter { player ->
         val playerLocation = player.location

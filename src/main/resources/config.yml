@@ -14,8 +14,8 @@ event:
       # x1,y1,z1,x2,y2,z2
       - [10,192,7,23,188,-6]
       - [10,192,9,23,188,22]
-      - [8,192,9,8,188,9]
-      - [8,192,7,8,188,7]
+      - [8,192,23,-5,188,9]
+      - [8,192,7,-5,188,-6]
     logos:
       - [17, 198, 0]
       - [17, 198, 16]
@@ -28,6 +28,7 @@ templates:
   # The path where all the template worlds are contained
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
   world_root: "&/templates/worlds"
+  party_games: "&/templates/party"
 
 lobby:
   world: hub
@@ -295,3 +296,19 @@ games:
           mob_spawn: [ 20.0, 70.0, -9.0 ]
           mob_spawn_sign: [ 3.0, 65.7, -10.9, 0.0, 0.0 ]
           spider_spawn: [ -2.25, 60.0, -18.25 ]
+  party:
+    worlds_folder: "party"
+    allow_solos: false
+    allow_refights: false
+    maps:
+      main:
+        world: "main"
+        data:
+          game_pivot: [-10000,128,0]
+          pregame_spawn: [0.5,72.0,-0.5]
+          cutscene:
+            start: [-0.5,74.5,-7.5,27.8,5.5]
+            first: [-7.8,163.2,496.7,-59.4,7.7]
+            second: [-9.6, 38.5, 13.1, 1.3, 4.9]
+            third: [-9.3, 38.2, 15.4, -30.6, 8.1]
+            fourth: [-11.8, 38.1, 14.5, 16.7, 4.5]

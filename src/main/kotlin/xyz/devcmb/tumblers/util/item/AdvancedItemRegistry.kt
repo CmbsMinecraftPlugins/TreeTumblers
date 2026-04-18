@@ -43,6 +43,6 @@ object AdvancedItemRegistry {
             PersistentDataType.STRING
         ) ?: return null
 
-        return items.get(id)
+        return items[id]
     }
 }

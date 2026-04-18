@@ -24,7 +24,6 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
-import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerInteractEvent
@@ -146,7 +145,8 @@ class DeathrunController : GameBase(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
-        Flag.DISABLE_BLOCK_BREAKING
+        Flag.DISABLE_BLOCK_BREAKING,
+        Flag.DISABLE_NATURAL_REGENERATION
     ),
     scores = hashMapOf(
         // this * placement = awarded score
@@ -591,9 +591,6 @@ class DeathrunController : GameBase(
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
                 it.disableBossBar("countdownBossbar")
-                if(it.gameMode == GameMode.ADVENTURE) {
-                    it.gameMode = GameMode.SURVIVAL
-                }
             }
         }
         super.cleanup()
@@ -873,12 +870,6 @@ class DeathrunController : GameBase(
     fun playerRunFail(event: PlayerDeathEvent) {
         event.isCancelled = true
         failRun(event.player)
-    }
-
-    @EventHandler
-    fun playerHealEvent(event: EntityRegainHealthEvent) {
-        if(event.entity !is Player || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM) return
-        event.isCancelled = true
     }
 
     @EventHandler

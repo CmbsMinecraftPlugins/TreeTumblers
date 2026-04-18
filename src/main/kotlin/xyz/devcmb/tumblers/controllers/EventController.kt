@@ -43,7 +43,6 @@ import xyz.devcmb.tumblers.util.playerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
-import java.util.UUID
 import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
@@ -133,11 +132,12 @@ class EventController : IController {
             if(!ready) return@launch
 
             state = State.PRE_EVENT
-            eventTimer = Timer("pre_event_timer", 5)
-            eventTimer!!.start()
+            eventTimer = Timer(5) {
+                id = "pre_event_timer"
+                joined = true
+            }
             eventTimerTitle = "Event Start"
-
-            eventTimer!!.join()
+            eventTimer!!.start()
             runOpeningCutscene()
 
             repeat(totalGames) {
@@ -181,19 +181,22 @@ class EventController : IController {
             readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
         }
 
-        readyCheckTimer = Timer("ready_check_expiry_${UUID.randomUUID().toString().take(6)}", 10) { early ->
-            if(early) return@Timer
+        readyCheckTimer = Timer(10) {
+            id = "ready_check_expiry"
+            onComplete { early ->
+                if(early) return@onComplete
 
-            readyCheckWaiting.forEach {
-                Bukkit.broadcast(Format.error(
-                    Format.mm(
-                        "<player> is not ready!",
-                        Placeholder.component("player", it.formattedName)
-                    )
-                ))
+                readyCheckWaiting.forEach {
+                    Bukkit.broadcast(Format.error(
+                        Format.mm(
+                            "<player> is not ready!",
+                            Placeholder.component("player", it.formattedName)
+                        )
+                    ))
+                }
+                readyCheckWaiting.clear()
+                readyCheckAborted = true
             }
-            readyCheckWaiting.clear()
-            readyCheckAborted = true
         }
         readyCheckTimer!!.start()
 
@@ -254,7 +257,9 @@ class EventController : IController {
 
     suspend fun runOpeningCutscene() {
         // TODO: Add more steps and adjust the `time` to match
-        eventTimer = Timer("event_opening_cutscene", 7)
+        eventTimer = Timer(7) {
+            id = "event_opening_cutscene"
+        }
         eventTimer!!.start()
         eventTimerTitle = "Cutscene"
 
@@ -306,7 +311,7 @@ class EventController : IController {
             Quaternionf(0.239f, -0.370f, 0.099f, 0.892f),
             Quaternionf(-0.099f, 0.892f, -0.239f, -0.370f),
             Quaternionf(0.099f, 0.892f, -0.239f, 0.370f),
-            Quaternionf(0.239f, -0.370f, -0.099f, 0.892f)
+            Quaternionf(0.239f, 0.370f, -0.099f, 0.892f)
         )
 
         logoPositions.forEach {
@@ -325,7 +330,10 @@ class EventController : IController {
             }
         }
 
-        eventTimer = Timer("event_voting", 20)
+        eventTimer = Timer(20) {
+            id = "event_voting"
+            joined = true
+        }
         eventTimerTitle = "Voting"
 
         repeat(4) {
@@ -373,7 +381,6 @@ class EventController : IController {
         ))
 
         eventTimer!!.start()
-        eventTimer!!.join()
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
             Format.mm("<yellow>Voting Closed!</yellow>"),
