@@ -437,6 +437,8 @@ class EventController : IController {
             quadrantLogoDisplays.forEach {
                 it.value.remove()
             }
+
+            quadrantLogoDisplays.clear()
         }
     }
 

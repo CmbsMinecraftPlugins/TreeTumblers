@@ -51,6 +51,7 @@ import java.util.UUID
  * @param flags A [Set] of [Flag] enums to determine certain shared behaviors
  * @param scores A [HashMap] of [xyz.devcmb.tumblers.engine.score.CommonScoreSource]s to the amount of score they give
  * @param icon The component icon of the game
+ * @param logo The component logo of the game
  * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
  *
  * @property currentState The current [State] of the individual game
