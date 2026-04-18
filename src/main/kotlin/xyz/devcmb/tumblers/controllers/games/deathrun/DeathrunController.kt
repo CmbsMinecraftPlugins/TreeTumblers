@@ -157,6 +157,8 @@ class DeathrunController : GameBase(
         DeathrunScoreSource.TRAP_DAMAGE to 5
     ),
     icon = Component.text("\uEA00").font(font),
+    logo = Component.text("\uEA01").font(font)
+        .shadowColor(ShadowColor.none()),
     scoreboard = "deathrunScoreboard"
 ) {
     companion object {
