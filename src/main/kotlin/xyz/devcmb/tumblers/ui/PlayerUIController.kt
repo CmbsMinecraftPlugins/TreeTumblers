@@ -18,9 +18,11 @@ import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.ReadyCheckInventory
+import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.games.BreachScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.SnifferCaretakerScoreboard
@@ -44,6 +46,7 @@ class PlayerUIController(val player: Player) {
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
+        registerInventory(BreachKitSelector(player, gameController))
         registerInventory(ReadyCheckInventory(player, eventController))
 
         registerBossBar(AliveTeamsBossbar(gameController))
@@ -58,6 +61,7 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(CrumbleScoreboard(gameController, player))
         registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
+        registerScoreboard(BreachScoreboard())
 
         registerScoreboard(IntermissionScoreboard(eventController, player))
 

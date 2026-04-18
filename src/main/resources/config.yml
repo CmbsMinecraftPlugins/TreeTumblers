@@ -290,3 +290,11 @@ games:
           mob_spawn: [ 20.0, 70.0, -9.0 ]
           mob_spawn_sign: [ 3.0, 65.7, -10.9, 0.0, 0.0 ]
           spider_spawn: [ -2.25, 60.0, -18.25 ]
+  breach:
+    worlds_folder: "breach"
+    maps:
+      stadium:
+        world: "stadium"
+        data:
+          team_1_spawn: [-2.0, 65.0, -2.0, 90.0, 0.0]
+          team_2_spawn: [-26.0, 65.0, -26.0, -90.0, 0.0]
