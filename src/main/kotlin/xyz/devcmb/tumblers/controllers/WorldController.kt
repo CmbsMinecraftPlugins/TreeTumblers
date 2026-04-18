@@ -182,7 +182,8 @@ class WorldController : IController {
     @EventHandler(priority = EventPriority.LOWEST)
     fun onServerLoad(event: ServerLoadEvent) {
         if (Bukkit.getWorld(lobbyWorld) == null) {
-            Bukkit.createWorld(WorldCreator(lobbyWorld))
+            val world = Bukkit.createWorld(WorldCreator(lobbyWorld))
+            world?.isAutoSave = false
         }
     }
 
