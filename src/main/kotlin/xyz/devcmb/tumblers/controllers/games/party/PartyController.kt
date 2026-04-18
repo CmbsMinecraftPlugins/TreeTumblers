@@ -22,6 +22,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import org.bukkit.entity.Projectile
 import org.bukkit.event.EventHandler
 import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
@@ -173,6 +174,9 @@ class PartyController : GameBase(
 
         @field:Configurable("games.party.allow_solos")
         var allowSolos: Boolean = false
+
+        @field:Configurable("games.party.allow_refights")
+        var allowRefights: Boolean = false
     }
 
     override val scoreMessages: HashMap<ScoreSource, (Int) -> Component> = hashMapOf(
@@ -200,6 +204,14 @@ class PartyController : GameBase(
 
     lateinit var pivot: Location
     var nextXPosition: Int = 0
+
+    // ai because this race condition weird </3
+    @Synchronized
+    private fun reserveArenaX(): Int {
+        nextXPosition += 80
+        return nextXPosition
+    }
+
     val activeGames: ArrayList<PartyGame> = ArrayList()
     var currentGameType = PartyGameType.INDIVIDUAL
 
@@ -411,6 +423,12 @@ class PartyController : GameBase(
             it.disableBossBar("countdownBossbar")
         }
 
+        suspendSync {
+            gameParticipants.forEach {
+                it.showToAll()
+            }
+        }
+
         super.cleanup()
     }
 
@@ -424,7 +442,7 @@ class PartyController : GameBase(
             waitingIndividualPlayers.first {
                 it != player
                 && it.tumblingPlayer.team != player.tumblingPlayer.team
-                && lastIndividualMatchups[player] != it
+                && (lastIndividualMatchups[player] != it || allowRefights)
             }
         } catch(e: NoSuchElementException) {
             null
@@ -439,13 +457,12 @@ class PartyController : GameBase(
             inGamePlayers.add(player)
             opponent?.let { inGamePlayers.add(it) }
 
-            // without this, it would load multiple arenas at the same point
-            nextXPosition += 80
-
+            val xPosition = reserveArenaX()
             TreeTumblers.pluginScope.async {
                 runGame(
                     PartyMatchup.IndividualMatchup(this@PartyController, player, opponent),
-                    individualGames.random()
+                    individualGames.random(),
+                    xPosition
                 )
             }
         }
@@ -465,23 +482,30 @@ class PartyController : GameBase(
 
     fun addWaitingTeam(team: Team) {
         waitingTeams.add(team)
-        if(waitingTeams.size >= 2 || allowSolos) {
-            val opponent =
-                if(allowSolos) Team.entries.filter { it != team && it.playingTeam }.random()
-                else waitingTeams.first { it != team }
 
+        val opponent = try {
+            if (allowSolos) Team.entries.filter { it != team && it.playingTeam && (lastTeamMatchups[team] != it || allowRefights) }.random()
+            else waitingTeams.first { it != team && (lastTeamMatchups[team] != it || allowRefights) }
+        } catch(e: Exception) {
+            null
+        }
+
+        if(opponent != null) {
             waitingTeams.remove(team)
             waitingTeams.remove(opponent)
 
-            nextXPosition += 80
+            (team.getOnlinePlayers() + opponent.getOnlinePlayers()).forEach {
+                inGamePlayers.add(it)
+            }
 
+            val xPosition = reserveArenaX()
             TreeTumblers.pluginScope.async {
-                runGame(PartyMatchup.TeamMatchup(this@PartyController, team, opponent), teamGames.random())
+                runGame(PartyMatchup.TeamMatchup(this@PartyController, team, opponent), teamGames.random(), xPosition)
             }
         }
     }
 
-    suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>) {
+    suspend fun runGame(matchup: PartyMatchup, game: Class<out PartyGame>, xPosition: Int) {
         matchup.announceLoading()
 
         if(matchup is PartyMatchup.IndividualMatchup && matchup.player1 != null && matchup.player2 != null) {
@@ -519,7 +543,7 @@ class PartyController : GameBase(
             clipboard = reader.read()
         }
 
-        val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(nextXPosition)
+        val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(xPosition)
 
         val editSession = WorldEdit.getInstance()
             .newEditSessionBuilder()
@@ -602,7 +626,9 @@ class PartyController : GameBase(
 
         if(!activeGames.contains(game)) return@launch
 
-        game.cleanup()
+        suspendSync {
+            game.cleanup()
+        }
         activeGames.remove(game)
 
         HandlerList.unregisterAll(game)
@@ -687,8 +713,10 @@ class PartyController : GameBase(
                 player1!!.showTitle(title)
                 player2?.showTitle(title)
 
-                player1.showToAll()
-                player2?.showToAll()
+                suspendSync {
+                    player1.showToAll()
+                    player2?.showToAll()
+                }
 
                 delay(1000)
             }
@@ -751,14 +779,14 @@ class PartyController : GameBase(
                 team1.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns1[i % spawns1.size])
                     it.heal(20.0)
-                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 1))
                     partyController!!.frozenPlayers.add(it)
                 }
 
                 team2.getOnlinePlayers().forEachIndexed { i, it ->
                     it.teleport(spawns2[i % spawns1.size])
                     it.heal(20.0)
-                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5, 1))
+                    it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 1))
                     partyController!!.frozenPlayers.add(it)
                 }
             }
@@ -770,8 +798,8 @@ class PartyController : GameBase(
             override fun announceLoading() {
                 val title = Title.title(
                     Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
-                    Component.text("Loading...", NamedTextColor.AQUA),
-                    Title.Times.times(Tick.of(0), Tick.of(9999999), Tick.of(0))
+                    Component.text("Loading arena...", NamedTextColor.GREEN),
+                    Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
 
                 team1.audience.showTitle(title)
@@ -779,11 +807,19 @@ class PartyController : GameBase(
             }
 
             override suspend fun concludeLoading() {
-                team1.audience.resetTitle()
-                team2.audience.resetTitle()
+                val title = Title.title(
+                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("Loading arena...", NamedTextColor.GREEN),
+                    Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
+                )
 
-                (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
-                    it.showToAll()
+                team1.audience.showTitle(title)
+                team2.audience.showTitle(title)
+
+                suspendSync {
+                    (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
+                        it.showToAll()
+                    }
                 }
 
                 delay(1000)
@@ -850,7 +886,22 @@ class PartyController : GameBase(
 
     @EventHandler
     fun entityDamageEvent(event: EntityDamageByEntityEvent) {
-        if(event.damager !in inGamePlayers || event.entity !in inGamePlayers) event.isCancelled = true
+        val victim = event.entity as? Player ?: return
+
+        val attacker: Player? = when (val damager = event.damager) {
+            is Player -> damager
+            is Projectile -> damager.shooter as? Player
+            else -> null
+        }
+
+        if (attacker == null) {
+            event.isCancelled = true
+            return
+        }
+
+        if (attacker !in inGamePlayers || victim !in inGamePlayers) {
+            event.isCancelled = true
+        }
     }
 
     @EventHandler

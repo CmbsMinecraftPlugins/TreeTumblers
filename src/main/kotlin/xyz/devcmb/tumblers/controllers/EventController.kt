@@ -311,7 +311,7 @@ class EventController : IController {
             Quaternionf(0.239f, -0.370f, 0.099f, 0.892f),
             Quaternionf(-0.099f, 0.892f, -0.239f, -0.370f),
             Quaternionf(0.099f, 0.892f, -0.239f, 0.370f),
-            Quaternionf(0.239f, -0.370f, -0.099f, 0.892f)
+            Quaternionf(0.239f, 0.370f, -0.099f, 0.892f)
         )
 
         logoPositions.forEach {

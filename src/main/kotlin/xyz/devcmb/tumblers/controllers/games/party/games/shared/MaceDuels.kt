@@ -26,7 +26,6 @@ class MaceDuels(
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.MACE).apply {
             itemMeta = itemMeta.also {
-                it.addEnchant(Enchantment.DENSITY, 3, true)
                 it.addEnchant(Enchantment.WIND_BURST, 1, true)
             }
         }, ItemStack.of(Material.WIND_CHARGE, 64))

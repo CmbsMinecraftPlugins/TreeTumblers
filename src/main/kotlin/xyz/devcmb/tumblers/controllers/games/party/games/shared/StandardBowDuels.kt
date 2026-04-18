@@ -23,7 +23,7 @@ class StandardBowDuels(
         override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.CROSSBOW).apply {
             itemMeta = itemMeta.also {
                 it.addEnchant(Enchantment.INFINITY, 1, true)
-                it.addEnchant(Enchantment.QUICK_CHARGE, 1, true)
+                it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
             }
         }, ItemStack.of(Material.ARROW))
         override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET

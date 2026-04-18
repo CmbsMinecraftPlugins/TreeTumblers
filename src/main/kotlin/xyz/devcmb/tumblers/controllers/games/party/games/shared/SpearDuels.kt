@@ -1,12 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.party.games.shared
 
 import org.bukkit.Material
-import org.bukkit.attribute.Attribute
-import org.bukkit.entity.Horse
-import org.bukkit.entity.Player
-import org.bukkit.event.EventHandler
-import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.vehicle.VehicleExitEvent
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
@@ -25,59 +19,19 @@ class SpearDuels(
 
     override val id: String = "shared_spear_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.NETHERITE_SPEAR))
+        override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.DIAMOND_SPEAR))
         override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true
     override val individual: Boolean = true
 
-    val horses: HashMap<Player, Horse> = HashMap()
-
     override fun postSpawn() {
-        matchup.players.forEach {
-            partyController!!.map.world.spawn(it.location, Horse::class.java) { entity ->
-                entity.inventory.saddle = ItemStack(Material.SADDLE)
-                entity.isInvulnerable = true
-                entity.addPassenger(it)
-
-                entity.setAI(false)
-                entity.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = 0.0
-                entity.jumpStrength = 0.0
-
-                horses.put(it, entity)
-            }
-        }
     }
 
     override suspend fun start() {
-        horses.forEach { player, it ->
-            it.setAI(true)
-            it.getAttribute(Attribute.MOVEMENT_SPEED)?.baseValue = 0.225
-            it.jumpStrength = 0.7
-        }
     }
 
     override fun cleanup() {
-        horses.forEach { it.value.remove() }
-    }
-
-    @EventHandler
-    fun playerDismountEvent(event: VehicleExitEvent) {
-        val player = event.exited
-        if(player !is Player || player !in matchup.players) return
-
-        event.isCancelled = true
-    }
-
-    @EventHandler
-    fun playerDeathEvent(event: PlayerDeathEvent) {
-        val player = event.player
-        if(player !in matchup.players) return
-
-        if(!horses.contains(player)) return
-
-        horses[player]!!.remove()
-        horses.remove(player)
     }
 }

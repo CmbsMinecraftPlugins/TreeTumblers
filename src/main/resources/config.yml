@@ -299,6 +299,7 @@ games:
   party:
     worlds_folder: "party"
     allow_solos: false
+    allow_refights: false
     maps:
       main:
         world: "main"
