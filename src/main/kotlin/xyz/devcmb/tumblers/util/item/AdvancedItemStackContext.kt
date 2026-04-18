@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.util.item
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataContainer
@@ -37,6 +38,18 @@ class AdvancedItemStackContext(
         }
     }
 
+    fun count(amount: Int) {
+        item.amount = amount
+    }
+
+    fun enchants(enchantments: Map<Enchantment, Int>) {
+        item.itemMeta = item.itemMeta.also {
+            enchantments.forEach { enchant ->
+                it.addEnchant(enchant.key, enchant.value, true)
+            }
+        }
+    }
+
     fun rightClick(action: (Player) -> Unit) {
         rightClick = action
     }
@@ -65,6 +78,10 @@ class AdvancedItemStackContext(
         )
 
         item.itemMeta = meta
+
+        if(Enchantment.BINDING_CURSE.canEnchantItem(item) && !droppable) {
+            item.addEnchantment(Enchantment.BINDING_CURSE, 1)
+        }
 
         AdvancedItemRegistry.register(this)
         return item

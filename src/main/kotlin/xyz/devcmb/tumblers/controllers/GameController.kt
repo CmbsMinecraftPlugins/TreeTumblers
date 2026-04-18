@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers
 
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -30,7 +31,8 @@ class GameController : IController {
         val id: String,
         val name: String,
         val votable: Boolean,
-        val game: Class<out GameBase>
+        val game: Class<out GameBase>,
+        val logo: Component
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -50,7 +52,8 @@ class GameController : IController {
                     templateInstance.id,
                     templateInstance.name,
                     templateInstance.votable,
-                    gameClass
+                    gameClass,
+                    templateInstance.logo
                 ))
             }
     }

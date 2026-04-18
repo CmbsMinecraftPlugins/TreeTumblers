@@ -8,12 +8,18 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object Format {
+    val gameController by lazy {
+        ControllerDelegate.getController<GameController>()
+    }
+
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
             .resolver(StandardTags.defaults())
@@ -28,9 +34,24 @@ object Format {
         return miniMessage.deserialize(text, *placeholder)
     }
 
-    fun formatPlayerName(player: Player) = formatPlayerName(player.tumblingPlayer)
+    fun format(message: Component, format: MessageFormatter): Component {
+        return format.formatMessage(message)
+    }
 
-    fun formatPlayerName(player: TumblingPlayer): Component {
+    fun formatPlayerName(player: Player?) = formatPlayerName(player?.tumblingPlayer)
+
+    fun formatPlayerName(player: TumblingPlayer?): Component {
+        if(player == null) {
+            val team = Team.SPECTATORS
+            return Component.empty()
+                .append(
+                    Component.text(team.icon, NamedTextColor.WHITE)
+                        .font(NamespacedKey("tumbling", "icons"))
+                )
+                .append(Component.text(" "))
+                .append(Component.text("Player", team.color))
+        }
+
         val team = player.team
         return Component.empty()
             .append(
@@ -126,5 +147,25 @@ object Format {
             .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
             .append(Component.text(" "))
             .append(text).color(level.color)
+    }
+
+    enum class MessageFormatter(val id: String) {
+        DEFAULT("default") {
+            override fun formatMessage(message: Component): Component {
+                return message
+            }
+        },
+
+        GAME_MESSAGE("game") {
+            override fun formatMessage(message: Component): Component {
+                return mm(
+                    "<yellow>(<white><icon></white><yellow>)</yellow> <white><message></white>",
+                    Placeholder.component("icon", gameController.activeGame?.icon ?: Component.empty()),
+                    Placeholder.component("message", message)
+                )
+            }
+        };
+
+        abstract fun formatMessage(message: Component): Component
     }
 }

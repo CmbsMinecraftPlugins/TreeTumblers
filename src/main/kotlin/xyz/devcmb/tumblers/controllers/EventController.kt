@@ -12,10 +12,15 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.entity.Display
 import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.util.Transformation
+import org.joml.Quaternionf
+import org.joml.Vector3f
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
@@ -38,7 +43,6 @@ import xyz.devcmb.tumblers.util.playerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
-import java.util.UUID
 import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
@@ -128,11 +132,12 @@ class EventController : IController {
             if(!ready) return@launch
 
             state = State.PRE_EVENT
-            eventTimer = Timer("pre_event_timer", 5)
-            eventTimer!!.start()
+            eventTimer = Timer(5) {
+                id = "pre_event_timer"
+                joined = true
+            }
             eventTimerTitle = "Event Start"
-
-            eventTimer!!.join()
+            eventTimer!!.start()
             runOpeningCutscene()
 
             repeat(totalGames) {
@@ -176,19 +181,22 @@ class EventController : IController {
             readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
         }
 
-        readyCheckTimer = Timer("ready_check_expiry_${UUID.randomUUID().toString().take(6)}", 10) { early ->
-            if(early) return@Timer
+        readyCheckTimer = Timer(10) {
+            id = "ready_check_expiry"
+            onComplete { early ->
+                if(early) return@onComplete
 
-            readyCheckWaiting.forEach {
-                Bukkit.broadcast(Format.error(
-                    Format.mm(
-                        "<player> is not ready!",
-                        Placeholder.component("player", it.formattedName)
-                    )
-                ))
+                readyCheckWaiting.forEach {
+                    Bukkit.broadcast(Format.error(
+                        Format.mm(
+                            "<player> is not ready!",
+                            Placeholder.component("player", it.formattedName)
+                        )
+                    ))
+                }
+                readyCheckWaiting.clear()
+                readyCheckAborted = true
             }
-            readyCheckWaiting.clear()
-            readyCheckAborted = true
         }
         readyCheckTimer!!.start()
 
@@ -249,7 +257,9 @@ class EventController : IController {
 
     suspend fun runOpeningCutscene() {
         // TODO: Add more steps and adjust the `time` to match
-        eventTimer = Timer("event_opening_cutscene", 7)
+        eventTimer = Timer(7) {
+            id = "event_opening_cutscene"
+        }
         eventTimer!!.start()
         eventTimerTitle = "Cutscene"
 
@@ -286,9 +296,29 @@ class EventController : IController {
     )
 
     val quadrantGames: HashMap<Int, GameController.RegisteredGame> = HashMap()
+    val quadrantLogoDisplays: HashMap<Int, TextDisplay> = HashMap()
     val votes: ArrayList<Int> = ArrayList()
 
     suspend fun voting() {
+        val lobby = Bukkit.getWorld(lobbyWorld)!!
+        val logoLocations: ArrayList<Location> = ArrayList()
+        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")?.map {
+            if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
+            it.validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
+        } ?: throw TumblingEventException("Voting logo positions not provided")
+
+        val logoQuaternions: List<Quaternionf> = listOf(
+            Quaternionf(0.239f, -0.370f, 0.099f, 0.892f),
+            Quaternionf(-0.099f, 0.892f, -0.239f, -0.370f),
+            Quaternionf(0.099f, 0.892f, -0.239f, 0.370f),
+            Quaternionf(0.239f, 0.370f, -0.099f, 0.892f)
+        )
+
+        logoPositions.forEach {
+            val location = it.validateLocation(lobby) ?: throw TumblingEventException("Voting logo position is an invalid location")
+            logoLocations.add(location)
+        }
+
         state = State.VOTING
 
         suspendSync {
@@ -300,7 +330,10 @@ class EventController : IController {
             }
         }
 
-        eventTimer = Timer("event_voting", 20)
+        eventTimer = Timer(20) {
+            id = "event_voting"
+            joined = true
+        }
         eventTimerTitle = "Voting"
 
         repeat(4) {
@@ -315,6 +348,19 @@ class EventController : IController {
                 quadrant.forEach { loc ->
                     loc.block.type = votingConcretes[it]
                 }
+
+                val logoDisplay = lobby.spawn(logoLocations[it], TextDisplay::class.java) { display ->
+                    display.text(game.logo)
+                    display.transformation = Transformation(
+                        Vector3f(),
+                        logoQuaternions[it],
+                        Vector3f(6.0f, 6.0f, 6.0f),
+                        Quaternionf(0f, 0f, 0f, 1f)
+                    )
+                    display.brightness = Display.Brightness(15, 15)
+                }
+
+                quadrantLogoDisplays[it] = logoDisplay
             }
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
@@ -335,7 +381,6 @@ class EventController : IController {
         ))
 
         eventTimer!!.start()
-        eventTimer!!.join()
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
             Format.mm("<yellow>Voting Closed!</yellow>"),
@@ -364,17 +409,28 @@ class EventController : IController {
         delay(2000)
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
-            Component.text(winningGame.first.name, votingTextColors[winningGame.second]),
+            winningGame.first.logo,
             Component.text("And the game is..."),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
+
+        suspendSync {
+            quadrantGames.forEach { it
+                if (winningGame.first.id != it.value.id) {
+                    quadrantLogoDisplays[it.key]!!.remove()
+                }
+            }
+        }
+
         votes.forEachIndexed { i, it ->
-            votesComponent = votesComponent.append(Format.mm(
-                "<white><br><game> - ${it}</white>",
-                Placeholder.component("game", Component.text(quadrantGames[i]!!.name, votingTextColors[i]))
-            ))
+            votesComponent = votesComponent.append(
+                Format.mm(
+                    "<white><br><game> - ${it}</white>",
+                    Placeholder.component("game", Component.text(quadrantGames[i]!!.name, votingTextColors[i]))
+                )
+            )
         }
 
         Bukkit.broadcast(votesComponent)
@@ -383,6 +439,14 @@ class EventController : IController {
         votes.clear()
         nextGame = winningGame.first.id
         delay(7000)
+
+        suspendSync {
+            quadrantLogoDisplays.forEach {
+                it.value.remove()
+            }
+
+            quadrantLogoDisplays.clear()
+        }
     }
 
     fun countVotes(): Pair<GameController.RegisteredGame, Int> {

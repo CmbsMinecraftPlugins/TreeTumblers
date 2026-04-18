@@ -17,6 +17,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -39,8 +40,6 @@ import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.unpackCoordinates
-import java.util.UUID
-
 /**
  * Base class for all games
  * @param id The unique identifier of the game
@@ -51,6 +50,7 @@ import java.util.UUID
  * @param flags A [Set] of [Flag] enums to determine certain shared behaviors
  * @param scores A [HashMap] of [xyz.devcmb.tumblers.engine.score.CommonScoreSource]s to the amount of score they give
  * @param icon The component icon of the game
+ * @param logo The component logo of the game
  * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
  *
  * @property currentState The current [State] of the individual game
@@ -69,6 +69,7 @@ abstract class GameBase(
     val flags: Set<Flag>,
     val scores: HashMap<ScoreSource, Int>,
     val icon: Component,
+    val logo: Component,
     val scoreboard: String
 ): Listener {
     init {
@@ -298,13 +299,13 @@ abstract class GameBase(
     /**
      * Perform a countdown synchronously, stored in the [countdownTime] field
      * @param time How long to run the countdown for
-     * @return If the timer wasn't ended early
      */
-    suspend fun countdown(time: Int, id: String? = null, async: Boolean = false): Boolean {
-        currentTimer = Timer(id ?: "${id}_${if(async) "async_" else ""}countdown_${UUID.randomUUID().toString().take(5)}", time)
+    suspend fun countdown(time: Int, id: String? = null) {
+        currentTimer = Timer(time) {
+            id?.let { this.id = id }
+            joined = true
+        }
         currentTimer!!.start()
-        currentTimer!!.join()
-        return (currentTimer?.endedEarly == false)
     }
 
     /**
@@ -313,8 +314,11 @@ abstract class GameBase(
      * @param onComplete The function to invoke when the countdown finishes executing
      */
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
-        val success = countdown(time, id, true)
-        if(onComplete != null) onComplete(!success)
+        currentTimer = Timer(time) {
+            id?.let { this.id = it }
+            this.onComplete = onComplete
+        }
+        currentTimer!!.start()
     }
 
     /**
@@ -385,11 +389,7 @@ abstract class GameBase(
      * Gets a message formatted with the icon of the game
      */
     fun gameMessage(text: Component): Component {
-        return Component.empty()
-            .append(Component.text("(", NamedTextColor.YELLOW))
-            .append(icon)
-            .append(Component.text(") ", NamedTextColor.YELLOW))
-            .append(text)
+        return Format.format(text, Format.MessageFormatter.GAME_MESSAGE)
     }
 
     /**
@@ -511,6 +511,16 @@ abstract class GameBase(
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
             event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerHealEvent(event: EntityRegainHealthEvent) {
+        if(
+            event.entity !is Player
+            || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM
+            || !flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
+        ) return
+        event.isCancelled = true
     }
 
     /**

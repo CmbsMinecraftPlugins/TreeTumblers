@@ -30,6 +30,7 @@ import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
+import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
@@ -84,7 +85,10 @@ class PlayerController : IController {
         player.isFlying = false
         player.allowFlight = false
         player.clearActivePotionEffects()
-        player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+
+        if(player.vehicle != null) player.vehicle!!.remove()
+
+        runTask { player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!)) }
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
 
