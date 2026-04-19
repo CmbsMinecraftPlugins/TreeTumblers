@@ -146,7 +146,8 @@ class DeathrunController : GameBase(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
         Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     scores = hashMapOf(
         // this * placement = awarded score
@@ -722,7 +723,6 @@ class DeathrunController : GameBase(
     }
 
     fun failRun(player: Player) {
-        makePlayerSpectate(player)
         grantScore(player, DeathrunScoreSource.RUN_FAILED)
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
@@ -850,7 +850,6 @@ class DeathrunController : GameBase(
 
     @EventHandler
     fun playerRunFail(event: PlayerDeathEvent) {
-        event.isCancelled = true
         failRun(event.player)
     }
 

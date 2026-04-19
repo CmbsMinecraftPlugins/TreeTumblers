@@ -98,11 +98,7 @@ abstract class PartyGame(
     @EventHandler
     fun playerKillEvent(event: PlayerDeathEvent) {
         val player = event.player
-
         if(player !in matchup.players) return
-
-        partyController!!.makeSpectator(player)
-        event.isCancelled = true
 
         alivePlayers.remove(player)
         if(!alivePlayers.any { it.tumblingPlayer.team == player.tumblingPlayer.team }) {
@@ -115,10 +111,10 @@ abstract class PartyGame(
                         (winningSide == MatchupSide.FIRST && matchup.player1 !in alivePlayers)
                         || (winningSide == MatchupSide.SECOND && (matchup.player2 == null || matchup.player2 !in alivePlayers))
                     ) {
-                        partyController.endGame(this, null)
+                        partyController!!.endGame(this, null)
                         draw()
                     } else {
-                        partyController.endGame(this, winningSide)
+                        partyController!!.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }
@@ -132,10 +128,10 @@ abstract class PartyGame(
                         (winningSide == MatchupSide.FIRST && !matchup.team1.getOnlinePlayers().any { it in alivePlayers })
                         || (winningSide == MatchupSide.SECOND && !matchup.team2.getOnlinePlayers().any { it in alivePlayers })
                     ) {
-                        partyController.endGame(this, null)
+                        partyController!!.endGame(this, null)
                         draw()
                     } else {
-                        partyController.endGame(this, winningSide)
+                        partyController!!.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }

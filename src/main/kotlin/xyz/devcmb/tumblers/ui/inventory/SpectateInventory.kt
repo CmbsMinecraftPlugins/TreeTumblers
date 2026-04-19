@@ -35,7 +35,7 @@ class SpectateInventory(
                     Team.entries
                         .filter { it.playingTeam }
                         .flatMap { it.getOnlinePlayers() }
-                        .filter { it != player }
+                        .filter { it != player && it !in spectateController.spectators }
                         .toSet()
 
                 val items: ArrayList<InventoryMappedItem> = ArrayList()
@@ -56,6 +56,12 @@ class SpectateInventory(
                         },
                         onClick = { page, item ->
                             if(!spectateController.spectators.contains(player)) return@InventoryMappedItem
+
+                            if(spectateController.spectators.contains(plr)) {
+                                player.sendMessage(Format.warning("This player can't be spectated right now."))
+                                return@InventoryMappedItem
+                            }
+
                             player.teleport(plr.location)
                             page.ui.close()
                         }

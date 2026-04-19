@@ -134,7 +134,8 @@ class PartyController : GameBase(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     icon = Component.text("\uEA00").font(font),
     scoreboard = "partyScoreboard",

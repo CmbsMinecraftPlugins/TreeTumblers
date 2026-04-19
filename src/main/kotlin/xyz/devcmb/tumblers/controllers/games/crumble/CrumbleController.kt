@@ -140,7 +140,8 @@ class CrumbleController : GameBase(
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
     flags = setOf(
-        Flag.SURVIVAL_MODE
+        Flag.SURVIVAL_MODE,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     scores = hashMapOf(
         CommonScoreSource.KILL to 45,
@@ -976,10 +977,6 @@ class CrumbleController : GameBase(
         val tumblingPlayer = killed.tumblingPlayer
         val killedTeam = tumblingPlayer.team
         if(!killedTeam.playingTeam) return
-
-        event.isCancelled = true
-
-        makeSpectator(killed, false)
 
         alivePlayers[tumblingPlayer.team]!!.remove(killed)
         val currentPlayerMatchup = getCurrentMatchup(killed)!!
