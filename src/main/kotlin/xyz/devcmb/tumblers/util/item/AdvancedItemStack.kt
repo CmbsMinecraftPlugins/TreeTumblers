@@ -11,6 +11,7 @@ class AdvancedItemStack(val material: Material, val init: AdvancedItemStackConte
         if(meta.hasLore()) lore(meta.lore()!!)
         if(meta.hasItemModel()) model(meta.itemModel!!)
         if(meta.hasEnchants()) enchants(meta.enchants)
+        unbreakable(meta.isUnbreakable)
 
         count(itemStack.amount)
 

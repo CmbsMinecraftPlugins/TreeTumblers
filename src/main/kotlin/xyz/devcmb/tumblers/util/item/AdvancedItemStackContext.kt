@@ -50,6 +50,12 @@ class AdvancedItemStackContext(
         }
     }
 
+    fun unbreakable(unbreakable: Boolean) {
+        item.itemMeta = item.itemMeta.also {
+            it.isUnbreakable = unbreakable
+        }
+    }
+
     fun rightClick(action: (Player) -> Unit) {
         rightClick = action
     }

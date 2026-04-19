@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.breach
 
 import kotlinx.coroutines.delay
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
@@ -21,7 +22,10 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -64,6 +68,8 @@ class BreachController: GameBase(
 
     var team1holder: Player? = null
     var team2holder: Player? = null
+
+    var chosenKits: HashMap<Player, BreachKit> = hashMapOf()
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
@@ -138,9 +144,13 @@ class BreachController: GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
+        gameParticipants.forEach {
+            it.enableBossBar("countdownBossbar")
+        }
+
         repeat(5) {
-            spawn(SpawnCycle.PRE_ROUND)
-            delay(20000)
+            preround()
+            delay(10000)
         }
     }
 
@@ -151,13 +161,58 @@ class BreachController: GameBase(
 
     }
 
-    fun giveKit(player: Player, kit: BreachKit) {
+    suspend fun preround() {
+        chosenKits.clear()
+        team1holder = null
+        team2holder = null
+
+        playingTeams.first.getOnlinePlayers().forEach {
+            it.inventory.clear()
+            it.inventory.setItem(8, kitSelector.clone())
+        }
+        playingTeams.second.getOnlinePlayers().forEach {
+            it.inventory.clear()
+            it.inventory.setItem(8, kitSelector.clone())
+        }
+
+        spawn(SpawnCycle.PRE_ROUND)
+        countdown(15, "kit_selection")
+
+        if (team1holder == null) team1holder = playingTeams.first.getOnlinePlayers().random()
+        if (team2holder == null) team2holder = playingTeams.first.getOnlinePlayers().random()
+
+        playingTeams.first.getOnlinePlayers().forEach {
+            if (chosenKits.get(it) == null) {
+                chosenKits[it] = BreachKit.entries.random()
+            }
+
+            giveKit(it, chosenKits[it]!!, true)
+        }
+
+        playingTeams.second.getOnlinePlayers().forEach {
+            if (chosenKits.get(it) == null) {
+                chosenKits[it] = BreachKit.entries.random()
+            }
+
+            giveKit(it, chosenKits[it]!!, true)
+        }
+
+        asyncCountdown(8, "pre_round")
+        delay(3000)
+        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
+
+        // break walls
+    }
+
+    fun giveKit(player: Player, kit: BreachKit, removeSelector: Boolean = false) {
         player.giveKit(kit.kit)
+        chosenKits[player] = kit
 
         if (player == team1holder || player == team2holder) {
             player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
         }
 
+        if (removeSelector) return
         player.inventory.setItem(8, kitSelector.clone())
     }
 
