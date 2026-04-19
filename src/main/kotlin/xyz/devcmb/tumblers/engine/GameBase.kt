@@ -118,10 +118,10 @@ abstract class GameBase(
     var currentTimer: Timer? = null
 
     companion object {
-        @field:Configurable("lobby.world")
+        @Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @field:Configurable("lobby.position")
+        @Configurable("lobby.position")
         var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 
@@ -288,7 +288,7 @@ abstract class GameBase(
      * This should be expanded upon if the game has any listeners registered not in the main class.
      */
     open suspend fun cleanup() {
-        gameSpectators.forEach(this::unSpectate)
+        gameSpectators.toList().forEach(this::unSpectate)
 
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {

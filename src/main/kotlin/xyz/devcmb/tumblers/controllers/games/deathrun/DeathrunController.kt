@@ -505,7 +505,7 @@ class DeathrunController : GameBase(
     suspend fun postRound() {
         suspendSync {
             if(currentRound != rounds) {
-                participatingSpectators.forEach(this::unSpectate)
+                participatingSpectators.toList().forEach(this::unSpectate)
             }
 
             gameParticipants.forEach { plr ->
