@@ -315,6 +315,7 @@ games:
 
   breach:
     worlds_folder: "breach"
+    best_of: 3
     maps:
       stadium:
         world: "stadium"

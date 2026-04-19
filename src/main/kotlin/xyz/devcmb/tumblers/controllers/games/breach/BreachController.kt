@@ -8,12 +8,16 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.block.Action
+import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.data.Team
@@ -51,6 +55,12 @@ class BreachController: GameBase(
 ) {
     companion object {
         val kitItemsKey = NamespacedKey("tumbling", "kit_item")
+
+        @field:Configurable("games.breach.best_of")
+        var bestOf: Int = 3
+
+        val rounds: Int
+            get() { return (bestOf * 2) - 1 }
     }
 
     val currentMap: LoadedMap
@@ -64,7 +74,8 @@ class BreachController: GameBase(
     }
     val team1score: Int = 0
     val team2score: Int = 0
-    val currentRound: Int = 1
+    var currentRound: Int = 1
+    var gameState: GameState = GameState.KIT_SELECT
 
     var team1holder: Player? = null
     var team2holder: Player? = null
@@ -99,7 +110,9 @@ class BreachController: GameBase(
 
         playingTeams = Pair(team1, team2)
 
-        loadMap(maps.random(), 1)
+        repeat(rounds) {
+            loadMap(maps.random(), it)
+        }
     }
 
     /**
@@ -148,9 +161,10 @@ class BreachController: GameBase(
             it.enableBossBar("countdownBossbar")
         }
 
-        repeat(5) {
+        repeat(rounds) {
             preround()
             delay(10000)
+            currentRound++
         }
     }
 
@@ -165,6 +179,7 @@ class BreachController: GameBase(
         chosenKits.clear()
         team1holder = null
         team2holder = null
+        gameState = GameState.KIT_SELECT
 
         playingTeams.first.getOnlinePlayers().forEach {
             it.inventory.clear()
@@ -197,10 +212,11 @@ class BreachController: GameBase(
             giveKit(it, chosenKits[it]!!, true)
         }
 
+        gameState = GameState.PRE_ROUND
         asyncCountdown(8, "pre_round")
         delay(3000)
         MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
-
+        gameState = GameState.GAME_ON
         // break walls
     }
 
@@ -266,5 +282,35 @@ class BreachController: GameBase(
     @EventHandler
     fun playerSwapHandItemEvent(event: PlayerSwapHandItemsEvent) {
         event.isCancelled = true
+    }
+
+    @EventHandler
+    fun projectileLaunchEvent(event: ProjectileLaunchEvent) {
+        if (gameState == GameState.KIT_SELECT) {
+            event.isCancelled = true
+            return
+        }
+    }
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEvent) {
+        val player = event.player
+        val bow: ItemStack = player.inventory.itemInMainHand
+        val action = event.action
+
+        if (
+            (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) &&
+            (bow.type == Material.BOW || bow.type == Material.CROSSBOW || bow.type == Material.TRIDENT) &&
+            gameState == GameState.KIT_SELECT)
+        {
+            event.isCancelled = true
+        }
+    }
+
+    enum class GameState {
+        KIT_SELECT,
+        PRE_ROUND,
+        GAME_ON,
+        ROUND_OVER
     }
 }
