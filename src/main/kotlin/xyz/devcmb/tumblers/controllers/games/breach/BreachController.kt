@@ -2,7 +2,12 @@ package xyz.devcmb.tumblers.controllers.games.breach
 
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
+import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerSwapHandItemsEvent
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -17,6 +22,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 
 @EventGame
@@ -48,6 +54,9 @@ class BreachController: GameBase(
     val team1score: Int = 0
     val team2score: Int = 0
     val currentRound: Int = 1
+
+    var team1holder: Player? = null
+    var team2holder: Player? = null
 
     /**
      * The load sequence that each individual game should do
@@ -122,8 +131,62 @@ class BreachController: GameBase(
     }
 
     fun giveKit(player: Player, kit: BreachKit) {
-        player.inventory.clear()
         player.giveKit(kit.kit)
+
+        if (player == team1holder || player == team2holder) {
+            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+        }
     }
 
+    fun takeItem(player: Player) {
+        val team = player.tumblingPlayer.team
+
+        if (team == playingTeams.first) {
+            if (team1holder != null) {
+                dropItem(player)
+                return
+            }
+            team1holder = player
+            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+        }
+
+        if (team == playingTeams.second) {
+            if (team2holder != null) {
+                dropItem(player)
+                return
+            }
+            team2holder = player
+            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+        }
+    }
+
+    fun dropItem(player: Player) {
+        val team = player.tumblingPlayer.team
+
+        if (team == playingTeams.first && team1holder == player) {
+            team1holder = null
+            player.inventory.setItemInOffHand(ItemStack.empty())
+        }
+
+        if (team == playingTeams.second && team2holder == player) {
+            team2holder = null
+            player.inventory.setItemInOffHand(ItemStack.empty())
+        }
+    }
+
+    @EventHandler
+    fun inventoryClickEvent(event: InventoryClickEvent) {
+        if (event.rawSlot == 45 && event.inventory.holder is Player) {
+            event.isCancelled = true
+        }
+
+        if (event.cursor.type == Material.NETHER_STAR) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun playerSwapHandItemEvent(event: PlayerSwapHandItemsEvent) {
+        event.isCancelled = true
+    }
 }
