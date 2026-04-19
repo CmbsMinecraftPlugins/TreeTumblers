@@ -2,10 +2,14 @@ package xyz.devcmb.tumblers.controllers
 
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
+import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.attribute.Attribute
@@ -32,6 +36,7 @@ import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -210,5 +215,78 @@ class PlayerController : IController {
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
             event.isCancelled = true
+    }
+
+    val channels: HashMap<Player, ChatChannel> = HashMap()
+    @EventHandler
+    fun playerMessageEvent(event: AsyncChatEvent) {
+        event.isCancelled = true
+
+        val channel = channels[event.player] ?: ChatChannel.LOCAL
+        val viewers = Bukkit.getOnlinePlayers().filter {
+            channel.canSee(event.player, it)
+        }
+
+        Audience.audience(viewers).sendMessage(
+            channel.format(event.player, event.message())
+        )
+    }
+
+    enum class ChatChannel(val channelName: String, val color: TextColor) {
+        LOCAL("Local", NamedTextColor.WHITE) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return true
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return true
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color.asHexString()}><sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        TEAM("Team", TextColor.fromHexString("#34d031")!!) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return sender?.tumblingPlayer?.team == receiver.tumblingPlayer.team
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return player.tumblingPlayer.team.playingTeam
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color.asHexString()}>[Team] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        STAFF("Staff", TextColor.fromHexString("#ff3c50")!!) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return receiver.hasPermission("tumbling.dev") || receiver.hasPermission("tumbling.organizer")
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return canSee(null, player)
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color}>[Staff] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        };
+
+        abstract fun canSee(sender: Player?, receiver: Player): Boolean
+        abstract fun canSend(player: Player): Boolean
+        abstract fun format(sender: Player, message: Component): Component
     }
 }

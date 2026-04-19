@@ -15,7 +15,6 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
-import xyz.devcmb.tumblers.util.playerController
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -390,6 +389,9 @@ class DatabaseController : IController {
 
     class OfflineDatabase(val databaseController: DatabaseController) {
         val playerTeams: HashMap<UUID, Team> = HashMap()
+        val playerController: PlayerController by lazy {
+            ControllerDelegate.getController<PlayerController>()
+        }
 
         // no whitelist
         fun whitelistPlayer(profile: PlayerProfile, team: Team) {}
