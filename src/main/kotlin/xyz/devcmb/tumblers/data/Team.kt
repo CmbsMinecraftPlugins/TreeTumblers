@@ -22,7 +22,7 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
     PINK("Pink Parrots", TextColor.fromHexString("#ff5cd9")!!, "\uE00A", 8),
 
     // Non-playing teams
-    SPECTATORS("Spectators", NamedTextColor.WHITE, "\uE007", 9, false),
+    SPECTATORS("Spectators", NamedTextColor.GRAY, "\uE007", 9, false),
     DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", 10, false);
 
     val formattedName: Component =

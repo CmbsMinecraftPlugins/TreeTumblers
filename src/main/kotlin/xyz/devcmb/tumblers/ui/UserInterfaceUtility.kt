@@ -19,6 +19,9 @@ object UserInterfaceUtility {
     val HUD = NamespacedKey("tumbling", "hud")
     val ICONS = NamespacedKey("tumbling", "icons")
 
+    // item model key
+    val FLAT_SKULL = NamespacedKey("tumbling", "flat_skull")
+
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",
         -5 to "\uF001",

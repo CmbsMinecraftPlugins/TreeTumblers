@@ -57,7 +57,6 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
-import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
@@ -262,20 +261,18 @@ class PartyController : GameBase(
             override fun run() {
                 if(currentState != State.GAME_ON) return
 
-                gameParticipants.forEach {
-                    val message: Component = if(currentGameType == PartyGameType.GAME_OVER) {
+                gameParticipants.forEach { player ->
+                    val message: Component? = if(currentGameType == PartyGameType.GAME_OVER) {
                         Format.mm("<red>Game Over!</red>")
-                    } else if(it in disabledGameWaitingPlayers) {
+                    } else if(player in disabledGameWaitingPlayers) {
                         Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
-                    } else if (it in waitingTeamPlayers[it.tumblingPlayer.team]!!) {
+                    } else if (player in waitingTeamPlayers[player.tumblingPlayer.team]!!) {
                         Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
-                    } else if(it !in inGamePlayers) {
+                    } else if(player !in inGamePlayers) {
                         Format.mm("<aqua>Waiting for a match...</aqua>")
-                    } else {
-                        Component.empty()
-                    }
+                    } else null
 
-                    it.sendActionBar(message)
+                    message?.let { player.sendActionBar(it) }
                 }
             }
         }
@@ -307,11 +304,7 @@ class PartyController : GameBase(
 
         player.teleport(spawn)
         if(!preGame) {
-            player.hideToAll()
-            player.isFlying = false
-            player.heal(20.0)
-            player.inventory.clear()
-            player.allowFlight = false
+            makeSpectator(player, false)
         }
     }
 
@@ -428,7 +421,7 @@ class PartyController : GameBase(
 
         suspendSync {
             gameParticipants.forEach {
-                it.showToAll()
+                unSpectate(it)
             }
         }
 
@@ -585,11 +578,11 @@ class PartyController : GameBase(
 
         suspendSync {
             matchup.spawn(firstSideSpawns, secondSideSpawns)
-            matchup.kitPlayers(gameClass.kit)
             gameClass.postSpawn()
         }
 
         matchup.concludeLoading()
+        matchup.kitPlayers(gameClass.kit)
         matchup.announceMatchup()
         gameClass.start()
     }
@@ -717,8 +710,8 @@ class PartyController : GameBase(
                 player2?.showTitle(title)
 
                 suspendSync {
-                    player1.showToAll()
-                    player2?.showToAll()
+                    partyController!!.unSpectate(player1)
+                    player2?.let { partyController.unSpectate(it) }
                 }
 
                 delay(1000)

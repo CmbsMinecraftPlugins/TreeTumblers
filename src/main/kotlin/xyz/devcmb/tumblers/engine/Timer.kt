@@ -83,7 +83,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
         timerController.register(this)
         isRunning = true
-        job = TreeTumblers.Companion.pluginScope.launch {
+        job = TreeTumblers.pluginScope.launch {
             while(true) {
                 delay(1000)
 

@@ -34,7 +34,6 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
@@ -65,8 +64,6 @@ import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
-import xyz.devcmb.tumblers.util.runTask
-import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.util.UUID
@@ -210,7 +207,6 @@ class CrumbleController : GameBase(
     val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
     val teamArenaSpawns: HashMap<Team, String> = HashMap()
     val alivePlayers: HashMap<Team, ArrayList<Player>> = HashMap()
-    val spectatingPlayers: ArrayList<Player> = ArrayList()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
@@ -497,7 +493,9 @@ class CrumbleController : GameBase(
         repeat(rounds) {
             currentRound++
             gameTimeoutEnd = false
-            unhideSpectators()
+            suspendSync {
+                participatingSpectators.toList().forEach(this::unSpectate)
+            }
             preRound()
             suspendSync(this::giveKits)
             preRoundFreeze = true
@@ -549,7 +547,6 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun cleanup() {
-        suspendSync(this::unhideSpectators)
         playerKits.forEach {
             HandlerList.unregisterAll(it.value)
         }
@@ -662,18 +659,6 @@ class CrumbleController : GameBase(
             }
         }
         borderEvent!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
-    }
-
-    fun unhideSpectators() {
-        spectatingPlayers.forEach { plr ->
-            Bukkit.getOnlinePlayers().forEach {
-                it.showPlayer(TreeTumblers.plugin, plr)
-            }
-
-            plr.isFlying = false
-            plr.allowFlight = false
-        }
-        spectatingPlayers.clear()
     }
     
     suspend fun awaitEnd() {
@@ -988,17 +973,13 @@ class CrumbleController : GameBase(
         val killed = event.player
         val killer = killed.killer
 
-        Bukkit.getOnlinePlayers().forEach {
-            it.hidePlayer(TreeTumblers.plugin, killed)
-        }
-        spectatingPlayers.add(killed)
-        runTaskLater(60) {
-            killed.spigot().respawn()
-        }
-
         val tumblingPlayer = killed.tumblingPlayer
         val killedTeam = tumblingPlayer.team
         if(!killedTeam.playingTeam) return
+
+        event.isCancelled = true
+
+        makeSpectator(killed, false)
 
         alivePlayers[tumblingPlayer.team]!!.remove(killed)
         val currentPlayerMatchup = getCurrentMatchup(killed)!!
@@ -1012,7 +993,7 @@ class CrumbleController : GameBase(
                 roundDraw(killedTeam)
                 roundDraw(killerTeam)
             } else {
-                spectatingPlayers.addAll(alivePlayers[killerTeam]!!)
+                alivePlayers[killerTeam]!!.forEach(this::makeSpectator)
                 alivePlayers[killerTeam]!!.clear()
                 roundLoss(killedTeam)
                 roundWin(killerTeam)
@@ -1024,7 +1005,6 @@ class CrumbleController : GameBase(
             return
         }
 
-        event.showDeathMessages = false
         playerKillAnnouncement(killer, killed)
     }
 
@@ -1033,7 +1013,7 @@ class CrumbleController : GameBase(
     fun playerMoveEvent(event: PlayerMoveEvent) {
         if(
             preRoundFreeze
-            && (event.to.x != event.from.x || event.to.y != event.from.y || event.to.z != event.from.z)
+            && (event.to.x != event.from.x || event.to.z != event.from.z)
         ) {
             event.isCancelled = true
         }
@@ -1041,7 +1021,7 @@ class CrumbleController : GameBase(
 
     @EventHandler
     fun playerVoidEvent(event: PlayerMoveEvent) {
-        if(!roundActive || spectatingPlayers.contains(event.player)) return
+        if(!roundActive || participatingSpectators.contains(event.player)) return
 
         val voidHeight = currentMap.data.getInt("kill_height")
         if(event.to.y < voidHeight) {
@@ -1098,13 +1078,13 @@ class CrumbleController : GameBase(
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         if(event.entity !is Player) return
-        if(!roundActive || spectatingPlayers.contains(event.entity)) event.isCancelled = true
+        if(!roundActive) event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     fun tntDamageEvent(event: EntityDamageEvent) {
         val player = event.entity
-        if(player !is Player) return
+        if(player !is Player || event.isCancelled) return
 
         val causingEntity = event.damageSource.directEntity
         if(causingEntity == null || causingEntity !is TNTPrimed) return
@@ -1140,31 +1120,6 @@ class CrumbleController : GameBase(
     @EventHandler
     fun preRoundBlockBreakEvent(event: BlockBreakEvent) {
         if(!roundActive) event.isCancelled = true
-    }
-
-    @EventHandler
-    fun playerRespawnEvent(event: PlayerRespawnEvent) {
-        val player = event.player
-        val tumblingPlayer = player.tumblingPlayer
-
-        val arena: String =
-            if(!tumblingPlayer.team.playingTeam) "arena1"
-            else teamArenaSpawns[tumblingPlayer.team]!!
-
-        val position: List<Double> = currentMap.data.getList("centers.$arena")
-            ?.map {
-                if(it !is Double) throw GameControllerException("Center for $arena does not contain exclusively doubles")
-                it
-            }
-            ?: throw GameControllerException("Map does not have a center specified for $arena")
-
-        val location = position.unpackCoordinates(currentMap.world)
-        event.respawnLocation = location
-
-        runTask {
-            player.allowFlight = true
-            player.isFlying = true
-        }
     }
 
     enum class RoundResult {

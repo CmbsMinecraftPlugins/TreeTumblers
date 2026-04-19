@@ -230,7 +230,6 @@ class DeathrunController : GameBase(
     val cooldownTimes: HashMap<Int, Long> = HashMap()
 
     val alivePlayers: MutableSet<Player> = HashSet()
-    val spectators: MutableSet<Player> = HashSet()
 
     val placements: ArrayList<HashMap<Player, Int>> = ArrayList()
 
@@ -505,11 +504,7 @@ class DeathrunController : GameBase(
     suspend fun postRound() {
         suspendSync {
             if(currentRound != rounds) {
-                spectators.forEach {
-                    it.showToAll()
-                    it.isFlying = false
-                    it.allowFlight = false
-                }
+                participatingSpectators.forEach(this::unSpectate)
             }
 
             gameParticipants.forEach { plr ->
@@ -522,7 +517,6 @@ class DeathrunController : GameBase(
         }
 
         alivePlayers.clear()
-        spectators.clear()
         completionTimes.clear()
         mapCheckpoints.clear()
         playerCheckpoints.clear()
@@ -681,21 +675,10 @@ class DeathrunController : GameBase(
         }
     }
 
-    fun makeSpectator(player: Player) {
+    fun makePlayerSpectate(player: Player) {
         alivePlayers.remove(player)
-        spectators.add(player)
-        player.hideToAll()
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        player.health = 20.0
-        player.allowFlight = true
-        player.isFlying = true
-
-        gameParticipants.forEach { plr ->
-            gameParticipants.forEach { other ->
-                if(other == plr || !gameParticipants.contains(other) || spectators.contains(other)) return@forEach
-                plr.showPlayer(TreeTumblers.plugin, other)
-            }
-        }
+        makeSpectator(player, false)
 
         if(alivePlayers.isEmpty()) {
             roundEnded = true
@@ -703,7 +686,7 @@ class DeathrunController : GameBase(
     }
 
     fun completeRun(player: Player) {
-        makeSpectator(player)
+        makePlayerSpectate(player)
         val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
@@ -739,7 +722,7 @@ class DeathrunController : GameBase(
     }
 
     fun failRun(player: Player) {
-        makeSpectator(player)
+        makePlayerSpectate(player)
         grantScore(player, DeathrunScoreSource.RUN_FAILED)
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
@@ -775,9 +758,10 @@ class DeathrunController : GameBase(
                 ))
             }
 
-            roundEnded = false
-            cancelCountdown()
         }
+
+        roundEnded = false
+        cancelCountdown()
         delay(4000)
     }
 
@@ -861,9 +845,7 @@ class DeathrunController : GameBase(
         }
 
         event.damage = 2.0
-        if(player.health - 2.0 > 0) {
-            respawnRunner(player)
-        }
+        respawnRunner(player)
     }
 
     @EventHandler

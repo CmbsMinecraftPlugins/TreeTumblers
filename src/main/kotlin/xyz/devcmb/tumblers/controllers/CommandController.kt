@@ -31,7 +31,8 @@ class CommandController : IController {
                 ScoreCommand(),
                 TimerCommand(),
                 EventCommand(),
-                PartyCommand()
+                PartyCommand(),
+                SpectateCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

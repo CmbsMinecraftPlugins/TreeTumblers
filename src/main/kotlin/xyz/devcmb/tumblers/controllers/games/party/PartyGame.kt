@@ -11,7 +11,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
-import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 abstract class PartyGame(
@@ -102,11 +101,7 @@ abstract class PartyGame(
 
         if(player !in matchup.players) return
 
-        player.hideToAll()
-        player.heal(20.0)
-        player.inventory.clear()
-        player.allowFlight = true
-        player.isFlying = true
+        partyController!!.makeSpectator(player)
         event.isCancelled = true
 
         alivePlayers.remove(player)
@@ -120,10 +115,10 @@ abstract class PartyGame(
                         (winningSide == MatchupSide.FIRST && matchup.player1 !in alivePlayers)
                         || (winningSide == MatchupSide.SECOND && (matchup.player2 == null || matchup.player2 !in alivePlayers))
                     ) {
-                        partyController!!.endGame(this, null)
+                        partyController.endGame(this, null)
                         draw()
                     } else {
-                        partyController!!.endGame(this, winningSide)
+                        partyController.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }
@@ -137,10 +132,10 @@ abstract class PartyGame(
                         (winningSide == MatchupSide.FIRST && !matchup.team1.getOnlinePlayers().any { it in alivePlayers })
                         || (winningSide == MatchupSide.SECOND && !matchup.team2.getOnlinePlayers().any { it in alivePlayers })
                     ) {
-                        partyController!!.endGame(this, null)
+                        partyController.endGame(this, null)
                         draw()
                     } else {
-                        partyController!!.endGame(this, winningSide)
+                        partyController.endGame(this, winningSide)
                         win(winningSide)
                         lose(otherSide)
                     }
