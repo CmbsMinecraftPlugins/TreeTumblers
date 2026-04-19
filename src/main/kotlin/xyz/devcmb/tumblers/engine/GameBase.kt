@@ -118,10 +118,10 @@ abstract class GameBase(
     var currentTimer: Timer? = null
 
     companion object {
-        @Configurable("lobby.world")
+        @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @Configurable("lobby.position")
+        @field:Configurable("lobby.position")
         var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 

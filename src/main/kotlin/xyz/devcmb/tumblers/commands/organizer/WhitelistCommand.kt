@@ -26,6 +26,11 @@ class WhitelistCommand {
 
     @Execute(name = "add")
     fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {
+        if(!DatabaseController.enabled) {
+            executor.sendMessage(Format.warning("The server is running without a database, so only the vanilla minecraft whitelist allows/disallows people to join! If you wish to edit the vanilla whitelist, use the command /minecraft:whitelist!"))
+            return
+        }
+
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
                 Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
@@ -66,6 +71,11 @@ class WhitelistCommand {
 
     @Execute(name = "remove")
     fun executeWhitelistRemove(@Context executor: CommandSender, @Arg whitelistedPlayer: DatabaseController.WhitelistedPlayer) {
+        if(!DatabaseController.enabled) {
+            executor.sendMessage(Format.warning("The server is running without a database, so only the vanilla minecraft whitelist allows/disallows people to join! If you wish to edit the vanilla whitelist, use the command /minecraft:whitelist!"))
+            return
+        }
+
         val name = whitelistedPlayer.name
 
         if(name.length > 16) {
