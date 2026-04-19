@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.controllers.games.breach
 
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
-import org.bukkit.Material
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
@@ -16,6 +15,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.validateLocation
 
@@ -32,8 +32,9 @@ class BreachController: GameBase(
         Flag.DISABLE_BLOCK_BREAKING
     ),
     icon = Component.text("\uEA00").font(font),
+    logo = Component.text("awesome logo goes here"),
     scores = hashMapOf(),
-    scoreboard = "breachScoreboard",
+    scoreboard = "breachScoreboard"
 ) {
     val currentMap: LoadedMap
         get() {
@@ -120,8 +121,9 @@ class BreachController: GameBase(
 
     }
 
-    fun giveWeapon(player: Player, kit: Material) {
-        DebugUtil.info("i gave ${player.name} that sweet ${kit.name}")
+    fun giveKit(player: Player, kit: BreachKit) {
+        player.inventory.clear()
+        player.giveKit(kit.kit)
     }
 
 }
