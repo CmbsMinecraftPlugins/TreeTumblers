@@ -7,6 +7,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
+import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
 import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -15,6 +16,7 @@ import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SpectateInventory(
@@ -74,5 +76,46 @@ class SpectateInventory(
             itemPage = 1
         )
         page.addItemMap(itemMap)
+
+        (27..35).forEach {
+            page.addItem(InventoryItem(
+                getItemStack = { page, item ->
+                    ItemStack.of(Material.GRAY_STAINED_GLASS_PANE)
+                },
+                it
+            ))
+        }
+
+        page.addItem(InventoryItem(
+            getItemStack = { page, item ->
+                ItemStack.of(Material.ARROW).apply {
+                    itemMeta = itemMeta.also {
+                        it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
+                    }
+                }
+            },
+            slot = 36,
+            onClick = { page, item ->
+                player.buttonClickSound()
+                itemMap.pageBack()
+                page.reload()
+            }
+        ))
+
+        page.addItem(InventoryItem(
+            getItemStack = { page, item ->
+                ItemStack.of(Material.ARROW).apply {
+                    itemMeta = itemMeta.also {
+                        it.itemName(Format.mm("<yellow>Next Page</yellow>"))
+                    }
+                }
+            },
+            slot = 44,
+            onClick = { page, item ->
+                player.buttonClickSound()
+                itemMap.pageForward()
+                page.reload()
+            }
+        ))
     }
 }

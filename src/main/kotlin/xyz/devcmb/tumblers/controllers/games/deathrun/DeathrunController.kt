@@ -723,6 +723,7 @@ class DeathrunController : GameBase(
     }
 
     fun failRun(player: Player) {
+        makePlayerSpectate(player)
         grantScore(player, DeathrunScoreSource.RUN_FAILED)
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
@@ -850,7 +851,12 @@ class DeathrunController : GameBase(
 
     @EventHandler
     fun playerRunFail(event: PlayerDeathEvent) {
-        failRun(event.player)
+        val player = event.player
+        currentTeam.getOnlinePlayers().forEach {
+            MiscUtils.announceKill(it, player, getScoreSource(DeathrunScoreSource.TRAP_KILL))
+        }
+        failRun(player)
+        // no need to cancel because the spectator kill flag thing already does it
     }
 
     @EventHandler
@@ -872,7 +878,7 @@ class DeathrunController : GameBase(
     @EventHandler
     fun checkpointEvent(event: PlayerMoveEvent) {
         val checkpoint = mapCheckpoints.indexOfFirst { event.to.isInRegion(it.first, it.second) }
-        if(checkpoint == -1) return
+        if(checkpoint == -1 || event.player !in alivePlayers) return
 
         setCheckpoint(event.player, checkpoint)
     }

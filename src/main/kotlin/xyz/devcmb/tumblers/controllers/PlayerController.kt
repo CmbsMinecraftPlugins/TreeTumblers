@@ -15,6 +15,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -26,9 +27,11 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -43,6 +46,10 @@ class PlayerController : IController {
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
+    }
+
+    private val gameController: GameController by lazy {
+        ControllerDelegate.getController<GameController>()
     }
 
     companion object {
@@ -152,6 +159,19 @@ class PlayerController : IController {
     @EventHandler
     fun playerDropItem(event: PlayerDropItemEvent) {
         AdvancedItemRegistry.handleDrop(event)
+    }
+
+    @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        if(killer == null) return
+
+        val currentGame = gameController.activeGame
+        val score = currentGame?.getScoreSource(CommonScoreSource.KILL)
+
+        MiscUtils.announceKill(killer, killed, if(score != null && score != 1) score else null)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
