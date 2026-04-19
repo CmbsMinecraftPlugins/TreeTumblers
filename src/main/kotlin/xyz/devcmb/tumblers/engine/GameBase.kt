@@ -209,6 +209,14 @@ abstract class GameBase(
      */
     suspend fun pregame() {
         currentState = State.PREGAME
+        if(flags.contains(Flag.SURVIVAL_MODE)) {
+            suspendSync {
+                gameParticipants.forEach {
+                    it.gameMode = GameMode.SURVIVAL
+                }
+            }
+        }
+
         spawn(SpawnCycle.PREGAME)
 
         gamePlayers.forEach {

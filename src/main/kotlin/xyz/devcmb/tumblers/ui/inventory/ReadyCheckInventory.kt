@@ -26,7 +26,7 @@ class ReadyCheckInventory(
 
         page.addItem(InventoryItem(
             getItemStack = { page, item ->
-                ItemStack.of(Material.GREEN_CONCRETE).apply {
+                ItemStack.of(Material.LIME_CONCRETE).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<green><b>Ready!</b></green>"))
                     }

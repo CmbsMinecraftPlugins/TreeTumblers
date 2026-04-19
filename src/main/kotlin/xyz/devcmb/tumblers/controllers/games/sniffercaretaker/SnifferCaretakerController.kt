@@ -17,7 +17,6 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
-import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -61,6 +60,7 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -235,7 +235,7 @@ class SnifferCaretakerController : GameBase(
         ) { map ->
         }
     ),
-    flags = emptySet(),
+    flags = setOf(Flag.SURVIVAL_MODE),
     scores = hashMapOf(
         SnifferCaretakerScoreSource.TASK_1_STAR to 20,
         SnifferCaretakerScoreSource.TASK_2_STAR to 40,
@@ -540,7 +540,6 @@ class SnifferCaretakerController : GameBase(
         suspendSync {
             gamePlayers.forEach {
                 it.spigot().respawn()
-                it.gameMode = GameMode.SURVIVAL
                 val tumblingPlayer = it.tumblingPlayer
 
                 val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)

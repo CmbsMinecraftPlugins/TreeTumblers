@@ -142,7 +142,9 @@ class CrumbleController : GameBase(
         },
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
-    flags = setOf(),
+    flags = setOf(
+        Flag.SURVIVAL_MODE
+    ),
     scores = hashMapOf(
         CommonScoreSource.KILL to 45,
         CommonScoreSource.TEAM_ROUND_WIN to 480,

@@ -291,7 +291,7 @@ class EventController : IController {
     val votingConcretes: ArrayList<Material> = arrayListOf(
         Material.RED_CONCRETE,
         Material.BLUE_CONCRETE,
-        Material.GREEN_CONCRETE,
+        Material.LIME_CONCRETE,
         Material.YELLOW_CONCRETE
     )
 
