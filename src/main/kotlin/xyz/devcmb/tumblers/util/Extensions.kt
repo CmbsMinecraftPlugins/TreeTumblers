@@ -19,7 +19,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-val playerController: PlayerController by lazy {
+private val playerController: PlayerController by lazy {
     ControllerDelegate.getController("playerController") as PlayerController
 }
 

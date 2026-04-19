@@ -48,6 +48,7 @@ class PlayerController : IController {
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
+    var isChatMuted = false
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
@@ -222,6 +223,11 @@ class PlayerController : IController {
     fun playerMessageEvent(event: AsyncChatEvent) {
         event.isCancelled = true
 
+        if(isChatMuted) {
+            event.player.sendMessage(Format.error("The chat is currently muted!"))
+            return
+        }
+
         val channel = channels[event.player] ?: ChatChannel.LOCAL
         val viewers = Bukkit.getOnlinePlayers().filter {
             channel.canSee(event.player, it)
@@ -230,6 +236,16 @@ class PlayerController : IController {
         Audience.audience(viewers).sendMessage(
             channel.format(event.player, event.message())
         )
+    }
+
+    fun muteChat() {
+        isChatMuted = true
+        Bukkit.broadcast(Format.info("The chat has been muted!"))
+    }
+
+    fun unmuteChat() {
+        isChatMuted = false
+        Bukkit.broadcast(Format.info("The chat has been unmuted!"))
     }
 
     enum class ChatChannel(val channelName: String, val color: TextColor) {

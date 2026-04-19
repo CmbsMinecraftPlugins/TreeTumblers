@@ -39,7 +39,6 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
-import xyz.devcmb.tumblers.util.playerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -55,6 +54,10 @@ class EventController : IController {
 
     private val gameController: GameController by lazy {
         ControllerDelegate.getController<GameController>()
+    }
+
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
     }
 
     lateinit var topbarRunnable: BukkitRunnable

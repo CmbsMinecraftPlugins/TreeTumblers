@@ -25,6 +25,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -103,6 +104,10 @@ abstract class GameBase(
 
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
+    }
+
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
     }
 
     private val spectatorController by lazy {
@@ -207,6 +212,7 @@ abstract class GameBase(
      */
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
+        playerController.muteChat()
 
         cutsceneSteps.forEach {
             it.run(gamePlayers, loadedMaps.first(), this)
@@ -219,6 +225,8 @@ abstract class GameBase(
      */
     suspend fun pregame() {
         currentState = State.PREGAME
+        playerController.unmuteChat()
+
         suspendSync {
             gamePlayers
                 .filter { !it.tumblingPlayer.team.playingTeam }
