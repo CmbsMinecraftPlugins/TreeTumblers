@@ -2,17 +2,19 @@ package xyz.devcmb.tumblers.controllers.games.breach
 
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController.Companion.font
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -21,6 +23,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.giveKit
+import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
@@ -37,11 +40,15 @@ class BreachController: GameBase(
     flags = setOf(
         Flag.DISABLE_BLOCK_BREAKING
     ),
-    icon = Component.text("\uEA00").font(font),
+    icon = Component.text("\uEA00"),
     logo = Component.text("awesome logo goes here"),
     scores = hashMapOf(),
     scoreboard = "breachScoreboard"
 ) {
+    companion object {
+        val kitItemsKey = NamespacedKey("tumbling", "kit_item")
+    }
+
     val currentMap: LoadedMap
         get() {
             return loadedMaps.getOrNull(currentRound - 1) ?: loadedMaps[0]
@@ -57,6 +64,16 @@ class BreachController: GameBase(
 
     var team1holder: Player? = null
     var team2holder: Player? = null
+
+    val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
+        name(Component.text("Kit Selector", NamedTextColor.YELLOW))
+        persistentDataContainer {
+            set(kitItemsKey, PersistentDataType.BOOLEAN, true)
+        }
+        rightClick { player ->
+            player.openHandledInventory("breachKitSelector")
+        }
+    }.build()
 
     /**
      * The load sequence that each individual game should do
@@ -99,11 +116,15 @@ class BreachController: GameBase(
 
                     playingTeams.first.getOnlinePlayers().forEach {
                         it.teleport(team1spawn)
+                        it.inventory.setItem(8, kitSelector.clone())
+
                         it.openHandledInventory("breachKitSelector")
                     }
 
                     playingTeams.second.getOnlinePlayers().forEach {
                         it.teleport(team2spawn)
+                        it.inventory.setItem(8, kitSelector.clone())
+
                         it.openHandledInventory("breachKitSelector")
                     }
                 }
@@ -119,7 +140,7 @@ class BreachController: GameBase(
     override suspend fun gameOn() {
         repeat(5) {
             spawn(SpawnCycle.PRE_ROUND)
-            delay(10000)
+            delay(20000)
         }
     }
 
@@ -136,6 +157,8 @@ class BreachController: GameBase(
         if (player == team1holder || player == team2holder) {
             player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
         }
+
+        player.inventory.setItem(8, kitSelector.clone())
     }
 
     fun takeItem(player: Player) {

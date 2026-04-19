@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.ui.inventory.breach
 
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -43,7 +44,7 @@ class BreachKitSelector(
                     val itemStack = ItemStack.of(kit.item).apply {
                         itemMeta = itemMeta.also { meta ->
                             meta.itemName(kit.label)
-                            meta.lore(kit.description)
+                            meta.lore(kit.description.map { it.decoration(TextDecoration.ITALIC, false) })
                         }
                     }
 
@@ -86,6 +87,7 @@ class BreachKitSelector(
                                 Format.mm("<aqua>Keep it safe."),
                                 Format.mm("<aqua>Your victory depends on it.")
                             ))
+
                         } else if (itemHolder != player) {
                             meta.itemName(Format.mm("<dark_purple>Star held by ${itemHolder.name}"))
                             meta.lore(listOf(
