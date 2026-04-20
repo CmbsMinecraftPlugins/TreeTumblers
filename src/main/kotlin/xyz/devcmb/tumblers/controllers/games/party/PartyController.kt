@@ -429,6 +429,20 @@ class PartyController : GameBase(
         super.cleanup()
     }
 
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
+        TODO("Not yet implemented")
+    }
+
     fun addWaitingPlayer(player: Player) {
         if(currentGameType != PartyGameType.INDIVIDUAL) throw GameControllerException("Attempted to add player to player waitlist while party was not in individual mode")
 

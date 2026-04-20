@@ -19,6 +19,8 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -41,6 +43,7 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 /**
@@ -88,6 +91,8 @@ abstract class GameBase(
             DebugUtil.info("Transitioning to GameState ${value.name}")
             field = value
         }
+
+    var currentCutsceneStep: CutsceneStep? = null
 
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
@@ -215,8 +220,10 @@ abstract class GameBase(
         playerController.muteChat()
 
         cutsceneSteps.forEach {
+            currentCutsceneStep = it
             it.run(gamePlayers, loadedMaps.first(), this)
             it.cleanup(gamePlayers)
+            currentCutsceneStep = null
         }
     }
 
@@ -542,6 +549,58 @@ abstract class GameBase(
         participatingSpectators.remove(player)
         gameSpectators.remove(player)
         spectatorController.unSpectate(player)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
+     */
+    abstract fun playerJoin(player: Player)
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
+     */
+    abstract fun playerLeave(player: Player)
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerJoinEvent(event: PlayerJoinEvent) {
+        val player = event.player
+
+        gamePlayers.add(player)
+        player.activateScoreboard(scoreboard)
+        if(player.tumblingPlayer.team.playingTeam) gameParticipants.add(player)
+
+        // The normal `playerJoinEvent` runs events after 1 tick, so after 2 everything is done
+        runTaskLater(2) {
+            when(currentState) {
+                State.CUTSCENE -> {
+                    TreeTumblers.pluginScope.launch {
+                        currentCutsceneStep?.run(setOf(player), loadedMaps.first(), this@GameBase)
+                    }
+                }
+                State.PREGAME,
+                State.GAME_ON -> {
+                    playerJoin(player)
+                }
+                else -> return@runTaskLater
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerLeaveEvent(event: PlayerQuitEvent) {
+        val player = event.player
+
+        gamePlayers.remove(player)
+        gameParticipants.remove(player)
+        unSpectate(player)
+
+        when(currentState) {
+            State.PREGAME,
+            State.GAME_ON -> {
+                playerLeave(player)
+            }
+            else -> return
+        }
     }
 
     @EventHandler

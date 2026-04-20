@@ -48,7 +48,7 @@ class CutsceneStep(
         suspendSync {
             observers.forEach {
                 observers.forEach { other ->
-                    if(other == it) return@forEach
+                    if(other == it || !it.isOnline || !other.isOnline) return@forEach
                     it.hidePlayer(TreeTumblers.plugin, other)
                 }
 
@@ -71,7 +71,7 @@ class CutsceneStep(
         suspendSync {
             observers.forEach {
                 observers.forEach { other ->
-                    if(other == it) return@forEach
+                    if(other == it || !it.isOnline || !other.isOnline) return@forEach
                     it.showPlayer(TreeTumblers.plugin, other)
                 }
             }

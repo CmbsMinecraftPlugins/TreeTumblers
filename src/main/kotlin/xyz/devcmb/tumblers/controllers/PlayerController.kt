@@ -12,6 +12,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
@@ -22,8 +23,10 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -90,7 +93,7 @@ class PlayerController : IController {
         players.find { it.uuid == uuid }!!.team = team
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
@@ -99,9 +102,13 @@ class PlayerController : IController {
         player.allowFlight = false
         player.clearActivePotionEffects()
 
-        if(player.vehicle != null) player.vehicle!!.remove()
+        player.vehicle?.let {
+            player.leaveVehicle()
+            it.remove()
+        }
 
         runTask { player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!)) }
+
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
 
@@ -184,6 +191,19 @@ class PlayerController : IController {
     fun playerFireworkDamageEvent(event: EntityDamageEvent) {
         if(event.entity is Player && event.damageSource.damageType == DamageType.FIREWORKS)
             event.isCancelled = true
+    }
+
+
+    @EventHandler
+    fun playerMilkEvent(event: PlayerItemConsumeEvent) {
+        if(event.item.type != Material.MILK_BUCKET) return
+
+        event.isCancelled = true
+        if(event.player.inventory.itemInMainHand.type == Material.MILK_BUCKET) {
+            event.player.inventory.setItemInMainHand(ItemStack.of(Material.BUCKET))
+        } else if (event.player.inventory.itemInOffHand.type == Material.MILK_BUCKET) {
+            event.player.inventory.setItemInOffHand(ItemStack.of(Material.BUCKET))
+        }
     }
 
     /*

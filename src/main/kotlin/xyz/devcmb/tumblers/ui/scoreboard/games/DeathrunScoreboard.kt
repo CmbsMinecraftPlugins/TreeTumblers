@@ -43,7 +43,10 @@ class DeathrunScoreboard(
                 val result = activeGame.placements[roundIndex][player]
 
                 component = component.append(when (result) {
-                    null -> Format.mm("${if(setRound != 0) " " else ""}<white>[ ]</white>")
+                    null -> {
+                        if(roundIndex < activeGame.roundIndex) Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
+                        else Format.mm("${if (setRound != 0) " " else ""}<white>[ ]</white>")
+                    }
                     -1 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
                     -2 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<red>\uD83D\uDDE1</red>]</white>")
                     else -> Format.mm("${if (setRound != 0) " " else ""}<white>[<green>$result${MiscUtils.getOrdinalSuffix(result)}</green>]</white>")

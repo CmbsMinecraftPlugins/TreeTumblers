@@ -29,6 +29,8 @@ class CutsceneContext(
     suspend fun teleport(x: Double, y: Double, z: Double, pitch: Float, yaw: Float) {
         suspendSync {
             observers.forEach {
+                if(!it.isOnline) return@forEach
+
                 val location = Location(map.world, x, y, z, pitch, yaw)
                 createPassengerPig(it, location)
                 it.setRotation(location.yaw, location.pitch)
@@ -40,8 +42,9 @@ class CutsceneContext(
         val location = getLocation(path)
         suspendSync {
             observers.forEach {
-                it.teleport(location)
+                if(!it.isOnline) return@forEach
 
+                it.teleport(location)
                 createPassengerPig(it, location)
             }
         }
@@ -49,6 +52,8 @@ class CutsceneContext(
 
     fun title(title: Component? = null, subtitle: Component? = null, times: Title.Times? = null) {
         observers.forEach {
+            if(!it.isOnline) return@forEach
+
             it.showTitle(Title.title(
                 title ?: Component.empty(),
                 subtitle ?: Component.empty(),

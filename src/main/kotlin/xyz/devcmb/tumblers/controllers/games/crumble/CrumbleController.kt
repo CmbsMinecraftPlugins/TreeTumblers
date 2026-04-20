@@ -509,8 +509,8 @@ class CrumbleController : GameBase(
             setupBorder()
             announceMatchup()
             roundActive = true
-            asyncCountdown(roundLength, "crumble_round_timer") {
-                gameTimeoutEnd = true
+            asyncCountdown(roundLength, "crumble_round_timer") { early ->
+                if(!early) gameTimeoutEnd = true
             }
             awaitEnd()
             endRound()
@@ -561,6 +561,20 @@ class CrumbleController : GameBase(
             it.disableBossBar("crumbleAliveTeamsBossbar")
         }
         super.cleanup()
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        TODO("Not yet implemented")
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
+        TODO("Not yet implemented")
     }
 
     suspend fun preRound() {

@@ -45,7 +45,6 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -535,24 +534,27 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun spawn(cycle: SpawnCycle) {
         if (cycle != SpawnCycle.PRE_ROUND) return
-        val map = loadedMaps[0]
-
         suspendSync {
-            gamePlayers.forEach {
-                it.spigot().respawn()
-                val tumblingPlayer = it.tumblingPlayer
+            gamePlayers.forEach(this::spawnPlayer)
+        }
+    }
 
-                val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
-                    ?: throw GameControllerException("Spawn not found")
+    fun spawnPlayer(player: Player) {
+        val map = loadedMaps[0]
+        // @Nibbl-z why is this needed? if we ever find an instance where the player could possibly die before the game starts, we should probably respawn them /then/
+        player.spigot().respawn()
 
-                val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
+        val tumblingPlayer = player.tumblingPlayer
 
-                it.teleport(playerLocation)
+        val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
+            ?: throw GameControllerException("Spawn not found")
 
-                kit.forEach { item ->
-                    it.inventory.addItem(item)
-                }
-            }
+        val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
+
+        player.teleport(playerLocation)
+
+        kit.forEach { item ->
+            player.inventory.addItem(item)
         }
     }
 
@@ -691,6 +693,19 @@ class SnifferCaretakerController : GameBase(
         delay(5000)
         announceOverallTeamScores()
         delay(5000)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        spawnPlayer(player)
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
     }
 
     fun offsetLocation(location: Location, team: Team): Location {
@@ -894,7 +909,7 @@ class SnifferCaretakerController : GameBase(
         currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
         currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
 
-        if (task.completer != null) {
+        if (task.completer != null && task.completer!!.isOnline) {
             grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
         } else {
             grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
@@ -1062,10 +1077,18 @@ class SnifferCaretakerController : GameBase(
         }
     }
 
+    val eatingBlocks: ArrayList<Location> = ArrayList()
+
     @EventHandler
     fun blockBreakEventSnifferCaretaker(event: BlockBreakEvent) {
-        if (!breakableBlocks.contains(event.block.type)) {
+        if (!breakableBlocks.contains(event.block.type) || event.block.location in eatingBlocks) {
             event.isCancelled = true
+            return
+        }
+
+        if(event.block.type == Material.GRAVEL) {
+            event.isDropItems = false
+            currentMap.world.dropItemNaturally(event.block.location, ItemStack.of(Material.GRAVEL))
         }
 
         if (event.block.type == Material.WHEAT) {
@@ -1086,6 +1109,14 @@ class SnifferCaretakerController : GameBase(
             event.clickedBlock?.applyBoneMeal(event.blockFace)
         }
 
+        if(
+            event.action == Action.RIGHT_CLICK_BLOCK
+            && event.item?.type == Material.POTION
+            && (event.clickedBlock?.type != Material.DIRT && event.clickedBlock?.type != Material.GRASS_BLOCK)
+        ) {
+            event.isCancelled = true
+        }
+
         // prevent opening trapdoors !!
         if (event.action == Action.RIGHT_CLICK_BLOCK && event.clickedBlock?.blockData is TrapDoor) {
             event.isCancelled = true
@@ -1099,9 +1130,10 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun playerBucketFillEvent(event: PlayerBucketFillEvent) {
+        if(event.itemStack == null) return
 
         event.isCancelled = true
-        event.player.inventory.setItem(event.hand, ItemStack(Material.WATER_BUCKET))
+        event.player.inventory.setItem(event.hand, event.itemStack!!.clone())
     }
 
     @EventHandler
@@ -1118,18 +1150,24 @@ class SnifferCaretakerController : GameBase(
         }
     }
 
+    val allowedCrafts: List<Material> = listOf(
+        Material.MUSHROOM_STEW,
+        Material.SUGAR,
+        Material.COARSE_DIRT,
+        Material.FERMENTED_SPIDER_EYE,
+        Material.BREAD,
+        Material.PUMPKIN_PIE,
+        Material.CAKE
+    )
+
     @EventHandler
     fun craftItemEvent(event: CraftItemEvent) {
         // prevent the bone meal from being turned into dye... or bone blocks...
+        // or you could just, y'know
 
-        if (event.recipe.result.type == Material.WHITE_DYE || event.recipe.result.type == Material.BONE_BLOCK) {
+        if(event.recipe.result.type !in allowedCrafts) {
             event.isCancelled = true
         }
-    }
-
-    @EventHandler
-    fun playerItemConsumeEvent(event: PlayerItemConsumeEvent) {
-        event.isCancelled = true
     }
 
     @EventHandler

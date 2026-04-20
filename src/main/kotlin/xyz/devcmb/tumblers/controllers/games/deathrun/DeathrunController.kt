@@ -409,8 +409,8 @@ class DeathrunController : GameBase(
             preRound()
             roundActive = true
             roundStart()
-            asyncCountdown(120, "deathrun_game_countdown") {
-                roundEnded = true
+            asyncCountdown(120, "deathrun_game_countdown") { early ->
+                if(!early) roundEnded = true
             }
 
             while(!roundEnded) {
@@ -589,6 +589,29 @@ class DeathrunController : GameBase(
             }
         }
         super.cleanup()
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        player.enableBossBar("countdownBossbar")
+        if(player.tumblingPlayer.team == currentTeam) {
+            spawnAttacker(player)
+        } else {
+            spawnMain(player)
+
+            if(roundActive) {
+                makeSpectator(player)
+                player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+            }
+        }
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
     }
 
     suspend fun roundStart() {

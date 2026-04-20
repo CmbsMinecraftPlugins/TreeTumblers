@@ -138,6 +138,14 @@ fun Location.randomBetween(other: Location): Location {
     return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
 }
 
+fun Location.minOf(other: Location): Location {
+    return Location(this.world, min(this.x, other.x), min(this.y, other.y), min(this.z, other.z))
+}
+
+fun Location.maxOf(other: Location): Location {
+    return Location(this.world, max(this.x, other.x), max(this.y, other.y), max(this.z, other.z))
+}
+
 fun World.fill(location1: Location, location2: Location, material: Material) {
     val xRange = (min(location1.x.toInt(), location2.x.toInt())..max(location1.x.toInt(), location2.x.toInt()))
     val yRange = (min(location1.y.toInt(), location2.y.toInt())..max(location1.y.toInt(), location2.y.toInt()))

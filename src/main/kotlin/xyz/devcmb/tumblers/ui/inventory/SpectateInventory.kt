@@ -80,7 +80,11 @@ class SpectateInventory(
         (27..35).forEach {
             page.addItem(InventoryItem(
                 getItemStack = { page, item ->
-                    ItemStack.of(Material.GRAY_STAINED_GLASS_PANE)
+                    ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
+                        itemMeta = itemMeta.also { meta ->
+                            meta.isHideTooltip = true
+                        }
+                    }
                 },
                 it
             ))
@@ -91,6 +95,7 @@ class SpectateInventory(
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
+                        it.lore(listOf(Format.mm("<white><!_i>Page ${itemMap.itemPage}</!_i></white>")))
                     }
                 }
             },
@@ -107,6 +112,7 @@ class SpectateInventory(
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Next Page</yellow>"))
+                        it.lore(listOf(Format.mm("<white><!_i>Page ${itemMap.itemPage}</!_i></white>")))
                     }
                 }
             },
