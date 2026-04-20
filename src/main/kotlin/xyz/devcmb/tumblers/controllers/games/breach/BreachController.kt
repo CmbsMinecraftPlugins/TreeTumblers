@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -30,10 +31,13 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 
 @EventGame
@@ -163,7 +167,7 @@ class BreachController: GameBase(
 
         repeat(rounds) {
             preround()
-            delay(10000)
+            roundStart()
             currentRound++
         }
     }
@@ -217,7 +221,39 @@ class BreachController: GameBase(
         delay(3000)
         MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
         gameState = GameState.GAME_ON
-        // break walls
+    }
+
+    suspend fun roundStart() {
+        asyncCountdown(10, "round")
+
+        val doors: List<List<List<Int>>> = (currentMap.data.getList("doors")?.map { list ->
+            if (list !is List<*>) throw GameControllerException("Door locations is not a valid list")
+            list.map { it ->
+                if (it !is List<*>) throw GameControllerException("Door locations is not a valid list")
+                it.validateList<Int>() ?: throw GameControllerException("Door locations does not contain exclusively Integers")
+            }
+        } ?: throw GameControllerException("Door locations not found"))
+
+        doors.forEach { door ->
+            val point1 = door[0].validateLocation(currentMap.world) ?: throw GameControllerException("Door point 1 is an invalid location")
+            val point2 = door[1].validateLocation(currentMap.world) ?: throw GameControllerException("Door point 2 is an invalid location")
+
+            var i = 0L
+
+            (point1.y.toInt()..point2.y.toInt()).forEach {
+                runTaskLater(i * 5L) {
+                    currentMap.world.fill(
+                        Location(currentMap.world, point1.x, it.toDouble(), point1.z),
+                        Location(currentMap.world, point2.x, it.toDouble(), point2.z),
+                        Material.AIR
+                    )
+                }
+
+                i++
+            }
+        }
+
+        delay(10000)
     }
 
     fun giveKit(player: Player, kit: BreachKit, removeSelector: Boolean = false) {
