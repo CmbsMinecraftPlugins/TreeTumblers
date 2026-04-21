@@ -314,7 +314,7 @@ class PlayerController : IController {
 
             override fun format(sender: Player, message: Component): Component {
                 return Format.mm(
-                    "<color:${color}>[Staff] <sender>: <message></color>",
+                    "<color:${color.asHexString()}>[Staff] <sender>: <message></color>",
                     Placeholder.component("sender", sender.formattedName),
                     Placeholder.component("message", message)
                 )

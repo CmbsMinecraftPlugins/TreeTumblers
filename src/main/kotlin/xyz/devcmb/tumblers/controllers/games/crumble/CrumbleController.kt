@@ -613,10 +613,13 @@ class CrumbleController : GameBase(
         playerKits.forEach {
             HandlerList.unregisterAll(it.value)
         }
+
         actionBarTasks.forEach {
             try {
                 it.cancel()
-            } catch(e: Exception) {}
+            } catch(e: Exception) {
+                DebugUtil.warning("Failed to cancel action bar task: ${e.message}")
+            }
         }
         Bukkit.getOnlinePlayers().forEach {
             it.disableBossBar("countdownBossbar")
