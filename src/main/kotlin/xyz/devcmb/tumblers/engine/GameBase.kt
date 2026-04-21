@@ -567,7 +567,11 @@ abstract class GameBase(
 
         gamePlayers.add(player)
         player.activateScoreboard(scoreboard)
-        if(player.tumblingPlayer.team.playingTeam) gameParticipants.add(player)
+        if(player.tumblingPlayer.team.playingTeam) {
+            gameParticipants.add(player)
+        } else {
+            makeSpectator(player, participating = false)
+        }
 
         // The normal `playerJoinEvent` runs events after 1 tick, so after 2 everything is done
         runTaskLater(2) {
@@ -592,7 +596,6 @@ abstract class GameBase(
 
         gamePlayers.remove(player)
         gameParticipants.remove(player)
-        unSpectate(player)
 
         when(currentState) {
             State.PREGAME,

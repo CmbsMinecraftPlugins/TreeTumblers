@@ -41,6 +41,7 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -203,10 +204,10 @@ class CrumbleController : GameBase(
         }
 
     var roundActive = false
+    var preRound = false
     var preRoundFreeze = false
 
     val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
-    val teamArenaSpawns: HashMap<Team, String> = HashMap()
     val alivePlayers: HashMap<Team, ArrayList<Player>> = HashMap()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
@@ -358,27 +359,13 @@ class CrumbleController : GameBase(
     override suspend fun spawn(cycle: SpawnCycle) {
         when(cycle) {
             SpawnCycle.PREGAME -> {
-                val currentMap = loadedMaps.getOrNull(0)
-                if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
-
-                val pregameSpawn = currentMap.data.getList("spawns.pregame")
-                    ?: throw GameControllerException("Pregame spawn not specified for ${currentMap.id}")
-
-                val location: List<Double> = pregameSpawn.map {
-                    if(it !is Double) throw GameControllerException("Teleport list does not contain exclusively doubles")
-                    it
-                }
-
                 suspendSync {
                     gamePlayers.forEach {
-                        it.teleport(location.unpackCoordinates(currentMap.world))
-                        DebugUtil.info("Spawned player ${it.name} at $location")
+                        spawnPlayerPregame(it)
                     }
                 }
             }
             SpawnCycle.PRE_ROUND -> {
-                teamArenaSpawns.clear()
-
                 val currentMatchups = matchups[roundIndex]
                 val spawnSetKeys = (1..4).map {
                     "spawns.ingame.arena$it"
@@ -400,9 +387,6 @@ class CrumbleController : GameBase(
 
                     var firstOccupiedSpawns = 0
                     var secondOccupiedSpawns = 0
-
-                    teamArenaSpawns.put(matchup.first, spawnSetKeys[index].split(".")[2])
-                    teamArenaSpawns.put(matchup.second, spawnSetKeys[index].split(".")[2])
 
                     suspendSync {
                         gamePlayers.forEach {
@@ -429,8 +413,6 @@ class CrumbleController : GameBase(
                                     val location = playerSpawn.unpackCoordinates(currentMap.world)
 
                                     it.teleport(location)
-                                    it.isFlying = false
-                                    it.allowFlight = false
                                     DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                     secondOccupiedSpawns++
@@ -444,31 +426,81 @@ class CrumbleController : GameBase(
         }
     }
 
-    override suspend fun gamePregame() {
-        gameParticipants.forEach {
-            it.inventory.addItem(kitSelector.clone())
-            val task = object : BukkitRunnable() {
-                override fun run() {
-                    var component = Component.empty()
-                    val kit = playerKits[it]
-                    if(kit != null) {
-                        component = component.append(UserInterfaceUtility.backgroundTextCenter(
-                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                            Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Component.text(kit.kitIcon).font(font))),
-                            kit.name,
-                            69.5,
-                            14.0
-                        ))
-                    }
+    fun spawnPlayerPregame(player: Player) {
+        val currentMap = loadedMaps.getOrNull(0)
+        if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
 
-                    it.sendActionBar(component)
-                }
-            }
-            task.runTaskTimer(TreeTumblers.plugin, 0, 5)
-            actionBarTasks.add(task)
+        val pregameSpawn = currentMap.data.getList("spawns.pregame")
+            ?: throw GameControllerException("Pregame spawn not specified for ${currentMap.id}")
 
-            it.enableBossBar("countdownBossbar")
+        val location: List<Double> = pregameSpawn.map {
+            if(it !is Double) throw GameControllerException("Teleport list does not contain exclusively doubles")
+            it
         }
+
+        player.teleport(location.unpackCoordinates(currentMap.world))
+        DebugUtil.info("Spawned player ${player.name} at $location")
+    }
+
+    // only used for placing players into the arena during pre-round
+    fun spawnPlayerPreRound(player: Player) {
+        val currentMatchups = matchups[roundIndex]
+        val spawnSetKeys = (1..4).map {
+            "spawns.ingame.arena$it"
+        }.toMutableList()
+
+        val playerMatchup = currentMatchups.find { player in it.first.getOnlinePlayers() || player in it.second.getOnlinePlayers() }
+            ?: throw GameControllerException("Could not find a valid matchup with player ${player.name}")
+
+        val index = currentMatchups.indexOf(playerMatchup)
+
+        val spawns: List<List<List<Double>>> = currentMap.data
+            .getList(spawnSetKeys.getOrNull(index) ?: spawnSetKeys.first())
+            ?.map { l1 ->
+                if(l1 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
+                l1.map { l2 ->
+                    if(l2 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
+                    l2.map {
+                        if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
+                        it
+                    }
+                }
+            } ?: throw GameControllerException("Spawn set not found")
+
+        val team = player.tumblingPlayer.team
+        val teamSpawns = if(team == playerMatchup.first) spawns[0] else spawns[1]
+
+        // just use the first one
+        player.teleport(teamSpawns[0].unpackCoordinates(currentMap.world))
+    }
+
+    fun pregamePlayer(player: Player) {
+        player.inventory.addItem(kitSelector.clone())
+        val task = object : BukkitRunnable() {
+            override fun run() {
+                var component = Component.empty()
+                val kit = playerKits[player]
+                if(kit != null) {
+                    component = component.append(UserInterfaceUtility.backgroundTextCenter(
+                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                        Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Component.text(kit.kitIcon).font(font))),
+                        kit.name,
+                        69.5,
+                        14.0
+                    ))
+                }
+
+                player.sendActionBar(component)
+            }
+        }
+        task.runTaskTimer(TreeTumblers.plugin, 0, 5)
+        actionBarTasks.add(task)
+
+        player.enableBossBar("countdownBossbar")
+    }
+
+    override suspend fun gamePregame() {
+        gameParticipants.forEach(this::pregamePlayer)
 
         countdown(20, "crumble_kit_selection_timer")
 
@@ -508,6 +540,7 @@ class CrumbleController : GameBase(
             setupCrumble()
             setupBorder()
             announceMatchup()
+            preRound = false
             roundActive = true
             asyncCountdown(roundLength, "crumble_round_timer") { early ->
                 if(!early) gameTimeoutEnd = true
@@ -567,17 +600,31 @@ class CrumbleController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        TODO("Not yet implemented")
+        when(currentState) {
+            State.PREGAME -> {
+                spawnPlayerPregame(player)
+                pregamePlayer(player)
+            }
+            State.GAME_ON -> {
+                spawnPlayerPreRound(player)
+                if(!preRound) {
+                    makeSpectator(player)
+                    player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+                }
+            }
+            else -> throw GameOperatorException("Game base passed playerJoin while state was neither pregame nor game on.")
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] state
      */
     override fun playerLeave(player: Player) {
-        TODO("Not yet implemented")
+        // TODO: Eliminate player, cancel game if not enough players
     }
 
     suspend fun preRound() {
+        preRound = true
         spawn(SpawnCycle.PRE_ROUND)
         alivePlayers.values.forEach { it.clear() }
         gameParticipants.forEach { player ->

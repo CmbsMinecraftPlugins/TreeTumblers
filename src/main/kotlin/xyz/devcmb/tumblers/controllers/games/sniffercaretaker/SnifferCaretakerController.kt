@@ -545,16 +545,18 @@ class SnifferCaretakerController : GameBase(
         player.spigot().respawn()
 
         val tumblingPlayer = player.tumblingPlayer
+        val playing = tumblingPlayer.team.playingTeam
 
         val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
             ?: throw GameControllerException("Spawn not found")
 
-        val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
-
+        val playerLocation = offsetLocation(playerSpawn, if(playing) tumblingPlayer.team else Team.RED)
         player.teleport(playerLocation)
 
-        kit.forEach { item ->
-            player.inventory.addItem(item)
+        if(playing) {
+            kit.forEach { item ->
+                player.inventory.addItem(item)
+            }
         }
     }
 

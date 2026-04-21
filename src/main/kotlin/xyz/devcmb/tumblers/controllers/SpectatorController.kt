@@ -5,6 +5,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
@@ -72,5 +73,10 @@ class SpectatorController : IController {
     fun damageEvent(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
         if(player in spectators) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerLeaveEvent(event: PlayerQuitEvent) {
+        unSpectate(event.player)
     }
 }

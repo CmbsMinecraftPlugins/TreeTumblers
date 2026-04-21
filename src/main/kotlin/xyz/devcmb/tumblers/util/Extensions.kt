@@ -25,7 +25,7 @@ private val playerController: PlayerController by lazy {
 
 val Player.tumblingPlayer: TumblingPlayer
     get() {
-        return playerController.players.find { it.bukkitPlayer == this }!!
+        return playerController.players.find { it.uuid == this.uniqueId }!!
     }
 
 val Player.formattedName: Component

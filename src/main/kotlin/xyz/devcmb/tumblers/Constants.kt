@@ -2,6 +2,6 @@ package xyz.devcmb.tumblers
 
 data object Constants {
     val IS_DEVELOPMENT = true
-    const val VERSION: String = "1e0"
+    const val VERSION: String = "1e5"
     const val BRANCH: String = "feat/everything_else"
 }

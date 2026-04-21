@@ -154,8 +154,10 @@ class DeathrunController : GameBase(
         DeathrunScoreSource.RUN_COMPLETE to 20,
         // constant value
         DeathrunScoreSource.RUN_FAILED to 20,
-        DeathrunScoreSource.TRAP_KILL to 10,
-        DeathrunScoreSource.TRAP_DAMAGE to 5
+
+        // split across the whole team
+        DeathrunScoreSource.TRAP_KILL to 40,
+        DeathrunScoreSource.TRAP_DAMAGE to 20
     ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font)
@@ -175,6 +177,7 @@ class DeathrunController : GameBase(
     val roundIndex
         get() = max(currentRound - 1, 0)
     var roundActive = false
+    var preRound = false
 
     val currentMap: LoadedMap
         get() {
@@ -381,6 +384,8 @@ class DeathrunController : GameBase(
     }
 
     fun respawnRunner(player: Player) {
+        player.fireTicks = 0
+
         val checkpoint = playerCheckpoints[player]
         if(checkpoint == null) {
             spawnMain(player)
@@ -424,6 +429,7 @@ class DeathrunController : GameBase(
     }
 
     suspend fun preRound() {
+        preRound = true
         alivePlayers.addAll(runningPlayers)
         alivePlayers.forEach {
             it.health = lives.toDouble() * 2
@@ -500,6 +506,7 @@ class DeathrunController : GameBase(
         while(currentTimer?.paused == true) {
             delay(1000)
         }
+        preRound = false
     }
 
     suspend fun postRound() {
@@ -601,7 +608,7 @@ class DeathrunController : GameBase(
         } else {
             spawnMain(player)
 
-            if(roundActive) {
+            if(!preRound && player.tumblingPlayer.team.playingTeam) {
                 makeSpectator(player)
                 player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
             }
@@ -612,6 +619,8 @@ class DeathrunController : GameBase(
      * The method that gets called when a player leaves the game during the [State.GAME_ON] state
      */
     override fun playerLeave(player: Player) {
+        if(player.tumblingPlayer.team == currentTeam || !player.tumblingPlayer.team.playingTeam) return
+        failRun(player)
     }
 
     suspend fun roundStart() {
@@ -746,17 +755,19 @@ class DeathrunController : GameBase(
     }
 
     fun failRun(player: Player) {
+        currentTeam.getOnlinePlayers().forEach {
+            MiscUtils.announceKill(it, player, getScoreSource(DeathrunScoreSource.TRAP_KILL))
+        }
+
         makePlayerSpectate(player)
         grantScore(player, DeathrunScoreSource.RUN_FAILED)
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
+        Bukkit.broadcast(
             gameMessage(Format.mm(
                 "<red><player> has been eliminated!</red>",
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
-        currentTeam.getOnlinePlayers().forEach {
-            grantScore(it, DeathrunScoreSource.TRAP_KILL)
-        }
+        grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_KILL)
         placements[roundIndex].put(player, -1)
 
         player.showTitle(Title.title(
@@ -863,10 +874,8 @@ class DeathrunController : GameBase(
                 )
             )
 
-            if(it.tumblingPlayer.team == currentTeam) {
-                grantScore(it, DeathrunScoreSource.TRAP_DAMAGE)
-            }
         }
+        grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_DAMAGE)
 
         event.damage = 2.0
         respawnRunner(player)
@@ -875,9 +884,6 @@ class DeathrunController : GameBase(
     @EventHandler
     fun playerRunFail(event: PlayerDeathEvent) {
         val player = event.player
-        currentTeam.getOnlinePlayers().forEach {
-            MiscUtils.announceKill(it, player, getScoreSource(DeathrunScoreSource.TRAP_KILL))
-        }
         failRun(player)
         // no need to cancel because the spectator kill flag thing already does it
     }
