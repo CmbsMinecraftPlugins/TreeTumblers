@@ -19,6 +19,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.buttonClickSound
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleKitSelector(
     val player: Player,
@@ -61,7 +62,7 @@ class CrumbleKitSelector(
                                     itemMeta = itemMeta.also { meta ->
                                         meta.itemName(Component.text(template.name))
                                         if(
-                                            crumble.playerKits[player]?.id != template.id
+                                            crumble.playerKits[player.tumblingPlayer]?.id != template.id
                                             && currentPlayerKits.size < CrumbleController.maxPlayersPerKit
                                         ) meta.itemModel = template.inventoryModel
                                     }
@@ -83,7 +84,7 @@ class CrumbleKitSelector(
                                     Component.text("${currentPlayerKits.size}/${CrumbleController.maxPlayersPerKit}", NamedTextColor.GRAY)
                                 )
 
-                                if(crumble.playerKits[player]?.id == template.id) {
+                                if(crumble.playerKits[player.tumblingPlayer]?.id == template.id) {
                                     stack = stack.withType(Material.GREEN_STAINED_GLASS_PANE)
                                     lore.add(Component.text("Selected!", NamedTextColor.GREEN))
                                 }
@@ -108,7 +109,7 @@ class CrumbleKitSelector(
                                     return@InventoryMappedItem
                                 }
 
-                                if(crumble.playerKits[player]?.id == template.id) {
+                                if(crumble.playerKits[player.tumblingPlayer]?.id == template.id) {
                                     player.sendMessage(Format.error("You've already selected this kit!"))
                                     return@InventoryMappedItem
                                 }

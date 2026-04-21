@@ -48,6 +48,7 @@ import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -213,8 +214,8 @@ class CrumbleController : GameBase(
 
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
     val kitTemplates: HashMap<String, Kit> = HashMap()
-    val playerKits: HashMap<Player, Kit> = HashMap()
-    val abilitiesUsed: ArrayList<Player> = ArrayList()
+    val playerKits: HashMap<TumblingPlayer, Kit> = HashMap()
+    val abilitiesUsed: ArrayList<TumblingPlayer> = ArrayList()
 
     val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
 
@@ -293,7 +294,7 @@ class CrumbleController : GameBase(
                     return@to
                 }
 
-                val kit = playerKits[sender]
+                val kit = playerKits[sender.tumblingPlayer]
                 if(kit == null) {
                     sender.sendMessage(Format.error("You do not have a kit selected!"))
                     return@to
@@ -309,8 +310,8 @@ class CrumbleController : GameBase(
             }
         )
 
-        override fun killEvent(killer: Player?, killed: Player?) = playerKillAnnouncement(killer, killed)
-        override fun deathEvent(killed: Player?) = playerDeathAnnouncement(killed)
+        override fun killEvent(killer: Player?, killed: Player?) {}
+        override fun deathEvent(killed: Player?) {}
     }
 
     override suspend fun gameLoad() {
@@ -479,7 +480,7 @@ class CrumbleController : GameBase(
         val task = object : BukkitRunnable() {
             override fun run() {
                 var component = Component.empty()
-                val kit = playerKits[player]
+                val kit = playerKits[player.tumblingPlayer]
                 if(kit != null) {
                     component = component.append(UserInterfaceUtility.backgroundTextCenter(
                         Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
@@ -506,7 +507,7 @@ class CrumbleController : GameBase(
 
         suspendSync {
             gameParticipants.forEach {
-                if(!playerKits.containsKey(it)) {
+                if(!playerKits.containsKey(it.tumblingPlayer)) {
                     selectKit(
                         it,
                         registeredKits.keys.filter { registeredKit ->
@@ -604,12 +605,27 @@ class CrumbleController : GameBase(
             State.PREGAME -> {
                 spawnPlayerPregame(player)
                 pregamePlayer(player)
+
+                if(playerKits.containsKey(player.tumblingPlayer)) {
+                    givePlayerKit(player, true)
+                }
             }
             State.GAME_ON -> {
+                if(!playerKits.containsKey(player.tumblingPlayer)) {
+                    selectKit(
+                        player,
+                        registeredKits.keys.filter { registeredKit ->
+                            playerKits.filter { kit -> kit.value.id == registeredKit }.size < maxPlayersPerKit
+                        }.random()
+                    )
+                }
+
                 spawnPlayerPreRound(player)
                 if(!preRound) {
                     makeSpectator(player)
                     player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+                } else {
+                    givePlayerKit(player)
                 }
             }
             else -> throw GameOperatorException("Game base passed playerJoin while state was neither pregame nor game on.")
@@ -620,7 +636,11 @@ class CrumbleController : GameBase(
      * The method that gets called when a player leaves the game during the [State.GAME_ON] state
      */
     override fun playerLeave(player: Player) {
-        // TODO: Eliminate player, cancel game if not enough players
+        if(player.tumblingPlayer.team.playingTeam) {
+            if(roundActive && player in alivePlayers[player.tumblingPlayer.team]!!) {
+                playerDeath(player, null)
+            }
+        }
     }
 
     suspend fun preRound() {
@@ -909,28 +929,17 @@ class CrumbleController : GameBase(
         matchResults[roundIndex].put(team, RoundResult.DRAW)
     }
 
-    fun playerKillAnnouncement(killer: Player?, killed: Player?) {
-        sendTeamMessage(killed) {
-            Format.formatKillMessage(killer, killed, it, getScoreSource(CommonScoreSource.KILL))
-        }
-
-        if(killer != null) {
-            grantScore(killer, CommonScoreSource.KILL)
-        }
-    }
-
-    fun playerDeathAnnouncement(killed: Player?) {
-        sendTeamMessage(killed) {
-            Format.formatDeathMessage(killed, it)
-        }
-
-        // Natural death in this game does not give score
-    }
-
     fun giveKits() = playerKits.keys.forEach(this::givePlayerKit)
 
+    fun givePlayerKit(player: TumblingPlayer, pregame: Boolean = false) {
+        if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) return
+        givePlayerKit(player.bukkitPlayer!!, pregame)
+    }
+
     fun givePlayerKit(player: Player, pregame: Boolean = false) {
-        val kit = playerKits[player]!!
+        DebugUtil.info("Giving ${player.name} their kit")
+
+        val kit = playerKits[player.tumblingPlayer]!!
         kit.cleanup()
         player.inventory.clear()
 
@@ -1003,19 +1012,19 @@ class CrumbleController : GameBase(
         val kit = registeredKits[id]!!
             .getDeclaredConstructor(Player::class.java, CrumbleController::class.java)
             .newInstance(player, this)
-        playerKits.put(player, kit)
+        playerKits.put(player.tumblingPlayer, kit)
         givePlayerKit(player, true)
         Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
     }
 
     fun deselectKit(player: Player) {
-        if(!playerKits.containsKey(player)) return
-        HandlerList.unregisterAll(playerKits[player]!!)
-        playerKits.remove(player)
+        if(!playerKits.containsKey(player.tumblingPlayer)) return
+        HandlerList.unregisterAll(playerKits[player.tumblingPlayer]!!)
+        playerKits.remove(player.tumblingPlayer)
     }
 
     fun useAbility(player: Player) {
-        if(abilitiesUsed.contains(player)) {
+        if(abilitiesUsed.contains(player.tumblingPlayer)) {
             player.sendMessage(Format.error("You've already used your ability!"))
             return
         }
@@ -1025,16 +1034,12 @@ class CrumbleController : GameBase(
             return
         }
 
-        playerKits[player]!!.onAbility()
+        playerKits[player.tumblingPlayer]!!.onAbility()
         player.sendMessage(Format.success("Activated ability!"))
-        abilitiesUsed.add(player)
+        abilitiesUsed.add(player.tumblingPlayer)
     }
 
-    @EventHandler
-    fun playerKillEvent(event: PlayerDeathEvent) {
-        val killed = event.player
-        val killer = killed.killer
-
+    fun playerDeath(killed: Player, killer: Player?) {
         val tumblingPlayer = killed.tumblingPlayer
         val killedTeam = tumblingPlayer.team
         if(!killedTeam.playingTeam) return
@@ -1058,12 +1063,28 @@ class CrumbleController : GameBase(
             }
         }
 
-        if(killer == null) {
-            playerDeathAnnouncement(killed)
-            return
+        sendTeamMessage(killed) {
+            Format.formatKillMessage(killer, killed, it, getScoreSource(CommonScoreSource.KILL))
         }
 
-        playerKillAnnouncement(killer, killed)
+        val currentMatchup = getCurrentMatchup(killed)!!
+        val otherTeam =
+            if(currentMatchup.first == killed.tumblingPlayer.team) currentMatchup.second
+            else currentMatchup.first
+
+        if(killer != null) {
+            grantScore(killer, CommonScoreSource.KILL)
+        } else {
+            grantTeamScore(otherTeam, CommonScoreSource.KILL)
+        }
+    }
+
+    @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        playerDeath(killed, killer)
     }
 
     // Some maps have the spawn point right next to lava, so if you move immediately after spawning you'd just run right in
