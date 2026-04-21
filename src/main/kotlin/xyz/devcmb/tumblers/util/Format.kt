@@ -62,31 +62,31 @@ object Format {
             .append(Component.text(player.name, team.color))
     }
 
-    fun formatKillMessage(killer: Player?, killed: Player?, receiver: Player, score: Int): Component {
+    fun formatKillMessage(killer: Player?, killed: Player?, receiver: Player, score: Int)
+        = formatKillMessage(killer?.tumblingPlayer, killed?.tumblingPlayer, receiver, score)
+
+    fun formatKillMessage(killer: TumblingPlayer?, killed: TumblingPlayer?, receiver: Player, score: Int): Component {
         require(killer != null || killed != null) { "Both killer and killed cannot be null" }
 
-        val killerTumblingPlayer = killer?.tumblingPlayer
-        val killedTumblingPlayer = killed?.tumblingPlayer
-
         val killerName =
-            if(killerTumblingPlayer == null) Component.empty()
+            if(killer == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killerTumblingPlayer)
+            else formatPlayerName(killer)
 
         val killedName =
-            if(killedTumblingPlayer == null) Component.empty()
+            if(killed == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killedTumblingPlayer)
+            else formatPlayerName(killed)
 
         var component = mm(
             "<killed> was slain by <killer>",
@@ -101,18 +101,19 @@ object Format {
         return component
     }
 
-    fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
-        val killedTumblingPlayer = killed?.tumblingPlayer
+    fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0)
+        = formatDeathMessage(killed?.tumblingPlayer, receiver, grantScore, score)
 
+    fun formatDeathMessage(killed: TumblingPlayer?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
         val killedName =
-            if(killedTumblingPlayer == null) Component.empty()
+            if(killed == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
                         .font(NamespacedKey("tumbling", "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
-            else formatPlayerName(killedTumblingPlayer)
+            else formatPlayerName(killed)
 
         var result = mm(
             MiniMessagePlaceholders.Game.DEATH_MESSAGES.random(),

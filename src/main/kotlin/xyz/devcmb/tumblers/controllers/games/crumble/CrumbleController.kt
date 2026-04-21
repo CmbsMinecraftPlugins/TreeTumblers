@@ -68,6 +68,7 @@ import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
@@ -201,7 +202,7 @@ class CrumbleController : GameBase(
 
     val currentMap: LoadedMap
         get() {
-            return loadedMaps[roundIndex]
+            return loadedMaps.getOrElse(roundIndex) { loadedMaps.first() }
         }
 
     var roundActive = false
@@ -209,7 +210,7 @@ class CrumbleController : GameBase(
     var preRoundFreeze = false
 
     val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
-    val alivePlayers: HashMap<Team, ArrayList<Player>> = HashMap()
+    val alivePlayers: HashMap<Team, ArrayList<TumblingPlayer>> = HashMap()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
     val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
@@ -423,13 +424,28 @@ class CrumbleController : GameBase(
                         }
                     }
                 }
+
+                Team.entries.filter { !it.playingTeam }.forEach {
+                    it.getOnlinePlayers().forEach(this::spawnSpectator)
+                }
             }
         }
     }
 
+    fun spawnSpectator(player: Player) {
+        val arena1Center: Location = currentMap.data
+            .getList("centers.arena1")
+            ?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Spawn set not found")
+
+        player.teleport(arena1Center)
+    }
+
     fun spawnPlayerPregame(player: Player) {
-        val currentMap = loadedMaps.getOrNull(0)
-        if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
+        if(!player.tumblingPlayer.team.playingTeam) {
+            spawnSpectator(player)
+            return
+        }
 
         val pregameSpawn = currentMap.data.getList("spawns.pregame")
             ?: throw GameControllerException("Pregame spawn not specified for ${currentMap.id}")
@@ -542,6 +558,18 @@ class CrumbleController : GameBase(
             setupBorder()
             announceMatchup()
             preRound = false
+
+            // this is so if you fight an empty team, the team gets the points for it while also immediately ending the round
+            suspendSync {
+                alivePlayers.forEach { aliveEntry ->
+                    aliveEntry.value.toList().forEach { player ->
+                        if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) {
+                            playerDeath(player, null)
+                        }
+                    }
+                }
+            }
+
             roundActive = true
             asyncCountdown(roundLength, "crumble_round_timer") { early ->
                 if(!early) gameTimeoutEnd = true
@@ -601,6 +629,17 @@ class CrumbleController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
+        if(!player.tumblingPlayer.team.playingTeam) {
+            val arena1Center: Location = currentMap.data
+                .getList("centers.arena1")
+                ?.validateLocation(currentMap.world)
+                ?: throw GameControllerException("Spawn set not found")
+
+            player.teleport(arena1Center)
+
+            return
+        }
+
         when(currentState) {
             State.PREGAME -> {
                 spawnPlayerPregame(player)
@@ -622,7 +661,7 @@ class CrumbleController : GameBase(
 
                 spawnPlayerPreRound(player)
                 if(!preRound) {
-                    makeSpectator(player)
+                    makeSpectator(player, false)
                     player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
                 } else {
                     givePlayerKit(player)
@@ -636,9 +675,10 @@ class CrumbleController : GameBase(
      * The method that gets called when a player leaves the game during the [State.GAME_ON] state
      */
     override fun playerLeave(player: Player) {
-        if(player.tumblingPlayer.team.playingTeam) {
-            if(roundActive && player in alivePlayers[player.tumblingPlayer.team]!!) {
-                playerDeath(player, null)
+        val tumblingPlayer = player.tumblingPlayer
+        if(tumblingPlayer.team.playingTeam) {
+            if(roundActive && tumblingPlayer in alivePlayers[tumblingPlayer.team]!!) {
+                playerDeath(tumblingPlayer, player.killer)
             }
         }
     }
@@ -647,9 +687,8 @@ class CrumbleController : GameBase(
         preRound = true
         spawn(SpawnCycle.PRE_ROUND)
         alivePlayers.values.forEach { it.clear() }
-        gameParticipants.forEach { player ->
-            val tumblingPlayer = player.tumblingPlayer
-            alivePlayers[tumblingPlayer.team]!!.add(player)
+        Team.entries.filter { it.playingTeam }.forEach {
+            alivePlayers.put(it, ArrayList(it.getAllPlayers()))
         }
         gamePlayers.forEach {
             it.enableBossBar("crumbleAliveTeamsBossbar")
@@ -766,6 +805,13 @@ class CrumbleController : GameBase(
                 }
             }
         }
+
+        Team.entries.filter { it.playingTeam }.forEach {
+            if(matchResults[roundIndex][it] == null) {
+                matchResults[roundIndex].put(it, RoundResult.DRAW)
+            }
+        }
+
         gameTimeoutEnd = false
         delay(1000)
         gamePlayers.forEach {
@@ -863,15 +909,8 @@ class CrumbleController : GameBase(
         Bukkit.broadcast(gameMessage(Component.text("Round started!")))
     }
 
-    fun sendTeamMessage(player: Player?, message: (receiver: Player) -> Component) {
-        if(player == null) {
-            Bukkit.getOnlinePlayers().forEach {
-                it.sendMessage(message(it))
-            }
-            return
-        }
-
-        val matchup = getCurrentMatchup(player)!!
+    fun sendTeamMessage(player: TumblingPlayer, message: (receiver: Player) -> Component) {
+        val matchup = getCurrentMatchup(player.team)!!
         val (team1, team2) = matchup
 
         (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach { it.sendMessage(message(it)) }
@@ -1039,43 +1078,66 @@ class CrumbleController : GameBase(
         abilitiesUsed.add(player.tumblingPlayer)
     }
 
-    fun playerDeath(killed: Player, killer: Player?) {
-        val tumblingPlayer = killed.tumblingPlayer
-        val killedTeam = tumblingPlayer.team
+    fun playerDeath(killed: TumblingPlayer, killer: Player?) {
+        val killedTeam = killed.team
         if(!killedTeam.playingTeam) return
+        alivePlayers[killedTeam]?.remove(killed)
+        if(matchResults[roundIndex].containsKey(killedTeam)) return
 
-        alivePlayers[tumblingPlayer.team]!!.remove(killed)
-        val currentPlayerMatchup = getCurrentMatchup(killed)!!
+        alivePlayers[killed.team]!!.remove(killed)
+        val currentPlayerMatchup = getCurrentMatchup(killed.team)!!
+
         val killerTeam =
             if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
             else currentPlayerMatchup.first
 
-        if(alivePlayers[killedTeam]!!.isEmpty()) {
-            // this should only really happen if they die same-tick (or if there's only one person), but im not even sure if that'd be the case
-            if(alivePlayers[killerTeam]!!.isEmpty()) {
-                roundDraw(killedTeam)
-                roundDraw(killerTeam)
+        val emptyMatchup = (!alivePlayers[killedTeam]!!.any { it.isOnline } && !alivePlayers[killerTeam]!!.any { it.isOnline })
+        if(!emptyMatchup) {
+            val currentMatchup = getCurrentMatchup(killed.team)!!
+            val otherTeam =
+                if(currentMatchup.first == killed.team) currentMatchup.second
+                else currentMatchup.first
+
+            if(killer != null) {
+                grantScore(killer, CommonScoreSource.KILL)
+                sendTeamMessage(killed) {
+                    Format.formatKillMessage(killer.tumblingPlayer, killed, it, getScoreSource(CommonScoreSource.KILL))
+                }
             } else {
-                alivePlayers[killerTeam]!!.forEach(this::makeSpectator)
-                alivePlayers[killerTeam]!!.clear()
-                roundLoss(killedTeam)
-                roundWin(killerTeam)
+                val scores = grantTeamScore(otherTeam, CommonScoreSource.KILL)
+                sendTeamMessage(killed) {
+                    Format.formatDeathMessage(killed, it, it.tumblingPlayer.team == otherTeam, scores[it.tumblingPlayer] ?: 0)
+                }
             }
         }
 
-        sendTeamMessage(killed) {
-            Format.formatKillMessage(killer, killed, it, getScoreSource(CommonScoreSource.KILL))
-        }
+        if(alivePlayers[killedTeam]!!.isEmpty()) {
+            Bukkit.broadcast(gameMessage(
+                Format.mm(
+                    "<team> have finished their game!",
+                    Placeholder.component("team", killedTeam.formattedName)
+                )
+            ))
+            Bukkit.broadcast(gameMessage(
+                Format.mm(
+                    "<team> have finished their game!",
+                    Placeholder.component("team", killerTeam.formattedName)
+                )
+            ))
 
-        val currentMatchup = getCurrentMatchup(killed)!!
-        val otherTeam =
-            if(currentMatchup.first == killed.tumblingPlayer.team) currentMatchup.second
-            else currentMatchup.first
+            // this game is becoming spaghetti very quickly
+            if(alivePlayers[killerTeam]!!.isEmpty() || emptyMatchup) {
+                roundDraw(killedTeam)
+                roundDraw(killerTeam)
+            } else {
+                alivePlayers[killerTeam]!!.filter { it.bukkitPlayer != null }.forEach {
+                    makeSpectator(it.bukkitPlayer!!, false)
+                }
+                alivePlayers[killerTeam]!!.clear()
 
-        if(killer != null) {
-            grantScore(killer, CommonScoreSource.KILL)
-        } else {
-            grantTeamScore(otherTeam, CommonScoreSource.KILL)
+                roundLoss(killedTeam)
+                roundWin(killerTeam)
+            }
         }
     }
 
@@ -1084,7 +1146,7 @@ class CrumbleController : GameBase(
         val killed = event.player
         val killer = killed.killer
 
-        playerDeath(killed, killer)
+        playerDeath(killed.tumblingPlayer, killer)
     }
 
     // Some maps have the spawn point right next to lava, so if you move immediately after spawning you'd just run right in

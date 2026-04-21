@@ -409,19 +409,30 @@ abstract class GameBase(
      * Grants a score equally amongst a team
      * @param team The team to give score to
      * @param source The source of score
+     * @return The score value that each player got in a [HashMap] from [TumblingPlayer] to their score in an [Int]
      */
-
-    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
+    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null): HashMap<TumblingPlayer, Int> {
         val amount = amountOverride ?: getScoreSource(source)
         val playerCount = team.getAllPlayers().size
 
-        if (amount % playerCount != 0) {
-            DebugUtil.warning("Attempted to give team ${team.name} ($playerCount players) $amount score, which cannot be divided equally, giving ${(amount / playerCount) * playerCount} score instead of $amount")
+        var remainder = amount % playerCount
+        if (remainder > 0) {
+            DebugUtil.info("Attempted to give team ${team.name} ($playerCount players) $amount score, which is not divisible by $playerCount, and has a remainder of $remainder that will be distributed prioritizing players with the least score.")
         }
 
-        team.getAllPlayers().forEach {
-            grantScore(it, source, amount / playerCount)
+        val scores: HashMap<TumblingPlayer, Int> = HashMap()
+        team.getAllPlayers().sortedBy { it.score }.forEach {
+            var scoreToGrant = amount / playerCount
+            if(remainder > 0) {
+                scoreToGrant++
+                remainder--
+            }
+
+            scores.put(it, scoreToGrant)
+            grantScore(it, source, scoreToGrant)
         }
+
+        return scores
     }
 
     /**
