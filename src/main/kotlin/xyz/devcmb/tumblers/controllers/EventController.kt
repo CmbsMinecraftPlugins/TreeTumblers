@@ -1,5 +1,13 @@
 package xyz.devcmb.tumblers.controllers
 
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.transform.AffineTransform
+import com.sk89q.worldedit.session.ClipboardHolder
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -42,6 +50,7 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import java.io.File
 import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
@@ -102,6 +111,12 @@ class EventController : IController {
 
         @field:Configurable("event.voting.dome_end")
         var domeEnd: List<Int> = listOf(26,197,-11)
+
+        @field:Configurable("templates.dioramas")
+        var dioramasFolder: String = "&/templates/dioramas"
+            get() {
+                return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
+            }
     }
 
     override fun init() {
@@ -384,6 +399,9 @@ class EventController : IController {
 
             val game = games.random()
             quadrantGames.put(it, game)
+            suspendSync {
+                loadDiorama(game.id, it)
+            }
 
             suspendSync {
                 quadrant.forEach { loc ->
@@ -436,6 +454,8 @@ class EventController : IController {
                 }
             }
         }
+
+        cleanupDioramas()
 
         val winningGame = countVotes()
 
@@ -494,6 +514,72 @@ class EventController : IController {
 
             quadrantLogoDisplays.clear()
         }
+    }
+
+    val currentDioramaSessions: ArrayList<EditSession> = ArrayList()
+    fun loadDiorama(id: String, index: Int) {
+        val schematic = File(dioramasFolder, "$id.schem")
+        if(!schematic.exists()) {
+            DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
+            return
+        }
+
+        val format = ClipboardFormats.findByFile(schematic)
+        if(format == null) {
+            DebugUtil.warning("${schematic.parentFile.name}/${schematic.name} is not a valid schematic, aborting")
+            return
+        }
+
+        val clipboard: Clipboard
+        format.getReader(schematic.inputStream()).use { reader ->
+            clipboard = reader.read()
+        }
+
+        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        clipboard.origin = BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
+
+        val editSession = WorldEdit.getInstance()
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(lobbyWorld))
+            .build()
+
+        val holder = ClipboardHolder(clipboard)
+        holder.transform = holder.transform.combine(
+            AffineTransform().rotateY(index * -90.0)
+        )
+
+        try {
+            val operation = holder
+                .createPaste(editSession)
+                .to(BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint())
+                .ignoreAirBlocks(true)
+                .build()
+
+            Operations.complete(operation)
+            editSession.flushQueue()
+
+            currentDioramaSessions.add(editSession)
+        } catch(e: Exception) {
+            editSession.close()
+            DebugUtil.severe("Failed to load game diorama for $id: ${e.message}")
+        }
+    }
+
+    fun cleanupDioramas() {
+        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        val undoSession = WorldEdit.getInstance()
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(lobbyWorld))
+            .fastMode(true)
+            .build()
+
+        currentDioramaSessions.forEach {
+            it.undo(undoSession)
+        }
+        currentDioramaSessions.clear()
+
+        undoSession.flushQueue()
+        undoSession.close()
     }
 
     fun countVotes(): Pair<GameController.RegisteredGame, Int> {

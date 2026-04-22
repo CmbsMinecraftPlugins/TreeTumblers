@@ -3,6 +3,7 @@ database:
   # This makes it so teams, scores, and any other persisting data will reset when the server restarts
   enabled: true
 
+  # If enabled is false, these fields are not required
   host:
   port:
   username:
@@ -10,7 +11,9 @@ database:
   database:
 
 event:
+  # Determines if scores should be saved past a restart
   event_mode: true
+
   cutscene:
     first: [1.13,198.19,14.26,-125.2,40.2]
   voting:
@@ -30,13 +33,15 @@ event:
       - [1, 198, 16]
       - [1, 198, 0]
     inactive_quadrant_material: GRAY_CONCRETE
-    center: [9,196,8]
+    center: [9,191,8]
 
 templates:
-  # The path where all the template worlds are contained
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
+
+  # The path where all the template worlds are contained
   world_root: "&/templates/worlds"
   party_games: "&/templates/party"
+  dioramas: "&/templates/dioramas"
 
 lobby:
   world: hub
