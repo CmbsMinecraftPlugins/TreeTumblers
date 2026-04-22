@@ -250,6 +250,12 @@ class BreachController: GameBase(
         deadPlayers.clear()
         team1holder = null
         team2holder = null
+        suspendSync {
+            team1droppedStar?.remove()
+            team2droppedStar?.remove()
+        }
+        team1droppedStar = null
+        team2droppedStar = null
         gameState = GameState.KIT_SELECT
 
         suspendSync {
@@ -272,8 +278,8 @@ class BreachController: GameBase(
         spawn(SpawnCycle.PRE_ROUND)
         countdown(15, "kit_selection")
 
-        if (team1holder == null) team1holder = playingTeams.first.getOnlinePlayers().random()
-        if (team2holder == null) team2holder = playingTeams.first.getOnlinePlayers().random()
+        if (team1holder == null && playingTeams.first.getOnlinePlayers().isNotEmpty()) team1holder = playingTeams.first.getOnlinePlayers().random()
+        if (team2holder == null && playingTeams.second.getOnlinePlayers().isNotEmpty()) team2holder = playingTeams.second.getOnlinePlayers().random()
 
         playingTeams.first.getOnlinePlayers().forEach {
             if (chosenKits.get(it) == null) {
@@ -470,7 +476,10 @@ class BreachController: GameBase(
 
     @EventHandler
     fun breachPlayerDeathEvent(event: PlayerDeathEvent) {
+        event.drops.clear()
         event.isCancelled = true
+        event.player.inventory.clear()
+
         deadPlayers[event.player] = true
         event.player.addPotionEffect(PotionEffect(
             PotionEffectType.DARKNESS,
@@ -492,12 +501,16 @@ class BreachController: GameBase(
 
         event.player.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = 0.0
 
+        DebugUtil.info("${event.player} $team1holder")
         if (event.player == team1holder) {
+            DebugUtil.info("dropping star 1")
             team1droppedStar = currentMap.world.dropItem(event.player.location, team1star.clone())
             team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
         }
 
+        DebugUtil.info("${event.player} $team2holder")
         if (event.player == team2holder) {
+            DebugUtil.info("dropping star 2")
             team2droppedStar = currentMap.world.dropItem(event.player.location, team2star.clone())
             team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
         }
