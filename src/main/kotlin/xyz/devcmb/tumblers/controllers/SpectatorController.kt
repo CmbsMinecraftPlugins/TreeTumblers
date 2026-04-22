@@ -36,12 +36,6 @@ class SpectatorController : IController {
     }
 
     fun makeSpectator(player: Player, sendActionBar: Boolean = true) {
-        if(spectators.contains(player)) {
-            // updates the action bar state without rerunning everything else
-            spectators.put(player, sendActionBar)
-            return
-        }
-
         spectators.put(player, sendActionBar)
 
         player.hideToAll()
@@ -52,6 +46,7 @@ class SpectatorController : IController {
 
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
             name(Format.mm("<green>Spectate menu</green>"))
+            droppable(false)
             rightClick {
                 player.openHandledInventory("spectateInventory")
             }

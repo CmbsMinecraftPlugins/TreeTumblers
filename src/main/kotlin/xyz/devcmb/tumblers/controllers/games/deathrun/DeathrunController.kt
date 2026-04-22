@@ -151,9 +151,9 @@ class DeathrunController : GameBase(
     ),
     scores = hashMapOf(
         // this * placement = awarded score
-        DeathrunScoreSource.RUN_COMPLETE to 20,
+        DeathrunScoreSource.RUN_COMPLETE to 8,
         // constant value
-        DeathrunScoreSource.RUN_FAILED to 20,
+        DeathrunScoreSource.RUN_FAILED to 15,
 
         // split across the whole team
         DeathrunScoreSource.TRAP_KILL to 40,
@@ -239,7 +239,7 @@ class DeathrunController : GameBase(
 
     var ticksElapsed: Int = 0
     val completionTimes: HashMap<Player, Int> = HashMap()
-    var timerActionBarTasks: HashMap<Player, BukkitRunnable> = HashMap()
+    lateinit var timerActionBarTask: BukkitRunnable
 
     var endDisplay: TextDisplay? = null
     var endDisplayUpdateTask: BukkitRunnable? = null
@@ -318,27 +318,23 @@ class DeathrunController : GameBase(
     }
 
     override suspend fun gamePregame() {
-        suspendSync {
-            gameParticipants.forEach {
-                it.gameMode = GameMode.ADVENTURE
+        val runnable = object : BukkitRunnable() {
+            override fun run() {
+                gameParticipants.forEach {
+                    val time = completionTimes.getOrElse(it) { ticksElapsed }
+                    val text = MiscUtils.formatMsTime(time * 50L)
 
-                val runnable = object : BukkitRunnable() {
-                    override fun run() {
-                        val time = completionTimes.getOrElse(it) { ticksElapsed }
-                        val text = MiscUtils.formatMsTime(time * 50L)
-
-                        it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
-                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                            Component.text(text),
-                            text,
-                            69.5
-                        ))
-                    }
+                    it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
+                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                        Component.text(text),
+                        text,
+                        69.5
+                    ))
                 }
-                runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
-                timerActionBarTasks.put(it, runnable)
             }
         }
+        runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
+        timerActionBarTask = runnable
     }
 
     /**
@@ -437,6 +433,7 @@ class DeathrunController : GameBase(
         }
 
         suspendSync {
+            participatingSpectators.toList().forEach(this::unSpectate)
             summonScoreDisplay()
         }
 
@@ -511,10 +508,6 @@ class DeathrunController : GameBase(
 
     suspend fun postRound() {
         suspendSync {
-            if(currentRound != rounds) {
-                participatingSpectators.toList().forEach(this::unSpectate)
-            }
-
             gameParticipants.forEach { plr ->
                 plr.disableBossBar("deathrunCooldownBossbar")
                 gameParticipants.forEach { other ->
@@ -551,11 +544,7 @@ class DeathrunController : GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        timerActionBarTasks.forEach {
-            it.value.cancel()
-            it.key.sendActionBar(Component.empty())
-        }
-        timerActionBarTasks.clear()
+        timerActionBarTask.cancel()
 
         endDisplayUpdateTask?.cancel()
         endDisplayUpdateTask = null
@@ -606,11 +595,15 @@ class DeathrunController : GameBase(
         if(player.tumblingPlayer.team == currentTeam) {
             spawnAttacker(player)
         } else {
-            spawnMain(player)
+            if(roundActive || preRound) {
+                spawnMain(player)
+            }
 
-            if(!preRound && player.tumblingPlayer.team.playingTeam) {
-                makeSpectator(player)
+            if(roundActive && player.tumblingPlayer.team.playingTeam) {
+                makeSpectator(player, false)
                 player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+            } else if(preRound) {
+                alivePlayers.add(player)
             }
         }
     }
@@ -620,7 +613,9 @@ class DeathrunController : GameBase(
      */
     override fun playerLeave(player: Player) {
         if(player.tumblingPlayer.team == currentTeam || !player.tumblingPlayer.team.playingTeam) return
-        failRun(player)
+        if(!preRound) {
+            failRun(player)
+        }
     }
 
     suspend fun roundStart() {
@@ -632,7 +627,13 @@ class DeathrunController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate end not found")
 
+
         suspendSync {
+            alivePlayers.forEach {
+                if(!it.isOnline) {
+                    failRun(it)
+                }
+            }
             gateStart.forEachRegion(gateEnd) {
                 if(it.blockData !is Gate) return@forEachRegion
                 it.blockData = (it.blockData as Gate).also { gate ->
@@ -751,7 +752,10 @@ class DeathrunController : GameBase(
     }
 
     fun getRunCompletionScore(): Int {
-        return (gameParticipants.size - placements[roundIndex].size) * getScoreSource(DeathrunScoreSource.RUN_COMPLETE)
+        return (
+            Team.entries.filter { it.playingTeam && it != currentTeam }.sumOf { it.getAllPlayers().size }
+                - placements[roundIndex].filter { it.value != -1 }.size
+        ) * getScoreSource(DeathrunScoreSource.RUN_COMPLETE)
     }
 
     fun failRun(player: Player) {

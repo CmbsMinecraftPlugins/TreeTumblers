@@ -95,7 +95,7 @@ class SpectateInventory(
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
-                        it.lore(listOf(Format.mm("<white><!_i>Page ${itemMap.itemPage}</!_i></white>")))
+                        it.lore(listOf(Format.mm("<white>Page ${itemMap.itemPage}</white>").decoration(TextDecoration.ITALIC, false)))
                     }
                 }
             },
@@ -112,7 +112,7 @@ class SpectateInventory(
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Next Page</yellow>"))
-                        it.lore(listOf(Format.mm("<white><!_i>Page ${itemMap.itemPage}</!_i></white>")))
+                        it.lore(listOf(Format.mm("<white>Page ${itemMap.itemPage}</white>").decoration(TextDecoration.ITALIC, false)))
                     }
                 }
             },

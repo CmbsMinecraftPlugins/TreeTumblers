@@ -607,6 +607,7 @@ abstract class GameBase(
 
         gamePlayers.remove(player)
         gameParticipants.remove(player)
+        unSpectate(player)
 
         when(currentState) {
             State.PREGAME,

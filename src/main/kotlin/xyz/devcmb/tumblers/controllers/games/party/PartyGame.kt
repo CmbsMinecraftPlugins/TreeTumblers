@@ -95,11 +95,7 @@ abstract class PartyGame(
         }
     }
 
-    @EventHandler
-    fun playerKillEvent(event: PlayerDeathEvent) {
-        val player = event.player
-        if(player !in matchup.players) return
-
+    fun playerDeath(player: Player) {
         alivePlayers.remove(player)
         if(!alivePlayers.any { it.tumblingPlayer.team == player.tumblingPlayer.team }) {
             when(matchup) {
@@ -138,6 +134,14 @@ abstract class PartyGame(
                 }
             }
         }
+    }
+
+    @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val player = event.player
+        if(player !in matchup.players) return
+
+        playerDeath(player)
     }
 
     @EventHandler

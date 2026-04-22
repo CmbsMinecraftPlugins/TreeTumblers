@@ -84,6 +84,8 @@ import java.nio.file.Path
  * [ ] Ice boat race (small track, first to complete wins)
  * [ ] Riptide trident race (fastest one to complete a short trident course wins)
  */
+// TODO: Give this game the crumble treatment and give scores for players not connected (based on total players on a team)
+// TODO: and maybe do some other stuff to make sure every edge case works, I can't test it rn :P
 @EventGame
 class PartyController : GameBase(
     id = "party",
@@ -433,14 +435,41 @@ class PartyController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        TODO("Not yet implemented")
+        val tumbling = player.tumblingPlayer
+        if(!tumbling.team.playingTeam) {
+            // do true for pregame here because otherwise it'd just put a spectating player back into spectating again
+            spawnPlayer(player, true)
+            return
+        }
+
+        spawnPlayer(player, currentState == State.PREGAME)
+        if(currentState == State.GAME_ON) {
+            setupPlayerPostGame(player, false)
+            if(
+                currentGameType == PartyGameType.TEAM
+                && activeGames.any { it.matchup is PartyMatchup.TeamMatchup && (it.matchup.team1 == player.tumblingPlayer.team || it.matchup.team2 == player.tumblingPlayer.team) }
+            ) {
+                waitingTeamPlayers[player.tumblingPlayer.team]!!.add(player)
+                player.sendMessage(Format.warning("You've joined the game while your team is currently in a match. You will be able to participate once the game ends."))
+            }
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] state
      */
     override fun playerLeave(player: Player) {
-        TODO("Not yet implemented")
+        if(!player.tumblingPlayer.team.playingTeam) return
+
+        val currentGame = activeGames.find { player in it.matchup.players }
+        currentGame?.playerDeath(player)
+
+        waitingTeamPlayers[player.tumblingPlayer.team]!!.remove(player)
+        waitingIndividualPlayers.remove(player)
+
+        if(player.tumblingPlayer.team.getOnlinePlayers().isEmpty()) {
+            waitingTeams.remove(player.tumblingPlayer.team)
+        }
     }
 
     fun addWaitingPlayer(player: Player) {
@@ -485,13 +514,13 @@ class PartyController : GameBase(
         val team = player.tumblingPlayer.team
         if((waitingTeamPlayers[team]!!.size + 1) >= team.getOnlinePlayers().size) {
             addWaitingTeam(team)
-            waitingTeamPlayers[team]!!.clear()
         } else {
             waitingTeamPlayers[team]!!.add(player)
         }
     }
 
     fun addWaitingTeam(team: Team) {
+        waitingTeamPlayers[team]!!.clear()
         waitingTeams.add(team)
 
         val opponent = try {
@@ -645,6 +674,8 @@ class PartyController : GameBase(
         HandlerList.unregisterAll(game)
         suspendSync {
             game.matchup.players.forEach {
+                if(!it.isOnline) return@forEach
+
                 inGamePlayers.remove(it)
                 spawnPlayer(it, false)
             }
@@ -652,18 +683,24 @@ class PartyController : GameBase(
 
         delay(2000)
         game.matchup.players.forEach {
-            if(currentGameType == PartyGameType.INDIVIDUAL) {
-                addWaitingPlayer(it)
-            } else if(currentGameType == PartyGameType.TEAM) {
-                if(game.matchup is PartyMatchup.IndividualMatchup) {
-                    addWaitingTeamPlayer(it)
-                } else {
-                    if(waitingTeams.contains(it.tumblingPlayer.team)) return@forEach
-                    addWaitingTeam(it.tumblingPlayer.team)
-                }
-            } else if(currentGameType == PartyGameType.DISABLED) {
-                disabledGameWaitingPlayers.add(it)
+            if(!it.isOnline || waitingTeamPlayers.any { t -> it in t.value } || it in waitingIndividualPlayers || it in disabledGameWaitingPlayers) return@forEach
+
+            setupPlayerPostGame(it, game.matchup is PartyMatchup.IndividualMatchup)
+        }
+    }
+
+    fun setupPlayerPostGame(player: Player, wasIndiv: Boolean) {
+        if(currentGameType == PartyGameType.INDIVIDUAL) {
+            addWaitingPlayer(player)
+        } else if(currentGameType == PartyGameType.TEAM) {
+            if(wasIndiv) {
+                addWaitingTeamPlayer(player)
+            } else {
+                if(waitingTeams.contains(player.tumblingPlayer.team))
+                addWaitingTeam(player.tumblingPlayer.team)
             }
+        } else if(currentGameType == PartyGameType.DISABLED) {
+            disabledGameWaitingPlayers.add(player)
         }
     }
 
@@ -895,6 +932,7 @@ class PartyController : GameBase(
         ) event.isCancelled = true
     }
 
+    // todo: investigate this, opposing team players can't attack eachother
     @EventHandler
     fun entityDamageEvent(event: EntityDamageByEntityEvent) {
         val victim = event.entity as? Player ?: return
