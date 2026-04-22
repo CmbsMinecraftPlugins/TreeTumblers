@@ -316,6 +316,7 @@ games:
   breach:
     worlds_folder: "breach"
     best_of: 3
+    star_pickup_ticks: 60
     maps:
       stadium:
         world: "stadium"

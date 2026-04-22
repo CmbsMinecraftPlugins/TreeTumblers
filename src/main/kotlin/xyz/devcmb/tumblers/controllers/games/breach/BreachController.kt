@@ -7,21 +7,31 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.attribute.Attribute
+import org.bukkit.command.CommandSender
+import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
+import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -39,6 +49,8 @@ import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import java.util.UUID
+import kotlin.collections.set
 
 @EventGame
 class BreachController: GameBase(
@@ -50,7 +62,7 @@ class BreachController: GameBase(
     ),
     cutsceneSteps = arrayListOf(),
     flags = setOf(
-        Flag.DISABLE_BLOCK_BREAKING
+        Flag.DISABLE_BLOCK_BREAKING,
     ),
     icon = Component.text("\uEA00"),
     logo = Component.text("awesome logo goes here"),
@@ -59,12 +71,17 @@ class BreachController: GameBase(
 ) {
     companion object {
         val kitItemsKey = NamespacedKey("tumbling", "kit_item")
+        val team1starKey = NamespacedKey("tumbling", "breach_star_1")
+        val team2starKey = NamespacedKey("tumbling", "breach_star_2")
 
         @field:Configurable("games.breach.best_of")
         var bestOf: Int = 3
 
         val rounds: Int
             get() { return (bestOf * 2) - 1 }
+
+        @field:Configurable("game.breach.star_pickup_ticks")
+        var starPickupTicks = 60
     }
 
     val currentMap: LoadedMap
@@ -84,7 +101,12 @@ class BreachController: GameBase(
     var team1holder: Player? = null
     var team2holder: Player? = null
 
+    var team1droppedStar: Item? = null
+    var team2droppedStar: Item? = null
+
     var chosenKits: HashMap<Player, BreachKit> = hashMapOf()
+    var deadPlayers: HashMap<Player, Boolean> = hashMapOf()
+    var starPickupTimes: HashMap<Player, Int> = hashMapOf()
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
@@ -95,6 +117,38 @@ class BreachController: GameBase(
             player.openHandledInventory("breachKitSelector")
         }
     }.build()
+
+    val team1star: ItemStack = AdvancedItemStack(Material.NETHER_STAR) {
+        name(Format.mm("<light_purple>Star</light_purple>"))
+        persistentDataContainer {
+            set(team1starKey, PersistentDataType.BOOLEAN, true)
+        }
+    }.build()
+
+    val team2star: ItemStack = AdvancedItemStack(Material.NETHER_STAR) {
+        name(Format.mm("<light_purple></light_purple>"))
+        persistentDataContainer {
+            set(team2starKey, PersistentDataType.BOOLEAN, true)
+        }
+    }.build()
+
+    override val debugToolkit = object : DebugToolkit() {
+        override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
+            "star_1" to { sender ->
+
+            },
+            "star_2" to { sender ->
+                val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
+                    ?: throw GameControllerException("Team 2 spawn not found")
+
+                team2droppedStar = currentMap.world.dropItem(team2spawn, team2star.clone())
+                team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
+            },
+        )
+
+        override fun killEvent(killer: Player?, killed: Player?) {}
+        override fun deathEvent(killed: Player?) {}
+    }
 
     /**
      * The load sequence that each individual game should do
@@ -165,11 +219,23 @@ class BreachController: GameBase(
             it.enableBossBar("countdownBossbar")
         }
 
+        val tickTask = object : BukkitRunnable() {
+            override fun run() {
+                if (gameState == GameState.GAME_ON) {
+                    checkItemPickup()
+                }
+            }
+        }
+
+        tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
+
         repeat(rounds) {
-            preround()
+            preRound()
             roundStart()
             currentRound++
         }
+
+        tickTask.cancel()
     }
 
     /**
@@ -179,19 +245,28 @@ class BreachController: GameBase(
 
     }
 
-    suspend fun preround() {
+    suspend fun preRound() {
         chosenKits.clear()
+        deadPlayers.clear()
         team1holder = null
         team2holder = null
         gameState = GameState.KIT_SELECT
 
-        playingTeams.first.getOnlinePlayers().forEach {
-            it.inventory.clear()
-            it.inventory.setItem(8, kitSelector.clone())
-        }
-        playingTeams.second.getOnlinePlayers().forEach {
-            it.inventory.clear()
-            it.inventory.setItem(8, kitSelector.clone())
+        suspendSync {
+            playingTeams.first.getOnlinePlayers().forEach {
+                it.inventory.clear()
+                it.inventory.setItem(8, kitSelector.clone())
+                it.removePotionEffect(PotionEffectType.DARKNESS)
+                it.removePotionEffect(PotionEffectType.SLOWNESS)
+                it.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = it.getAttribute(Attribute.JUMP_STRENGTH)!!.defaultValue
+            }
+            playingTeams.second.getOnlinePlayers().forEach {
+                it.inventory.clear()
+                it.inventory.setItem(8, kitSelector.clone())
+                it.removePotionEffect(PotionEffectType.DARKNESS)
+                it.removePotionEffect(PotionEffectType.SLOWNESS)
+                it.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = it.getAttribute(Attribute.JUMP_STRENGTH)!!.defaultValue
+            }
         }
 
         spawn(SpawnCycle.PRE_ROUND)
@@ -260,8 +335,10 @@ class BreachController: GameBase(
         player.giveKit(kit.kit)
         chosenKits[player] = kit
 
-        if (player == team1holder || player == team2holder) {
-            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+        if (player == team1holder) {
+            player.inventory.setItemInOffHand(team1star.clone())
+        } else if (player == team2holder) {
+            player.inventory.setItemInOffHand(team2star.clone())
         }
 
         if (removeSelector) return
@@ -277,7 +354,7 @@ class BreachController: GameBase(
                 return
             }
             team1holder = player
-            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+            player.inventory.setItemInOffHand(team1star.clone())
         }
 
         if (team == playingTeams.second) {
@@ -286,7 +363,7 @@ class BreachController: GameBase(
                 return
             }
             team2holder = player
-            player.inventory.setItemInOffHand(ItemStack.of(Material.NETHER_STAR))
+            player.inventory.setItemInOffHand(team2star.clone())
         }
     }
 
@@ -301,6 +378,49 @@ class BreachController: GameBase(
         if (team == playingTeams.second && team2holder == player) {
             team2holder = null
             player.inventory.setItemInOffHand(ItemStack.empty())
+        }
+    }
+
+    fun checkItemPickup() {
+        playingTeams.first.getOnlinePlayers().forEach {
+            if (team1droppedStar != null) {
+                if (it.location.distance(team1droppedStar!!.location) < 2 && it != team1holder) {
+                    team1holder = it
+                    it.inventory.setItemInOffHand(team1star.clone())
+                    team1droppedStar!!.remove()
+                }
+            }
+
+            if (team2droppedStar != null) {
+                if (it.location.distance(team2droppedStar!!.location) < 2) {
+                    starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
+                    if (starPickupTimes[it]!! > starPickupTicks) {
+                        DebugUtil.info("WINNAR!")
+                    }
+                } else {
+                    starPickupTimes[it] = 0
+                }
+            }
+        }
+
+        playingTeams.second.getOnlinePlayers().forEach {
+            if (team2droppedStar != null) {
+                if (it.location.distance(team2droppedStar!!.location) < 2 && it != team2holder) {
+                    team2holder = it
+                    it.inventory.setItemInOffHand(team2star.clone())
+                }
+            }
+
+            if (team1droppedStar != null) {
+                if (it.location.distance(team1droppedStar!!.location) < 2) {
+                    starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
+                    if (starPickupTimes[it]!! > starPickupTicks) {
+                        DebugUtil.info("WINNAR!")
+                    }
+                } else {
+                    starPickupTimes[it] = 0
+                }
+            }
         }
     }
 
@@ -329,6 +449,11 @@ class BreachController: GameBase(
     }
 
     @EventHandler
+    fun playerDropItemEvent(event: PlayerDropItemEvent) {
+        event.isCancelled = true
+    }
+
+    @EventHandler
     fun playerInteractEvent(event: PlayerInteractEvent) {
         val player = event.player
         val bow: ItemStack = player.inventory.itemInMainHand
@@ -340,6 +465,41 @@ class BreachController: GameBase(
             gameState == GameState.KIT_SELECT)
         {
             event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun breachPlayerDeathEvent(event: PlayerDeathEvent) {
+        event.isCancelled = true
+        deadPlayers[event.player] = true
+        event.player.addPotionEffect(PotionEffect(
+            PotionEffectType.DARKNESS,
+            PotionEffect.INFINITE_DURATION,
+            67,
+            false,
+            false,
+            false
+        ))
+
+        event.player.addPotionEffect(PotionEffect(
+            PotionEffectType.SLOWNESS,
+            PotionEffect.INFINITE_DURATION,
+            255,
+            false,
+            false,
+            false
+        ))
+
+        event.player.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = 0.0
+
+        if (event.player == team1holder) {
+            team1droppedStar = currentMap.world.dropItem(event.player.location, team1star.clone())
+            team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
+        }
+
+        if (event.player == team2holder) {
+            team2droppedStar = currentMap.world.dropItem(event.player.location, team2star.clone())
+            team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
         }
     }
 
