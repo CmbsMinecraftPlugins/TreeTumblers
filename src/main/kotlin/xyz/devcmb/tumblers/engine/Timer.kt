@@ -41,6 +41,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
     val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
     val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()
+    val timeExecutions: HashMap<Int, suspend Timer.() -> Unit> = HashMap()
 
     init {
         this.init()
@@ -78,6 +79,11 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         timeBroadcasts[time] = Triple(message, formatter, onBroadcast)
     }
 
+    fun timeExecution(time: Int, method: suspend Timer.() -> Unit) {
+        timeExecutions.put(time, method)
+    }
+
+
     suspend fun start() {
         require(job == null) { "Timer has already been started." }
 
@@ -114,6 +120,12 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
                         Placeholder.unparsed("seconds", currentTime.toString()),
                         Placeholder.component("time", format())
                     )))
+                }
+
+                if(timeExecutions.containsKey(currentTime)) {
+                    TreeTumblers.pluginScope.launch {
+                        timeExecutions[currentTime]!!.invoke(this@Timer)
+                    }
                 }
             }
 

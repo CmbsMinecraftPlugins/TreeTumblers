@@ -14,6 +14,10 @@ event:
   cutscene:
     first: [1.13,198.19,14.26,-125.2,40.2]
   voting:
+    dome_start: [-8,189,24]
+    dome_end: [26,197,-11]
+    quadrant_separator: SMOOTH_QUARTZ_SLAB
+    quadrant_replacement: SMOOTH_QUARTZ
     quadrants:
       # x1,y1,z1,x2,y2,z2
       - [10,192,7,23,188,-6]

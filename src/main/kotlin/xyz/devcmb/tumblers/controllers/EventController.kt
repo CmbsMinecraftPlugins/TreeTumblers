@@ -90,6 +90,18 @@ class EventController : IController {
 
         @field:Configurable("event.voting.center")
         var voteCenter: List<Int> = listOf(0,0,0)
+
+        @field:Configurable("event.voting.quadrant_separator")
+        var quadrantSeparator: Material = Material.SMOOTH_QUARTZ_SLAB
+
+        @field:Configurable("event.voting.quadrant_replacement")
+        var quadrantReplacement: Material = Material.SMOOTH_QUARTZ
+
+        @field:Configurable("event.voting.dome_start")
+        var domeStart: List<Int> = listOf(-8,189,24)
+
+        @field:Configurable("event.voting.dome_end")
+        var domeEnd: List<Int> = listOf(26,197,-11)
     }
 
     override fun init() {
@@ -333,9 +345,35 @@ class EventController : IController {
             }
         }
 
+        val originalBlocks: HashMap<Location, Material> = HashMap()
         eventTimer = Timer(20) {
             id = "event_voting"
             joined = true
+
+            timeExecution(2) {
+                val domeFrom = domeStart.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingEventException("Dome from coordinates aren't valid!")
+                val domeTo = domeEnd.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingEventException("Dome to coordinates aren't valid!")
+
+                val blocks: ArrayList<Location> = ArrayList()
+                domeFrom.forEachRegion(domeTo) {
+                    if(it.type != quadrantSeparator) return@forEachRegion
+                    blocks.add(it.location.clone())
+                }
+
+                repeat(3) { i ->
+                    suspendSync {
+                        blocks.forEach { base ->
+                            val location = Location(base.world, base.x, base.y + i, base.z)
+                            originalBlocks.put(location, location.block.type)
+                            location.block.type = quadrantReplacement
+                        }
+                    }
+
+                    delay(500)
+                }
+            }
         }
         eventTimerTitle = "Voting"
 
@@ -416,6 +454,12 @@ class EventController : IController {
             Component.text("And the game is..."),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
+
+        suspendSync {
+            originalBlocks.forEach {
+                it.key.block.type = it.value
+            }
+        }
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
 

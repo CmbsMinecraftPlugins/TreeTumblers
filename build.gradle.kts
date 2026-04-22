@@ -43,8 +43,24 @@ tasks {
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         dependsOn("build")
+        downloadPlugins {
+            modrinth("packetevents", "2.11.2+spigot")
+            modrinth("fastasyncworldedit", "2.15.0")
+            modrinth("axiom-paper-plugin", "5.0.4+1.21.11")
+            github("libraryaddict", "LibsDisguises", "v11.0.16", "LibsDisguises-11.0.16-Github.jar")
+        }
         minecraftVersion("1.21.11")
     }
+}
+
+// https://github.com/jpenilla/run-task/wiki/Debugging
+@Suppress("UnstableApiUsage")
+tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
+    javaLauncher = javaToolchains.launcherFor {
+        vendor = JvmVendorSpec.JETBRAINS
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 }
 
 val targetJavaVersion = 21
