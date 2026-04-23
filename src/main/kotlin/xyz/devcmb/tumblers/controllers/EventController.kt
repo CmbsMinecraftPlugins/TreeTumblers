@@ -332,17 +332,21 @@ class EventController : IController {
     suspend fun voting() {
         val lobby = Bukkit.getWorld(lobbyWorld)!!
         val logoLocations: ArrayList<Location> = ArrayList()
-        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")?.map {
-            if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
-            it.validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
-        } ?: throw TumblingEventException("Voting logo positions not provided")
 
-        val logoQuaternions: List<Quaternionf> = listOf(
-            Quaternionf(0.239f, -0.370f, 0.099f, 0.892f),
-            Quaternionf(-0.099f, 0.892f, -0.239f, -0.370f),
-            Quaternionf(0.099f, 0.892f, -0.239f, 0.370f),
-            Quaternionf(0.239f, 0.370f, -0.099f, 0.892f)
-        )
+        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")
+            ?.take(3)
+            ?.map {
+                if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
+                it.validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
+            } ?: throw TumblingEventException("Voting logo positions not provided")
+
+        val logoQuaternions = TreeTumblers.plugin.config.getList("event.voting.logos")
+            ?.takeLast(4)
+            ?.map {
+                if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
+                val list = it.validateList<Float>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Floats")
+                Quaternionf(list[0], list[1], list[2], list[3])
+            } ?: throw TumblingEventException("Voting logo quaternions not provided")
 
         logoPositions.forEach {
             val location = it.validateLocation(lobby) ?: throw TumblingEventException("Voting logo position is an invalid location")
@@ -455,8 +459,6 @@ class EventController : IController {
             }
         }
 
-        cleanupDioramas()
-
         val winningGame = countVotes()
 
         delay(2000)
@@ -479,6 +481,7 @@ class EventController : IController {
             originalBlocks.forEach {
                 it.key.block.type = it.value
             }
+            cleanupDioramas()
         }
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
