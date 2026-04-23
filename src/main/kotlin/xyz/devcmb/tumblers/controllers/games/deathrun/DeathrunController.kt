@@ -73,9 +73,10 @@ class DeathrunController : GameBase(
             teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>")) { map ->
-            teleportConfig("cutscene.trapper_showcase")
-
+        CutsceneStep(
+            Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>"),
+            "cutscene.trapper_showcase"
+        ) { map ->
             val armorStands: ArrayList<ArmorStand> = ArrayList()
             map.data.getList("cutscene.armor_stands")?.forEach {
                 if(it !is List<*>) throw GameControllerException("Cutscene armor stand location table is not a list")
@@ -120,20 +121,23 @@ class DeathrunController : GameBase(
                 armorStands.clear()
             }
         },
-        CutsceneStep(Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage.")) {
-            teleportConfig("cutscene.trap_showcase")
-
+        CutsceneStep(
+            Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage."),
+            "cutscene.trap_showcase"
+        ) {
             val trap = (game as DeathrunController).mapTraps[0]!![0]
             delay(1000)
             trap.activate()
             delay(700)
         },
-        CutsceneStep(Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get")) {
+        CutsceneStep(
+            Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get"),
+            "cutscene.runner_score_showcase"
+        ) {
             val game = game as DeathrunController
             suspendSync {
                 game.summonScoreDisplay()
             }
-            teleportConfig("cutscene.runner_score_showcase")
             delay(6000)
             suspendSync {
                 game.endDisplay?.remove()
@@ -146,15 +150,18 @@ class DeathrunController : GameBase(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
         Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     scores = hashMapOf(
         // this * placement = awarded score
-        DeathrunScoreSource.RUN_COMPLETE to 20,
+        DeathrunScoreSource.RUN_COMPLETE to 8,
         // constant value
-        DeathrunScoreSource.RUN_FAILED to 20,
-        DeathrunScoreSource.TRAP_KILL to 10,
-        DeathrunScoreSource.TRAP_DAMAGE to 5
+        DeathrunScoreSource.RUN_FAILED to 15,
+
+        // split across the whole team
+        DeathrunScoreSource.TRAP_KILL to 40,
+        DeathrunScoreSource.TRAP_DAMAGE to 20
     ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font)
@@ -174,6 +181,7 @@ class DeathrunController : GameBase(
     val roundIndex
         get() = max(currentRound - 1, 0)
     var roundActive = false
+    var preRound = false
 
     val currentMap: LoadedMap
         get() {
@@ -230,13 +238,12 @@ class DeathrunController : GameBase(
     val cooldownTimes: HashMap<Int, Long> = HashMap()
 
     val alivePlayers: MutableSet<Player> = HashSet()
-    val spectators: MutableSet<Player> = HashSet()
 
     val placements: ArrayList<HashMap<Player, Int>> = ArrayList()
 
     var ticksElapsed: Int = 0
     val completionTimes: HashMap<Player, Int> = HashMap()
-    var timerActionBarTasks: HashMap<Player, BukkitRunnable> = HashMap()
+    lateinit var timerActionBarTask: BukkitRunnable
 
     var endDisplay: TextDisplay? = null
     var endDisplayUpdateTask: BukkitRunnable? = null
@@ -315,27 +322,23 @@ class DeathrunController : GameBase(
     }
 
     override suspend fun gamePregame() {
-        suspendSync {
-            gameParticipants.forEach {
-                it.gameMode = GameMode.ADVENTURE
+        val runnable = object : BukkitRunnable() {
+            override fun run() {
+                gameParticipants.forEach {
+                    val time = completionTimes.getOrElse(it) { ticksElapsed }
+                    val text = MiscUtils.formatMsTime(time * 50L)
 
-                val runnable = object : BukkitRunnable() {
-                    override fun run() {
-                        val time = completionTimes.getOrElse(it) { ticksElapsed }
-                        val text = MiscUtils.formatMsTime(time * 50L)
-
-                        it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
-                            Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                            Component.text(text),
-                            text,
-                            69.5
-                        ))
-                    }
+                    it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
+                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                        Component.text(text),
+                        text,
+                        69.5
+                    ))
                 }
-                runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
-                timerActionBarTasks.put(it, runnable)
             }
         }
+        runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
+        timerActionBarTask = runnable
     }
 
     /**
@@ -381,6 +384,8 @@ class DeathrunController : GameBase(
     }
 
     fun respawnRunner(player: Player) {
+        player.fireTicks = 0
+
         val checkpoint = playerCheckpoints[player]
         if(checkpoint == null) {
             spawnMain(player)
@@ -409,8 +414,8 @@ class DeathrunController : GameBase(
             preRound()
             roundActive = true
             roundStart()
-            asyncCountdown(120, "deathrun_game_countdown") {
-                roundEnded = true
+            asyncCountdown(120, "deathrun_game_countdown") { early ->
+                if(!early) roundEnded = true
             }
 
             while(!roundEnded) {
@@ -424,6 +429,7 @@ class DeathrunController : GameBase(
     }
 
     suspend fun preRound() {
+        preRound = true
         alivePlayers.addAll(runningPlayers)
         alivePlayers.forEach {
             it.health = lives.toDouble() * 2
@@ -431,6 +437,7 @@ class DeathrunController : GameBase(
         }
 
         suspendSync {
+            participatingSpectators.toList().forEach(this::unSpectate)
             summonScoreDisplay()
         }
 
@@ -500,18 +507,11 @@ class DeathrunController : GameBase(
         while(currentTimer?.paused == true) {
             delay(1000)
         }
+        preRound = false
     }
 
     suspend fun postRound() {
         suspendSync {
-            if(currentRound != rounds) {
-                spectators.forEach {
-                    it.showToAll()
-                    it.isFlying = false
-                    it.allowFlight = false
-                }
-            }
-
             gameParticipants.forEach { plr ->
                 plr.disableBossBar("deathrunCooldownBossbar")
                 gameParticipants.forEach { other ->
@@ -522,7 +522,6 @@ class DeathrunController : GameBase(
         }
 
         alivePlayers.clear()
-        spectators.clear()
         completionTimes.clear()
         mapCheckpoints.clear()
         playerCheckpoints.clear()
@@ -549,11 +548,7 @@ class DeathrunController : GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        timerActionBarTasks.forEach {
-            it.value.cancel()
-            it.key.sendActionBar(Component.empty())
-        }
-        timerActionBarTasks.clear()
+        timerActionBarTask.cancel()
 
         endDisplayUpdateTask?.cancel()
         endDisplayUpdateTask = null
@@ -596,6 +591,37 @@ class DeathrunController : GameBase(
         super.cleanup()
     }
 
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        player.enableBossBar("countdownBossbar")
+        if(player.tumblingPlayer.team == currentTeam) {
+            spawnAttacker(player)
+        } else {
+            if(roundActive || preRound) {
+                spawnMain(player)
+            }
+
+            if(roundActive && player.tumblingPlayer.team.playingTeam) {
+                makeSpectator(player, false)
+                player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+            } else if(preRound) {
+                alivePlayers.add(player)
+            }
+        }
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
+        if(player.tumblingPlayer.team == currentTeam || !player.tumblingPlayer.team.playingTeam) return
+        if(!preRound) {
+            failRun(player)
+        }
+    }
+
     suspend fun roundStart() {
         val gateStart: Location = currentMap.data.getList("gate_start")
             ?.validateLocation(currentMap.world)
@@ -605,7 +631,13 @@ class DeathrunController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate end not found")
 
+
         suspendSync {
+            alivePlayers.forEach {
+                if(!it.isOnline) {
+                    failRun(it)
+                }
+            }
             gateStart.forEachRegion(gateEnd) {
                 if(it.blockData !is Gate) return@forEachRegion
                 it.blockData = (it.blockData as Gate).also { gate ->
@@ -681,21 +713,10 @@ class DeathrunController : GameBase(
         }
     }
 
-    fun makeSpectator(player: Player) {
+    fun makePlayerSpectate(player: Player) {
         alivePlayers.remove(player)
-        spectators.add(player)
-        player.hideToAll()
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        player.health = 20.0
-        player.allowFlight = true
-        player.isFlying = true
-
-        gameParticipants.forEach { plr ->
-            gameParticipants.forEach { other ->
-                if(other == plr || !gameParticipants.contains(other) || spectators.contains(other)) return@forEach
-                plr.showPlayer(TreeTumblers.plugin, other)
-            }
-        }
+        makeSpectator(player, false)
 
         if(alivePlayers.isEmpty()) {
             roundEnded = true
@@ -703,7 +724,7 @@ class DeathrunController : GameBase(
     }
 
     fun completeRun(player: Player) {
-        makeSpectator(player)
+        makePlayerSpectate(player)
         val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
@@ -735,21 +756,26 @@ class DeathrunController : GameBase(
     }
 
     fun getRunCompletionScore(): Int {
-        return (gameParticipants.size - placements[roundIndex].size) * getScoreSource(DeathrunScoreSource.RUN_COMPLETE)
+        return (
+            Team.entries.filter { it.playingTeam && it != currentTeam }.sumOf { it.getAllPlayers().size }
+                - placements[roundIndex].filter { it.value != -1 }.size
+        ) * getScoreSource(DeathrunScoreSource.RUN_COMPLETE)
     }
 
     fun failRun(player: Player) {
-        makeSpectator(player)
+        val scores = grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_KILL)
+        currentTeam.getOnlinePlayers().forEach {
+            MiscUtils.announceKill(it, player, scores[it.tumblingPlayer]!!)
+        }
+
+        makePlayerSpectate(player)
         grantScore(player, DeathrunScoreSource.RUN_FAILED)
-        Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
+        Bukkit.broadcast(
             gameMessage(Format.mm(
                 "<red><player> has been eliminated!</red>",
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
-        currentTeam.getOnlinePlayers().forEach {
-            grantScore(it, DeathrunScoreSource.TRAP_KILL)
-        }
         placements[roundIndex].put(player, -1)
 
         player.showTitle(Title.title(
@@ -775,9 +801,10 @@ class DeathrunController : GameBase(
                 ))
             }
 
-            roundEnded = false
-            cancelCountdown()
         }
+
+        roundEnded = false
+        cancelCountdown()
         delay(4000)
     }
 
@@ -845,31 +872,27 @@ class DeathrunController : GameBase(
             return
         }
 
+        val scores = grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_DAMAGE)
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(
                 Format.formatDeathMessage(
                     player,
                     it,
                     it.tumblingPlayer.team == currentTeam,
-                    getScoreSource(DeathrunScoreSource.TRAP_DAMAGE)
+                    scores[it.tumblingPlayer] ?: 0
                 )
             )
-
-            if(it.tumblingPlayer.team == currentTeam) {
-                grantScore(it, DeathrunScoreSource.TRAP_DAMAGE)
-            }
         }
 
         event.damage = 2.0
-        if(player.health - 2.0 > 0) {
-            respawnRunner(player)
-        }
+        respawnRunner(player)
     }
 
     @EventHandler
     fun playerRunFail(event: PlayerDeathEvent) {
-        event.isCancelled = true
-        failRun(event.player)
+        val player = event.player
+        failRun(player)
+        // no need to cancel because the spectator kill flag thing already does it
     }
 
     @EventHandler
@@ -891,7 +914,7 @@ class DeathrunController : GameBase(
     @EventHandler
     fun checkpointEvent(event: PlayerMoveEvent) {
         val checkpoint = mapCheckpoints.indexOfFirst { event.to.isInRegion(it.first, it.second) }
-        if(checkpoint == -1) return
+        if(checkpoint == -1 || event.player !in alivePlayers) return
 
         setCheckpoint(event.player, checkpoint)
     }

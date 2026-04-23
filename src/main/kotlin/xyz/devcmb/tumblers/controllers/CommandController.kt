@@ -10,6 +10,7 @@ import xyz.devcmb.tumblers.commands.arguments.*
 import xyz.devcmb.tumblers.commands.dev.*
 import xyz.devcmb.tumblers.commands.event.EventCommand
 import xyz.devcmb.tumblers.commands.games.*
+import xyz.devcmb.tumblers.commands.misc.ChatCommand
 import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.data.Team
@@ -31,7 +32,9 @@ class CommandController : IController {
                 ScoreCommand(),
                 TimerCommand(),
                 EventCommand(),
-                PartyCommand()
+                PartyCommand(),
+                SpectateCommand(),
+                ChatCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
@@ -42,6 +45,7 @@ class CommandController : IController {
             .argument(Timer::class.java, TimerArgument())
             .argument(PartyController.PartyGameIdentifier::class.java, PartyGameArgument())
             .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
+            .argument(PlayerController.ChatChannel::class.java, ChatChannelArgument())
             .invalidUsage(InvalidUsageHandler())
             .build()
     }

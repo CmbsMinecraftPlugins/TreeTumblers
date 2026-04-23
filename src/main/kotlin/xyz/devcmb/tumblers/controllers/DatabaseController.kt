@@ -5,6 +5,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.bukkit.Bukkit
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.player.PlayerJoinEvent
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.DatabaseException
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -35,6 +38,9 @@ import java.util.UUID
 @Controller("databaseController", Controller.Priority.HIGH)
 class DatabaseController : IController {
     companion object {
+        @field:Configurable("database.enabled")
+        var enabled: Boolean = true
+
         @field:Configurable("database.host", true)
         var host: String = ""
 
@@ -51,7 +57,7 @@ class DatabaseController : IController {
         var database: String = ""
     }
 
-    lateinit var connection: Connection
+    private lateinit var connection: Connection
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
@@ -60,7 +66,13 @@ class DatabaseController : IController {
         ControllerDelegate.getController("playerController") as PlayerController
     }
 
+    var offlineDatabase: OfflineDatabase? = null
     override fun init() {
+        if(!enabled) {
+            offlineDatabase = OfflineDatabase(this)
+            return
+        }
+
         val url = "jdbc:mysql://$host:$port/$database?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
 
         // we can block here because it's before the server loads
@@ -130,6 +142,12 @@ class DatabaseController : IController {
     var hasCached: Boolean = false
 
     suspend fun whitelistPlayer(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            DebugUtil.warning("Server is running without a database! Teams, scores, and anything else needing it will not save past a restart!")
+            offlineDatabase!!.whitelistPlayer(profile, team)
+            return@withContext
+        }
+
         require(profile.id != null) { "PlayerProfile does not have a UUID" }
 
         val statement = connection.prepareStatement(
@@ -162,6 +180,11 @@ class DatabaseController : IController {
     }
 
     suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            offlineDatabase!!.unwhitelistPlayer(profile)
+            return@withContext
+        }
+
         require(profile.id != null) { "PlayerProfile does not have a UUID" }
 
         val statement = connection.prepareStatement(
@@ -181,6 +204,11 @@ class DatabaseController : IController {
     }
 
     suspend fun replicatePlayerData(player: TumblingPlayer) = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            offlineDatabase!!.replicatePlayerData(player)
+            return@withContext
+        }
+
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
             SET score = ?
@@ -194,6 +222,7 @@ class DatabaseController : IController {
     }
 
     suspend fun isWhitelisted(uuid: String): Boolean = withContext(Dispatchers.IO) {
+        if(!enabled) { return@withContext offlineDatabase!!.isWhitelisted(uuid) }
         if(!::connection.isInitialized) return@withContext false
 
         try {
@@ -216,6 +245,10 @@ class DatabaseController : IController {
     }
 
     suspend fun getAllPlayerData(): ArrayList<TumblingPlayer> = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            return@withContext offlineDatabase!!.getAllPlayerData()
+        }
+
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_players WHERE whitelisted = true;
         """.trimIndent())
@@ -248,6 +281,10 @@ class DatabaseController : IController {
     }
 
     suspend fun getWhitelistedPlayers(): HashMap<String, Team> = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            return@withContext offlineDatabase!!.getWhitelistedPlayers()
+        }
+
         if(!whitelistedPlayersCache.isEmpty() && hasCached) return@withContext whitelistedPlayersCache
 
         val statement = connection.prepareStatement("""
@@ -277,6 +314,11 @@ class DatabaseController : IController {
     }
 
     suspend fun setPlayerTeam(profile: PlayerProfile, team: Team) = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            offlineDatabase!!.setPlayerTeam(profile, team)
+            return@withContext
+        }
+
         require(profile.id != null) { "PlayerProfile does not have a UUID" }
 
         val statement = connection.prepareStatement("""
@@ -303,6 +345,10 @@ class DatabaseController : IController {
     }
 
     suspend fun getTeamScores(): HashMap<Team, Int> = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            return@withContext offlineDatabase!!.getTeamScores()
+        }
+
         val statement = connection.prepareStatement("""
             SELECT * FROM tumbling_teams
         """.trimIndent())
@@ -319,6 +365,11 @@ class DatabaseController : IController {
     }
 
     suspend fun replicateTeamData(scores: HashMap<Team, Int>): Unit = withContext(Dispatchers.IO) {
+        if(!enabled) {
+            offlineDatabase!!.replicateTeamData(scores)
+            return@withContext
+        }
+
         val statement = connection.prepareStatement("""
             UPDATE tumbling_teams
             SET score = ?
@@ -335,4 +386,41 @@ class DatabaseController : IController {
     }
 
     data class WhitelistedPlayer(val name: String)
+
+    class OfflineDatabase(val databaseController: DatabaseController) {
+        val playerTeams: HashMap<UUID, Team> = HashMap()
+        val playerController: PlayerController by lazy {
+            ControllerDelegate.getController<PlayerController>()
+        }
+
+        // no whitelist
+        fun whitelistPlayer(profile: PlayerProfile, team: Team) {}
+        fun unwhitelistPlayer(profile: PlayerProfile) {}
+
+        // Replication is not needed without a whitelist
+        fun replicatePlayerData(player: TumblingPlayer) {}
+        fun replicateTeamData(scores: HashMap<Team, Int>) {}
+
+        fun isWhitelisted(uuid: String): Boolean { return true }
+
+        fun getAllPlayerData(): ArrayList<TumblingPlayer> { return arrayListOf() }
+        fun getWhitelistedPlayers(): HashMap<String, Team> { return hashMapOf() }
+        fun setPlayerTeam(profile: PlayerProfile, team: Team) {
+            playerController.players.find { it.uuid == profile.id }?.team = team
+            databaseController.whitelistedPlayersCache.put(profile.name!!, team)
+        }
+        fun getTeamScores(): HashMap<Team, Int> { return HashMap(Team.entries.filter { it.playingTeam }.associateWith { 0 }) }
+    }
+
+    @EventHandler(priority = EventPriority.LOWEST)
+    fun playerJoin(event: PlayerJoinEvent) {
+        val player = event.player
+        if(enabled) return
+        if(playerController.players.any { it.uuid == player.uniqueId }) return
+
+        val team = Team.entries.filter { it.playingTeam }.random()
+        whitelistedPlayersCache.put(player.name, team)
+        whitelistedPlayerUUIDs.put(player.name, player.uniqueId)
+        playerController.registerTumblingPlayer(player.uniqueId, player.name, team, 0)
+    }
 }

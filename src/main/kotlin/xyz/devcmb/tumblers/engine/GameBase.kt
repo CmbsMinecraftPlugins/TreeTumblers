@@ -1,7 +1,6 @@
 package xyz.devcmb.tumblers.engine
 
 import io.papermc.paper.util.Tick
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
@@ -14,17 +13,22 @@ import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
@@ -39,7 +43,9 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.unpackCoordinates
+
 /**
  * Base class for all games
  * @param id The unique identifier of the game
@@ -58,6 +64,8 @@ import xyz.devcmb.tumblers.util.unpackCoordinates
  * @property configRoot The root path for the games configuration
  * @property gamePlayers A [MutableSet] with all the players that were online when the game was started
  * @property gameParticipants a [MutableSet] with all the players that were online when the game was started that are on a team labeled [Team.playingTeam]
+ * @property participatingSpectators A [MutableSet] with all the players that are in the [gameParticipants] set that are currently spectating
+ * @property gameSpectators A [MutableSet] with all the players that are currently in spectator mode, defined by the [SpectatorController]
  * @property debugToolkit An optional instance of a [DebugToolkit] for certain developer commands (you really should fill this out, but you can be lazy if you really don't want to)
  */
 abstract class GameBase(
@@ -84,11 +92,15 @@ abstract class GameBase(
             field = value
         }
 
+    var currentCutsceneStep: CutsceneStep? = null
+
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
 
     val gamePlayers: MutableSet<Player> = HashSet()
     val gameParticipants: MutableSet<Player> = HashSet()
+    val participatingSpectators: MutableSet<Player> = HashSet()
+    val gameSpectators: MutableSet<Player> = HashSet()
 
     val teamScores: HashMap<Team, Int> = HashMap()
     val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
@@ -97,6 +109,14 @@ abstract class GameBase(
 
     private val eventController: EventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
+    }
+
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
+    }
+
+    private val spectatorController by lazy {
+        ControllerDelegate.getController<SpectatorController>()
     }
 
     open val debugToolkit: DebugToolkit? = null
@@ -108,10 +128,10 @@ abstract class GameBase(
     var currentTimer: Timer? = null
 
     companion object {
-        @Configurable("lobby.world")
+        @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @Configurable("lobby.position")
+        @field:Configurable("lobby.position")
         var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 
@@ -197,10 +217,13 @@ abstract class GameBase(
      */
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
+        playerController.muteChat()
 
         cutsceneSteps.forEach {
+            currentCutsceneStep = it
             it.run(gamePlayers, loadedMaps.first(), this)
             it.cleanup(gamePlayers)
+            currentCutsceneStep = null
         }
     }
 
@@ -209,6 +232,22 @@ abstract class GameBase(
      */
     suspend fun pregame() {
         currentState = State.PREGAME
+        playerController.unmuteChat()
+
+        suspendSync {
+            gamePlayers
+                .filter { !it.tumblingPlayer.team.playingTeam }
+                .forEach { makeSpectator(it, participating = false) }
+        }
+
+        if(flags.contains(Flag.SURVIVAL_MODE)) {
+            suspendSync {
+                gameParticipants.forEach {
+                    it.gameMode = GameMode.SURVIVAL
+                }
+            }
+        }
+
         spawn(SpawnCycle.PREGAME)
 
         gamePlayers.forEach {
@@ -265,6 +304,8 @@ abstract class GameBase(
      */
     open suspend fun cleanup() {
         suspendSync {
+            gameSpectators.toList().forEach(this::unSpectate)
+
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
                 it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
@@ -293,7 +334,6 @@ abstract class GameBase(
         eventController.replicateScores()
     }
 
-    private var countdownJob: Job? = null
     private var countdownCancelled: Boolean = false
 
     /**
@@ -324,11 +364,10 @@ abstract class GameBase(
     /**
      * Cancel a countdown if one is active
      */
-    fun cancelCountdown() {
-        if(countdownJob == null) return
+    suspend fun cancelCountdown() {
+        if(currentTimer == null) return
 
-        countdownCancelled = true
-        countdownJob!!.cancel()
+        currentTimer!!.end()
     }
 
     /**
@@ -370,19 +409,30 @@ abstract class GameBase(
      * Grants a score equally amongst a team
      * @param team The team to give score to
      * @param source The source of score
+     * @return The score value that each player got in a [HashMap] from [TumblingPlayer] to their score in an [Int]
      */
-
-    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null) {
+    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null): HashMap<TumblingPlayer, Int> {
         val amount = amountOverride ?: getScoreSource(source)
         val playerCount = team.getAllPlayers().size
 
-        if (amount % playerCount != 0) {
-            DebugUtil.warning("Attempted to give team ${team.name} ($playerCount players) $amount score, which cannot be divided equally, giving ${(amount / playerCount) * playerCount} score instead of $amount")
+        var remainder = amount % playerCount
+        if (remainder > 0) {
+            DebugUtil.info("Attempted to give team ${team.name} ($playerCount players) $amount score, which is not divisible by $playerCount, and has a remainder of $remainder that will be distributed prioritizing players with the least score.")
         }
 
-        team.getAllPlayers().forEach {
-            grantScore(it, source, amount / playerCount)
+        val scores: HashMap<TumblingPlayer, Int> = HashMap()
+        team.getAllPlayers().sortedBy { it.score }.forEach {
+            var scoreToGrant = amount / playerCount
+            if(remainder > 0) {
+                scoreToGrant++
+                remainder--
+            }
+
+            scores.put(it, scoreToGrant)
+            grantScore(it, source, scoreToGrant)
         }
+
+        return scores
     }
 
     /**
@@ -489,9 +539,88 @@ abstract class GameBase(
         }
     }
 
+    /**
+     * Calls the respective method in the [SpectatorController]
+     *
+     * @param player The player to enable spectator for
+     * @param sendActionBar Whether there should be a "Spectating" actionbar when the player is in spectator
+     */
+    fun makeSpectator(player: Player, sendActionBar: Boolean = true, participating: Boolean = true) {
+        if(participating) participatingSpectators.add(player)
+        gameSpectators.add(player)
+        spectatorController.makeSpectator(player, sendActionBar)
+    }
+
+    /**
+     * Calls the respective method in the [SpectatorController]
+     *
+     * @param player The player to disable spectator for
+     */
+    fun unSpectate(player: Player) {
+        participatingSpectators.remove(player)
+        gameSpectators.remove(player)
+        spectatorController.unSpectate(player)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
+     */
+    abstract fun playerJoin(player: Player)
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
+     */
+    abstract fun playerLeave(player: Player)
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerJoinEvent(event: PlayerJoinEvent) {
+        val player = event.player
+
+        gamePlayers.add(player)
+        player.activateScoreboard(scoreboard)
+        if(player.tumblingPlayer.team.playingTeam) {
+            gameParticipants.add(player)
+        } else {
+            makeSpectator(player, participating = false)
+        }
+
+        // The normal `playerJoinEvent` runs events after 1 tick, so after 2 everything is done
+        runTaskLater(2) {
+            when(currentState) {
+                State.CUTSCENE -> {
+                    TreeTumblers.pluginScope.launch {
+                        currentCutsceneStep?.playerJoin(player)
+                    }
+                }
+                State.PREGAME,
+                State.GAME_ON -> {
+                    playerJoin(player)
+                }
+                else -> return@runTaskLater
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerLeaveEvent(event: PlayerQuitEvent) {
+        val player = event.player
+
+        gamePlayers.remove(player)
+        gameParticipants.remove(player)
+        unSpectate(player)
+
+        when(currentState) {
+            State.PREGAME,
+            State.GAME_ON -> {
+                playerLeave(player)
+            }
+            else -> return
+        }
+    }
+
     @EventHandler
     fun playerDeathEvent(event: PlayerDeathEvent){
-        if(flags.contains(Flag.ENABLE_ITEM_DROPS)) return
+        if(flags.contains(Flag.ENABLE_ITEM_DROPS) || event.isCancelled) return
         event.drops.clear()
     }
 
@@ -521,6 +650,14 @@ abstract class GameBase(
             || !flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
         ) return
         event.isCancelled = true
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
+        if(flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM)) {
+            event.isCancelled = true
+            makeSpectator(event.player)
+        }
     }
 
     /**

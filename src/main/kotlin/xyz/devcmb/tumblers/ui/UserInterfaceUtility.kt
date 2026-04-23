@@ -19,6 +19,9 @@ object UserInterfaceUtility {
     val HUD = NamespacedKey("tumbling", "hud")
     val ICONS = NamespacedKey("tumbling", "icons")
 
+    // item model key
+    val FLAT_SKULL = NamespacedKey("tumbling", "flat_skull")
+
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",
         -5 to "\uF001",
@@ -82,22 +85,6 @@ object UserInterfaceUtility {
         -295 to "\uF03B",
         -300 to "\uF03C"
     )
-
-    fun constructLine(length: Int, color: NamedTextColor = NamedTextColor.WHITE): Component {
-        var component = Component.empty()
-
-       repeat(length) {
-            component = component.append(
-                Component.text("—", color)
-                    .append(
-                        Component.text("\uF000")
-                            .font(SPACES)
-                    )
-            )
-        }
-
-        return component
-    }
 
     fun negativeSpace(targetPixels: Int): Component {
         var remaining = targetPixels

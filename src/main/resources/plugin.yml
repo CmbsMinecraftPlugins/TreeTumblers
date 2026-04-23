@@ -8,3 +8,10 @@ depend: [ FastAsyncWorldEdit, LibsDisguises ]
 description: An open-source minecraft event
 website: devcmb.xyz
 load: STARTUP
+permissions:
+  tumbling.dev:
+    description: Developers for the plugin
+    default: op
+  tumbling.organizer:
+    description: Those who help organize the event
+    default: op

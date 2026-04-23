@@ -57,7 +57,6 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
-import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
@@ -85,6 +84,8 @@ import java.nio.file.Path
  * [ ] Ice boat race (small track, first to complete wins)
  * [ ] Riptide trident race (fastest one to complete a short trident course wins)
  */
+// TODO: Give this game the crumble treatment and give scores for players not connected (based on total players on a team)
+// TODO: and maybe do some other stuff to make sure every edge case works, I can't test it rn :P
 @EventGame
 class PartyController : GameBase(
     id = "party",
@@ -97,29 +98,39 @@ class PartyController : GameBase(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
             .append(Component.text("\uEA00").font(font))
-            .append(Component.text(" Party"))
+            .append(Component.text(" Party")),
+            "cutscene.start"
         ) {
-            teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, <yellow>you</yellow> and <yellow>your team</yellow> will fight in head-to-head <aqua>minigames!</aqua>")) {
-            teleportConfig("cutscene.first")
+        CutsceneStep(
+            Format.mm("In this game, <yellow>you</yellow> and <yellow>your team</yellow> will fight in head-to-head <aqua>minigames!</aqua>"),
+            "cutscene.first"
+        ) {
             delay(5000)
         },
-        CutsceneStep(Format.mm("This game comes in <aqua>2 parts...</aqua>")) {
-            teleportConfig("cutscene.second")
+        CutsceneStep(
+            Format.mm("This game comes in <aqua>2 parts...</aqua>"),
+            "cutscene.second"
+        ) {
             delay(2500)
         },
-        CutsceneStep(Format.mm("You start playing <yellow>individual games</yellow> where you fight one other person.<br>This stage lasts the first <aqua>5m</aqua> of the game.")) {
-            teleportConfig("cutscene.third")
+        CutsceneStep(
+            Format.mm("You start playing <yellow>individual games</yellow> where you fight one other person.<br>This stage lasts the first <aqua>5m</aqua> of the game."),
+            "cutscene.third"
+        ) {
             delay(5000)
         },
-        CutsceneStep(Format.mm("Then, you will transition to playing <yellow>team games</yellow> where you fight against a whole team.<br>This stage lasts the final <aqua>5m</aqua> of the game.")) {
-            teleportConfig("cutscene.fourth")
+        CutsceneStep(
+            Format.mm("Then, you will transition to playing <yellow>team games</yellow> where you fight against a whole team.<br>This stage lasts the final <aqua>5m</aqua> of the game."),
+            "cutscene.fourth"
+        ) {
             delay(5000)
         },
-        CutsceneStep(Format.mm("Game range from <aqua>Sword duels</aqua> to <aqua>Mace duels</aqua> and anything in between!<br>While you're waiting for a match, you'll be waiting here.")) {
-            teleportConfig("cutscene.start")
+        CutsceneStep(
+            Format.mm("Game range from <aqua>Sword duels</aqua> to <aqua>Mace duels</aqua> and anything in between!<br>While you're waiting for a match, you'll be waiting here."),
+            "cutscene.start"
+        ) {
             delay(5000)
         },
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
@@ -135,7 +146,8 @@ class PartyController : GameBase(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     icon = Component.text("\uEA00").font(font),
     scoreboard = "partyScoreboard",
@@ -262,20 +274,18 @@ class PartyController : GameBase(
             override fun run() {
                 if(currentState != State.GAME_ON) return
 
-                gameParticipants.forEach {
-                    val message: Component = if(currentGameType == PartyGameType.GAME_OVER) {
+                gameParticipants.forEach { player ->
+                    val message: Component? = if(currentGameType == PartyGameType.GAME_OVER) {
                         Format.mm("<red>Game Over!</red>")
-                    } else if(it in disabledGameWaitingPlayers) {
+                    } else if(player in disabledGameWaitingPlayers) {
                         Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
-                    } else if (it in waitingTeamPlayers[it.tumblingPlayer.team]!!) {
+                    } else if (player in waitingTeamPlayers[player.tumblingPlayer.team]!!) {
                         Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
-                    } else if(it !in inGamePlayers) {
+                    } else if(player !in inGamePlayers) {
                         Format.mm("<aqua>Waiting for a match...</aqua>")
-                    } else {
-                        Component.empty()
-                    }
+                    } else null
 
-                    it.sendActionBar(message)
+                    message?.let { player.sendActionBar(it) }
                 }
             }
         }
@@ -307,11 +317,7 @@ class PartyController : GameBase(
 
         player.teleport(spawn)
         if(!preGame) {
-            player.hideToAll()
-            player.isFlying = false
-            player.heal(20.0)
-            player.inventory.clear()
-            player.allowFlight = false
+            makeSpectator(player, false)
         }
     }
 
@@ -428,11 +434,52 @@ class PartyController : GameBase(
 
         suspendSync {
             gameParticipants.forEach {
-                it.showToAll()
+                unSpectate(it)
             }
         }
 
         super.cleanup()
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        val tumbling = player.tumblingPlayer
+        if(!tumbling.team.playingTeam) {
+            // do true for pregame here because otherwise it'd just put a spectating player back into spectating again
+            spawnPlayer(player, true)
+            return
+        }
+
+        spawnPlayer(player, currentState == State.PREGAME)
+        if(currentState == State.GAME_ON) {
+            setupPlayerPostGame(player, false)
+            if(
+                currentGameType == PartyGameType.TEAM
+                && activeGames.any { it.matchup is PartyMatchup.TeamMatchup && (it.matchup.team1 == player.tumblingPlayer.team || it.matchup.team2 == player.tumblingPlayer.team) }
+            ) {
+                waitingTeamPlayers[player.tumblingPlayer.team]!!.add(player)
+                player.sendMessage(Format.warning("You've joined the game while your team is currently in a match. You will be able to participate once the game ends."))
+            }
+        }
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
+        if(!player.tumblingPlayer.team.playingTeam) return
+
+        val currentGame = activeGames.find { player in it.matchup.players }
+        currentGame?.playerDeath(player)
+
+        waitingTeamPlayers[player.tumblingPlayer.team]!!.remove(player)
+        waitingIndividualPlayers.remove(player)
+
+        if(player.tumblingPlayer.team.getOnlinePlayers().isEmpty()) {
+            waitingTeams.remove(player.tumblingPlayer.team)
+        }
     }
 
     fun addWaitingPlayer(player: Player) {
@@ -477,13 +524,13 @@ class PartyController : GameBase(
         val team = player.tumblingPlayer.team
         if((waitingTeamPlayers[team]!!.size + 1) >= team.getOnlinePlayers().size) {
             addWaitingTeam(team)
-            waitingTeamPlayers[team]!!.clear()
         } else {
             waitingTeamPlayers[team]!!.add(player)
         }
     }
 
     fun addWaitingTeam(team: Team) {
+        waitingTeamPlayers[team]!!.clear()
         waitingTeams.add(team)
 
         val opponent = try {
@@ -585,11 +632,11 @@ class PartyController : GameBase(
 
         suspendSync {
             matchup.spawn(firstSideSpawns, secondSideSpawns)
-            matchup.kitPlayers(gameClass.kit)
             gameClass.postSpawn()
         }
 
         matchup.concludeLoading()
+        matchup.kitPlayers(gameClass.kit)
         matchup.announceMatchup()
         gameClass.start()
     }
@@ -637,6 +684,8 @@ class PartyController : GameBase(
         HandlerList.unregisterAll(game)
         suspendSync {
             game.matchup.players.forEach {
+                if(!it.isOnline) return@forEach
+
                 inGamePlayers.remove(it)
                 spawnPlayer(it, false)
             }
@@ -644,18 +693,24 @@ class PartyController : GameBase(
 
         delay(2000)
         game.matchup.players.forEach {
-            if(currentGameType == PartyGameType.INDIVIDUAL) {
-                addWaitingPlayer(it)
-            } else if(currentGameType == PartyGameType.TEAM) {
-                if(game.matchup is PartyMatchup.IndividualMatchup) {
-                    addWaitingTeamPlayer(it)
-                } else {
-                    if(waitingTeams.contains(it.tumblingPlayer.team)) return@forEach
-                    addWaitingTeam(it.tumblingPlayer.team)
-                }
-            } else if(currentGameType == PartyGameType.DISABLED) {
-                disabledGameWaitingPlayers.add(it)
+            if(!it.isOnline || waitingTeamPlayers.any { t -> it in t.value } || it in waitingIndividualPlayers || it in disabledGameWaitingPlayers) return@forEach
+
+            setupPlayerPostGame(it, game.matchup is PartyMatchup.IndividualMatchup)
+        }
+    }
+
+    fun setupPlayerPostGame(player: Player, wasIndiv: Boolean) {
+        if(currentGameType == PartyGameType.INDIVIDUAL) {
+            addWaitingPlayer(player)
+        } else if(currentGameType == PartyGameType.TEAM) {
+            if(wasIndiv) {
+                addWaitingTeamPlayer(player)
+            } else {
+                if(waitingTeams.contains(player.tumblingPlayer.team))
+                addWaitingTeam(player.tumblingPlayer.team)
             }
+        } else if(currentGameType == PartyGameType.DISABLED) {
+            disabledGameWaitingPlayers.add(player)
         }
     }
 
@@ -717,8 +772,8 @@ class PartyController : GameBase(
                 player2?.showTitle(title)
 
                 suspendSync {
-                    player1.showToAll()
-                    player2?.showToAll()
+                    partyController!!.unSpectate(player1)
+                    player2?.let { partyController.unSpectate(it) }
                 }
 
                 delay(1000)
@@ -887,6 +942,7 @@ class PartyController : GameBase(
         ) event.isCancelled = true
     }
 
+    // todo: investigate this, opposing team players can't attack eachother
     @EventHandler
     fun entityDamageEvent(event: EntityDamageByEntityEvent) {
         val victim = event.entity as? Player ?: return

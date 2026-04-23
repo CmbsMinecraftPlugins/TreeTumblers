@@ -33,7 +33,7 @@ class IntermissionScoreboard(
             eventController.readyCheckTimer != null ->
                 Format.mm(
                     "<aqua>Ready Check: <white><timer></white></aqua>",
-                    Placeholder.component("timer", eventController.eventTimer!!.format())
+                    Placeholder.component("timer", eventController.readyCheckTimer!!.format())
                 )
             eventController.eventTimer != null ->
                 Format.mm(
