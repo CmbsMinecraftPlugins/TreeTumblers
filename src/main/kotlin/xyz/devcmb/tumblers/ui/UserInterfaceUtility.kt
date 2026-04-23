@@ -86,22 +86,6 @@ object UserInterfaceUtility {
         -300 to "\uF03C"
     )
 
-    fun constructLine(length: Int, color: NamedTextColor = NamedTextColor.WHITE): Component {
-        var component = Component.empty()
-
-       repeat(length) {
-            component = component.append(
-                Component.text("—", color)
-                    .append(
-                        Component.text("\uF000")
-                            .font(SPACES)
-                    )
-            )
-        }
-
-        return component
-    }
-
     fun negativeSpace(targetPixels: Int): Component {
         var remaining = targetPixels
         val result = StringBuilder()

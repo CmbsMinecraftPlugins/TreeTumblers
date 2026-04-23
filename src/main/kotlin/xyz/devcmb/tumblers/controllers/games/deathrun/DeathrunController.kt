@@ -73,9 +73,10 @@ class DeathrunController : GameBase(
             teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>")) { map ->
-            teleportConfig("cutscene.trapper_showcase")
-
+        CutsceneStep(
+            Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>"),
+            "cutscene.trapper_showcase"
+        ) { map ->
             val armorStands: ArrayList<ArmorStand> = ArrayList()
             map.data.getList("cutscene.armor_stands")?.forEach {
                 if(it !is List<*>) throw GameControllerException("Cutscene armor stand location table is not a list")
@@ -120,20 +121,23 @@ class DeathrunController : GameBase(
                 armorStands.clear()
             }
         },
-        CutsceneStep(Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage.")) {
-            teleportConfig("cutscene.trap_showcase")
-
+        CutsceneStep(
+            Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage."),
+            "cutscene.trap_showcase"
+        ) {
             val trap = (game as DeathrunController).mapTraps[0]!![0]
             delay(1000)
             trap.activate()
             delay(700)
         },
-        CutsceneStep(Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get")) {
+        CutsceneStep(
+            Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get"),
+            "cutscene.runner_score_showcase"
+        ) {
             val game = game as DeathrunController
             suspendSync {
                 game.summonScoreDisplay()
             }
-            teleportConfig("cutscene.runner_score_showcase")
             delay(6000)
             suspendSync {
                 game.endDisplay?.remove()
@@ -759,8 +763,9 @@ class DeathrunController : GameBase(
     }
 
     fun failRun(player: Player) {
+        val scores = grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_KILL)
         currentTeam.getOnlinePlayers().forEach {
-            MiscUtils.announceKill(it, player, getScoreSource(DeathrunScoreSource.TRAP_KILL))
+            MiscUtils.announceKill(it, player, scores[it.tumblingPlayer]!!)
         }
 
         makePlayerSpectate(player)
@@ -771,7 +776,6 @@ class DeathrunController : GameBase(
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
-        grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_KILL)
         placements[roundIndex].put(player, -1)
 
         player.showTitle(Title.title(
@@ -868,18 +872,17 @@ class DeathrunController : GameBase(
             return
         }
 
+        val scores = grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_DAMAGE)
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(
                 Format.formatDeathMessage(
                     player,
                     it,
                     it.tumblingPlayer.team == currentTeam,
-                    getScoreSource(DeathrunScoreSource.TRAP_DAMAGE)
+                    scores[it.tumblingPlayer] ?: 0
                 )
             )
-
         }
-        grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_DAMAGE)
 
         event.damage = 2.0
         respawnRunner(player)

@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.util
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.MiniMessage
+import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
@@ -23,6 +24,28 @@ object Format {
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
             .resolver(StandardTags.defaults())
+            .resolver(TagResolver.resolver("line") { args, context ->
+                var component = Component.empty()
+
+                var length = try {
+                    args.popOr { "Line argument must be a specified integer" }.value().toInt()
+                } catch(e: NumberFormatException) {
+                    DebugUtil.severe("Line argument was not a number!")
+                    return@resolver Tag.inserting(Component.empty())
+                }
+
+                repeat(length) {
+                    component = component.append(
+                        Component.text("—")
+                            .append(
+                                Component.text("\uF000")
+                                    .font(UserInterfaceUtility.SPACES)
+                            )
+                    )
+                }
+
+                Tag.inserting(component)
+            })
             .build())
         .build()
 

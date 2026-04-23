@@ -87,14 +87,15 @@ class CrumbleController : GameBase(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
                 .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
-                .append(Component.text(" Crumble"))
+                .append(Component.text(" Crumble")),
+            "cutscene.start"
         ) { map ->
-            teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, as time goes on, the map will <yellow>crumble away</yellow> in a circle")) { map ->
-            teleportConfig("cutscene.crumble_demonstration")
-
+        CutsceneStep(
+            Format.mm("In this game, as time goes on, the map will <yellow>crumble away</yellow> in a circle"),
+            "cutscene.crumble_demonstration"
+        ) { map ->
             val center = getLocation("centers.cutscene")
             val currentMapSize = map.data.getInt("map_size")
             var currentCrumbleRadius = ((currentMapSize * sqrt(2.0) * 0.5) + 1)
@@ -136,8 +137,10 @@ class CrumbleController : GameBase(
             delay(4000)
             runnable.cancel()
         },
-        CutsceneStep(Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><color:#ff701e><u>GDCob</u></color></click>!")) { map ->
-            teleportConfig("cutscene.credit")
+        CutsceneStep(
+            Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><color:#ff701e><u>GDCob</u></color></click>!"),
+            "cutscene.credit"
+        ) { map ->
             delay(4000)
         },
         CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
@@ -1084,11 +1087,10 @@ class CrumbleController : GameBase(
     fun playerDeath(killed: TumblingPlayer, killer: Player?) {
         val killedTeam = killed.team
         if(!killedTeam.playingTeam) return
-        alivePlayers[killedTeam]?.remove(killed)
+        alivePlayers[killedTeam]!!.remove(killed)
         if(matchResults[roundIndex].containsKey(killedTeam)) return
 
-        alivePlayers[killed.team]!!.remove(killed)
-        val currentPlayerMatchup = getCurrentMatchup(killed.team)!!
+        val currentPlayerMatchup = getCurrentMatchup(killedTeam)!!
 
         val killerTeam =
             if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
@@ -1096,9 +1098,9 @@ class CrumbleController : GameBase(
 
         val emptyMatchup = (!alivePlayers[killedTeam]!!.any { it.isOnline } && !alivePlayers[killerTeam]!!.any { it.isOnline })
         if(!emptyMatchup) {
-            val currentMatchup = getCurrentMatchup(killed.team)!!
+            val currentMatchup = getCurrentMatchup(killedTeam)!!
             val otherTeam =
-                if(currentMatchup.first == killed.team) currentMatchup.second
+                if(currentMatchup.first == killedTeam) currentMatchup.second
                 else currentMatchup.first
 
             if(killer != null) {

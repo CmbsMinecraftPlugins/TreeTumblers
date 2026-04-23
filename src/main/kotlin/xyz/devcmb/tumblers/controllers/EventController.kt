@@ -274,13 +274,12 @@ class EventController : IController {
     }
 
     val cutsceneSteps: ArrayList<CutsceneStep> = arrayListOf(
-        CutsceneStep(null) {
+        CutsceneStep(null, "first") {
             title(
                 Format.mm("<green><b>Tree Tumblers</b></green>"),
                 Format.mm("Welcome to the event!"),
                 Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(40))
             )
-            teleportConfig("first")
             delay(7000)
         }
     )
@@ -334,17 +333,19 @@ class EventController : IController {
         val logoLocations: ArrayList<Location> = ArrayList()
 
         val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")
-            ?.take(3)
             ?.map {
                 if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
-                it.validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
+                it.take(3).validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
             } ?: throw TumblingEventException("Voting logo positions not provided")
 
         val logoQuaternions = TreeTumblers.plugin.config.getList("event.voting.logos")
-            ?.takeLast(4)
             ?.map {
                 if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
-                val list = it.validateList<Float>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Floats")
+                val list: List<Float> = it.takeLast(4)
+                    .validateList<Double>()
+                    ?.map { entry -> entry.toFloat() }
+                    ?: throw TumblingEventException("Voting logo positions do not contain exclusively Floats")
+
                 Quaternionf(list[0], list[1], list[2], list[3])
             } ?: throw TumblingEventException("Voting logo quaternions not provided")
 

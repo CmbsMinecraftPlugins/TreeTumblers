@@ -38,10 +38,12 @@ class CutsceneContext(
         }
     }
 
-    suspend fun teleportConfig(path: String) {
+    suspend fun teleportConfig(path: String, player: Player? = null) {
         val location = getLocation(path)
+        val players = if(player != null) listOf(player) else observers
+
         suspendSync {
-            observers.forEach {
+            players.forEach {
                 if(!it.isOnline) return@forEach
 
                 it.teleport(location)

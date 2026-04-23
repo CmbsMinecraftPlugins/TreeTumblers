@@ -91,15 +91,16 @@ class SnifferCaretakerController : GameBase(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
                 .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
-                .append(Component.text(" Sniffer Caretaker"))
+                .append(Component.text(" Sniffer Caretaker")),
+            "cutscene.start"
         ) { map ->
-            teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has.")
+        CutsceneStep(
+            Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has."),
+            "cutscene.tasks"
         ) { map ->
             val game = game as SnifferCaretakerController
-            teleportConfig("cutscene.tasks")
 
             val exampleTasks: List<String> = listOf(
                 "hungry_wheat",
@@ -118,7 +119,9 @@ class SnifferCaretakerController : GameBase(
 
             delay(3000)
         },
-        CutsceneStep(Format.mm("<blue>Tasks</blue> range from feeding the sniffer various foods...")
+        CutsceneStep(
+            Format.mm("<blue>Tasks</blue> range from feeding the sniffer various foods..."),
+            "cutscene.farm"
         ) { map ->
             val game = game as SnifferCaretakerController
 
@@ -129,8 +132,6 @@ class SnifferCaretakerController : GameBase(
 
                 game.currentTasks[Team.RED]!!.clear()
             }
-
-            teleportConfig("cutscene.farm")
 
             map.data.getList("cutscene.farm_wheat")?.forEach {
                 if(it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
@@ -156,7 +157,9 @@ class SnifferCaretakerController : GameBase(
                 }
             }
         },
-        CutsceneStep(Format.mm("To giving the sniffer things to sniff...")
+        CutsceneStep(
+            Format.mm("To giving the sniffer things to sniff..."),
+            "cutscene.blocks"
         ) { map ->
             val game = game as SnifferCaretakerController
 
@@ -164,12 +167,12 @@ class SnifferCaretakerController : GameBase(
                 game.stockBlocks(Team.RED)
             }
 
-            teleportConfig("cutscene.blocks")
             delay(2000)
         },
-        CutsceneStep(Format.mm("To quenching the sniffer's thirst...")
+        CutsceneStep(
+            Format.mm("To quenching the sniffer's thirst..."),
+            "cutscene.thirst"
         ) { map ->
-            teleportConfig("cutscene.thirst")
             delay(500)
 
             val cauldron = getLocation("cutscene.thirst_cauldron")
@@ -187,10 +190,10 @@ class SnifferCaretakerController : GameBase(
                 cauldron.block.type = Material.CAULDRON
             }
         },
-        CutsceneStep(Format.mm("To bringing it a friend!")
+        CutsceneStep(
+            Format.mm("To bringing it a friend!"),
+            "cutscene.mobs"
         ) { map ->
-            teleportConfig("cutscene.mobs")
-
             val cowLocation = getLocation("cutscene.mobs_cow")
             val chickenLocation = getLocation("cutscene.mobs_chicken")
             lateinit var cow: Entity
@@ -208,10 +211,10 @@ class SnifferCaretakerController : GameBase(
                 chicken.remove()
             }
         },
-        CutsceneStep(Format.mm("The <red>sniffer</red> may also have some rather <i>odd</i> desires, which can be found in the back of the facility in the <red>basement...</red>")
+        CutsceneStep(
+            Format.mm("The <red>sniffer</red> may also have some rather <i>odd</i> desires, which can be found in the back of the facility in the <red>basement...</red>"),
+            "cutscene.basement"
         ) { map ->
-            teleportConfig("cutscene.basement")
-
             val spiderLocation = getLocation("cutscene.basement_spider")
             lateinit var spider: Entity
 
@@ -225,14 +228,13 @@ class SnifferCaretakerController : GameBase(
                 spider.remove()
             }
         },
-        CutsceneStep(Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!")
+        CutsceneStep(
+            Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!"),
+            "cutscene.end"
         ) { map ->
-            teleportConfig("cutscene.end")
             delay(4000)
         },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")
-        ) { map ->
-        }
+        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
     flags = setOf(Flag.SURVIVAL_MODE),
     scores = hashMapOf(

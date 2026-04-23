@@ -589,7 +589,7 @@ abstract class GameBase(
             when(currentState) {
                 State.CUTSCENE -> {
                     TreeTumblers.pluginScope.launch {
-                        currentCutsceneStep?.run(setOf(player), loadedMaps.first(), this@GameBase)
+                        currentCutsceneStep?.playerJoin(player)
                     }
                 }
                 State.PREGAME,

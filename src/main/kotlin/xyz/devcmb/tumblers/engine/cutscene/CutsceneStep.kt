@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.engine.cutscene
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.World
 import org.bukkit.configuration.ConfigurationSection
@@ -11,8 +11,9 @@ import org.bukkit.event.HandlerList
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.hideToAll
 
 /**
  * A single step of a cutscene.
@@ -24,6 +25,7 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
  */
 class CutsceneStep(
     val chatMessage: Component?,
+    val startingTeleport: String? = null,
     val init: suspend CutsceneContext.(map: LoadedMap) -> Unit
 ) {
     val pigs: HashMap<Player, Entity> = HashMap()
@@ -33,6 +35,9 @@ class CutsceneStep(
 
         context = CutsceneContext(observers, map, this, game)
         Bukkit.getPluginManager().registerEvents(context!!, TreeTumblers.plugin)
+        startingTeleport?.let {
+            context!!.teleportConfig(it)
+        }
         context!!.init(map)
     }
 
@@ -41,25 +46,30 @@ class CutsceneStep(
 
         context = CutsceneContext(observers, world, config, this)
         Bukkit.getPluginManager().registerEvents(context!!, TreeTumblers.plugin)
+        startingTeleport?.let {
+            context!!.teleportConfig(it)
+        }
         context!!.init(context!!.map)
+    }
+
+    suspend fun playerJoin(player: Player) {
+        if(context == null) return
+        startingTeleport?.let {
+            context!!.teleportConfig(it, player)
+            player.hideToAll()
+        }
     }
 
     suspend fun extraCutsceneWork(observers: Set<Player>) {
         suspendSync {
             observers.forEach {
-                observers.forEach { other ->
-                    if(other == it || !it.isOnline || !other.isOnline) return@forEach
-                    it.hidePlayer(TreeTumblers.plugin, other)
-                }
+                it.hideToAll()
 
                 if(chatMessage != null) {
-                    it.sendMessage(Component.empty()
-                        .append(UserInterfaceUtility.constructLine(35, NamedTextColor.AQUA))
-                        .append(Component.newline())
-                        .append(chatMessage)
-                        .append(Component.newline())
-                        .append(UserInterfaceUtility.constructLine(35, NamedTextColor.AQUA))
-                    )
+                    it.sendMessage(Format.mm(
+                        "<aqua><line:35><br><white><message></white><br><line:35></aqua>",
+                        Placeholder.component("message", chatMessage)
+                    ))
                 }
             }
         }
