@@ -1,9 +1,11 @@
 package xyz.devcmb.tumblers.controllers.games.breach
 
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -70,6 +72,7 @@ class BreachController: GameBase(
     scoreboard = "breachScoreboard"
 ) {
     companion object {
+        val font = NamespacedKey("tumbling", "games/breach")
         val kitItemsKey = NamespacedKey("tumbling", "kit_item")
         val team1starKey = NamespacedKey("tumbling", "breach_star_1")
         val team2starKey = NamespacedKey("tumbling", "breach_star_2")
@@ -93,8 +96,8 @@ class BreachController: GameBase(
     val eventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
-    val team1score: Int = 0
-    val team2score: Int = 0
+    var team1score: Int = 0
+    var team2score: Int = 0
     var currentRound: Int = 1
     var gameState: GameState = GameState.KIT_SELECT
 
@@ -144,6 +147,12 @@ class BreachController: GameBase(
                 team2droppedStar = currentMap.world.dropItem(team2spawn, team2star.clone())
                 team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
             },
+            "win_1" to { sender ->
+                roundEnd(playingTeams.first)
+            },
+            "win_2" to { sender ->
+                roundEnd(playingTeams.second)
+            }
         )
 
         override fun killEvent(killer: Player?, killed: Player?) {}
@@ -217,6 +226,7 @@ class BreachController: GameBase(
     override suspend fun gameOn() {
         gameParticipants.forEach {
             it.enableBossBar("countdownBossbar")
+            it.enableBossBar("breachScoreBossbar")
         }
 
         val tickTask = object : BukkitRunnable() {
@@ -232,6 +242,8 @@ class BreachController: GameBase(
         repeat(rounds) {
             preRound()
             roundStart()
+            awaitEnd()
+            delay(2500)
             currentRound++
         }
 
@@ -304,9 +316,7 @@ class BreachController: GameBase(
         gameState = GameState.GAME_ON
     }
 
-    suspend fun roundStart() {
-        asyncCountdown(10, "round")
-
+    fun roundStart() {
         val doors: List<List<List<Int>>> = (currentMap.data.getList("doors")?.map { list ->
             if (list !is List<*>) throw GameControllerException("Door locations is not a valid list")
             list.map { it ->
@@ -334,7 +344,49 @@ class BreachController: GameBase(
             }
         }
 
-        delay(10000)
+        asyncCountdown(30, "round") {
+            gameState = GameState.ROUND_OVER
+            // todo : THIS SHOULD NOT HAPPEN! do SOMETHING to force rounds to end with a winner
+        }
+    }
+
+    suspend fun awaitEnd() {
+        while(true) {
+            if(gameState == GameState.ROUND_OVER) break
+            delay(200)
+        }
+        cancelCountdown()
+    }
+
+    fun roundEnd(winner: Team) {
+        lateinit var loser: Team
+
+        if (winner == playingTeams.first) {
+            team1score++
+            loser = playingTeams.second
+        }
+        if (winner == playingTeams.second) {
+            team2score++
+            loser = playingTeams.first
+        }
+
+        winner.getOnlinePlayers().forEach {
+            it.showTitle(Title.title(
+                Format.mm("<b><green>Round Won!</green></b>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+            ))
+        }
+
+        loser.getOnlinePlayers().forEach {
+            it.showTitle(Title.title(
+                Format.mm("<b><red>Round Lost</red></b>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+            ))
+        }
+
+        gameState = GameState.ROUND_OVER
     }
 
     fun giveKit(player: Player, kit: BreachKit, removeSelector: Boolean = false) {
@@ -401,7 +453,7 @@ class BreachController: GameBase(
                 if (it.location.distance(team2droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     if (starPickupTimes[it]!! > starPickupTicks) {
-                        DebugUtil.info("WINNAR!")
+                        roundEnd(playingTeams.first)
                     }
                 } else {
                     starPickupTimes[it] = 0
@@ -421,7 +473,7 @@ class BreachController: GameBase(
                 if (it.location.distance(team1droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     if (starPickupTimes[it]!! > starPickupTicks) {
-                        DebugUtil.info("WINNAR!")
+                        roundEnd(playingTeams.second)
                     }
                 } else {
                     starPickupTimes[it] = 0
