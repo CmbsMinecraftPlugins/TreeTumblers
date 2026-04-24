@@ -608,6 +608,8 @@ class DeathrunController : GameBase(
                 player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
             } else if(preRound) {
                 alivePlayers.add(player)
+                player.health = lives.toDouble() * 2
+                player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = lives.toDouble() * 2
             }
         }
     }
