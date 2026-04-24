@@ -655,6 +655,14 @@ class EventController : IController {
                             ))
                     )
                     .appendNewline()
+                    .append(
+                        Component.text("DATABASE MODE: ", NamedTextColor.YELLOW)
+                            .append(Component.text(
+                                if(DatabaseController.enabled) "ENABLED" else "DISABLED",
+                                if(DatabaseController.enabled) NamedTextColor.GREEN else NamedTextColor.RED
+                            ))
+                    )
+                    .appendNewline()
                     .append(teamComponent)
             )
 
