@@ -21,6 +21,9 @@ event:
   # Determines if scores should be saved past a restart
   event_mode: true
 
+  # Whether the plugin should override the server's MOTD
+  override_motd: false
+
   cutscene:
     # The position of the first cutscene step
     # This is where it shows the text "Tree Tumblers" "Welcome to the event!"

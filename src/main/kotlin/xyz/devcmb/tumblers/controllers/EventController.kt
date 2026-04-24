@@ -24,6 +24,7 @@ import org.bukkit.entity.Display
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
+import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
@@ -90,6 +91,9 @@ class EventController : IController {
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
+
+        @field:Configurable("event.override_motd")
+        var overrideMotd: Boolean = false
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
@@ -713,6 +717,20 @@ class EventController : IController {
 
     override fun cleanup() {
         replicateScores()
+    }
+
+    @EventHandler
+    fun severListPingEvent(event: ServerListPingEvent) {
+        if(!overrideMotd) return
+
+        val firstGames = gameController.games.take(4)
+        val colors = arrayListOf("red", "blue", "green", "yellow")
+        val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
+        event.motd(Format.mm(
+            "<color:#64ffb8>■■■■■■</color> <b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</b> <color:#64ffb8>■■■■■■</color><br>" +
+                    "<color:#64ffb8>■ <footer> ■</color>",
+            Placeholder.parsed("footer", footer)
+        ))
     }
 
     enum class State {
