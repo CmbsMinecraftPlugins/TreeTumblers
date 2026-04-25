@@ -55,10 +55,10 @@ event:
     # You can use Axiom or some other text display creator to get these values
     logos:
       # x, y, z, qx, qy, qz, qw
-      - [17, 198, 0, 0.239f, -0.370f, 0.099f, 0.892f]
-      - [17, 198, 16, -0.099f, 0.892f, -0.239f, -0.370f]
-      - [1, 198, 16, 0.099f, 0.892f, -0.239f, 0.370f]
-      - [1, 198, 0, 0.239f, 0.370f, -0.099f, 0.892f]
+      - [17, 198, 0, 0.239, -0.370, 0.099, 0.892]
+      - [17, 198, 16, -0.099, 0.892, -0.239, -0.370]
+      - [1, 198, 16, 0.099, 0.892, -0.239, 0.370]
+      - [1, 198, 0, 0.239, 0.370, -0.099, 0.892]
 
     # The material that will be colored for each quadrant, used as the voting zone (any player on top of it will count as a vote)
     inactive_quadrant_material: GRAY_CONCRETE

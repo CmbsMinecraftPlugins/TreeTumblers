@@ -403,7 +403,7 @@ class EventController : IController {
 
         repeat(4) {
             val quadrant = votingQuadrants[it]
-            val games = gameController.games.filter { game -> !playedGames.contains(game.id) && !quadrantGames.containsValue(game) }
+            val games = gameController.games.filter { game -> !playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
             if(games.isEmpty()) return@repeat
 
             val game = games.random()
