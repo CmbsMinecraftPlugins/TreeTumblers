@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.controllers
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
+import dev.rollczi.litecommands.adventure.LiteAdventureExtension
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
@@ -18,6 +19,7 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 
 @Controller("commandController", Controller.Priority.LOWEST)
 class CommandController : IController {
@@ -48,6 +50,9 @@ class CommandController : IController {
             .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
             .argument(PlayerController.ChatChannel::class.java, ChatChannelArgument())
             .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
+            .extension(LiteAdventureExtension<CommandSender>()) { config ->
+                config.serializer(Format.miniMessage)
+            }
             .invalidUsage(InvalidUsageHandler())
             .build()
     }

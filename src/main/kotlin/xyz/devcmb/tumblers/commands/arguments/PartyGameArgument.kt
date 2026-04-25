@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.util.Format
 
 class PartyGameArgument: ArgumentResolver<CommandSender, PartyController.PartyGameIdentifier>() {
     override fun parse(
@@ -16,7 +17,7 @@ class PartyGameArgument: ArgumentResolver<CommandSender, PartyController.PartyGa
         argument: String
     ): ParseResult<PartyController.PartyGameIdentifier> {
         if(argument !in PartyController.gameIds) {
-            return ParseResult.failure("Invalid party game id!")
+            return ParseResult.failure(Format.error("Invalid party game id!"))
         }
 
         return ParseResult.success(PartyController.PartyGameIdentifier(argument))
