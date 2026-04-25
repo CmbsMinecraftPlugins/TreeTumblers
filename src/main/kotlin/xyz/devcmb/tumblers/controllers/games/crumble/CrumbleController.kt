@@ -6,6 +6,7 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -544,6 +545,8 @@ class CrumbleController : GameBase(
     var gameTimeoutEnd = false
     override suspend fun gameOn() {
         repeat(rounds) {
+            TreeTumblers.pluginScope.ensureActive()
+
             currentRound++
             gameTimeoutEnd = false
             suspendSync {
@@ -583,6 +586,9 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun postGame() {
+        crumbleEvent?.cancel()
+        borderEvent?.cancel()
+
         val placements = getTeamPlacements()
         gameParticipants.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second

@@ -1,6 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
-import kotlinx.coroutines.async
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
@@ -26,6 +26,7 @@ import xyz.devcmb.tumblers.util.hunger
 class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
+    var activeGameJob: Job? = null
 
     data class RegisteredGame(
         val id: String,
@@ -79,9 +80,13 @@ class GameController : IController {
         game.finishLoading()
         game.runCutscene()
         game.pregame()
-        game.gameMain()
-        game.postGame()
-        TreeTumblers.pluginScope.async {
+        activeGameJob = TreeTumblers.pluginScope.launch {
+            game.gameMain()
+        }
+        activeGameJob!!.join()
+        activeGameJob = null
+        game.basePostGame()
+        TreeTumblers.pluginScope.launch {
             game.cleanup()
         }
         HandlerList.unregisterAll(game)

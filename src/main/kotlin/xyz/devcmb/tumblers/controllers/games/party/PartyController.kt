@@ -359,6 +359,7 @@ class PartyController : GameBase(
 
         teamGamesTimer = Timer(5 * 60) {
             id = "party_team_games_switchover_timer"
+            game = this@PartyController
             timeBroadcast(
                 20,
                 "Individual games are going to switch to team games in 20 seconds! Game starting has been disabled!",

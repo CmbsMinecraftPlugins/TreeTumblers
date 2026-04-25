@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.controllers.games.deathrun
 import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
@@ -406,6 +407,8 @@ class DeathrunController : GameBase(
         }
 
         repeat(rounds) {
+            TreeTumblers.pluginScope.ensureActive()
+
             currentRound++
             cooldownTimes.clear()
             currentTraps.clear()
