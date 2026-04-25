@@ -337,8 +337,9 @@ abstract class GameBase(
     private var countdownCancelled: Boolean = false
 
     /**
-     * Perform a countdown synchronously, stored in the [countdownTime] field
+     * Runs a [Timer] instance with [Timer.joined] set to true, running synchronously
      * @param time How long to run the countdown for
+     * @param id An optional identifier for the /timer command
      */
     suspend fun countdown(time: Int, id: String? = null) {
         currentTimer = Timer(time) {
@@ -349,8 +350,9 @@ abstract class GameBase(
     }
 
     /**
-     * Runs the [countdown] method asynchronously
+     * Runs a [Timer] instance without [Timer.joined] set to true
      * @param time How long to run the countdown for
+     * @param id An optional identifier for the /timer command
      * @param onComplete The function to invoke when the countdown finishes executing
      */
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
