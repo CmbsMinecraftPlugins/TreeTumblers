@@ -8,6 +8,8 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Color
+import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -154,10 +156,16 @@ class BreachController: GameBase(
                 starDrop(playingTeams.second, team2spawn)
             },
             "win_1" to { sender ->
-                roundEnd(playingTeams.first)
+                val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
+                    ?: throw GameControllerException("Team 1 spawn not found")
+
+                roundEnd(playingTeams.first, team1spawn)
             },
             "win_2" to { sender ->
-                roundEnd(playingTeams.second)
+                val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
+                    ?: throw GameControllerException("Team 2 spawn not found")
+
+                roundEnd(playingTeams.second, team2spawn)
             }
         )
 
@@ -388,7 +396,7 @@ class BreachController: GameBase(
         cancelCountdown()
     }
 
-    fun roundEnd(winner: Team) {
+    fun roundEnd(winner: Team, fireworkPos: Location) {
         lateinit var loser: Team
 
         if (winner == playingTeams.first) {
@@ -404,6 +412,15 @@ class BreachController: GameBase(
             gameState = GameState.ROUND_OVER
             return
         }
+
+        MiscUtils.spawnFirework(fireworkPos.clone().add(0.0,5.0,0.0), FireworkEffect.builder()
+            .trail(false)
+            .flicker(true)
+            .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+            .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+            .with(FireworkEffect.Type.STAR)
+            .build()
+        )
 
         winner.getOnlinePlayers().forEach {
             it.showTitle(Title.title(
@@ -509,7 +526,7 @@ class BreachController: GameBase(
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
-                        roundEnd(playingTeams.first)
+                        roundEnd(playingTeams.first, team2droppedStar!!.location)
                     }
                 } else {
                     starPickupTimes[it] = 0
@@ -531,7 +548,7 @@ class BreachController: GameBase(
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
-                        roundEnd(playingTeams.second)
+                        roundEnd(playingTeams.second, team1droppedStar!!.location)
                     }
                 } else {
                     starPickupTimes[it] = 0

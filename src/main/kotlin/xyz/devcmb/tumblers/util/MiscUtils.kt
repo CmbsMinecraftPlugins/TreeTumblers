@@ -231,9 +231,11 @@ object MiscUtils {
         }
     }
 
-    fun spawnFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) {
-        val world = player.world
-        val location = player.location.clone()
+    fun spawnFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) =
+        spawnFirework(player.location.clone(), effect, detonationDelay)
+
+    fun spawnFirework(location: Location, effect: FireworkEffect, detonationDelay: Long = 2L) {
+        val world = location.world
 
         val firework = world.spawn(location, Firework::class.java) { fw ->
             fw.fireworkMeta = fw.fireworkMeta.apply {
