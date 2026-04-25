@@ -11,6 +11,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Item
@@ -58,6 +59,7 @@ import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 import kotlin.collections.set
+import kotlin.math.min
 
 @EventGame
 class BreachController: GameBase(
@@ -472,6 +474,26 @@ class BreachController: GameBase(
         }
     }
 
+    fun sendPickupProgressActionbar(player: Player) {
+        val currentTicks = starPickupTimes.getOrDefault(player, 0).toDouble()
+        val totalTicks = starPickupTicks.toDouble()
+        val progress = min(currentTicks / totalTicks, 1.0)
+
+        var component = Format.mm("<light_purple>Stealing: </light_purple>")
+
+        component = component.append(Format.mm("<white>[</white>"))
+
+        repeat(20) { i ->
+            val color = if (progress>= (i.toDouble() / 20.0)) "aqua" else "dark_grey"
+            component = component.append(Format.mm("<$color>|</$color>"))
+        }
+        component = component.append(Format.mm("<white>] ${(progress * 100.0).toInt()}%</white>"))
+
+
+        player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_PLING, 5f, 0.5f + progress.toFloat())
+        player.sendActionBar(component)
+    }
+
     fun checkItemPickup() {
         playingTeams.first.getOnlinePlayers().forEach {
             if (team1droppedStar != null) {
@@ -485,11 +507,13 @@ class BreachController: GameBase(
             if (team2droppedStar != null) {
                 if (it.location.distance(team2droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
+                    sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.first)
                     }
                 } else {
                     starPickupTimes[it] = 0
+                    it.sendActionBar(Component.empty())
                 }
             }
         }
@@ -505,11 +529,13 @@ class BreachController: GameBase(
             if (team1droppedStar != null) {
                 if (it.location.distance(team1droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
+                    sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.second)
                     }
                 } else {
                     starPickupTimes[it] = 0
+                    it.sendActionBar(Component.empty())
                 }
             }
         }
@@ -519,7 +545,8 @@ class BreachController: GameBase(
         val message = Component.empty()
             .append(Component.text(team.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
             .append(Component.text(" ${team.teamName}", team.color))
-            .append(Format.mm(" has dropped their <light_purple>star!</light_purple>"))
+            .append(Format.mm(" have dropped their <light_purple>star!</light_purple>"))
+        // As per DevCmb, the correct word is "have", and not "has". keeping this bug in the game would break everything.
 
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(message)
