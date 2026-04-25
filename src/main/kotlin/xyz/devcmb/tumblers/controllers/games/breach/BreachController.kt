@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -39,6 +40,7 @@ import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -46,9 +48,11 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.giveKit
+import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -145,8 +149,7 @@ class BreachController: GameBase(
                 val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
                     ?: throw GameControllerException("Team 2 spawn not found")
 
-                team2droppedStar = currentMap.world.dropItem(team2spawn, team2star.clone())
-                team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
+                starDrop(playingTeams.second, team2spawn)
             },
             "win_1" to { sender ->
                 roundEnd(playingTeams.first)
@@ -201,18 +204,16 @@ class BreachController: GameBase(
                     val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
                         ?: throw GameControllerException("Team 2 spawn not found")
 
-                    playingTeams.first.getOnlinePlayers().forEach {
-                        it.teleport(team1spawn)
-                        it.inventory.setItem(8, kitSelector.clone())
+                    listOf(playingTeams.first, playingTeams.second).forEachIndexed { i, team ->
+                        team.getOnlinePlayers().forEach {
+                            it.teleport(if (i == 0) team1spawn else team2spawn)
+                            it.inventory.setItem(8, kitSelector.clone())
+                            it.showToAll()
+                            it.health = 1.0
+                            it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
 
-                        it.openHandledInventory("breachKitSelector")
-                    }
-
-                    playingTeams.second.getOnlinePlayers().forEach {
-                        it.teleport(team2spawn)
-                        it.inventory.setItem(8, kitSelector.clone())
-
-                        it.openHandledInventory("breachKitSelector")
+                            it.openHandledInventory("breachKitSelector")
+                        }
                     }
                 }
             }
@@ -268,6 +269,20 @@ class BreachController: GameBase(
         }
 
         delay(9000)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
+     */
+    override fun playerJoin(player: Player) {
+
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
+     */
+    override fun playerLeave(player: Player) {
+
     }
 
     suspend fun preRound() {
@@ -500,6 +515,28 @@ class BreachController: GameBase(
         }
     }
 
+    fun starDrop(team: Team, location: Location) {
+        val message = Component.empty()
+            .append(Component.text(team.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+            .append(Component.text(" ${team.teamName}", team.color))
+            .append(Format.mm(" has dropped their <light_purple>star!</light_purple>"))
+
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(message)
+        }
+
+        if (team == playingTeams.first) {
+            team1droppedStar = currentMap.world.dropItem(location, team1star.clone())
+            team1droppedStar?.isGlowing = true
+
+            team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
+        } else if (team == playingTeams.second) {
+            team2droppedStar = currentMap.world.dropItem(location, team2star.clone())
+            team2droppedStar?.isGlowing = true
+            team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.  x2
+        }
+    }
+
     @EventHandler
     fun inventoryClickEvent(event: InventoryClickEvent) {
         if (event.rawSlot == 45 && event.inventory.holder is Player) {
@@ -571,18 +608,14 @@ class BreachController: GameBase(
 
         event.player.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = 0.0
 
-        DebugUtil.info("${event.player} $team1holder")
-        if (event.player == team1holder) {
-            DebugUtil.info("dropping star 1")
-            team1droppedStar = currentMap.world.dropItem(event.player.location, team1star.clone())
-            team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendMessage(Format.formatKillMessage(event.player.killer, event.player, it, 0))
         }
 
-        DebugUtil.info("${event.player} $team2holder")
-        if (event.player == team2holder) {
-            DebugUtil.info("dropping star 2")
-            team2droppedStar = currentMap.world.dropItem(event.player.location, team2star.clone())
-            team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised. x2
+        event.player.hideToAll()
+
+        if (event.player == team1holder || event.player == team2holder) {
+            starDrop(event.player.tumblingPlayer.team, event.player.location)
         }
     }
 
