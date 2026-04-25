@@ -1,4 +1,16 @@
+# Hello!
+# These config values are set as if you are playing with our template server
+# If you are using that server, you do not have to edit anything here
+# If you are not using that server, check the setup guide and comments on what to set up
+
+# TODO: Link to the template server
+
 database:
+  # Playing without a database should only be used if one isn't available, and you have a vanilla whitelist
+  # This makes it so teams, scores, and any other persisting data will reset when the server restarts
+  enabled: true
+
+  # If enabled is false, these fields are not required
   host:
   port:
   username:
@@ -6,84 +18,176 @@ database:
   database:
 
 event:
+  # Determines if scores should be saved past a restart
   event_mode: true
+
+  # Whether the plugin should override the server's MOTD
+  override_motd: false
+
   cutscene:
+    # The position of the first cutscene step
+    # This is where it shows the text "Tree Tumblers" "Welcome to the event!"
     first: [1.13,198.19,14.26,-125.2,40.2]
+
   voting:
+    # This is the position where the dome starts, at the very lowest and furthest point
+    # Even if the arena is a circle, the bounding box of these 2 should capture the entire thing
+    dome_start: [-8,189,24]
+    # Ending position
+    dome_end: [26,197,-11]
+
+    # This is the block that separates the different quadrants that will be turned into the quadrant_replacement, then stacked 3 up
+    quadrant_separator: SMOOTH_QUARTZ_SLAB
+    # What to replace the separator with
+    quadrant_replacement: SMOOTH_QUARTZ
+
+    # This should capture all the points in the quadrant without including any points on another
+    # Every block that is of the `inactive_quadrant_material` block will be used as a voting area
     quadrants:
       # x1,y1,z1,x2,y2,z2
       - [10,192,7,23,188,-6]
       - [10,192,9,23,188,22]
       - [8,192,23,-5,188,9]
       - [8,192,7,-5,188,-6]
+
+    # This is the positioning of the game logos
+    # Anything prefixed with a Q is part of a Quaternion that defines the rotation of the sign
+    # You can use Axiom or some other text display creator to get these values
     logos:
-      - [17, 198, 0]
-      - [17, 198, 16]
-      - [1, 198, 16]
-      - [1, 198, 0]
+      # x, y, z, qx, qy, qz, qw
+      - [17, 198, 0, 0.239f, -0.370f, 0.099f, 0.892f]
+      - [17, 198, 16, -0.099f, 0.892f, -0.239f, -0.370f]
+      - [1, 198, 16, 0.099f, 0.892f, -0.239f, 0.370f]
+      - [1, 198, 0, 0.239f, 0.370f, -0.099f, 0.892f]
+
+    # The material that will be colored for each quadrant, used as the voting zone (any player on top of it will count as a vote)
     inactive_quadrant_material: GRAY_CONCRETE
-    center: [9,196,8]
+
+    # The center of the arena for pasting in schematics and for spawning players
+    # Should be the same position the dioramas were copied from
+    center: [9,191,8]
 
 templates:
-  # The path where all the template worlds are contained
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
+
+  # The path where all the template worlds are contained
   world_root: "&/templates/worlds"
   party_games: "&/templates/party"
+  dioramas: "&/templates/dioramas"
 
 lobby:
+  # The hub world
   world: hub
+  # Where to teleport players in the hub world
   position: [-20.0, 209.0, 5.0,-90.0,0.0]
 
-# All games use the same format for their config, aside from the data fields
-# Refer to the comments in the first game for usage in the others
 games:
   crumble:
     # The path where all the maps are contained
     # This path is relative to the `world_root` config value
     worlds_folder: "crumble"
+
+    # The maximum amount of players that can have the same kit
+    # Default 2
     max_kit_players: 2
+
+    # The amount of time it takes for TNT to explode
+    # Default 80
     tnt_detonation_time: 80
+
+    # The rate at which the crumble border shrinks
+    # Default 0.6
     crumble_speed: 0.6
+
+    # The length of each round in seconds
+    # Default 75 (1:15)
     round_length: 75
+
     kits:
       archer:
+        # The level of punch that the archer kit gets on their bow
+        # Default 2
         punch_level: 2
+        # The level of power that the archer kit gets on their bow
+        # Default 3
         power_level: 3
+        # The length of the swiftness effect, in ticks, for when the archer gets a kill
+        # Default 30
         swiftness_ticks: 30
       bomber:
+        # The amount of time, in ticks, that the bomber's nuke takes to explode
+        # Default 5
         nuke_explosion_ticks: 5
+        # The explosion radius of the bomber's nuke
+        # Default 7.0
         nuke_radius: 7.0
+        # The amount of damage, in health (1 heart = 2 health), that the bomber's nuke does
+        # Default 7
         nuke_damage: 7
+        # The level of blast protection that the bomber gets on their armor
+        # Default 1
         blast_protection_level: 1
       fisher:
+        # The level of loyalty the fisher's trident has
+        # Default 2
         trident_loyalty_level: 2
+
+        # The amount of damage the fisher's trident can deal
+        # Default 5.0
         trident_damage: 5.0
+
+        # The attack speed of the fisher's trident
+        # Default 1.1
         trident_attack_speed: 1.1
       ninja:
+        # The length of the ninja's ability, in ticks
+        # Default 80
         invisibility_duration: 80
+
+        # How long the ninja's smoke bomb lasts, in ticks
+        # Default 100
         smoke_duration: 100
+
+        # The length of a cube in which the smoke is created
+        # Default 2.5
         smoke_size: 2.5
       sorcerer:
+        # The length, in ticks, that the sorcerer's ability poison lasts
         poison_duration: 70
+
+        # The amount of hearts to heal every second in the sorcerer's kill effect
+        # Default 2
         heal_hearts: 2
+
+        # The length of the sorcerer's heal, in ticks
+        # Default 60
         heal_duration: 60
       warrior:
+        # The fallback length of the warrior's blindness ability assuming the receiver does not take damage, in ticks
+        # Default 50
         blindness_ticks: 50
       worker:
+        # The duration, in ticks, of the worker's ability
         megamine_duration: 150
+        # The duration of the worker's efficiency after getting a kill
         efficiency_duration: 200
     maps:
       warfare:
         world: "crumble_warfare"
         data:
+          # The square length and height of the map
           map_size: 70
+          # The height in which players would die when reaching
           kill_height: 86
           spawns:
+            # The position players are spawned in the pre-game (kit selection)
             pregame: [-32.5,100.0,-33.5]
             ingame:
+              # The same information applies to the other 3 arenas
               arena1:
                 # The first set of spawns for the first team on this map
-                # It looks so bad but who caresssss
+                # Each entry is a list containing a list of coordinated
+                # The coordinates are formated as x,y,z, and must be doubles (having a decimal)
                 - [
                   [ -38.5,100.0,-43.5 ],
                   [ -38.5,100.0,-41.5 ],
@@ -137,6 +241,7 @@ games:
                   [-532.5, 100.0, -543.5]
                 ]
           centers:
+            # The center of their respective arena
             arena1: [-35.5,103.0,-36.5]
             arena2: [-535.5,103.0,-463.5]
             arena3: [464.5,103.0,-536.5]
@@ -148,57 +253,85 @@ games:
             crumble_demonstration: [438.5,102.5,489.5,45.0,33.0]
             credit: [464.4,90.3,471.4,62.3,13.6]
           walls:
+            # The positions of the walls separating the matches
+            # These drop when the game begins
             # startX,startY,startZ,endX,endY,endZ
             - [0,115,-37,-72,99,-37]
             - [-500,115,463,-572,99,463]
             - [500,115,-537,428,99,-537]
             - [-500,115,-537,-572,99,-537]
   deathrun:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "deathrun"
+    # The amount of lives the players get
+    # Default 3
     lives: 3
     maps:
       forest:
         world: "forest"
         data:
           spawns:
+            # Where the main players spawn if they do not have a checkpoint
             main: [ -4.5,63.0,15.5,-90.0,0.0 ]
+            # Where the attackers spawn
             attacker: [ 2.5,67.0,2.5 ]
+          # x, y, z, pitch, yaw
           cutscene:
             start: [ 36.84,61.84,21.5,155.7,9.3 ]
             trapper_showcase: [ 6.15,66.9,7.89,179.2,6.3 ]
             # Must be the first trap
             trap_showcase: [ 8.78,68.6,9.0,0.2,48.6 ]
+            # The positions of the armor stands in the cutscene
             armor_stands:
               - [ 3,67,1 ]
               - [ 5,67,1 ]
               - [ 7,67,1 ]
               - [ 9,67,1 ]
+            # This should be facing towards the end point display
             runner_score_showcase: [ 64.119,62.36,19.425,-122.6,5.7 ]
+          # The start of the gate preventing players from starting before the round starts
+          # Should be fence gates
           gate_start: [ -2,62,8 ]
+          # The end of the gate
           gate_end: [ -2,62,21 ]
+          # The properties of the point display at the end of the course
           point_display:
             pos: [ 71.25,63.12,14.81 ]
             yaw: 90
             scale: 5.0
+          # The start position of the win zone
           win_zone_start: [ 71,66,23 ]
+          # The end position of the win zone
           win_zone_end: [ 71,61,6 ]
+          # The position in which falling will kill you
           void_height: 48
+          # The start and end zones for all the checkpoints in the map
           checkpoints:
             - start: [ 45,68,22 ]
               end: [ 45,61,7 ]
               respawn: [ 45,63,15,-90.0,0.0 ]
+
+          # The identifiers, starting, ending, and trap-specific data of each trap on the course
+          # This may in the future be changed if I ever want to randomize the trap layout
+
+          # start and end are the trapper positions
           traps:
             - id: "magma_fall"
               start: [ -1,70,-2 ]
               end: [ 18,65,4 ]
               data:
+                # What block to get rid of
                 replace_type: STONE
+                # Where to check starting from
                 replace_start: [ -1,61,22 ]
+                # Where to check ending at
                 replace_end: [ 18,61,7 ]
             - id: "beam_run"
               start: [ 19,70,-2 ]
               end: [ 43,65,4 ]
               data:
+                # All the blocks to get rid of
                 blocks:
                   - [ 41,61,20 ]
                   - [ 41,61,19 ]
@@ -210,18 +343,34 @@ games:
               start: [ 43,70,-2 ]
               end: [ 67,65,4 ]
               data:
+                # The positions of all the ghasts
                 ghasts:
                   - [ 50.47,57.71,10.05 ]
                   - [ 56.78,57.97,19.16 ]
                   - [ 62.36,58.03,10.16 ]
                   - [ 69.24,56.90,14.04 ]
   snifferCaretaker:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "snifferCaretaker"
+
+    # The game length, in seconds
     game_length: 600
+
+    # The interval, in seconds, which the chests restock their items
     chest_refresh: 20
+    # The interval, in seconds, which the blocks restock
     block_refresh: 15
+    # The interval, in seconds, that mobs spawn
     mob_refresh: 30
+    # The interval, in seconds, that new tasks are distributed
     task_interval: 8
+
+    # The list of possible tasks and their items
+    # The ID is a unique identifier
+    # The type is the type of task it is, HUNGRY, THIRSTY, BORED, and LONELY
+    # The item is the item it involves (or the mob name if it's a LONELY task)
+    # Stars is the amount of stars it gives
     tasks: [
       { id: "hungry_bread", type: "HUNGRY", item: "BREAD", stars: 2 },
       { id: "hungry_wheat", type: "HUNGRY", item: "WHEAT", stars: 1 },
@@ -256,15 +405,18 @@ games:
         world: "facility"
         data:
           cutscene:
+            # x,y,z,pitch,yaw
             start: [6.7, 71.1, 4.0, 131.0, 26.0]
             tasks: [-3.0, 67.5, 8.0, 0.0, 0.0]
             farm: [-4.5, 66.7, -3.0, 50.0, 37.0]
+            # The positions of wheat to be set in the cutscene
             farm_wheat: [
               [-8.0, 65.0, 2.0], [-8.0, 65.0, 0.0], [-8.0, 65.0, -2.0],
               [-10.0, 65.0, 2.0], [-10.0, 65.0, 0.0], [-10.0, 65.0, -2.0]
             ]
             blocks: [-12.5, 66.7, -2.3, 180.0, 20.0]
             thirst: [1.4, 65.3, 1.3, 135.0, 35.6]
+            # The position of the cauldron to put water into
             thirst_cauldron: [-1.0, 64.0, -1.0]
             mobs: [-1.0, 66.0, -5.0, -130.0, 10.0]
             mobs_cow: [4.6, 65.0, -9.0]
@@ -272,41 +424,73 @@ games:
             basement: [1.2, 58.4, 4.3, 144.5, 16.1]
             basement_spider: [-2.0, 57.2, -13.2]
             end: [2.5, 65.0, 5.0, 180.0, 0.0]
+          # The from and to coordinates of the map
+          # This is used to set up the map relative to the original
           base_map: [[-27.0, 49.0, -23.0], [29.0, 75.0, 11.0]]
+
+          # All of the following keys are relative to the first map, then extended to the other ones
+          # The spawn location of the sniffer
           sniffer_spawn: [2.5, 65.0, -1.0]
+          # The start and end positions of the pen
+          # This makes it so you can give the sniffer blocks and animals
           pen: [[-2.0, 64.0, -2.2], [6.5, 67.0, 5.0]]
+          # The player spawn position
           spawn: [-8.0, 66.0, 8.0]
+          # The position of the chest to stock with supplies
           supply_chest: [-17.0, 65.0, 1.0]
+          # The position of the sign displaying the restock time of the supply chest
           supply_chest_sign: [-13.9, 68.4, 1.5, -90.0, 0.0]
+          # The position of the chest to stock with sticks and mushrooms
           basement_supply_chest: [4.0, 54.0, -1.0]
+          # The position of the sign displaying the restock time of the basement supply chest
           basement_supply_chest_sign: [0.93, 57.5, -0.5, 90.0, 0.0]
 
           block_containments:
             dirt:
+              # The area in which blocks can spawn
               area: [ [ -18.0, 64.0, -12.0 ], [ -14.0, 64.0, -8.0 ] ]
+              # The floor that gets removed
               floor: [ [ -18.0, 63.0, -12.0 ], [ -14.0, 63.0, -8.0 ] ]
+              # The door that gets created
               door: [ [ -18.0, 65.0, -7.0 ], [ -14.0, 67.0, -7.0 ] ]
+              # The sign that displays the restock time
               sign: [ -15.5, 68.4, -5.9 ]
             moss:
               area: [ [ -12.0, 64.0, -12.0 ], [ -8.0, 64.0, -8.0 ] ]
               floor: [ [ -12.0, 63.0, -12.0 ], [ -8.0, 63.0, -8.0 ] ]
               door: [ [ -12.0, 65.0, -7.0 ], [ -8.0, 67.0, -7.0 ] ]
               sign: [ -9.5, 68.4, -5.9 ]
+          # The starting position of spawning tasks on the task board and their orientations
           task_board: [ -3.0, 67.3, 11.7, 180.0, 0.0 ]
+          # The position where chickens and cows spawn
           mob_spawn: [ 20.0, 70.0, -9.0 ]
+          # The sign displaying when the next batch of mobs is due
           mob_spawn_sign: [ 3.0, 65.7, -10.9, 0.0, 0.0 ]
+          # The position where spiders spawn
           spider_spawn: [ -2.25, 60.0, -18.25 ]
   party:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "party"
+
+    # If solo matchups should be allowed
+    # Default false
     allow_solos: false
+
+    # If you should be able to refight the same person twice in a row
+    # Default false
+    # This would basically always make the same matchups
     allow_refights: false
     maps:
       main:
         world: "main"
         data:
+          # The starting position of the game worlds
           game_pivot: [-10000,128,0]
+          # The position where players spawn in the pregame
           pregame_spawn: [0.5,72.0,-0.5]
           cutscene:
+            # x, y, z, pitch, yaw
             start: [-0.5,74.5,-7.5,27.8,5.5]
             first: [-7.8,163.2,496.7,-59.4,7.7]
             second: [-9.6, 38.5, 13.1, 1.3, 4.9]

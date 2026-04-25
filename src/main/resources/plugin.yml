@@ -4,7 +4,14 @@ main: xyz.devcmb.tumblers.TreeTumblers
 api-version: '1.21'
 prefix: TreeTumblers
 authors: [ DevCmb ]
-depend: [ FastAsyncWorldEdit, LibsDisguises ]
+depend: [ FastAsyncWorldEdit, LibsDisguises, packetevents ]
 description: An open-source minecraft event
 website: devcmb.xyz
 load: STARTUP
+permissions:
+  tumbling.dev:
+    description: Developers for the plugin
+    default: op
+  tumbling.organizer:
+    description: Those who help organize the event
+    default: op

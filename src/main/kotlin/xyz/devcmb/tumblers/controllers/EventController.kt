@@ -1,5 +1,13 @@
 package xyz.devcmb.tumblers.controllers
 
+import com.sk89q.worldedit.EditSession
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.transform.AffineTransform
+import com.sk89q.worldedit.session.ClipboardHolder
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -16,6 +24,7 @@ import org.bukkit.entity.Display
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
+import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
@@ -39,10 +48,10 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
-import xyz.devcmb.tumblers.util.playerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import java.io.File
 import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
@@ -55,6 +64,10 @@ class EventController : IController {
 
     private val gameController: GameController by lazy {
         ControllerDelegate.getController<GameController>()
+    }
+
+    private val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
     }
 
     lateinit var topbarRunnable: BukkitRunnable
@@ -79,6 +92,9 @@ class EventController : IController {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
 
+        @field:Configurable("event.override_motd")
+        var overrideMotd: Boolean = false
+
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
 
@@ -87,6 +103,24 @@ class EventController : IController {
 
         @field:Configurable("event.voting.center")
         var voteCenter: List<Int> = listOf(0,0,0)
+
+        @field:Configurable("event.voting.quadrant_separator")
+        var quadrantSeparator: Material = Material.SMOOTH_QUARTZ_SLAB
+
+        @field:Configurable("event.voting.quadrant_replacement")
+        var quadrantReplacement: Material = Material.SMOOTH_QUARTZ
+
+        @field:Configurable("event.voting.dome_start")
+        var domeStart: List<Int> = listOf(-8,189,24)
+
+        @field:Configurable("event.voting.dome_end")
+        var domeEnd: List<Int> = listOf(26,197,-11)
+
+        @field:Configurable("templates.dioramas")
+        var dioramasFolder: String = "&/templates/dioramas"
+            get() {
+                return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
+            }
     }
 
     override fun init() {
@@ -244,13 +278,12 @@ class EventController : IController {
     }
 
     val cutsceneSteps: ArrayList<CutsceneStep> = arrayListOf(
-        CutsceneStep(null) {
+        CutsceneStep(null, "first") {
             title(
                 Format.mm("<green><b>Tree Tumblers</b></green>"),
                 Format.mm("Welcome to the event!"),
                 Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(40))
             )
-            teleportConfig("first")
             delay(7000)
         }
     )
@@ -291,7 +324,7 @@ class EventController : IController {
     val votingConcretes: ArrayList<Material> = arrayListOf(
         Material.RED_CONCRETE,
         Material.BLUE_CONCRETE,
-        Material.GREEN_CONCRETE,
+        Material.LIME_CONCRETE,
         Material.YELLOW_CONCRETE
     )
 
@@ -302,17 +335,23 @@ class EventController : IController {
     suspend fun voting() {
         val lobby = Bukkit.getWorld(lobbyWorld)!!
         val logoLocations: ArrayList<Location> = ArrayList()
-        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")?.map {
-            if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
-            it.validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
-        } ?: throw TumblingEventException("Voting logo positions not provided")
 
-        val logoQuaternions: List<Quaternionf> = listOf(
-            Quaternionf(0.239f, -0.370f, 0.099f, 0.892f),
-            Quaternionf(-0.099f, 0.892f, -0.239f, -0.370f),
-            Quaternionf(0.099f, 0.892f, -0.239f, 0.370f),
-            Quaternionf(0.239f, 0.370f, -0.099f, 0.892f)
-        )
+        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")
+            ?.map {
+                if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
+                it.take(3).validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
+            } ?: throw TumblingEventException("Voting logo positions not provided")
+
+        val logoQuaternions = TreeTumblers.plugin.config.getList("event.voting.logos")
+            ?.map {
+                if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
+                val list: List<Float> = it.takeLast(4)
+                    .validateList<Double>()
+                    ?.map { entry -> entry.toFloat() }
+                    ?: throw TumblingEventException("Voting logo positions do not contain exclusively Floats")
+
+                Quaternionf(list[0], list[1], list[2], list[3])
+            } ?: throw TumblingEventException("Voting logo quaternions not provided")
 
         logoPositions.forEach {
             val location = it.validateLocation(lobby) ?: throw TumblingEventException("Voting logo position is an invalid location")
@@ -330,9 +369,35 @@ class EventController : IController {
             }
         }
 
+        val originalBlocks: HashMap<Location, Material> = HashMap()
         eventTimer = Timer(20) {
             id = "event_voting"
             joined = true
+
+            timeExecution(2) {
+                val domeFrom = domeStart.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingEventException("Dome from coordinates aren't valid!")
+                val domeTo = domeEnd.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingEventException("Dome to coordinates aren't valid!")
+
+                val blocks: ArrayList<Location> = ArrayList()
+                domeFrom.forEachRegion(domeTo) {
+                    if(it.type != quadrantSeparator) return@forEachRegion
+                    blocks.add(it.location.clone())
+                }
+
+                repeat(3) { i ->
+                    suspendSync {
+                        blocks.forEach { base ->
+                            val location = Location(base.world, base.x, base.y + i, base.z)
+                            originalBlocks.put(location, location.block.type)
+                            location.block.type = quadrantReplacement
+                        }
+                    }
+
+                    delay(500)
+                }
+            }
         }
         eventTimerTitle = "Voting"
 
@@ -343,6 +408,9 @@ class EventController : IController {
 
             val game = games.random()
             quadrantGames.put(it, game)
+            suspendSync {
+                loadDiorama(game.id, it)
+            }
 
             suspendSync {
                 quadrant.forEach { loc ->
@@ -414,6 +482,13 @@ class EventController : IController {
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
 
+        suspendSync {
+            originalBlocks.forEach {
+                it.key.block.type = it.value
+            }
+            cleanupDioramas()
+        }
+
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
 
         suspendSync {
@@ -447,6 +522,72 @@ class EventController : IController {
 
             quadrantLogoDisplays.clear()
         }
+    }
+
+    val currentDioramaSessions: ArrayList<EditSession> = ArrayList()
+    fun loadDiorama(id: String, index: Int) {
+        val schematic = File(dioramasFolder, "$id.schem")
+        if(!schematic.exists()) {
+            DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
+            return
+        }
+
+        val format = ClipboardFormats.findByFile(schematic)
+        if(format == null) {
+            DebugUtil.warning("${schematic.parentFile.name}/${schematic.name} is not a valid schematic, aborting")
+            return
+        }
+
+        val clipboard: Clipboard
+        format.getReader(schematic.inputStream()).use { reader ->
+            clipboard = reader.read()
+        }
+
+        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        clipboard.origin = BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
+
+        val editSession = WorldEdit.getInstance()
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(lobbyWorld))
+            .build()
+
+        val holder = ClipboardHolder(clipboard)
+        holder.transform = holder.transform.combine(
+            AffineTransform().rotateY(index * -90.0)
+        )
+
+        try {
+            val operation = holder
+                .createPaste(editSession)
+                .to(BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint())
+                .ignoreAirBlocks(true)
+                .build()
+
+            Operations.complete(operation)
+            editSession.flushQueue()
+
+            currentDioramaSessions.add(editSession)
+        } catch(e: Exception) {
+            editSession.close()
+            DebugUtil.severe("Failed to load game diorama for $id: ${e.message}")
+        }
+    }
+
+    fun cleanupDioramas() {
+        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        val undoSession = WorldEdit.getInstance()
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(lobbyWorld))
+            .fastMode(true)
+            .build()
+
+        currentDioramaSessions.forEach {
+            it.undo(undoSession)
+        }
+        currentDioramaSessions.clear()
+
+        undoSession.flushQueue()
+        undoSession.close()
     }
 
     fun countVotes(): Pair<GameController.RegisteredGame, Int> {
@@ -518,6 +659,14 @@ class EventController : IController {
                             ))
                     )
                     .appendNewline()
+                    .append(
+                        Component.text("DATABASE MODE: ", NamedTextColor.YELLOW)
+                            .append(Component.text(
+                                if(DatabaseController.enabled) "ENABLED" else "DISABLED",
+                                if(DatabaseController.enabled) NamedTextColor.GREEN else NamedTextColor.RED
+                            ))
+                    )
+                    .appendNewline()
                     .append(teamComponent)
             )
 
@@ -568,6 +717,20 @@ class EventController : IController {
 
     override fun cleanup() {
         replicateScores()
+    }
+
+    @EventHandler
+    fun severListPingEvent(event: ServerListPingEvent) {
+        if(!overrideMotd) return
+
+        val firstGames = gameController.games.take(4)
+        val colors = arrayListOf("red", "blue", "green", "yellow")
+        val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
+        event.motd(Format.mm(
+            "<color:#64ffb8>■■■■■■</color> <b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</b> <color:#64ffb8>■■■■■■</color><br>" +
+                    "<color:#64ffb8>■ <footer> ■</color>",
+            Placeholder.parsed("footer", footer)
+        ))
     }
 
     enum class State {

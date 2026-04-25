@@ -5,7 +5,6 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
-import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
@@ -16,8 +15,11 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.GameBase.Companion.lobbyPosition
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -115,13 +117,7 @@ class WorldController : IController {
 
         suspendSync {
             world.players.forEach {
-                // TODO: teleport to some lobby maybe
-                it.teleport(Location(
-                    Bukkit.getWorld("world")!!,
-                    0.0,
-                    128.0,
-                    0.0
-                ))
+                it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(GameBase.Companion.lobbyWorld)!!))
             }
             Bukkit.unloadWorld(world, true)
         }

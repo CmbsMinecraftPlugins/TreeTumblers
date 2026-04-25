@@ -17,7 +17,6 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
-import org.bukkit.GameMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -46,7 +45,6 @@ import org.bukkit.event.player.PlayerBucketEmptyEvent
 import org.bukkit.event.player.PlayerBucketFillEvent
 import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerRespawnEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -61,6 +59,7 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -92,15 +91,16 @@ class SnifferCaretakerController : GameBase(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
                 .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
-                .append(Component.text(" Sniffer Caretaker"))
+                .append(Component.text(" Sniffer Caretaker")),
+            "cutscene.start"
         ) { map ->
-            teleportConfig("cutscene.start")
             delay(5000)
         },
-        CutsceneStep(Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has.")
+        CutsceneStep(
+            Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has."),
+            "cutscene.tasks"
         ) { map ->
             val game = game as SnifferCaretakerController
-            teleportConfig("cutscene.tasks")
 
             val exampleTasks: List<String> = listOf(
                 "hungry_wheat",
@@ -119,7 +119,9 @@ class SnifferCaretakerController : GameBase(
 
             delay(3000)
         },
-        CutsceneStep(Format.mm("<blue>Tasks</blue> range from feeding the sniffer various foods...")
+        CutsceneStep(
+            Format.mm("<blue>Tasks</blue> range from feeding the sniffer various foods..."),
+            "cutscene.farm"
         ) { map ->
             val game = game as SnifferCaretakerController
 
@@ -130,8 +132,6 @@ class SnifferCaretakerController : GameBase(
 
                 game.currentTasks[Team.RED]!!.clear()
             }
-
-            teleportConfig("cutscene.farm")
 
             map.data.getList("cutscene.farm_wheat")?.forEach {
                 if(it !is List<*>) throw GameControllerException("Cutscene farm wheat location table is not a list")
@@ -157,7 +157,9 @@ class SnifferCaretakerController : GameBase(
                 }
             }
         },
-        CutsceneStep(Format.mm("To giving the sniffer things to sniff...")
+        CutsceneStep(
+            Format.mm("To giving the sniffer things to sniff..."),
+            "cutscene.blocks"
         ) { map ->
             val game = game as SnifferCaretakerController
 
@@ -165,12 +167,12 @@ class SnifferCaretakerController : GameBase(
                 game.stockBlocks(Team.RED)
             }
 
-            teleportConfig("cutscene.blocks")
             delay(2000)
         },
-        CutsceneStep(Format.mm("To quenching the sniffer's thirst...")
+        CutsceneStep(
+            Format.mm("To quenching the sniffer's thirst..."),
+            "cutscene.thirst"
         ) { map ->
-            teleportConfig("cutscene.thirst")
             delay(500)
 
             val cauldron = getLocation("cutscene.thirst_cauldron")
@@ -188,10 +190,10 @@ class SnifferCaretakerController : GameBase(
                 cauldron.block.type = Material.CAULDRON
             }
         },
-        CutsceneStep(Format.mm("To bringing it a friend!")
+        CutsceneStep(
+            Format.mm("To bringing it a friend!"),
+            "cutscene.mobs"
         ) { map ->
-            teleportConfig("cutscene.mobs")
-
             val cowLocation = getLocation("cutscene.mobs_cow")
             val chickenLocation = getLocation("cutscene.mobs_chicken")
             lateinit var cow: Entity
@@ -209,10 +211,10 @@ class SnifferCaretakerController : GameBase(
                 chicken.remove()
             }
         },
-        CutsceneStep(Format.mm("The <red>sniffer</red> may also have some rather <i>odd</i> desires, which can be found in the back of the facility in the <red>basement...</red>")
+        CutsceneStep(
+            Format.mm("The <red>sniffer</red> may also have some rather <i>odd</i> desires, which can be found in the back of the facility in the <red>basement...</red>"),
+            "cutscene.basement"
         ) { map ->
-            teleportConfig("cutscene.basement")
-
             val spiderLocation = getLocation("cutscene.basement_spider")
             lateinit var spider: Entity
 
@@ -226,16 +228,15 @@ class SnifferCaretakerController : GameBase(
                 spider.remove()
             }
         },
-        CutsceneStep(Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!")
+        CutsceneStep(
+            Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!"),
+            "cutscene.end"
         ) { map ->
-            teleportConfig("cutscene.end")
             delay(4000)
         },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")
-        ) { map ->
-        }
+        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
     ),
-    flags = emptySet(),
+    flags = setOf(Flag.SURVIVAL_MODE),
     scores = hashMapOf(
         SnifferCaretakerScoreSource.TASK_1_STAR to 20,
         SnifferCaretakerScoreSource.TASK_2_STAR to 40,
@@ -535,24 +536,28 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun spawn(cycle: SpawnCycle) {
         if (cycle != SpawnCycle.PRE_ROUND) return
-        val map = loadedMaps[0]
-
         suspendSync {
-            gamePlayers.forEach {
-                it.spigot().respawn()
-                it.gameMode = GameMode.SURVIVAL
-                val tumblingPlayer = it.tumblingPlayer
+            gamePlayers.forEach(this::spawnPlayer)
+        }
+    }
 
-                val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
-                    ?: throw GameControllerException("Spawn not found")
+    fun spawnPlayer(player: Player) {
+        val map = loadedMaps[0]
+        // @Nibbl-z why is this needed? if we ever find an instance where the player could possibly die before the game starts, we should probably respawn them /then/
+        player.spigot().respawn()
 
-                val playerLocation = offsetLocation(playerSpawn, tumblingPlayer.team)
+        val tumblingPlayer = player.tumblingPlayer
+        val playing = tumblingPlayer.team.playingTeam
 
-                it.teleport(playerLocation)
+        val playerSpawn = currentMap.data.getList("spawn")?.validateLocation(map.world)
+            ?: throw GameControllerException("Spawn not found")
 
-                kit.forEach { item ->
-                    it.inventory.addItem(item)
-                }
+        val playerLocation = offsetLocation(playerSpawn, if(playing) tumblingPlayer.team else Team.RED)
+        player.teleport(playerLocation)
+
+        if(playing) {
+            kit.forEach { item ->
+                player.inventory.addItem(item)
             }
         }
     }
@@ -692,6 +697,19 @@ class SnifferCaretakerController : GameBase(
         delay(5000)
         announceOverallTeamScores()
         delay(5000)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] state
+     */
+    override fun playerJoin(player: Player) {
+        spawnPlayer(player)
+    }
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] state
+     */
+    override fun playerLeave(player: Player) {
     }
 
     fun offsetLocation(location: Location, team: Team): Location {
@@ -895,7 +913,7 @@ class SnifferCaretakerController : GameBase(
         currentMap.world.playSound(sniffer.location, Sound.ENTITY_SNIFFER_HAPPY, 1.0f, 1.0f)
         currentMap.world.spawnParticle(Particle.HEART, sniffer.location.add(0.0,2.0,0.0), 5, 0.1,0.1,0.1)
 
-        if (task.completer != null) {
+        if (task.completer != null && task.completer!!.isOnline) {
             grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
         } else {
             grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
@@ -1063,10 +1081,18 @@ class SnifferCaretakerController : GameBase(
         }
     }
 
+    val eatingBlocks: ArrayList<Location> = ArrayList()
+
     @EventHandler
     fun blockBreakEventSnifferCaretaker(event: BlockBreakEvent) {
-        if (!breakableBlocks.contains(event.block.type)) {
+        if (!breakableBlocks.contains(event.block.type) || event.block.location in eatingBlocks) {
             event.isCancelled = true
+            return
+        }
+
+        if(event.block.type == Material.GRAVEL) {
+            event.isDropItems = false
+            currentMap.world.dropItemNaturally(event.block.location, ItemStack.of(Material.GRAVEL))
         }
 
         if (event.block.type == Material.WHEAT) {
@@ -1087,6 +1113,14 @@ class SnifferCaretakerController : GameBase(
             event.clickedBlock?.applyBoneMeal(event.blockFace)
         }
 
+        if(
+            event.action == Action.RIGHT_CLICK_BLOCK
+            && event.item?.type == Material.POTION
+            && (event.clickedBlock?.type != Material.DIRT && event.clickedBlock?.type != Material.GRASS_BLOCK)
+        ) {
+            event.isCancelled = true
+        }
+
         // prevent opening trapdoors !!
         if (event.action == Action.RIGHT_CLICK_BLOCK && event.clickedBlock?.blockData is TrapDoor) {
             event.isCancelled = true
@@ -1100,9 +1134,10 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun playerBucketFillEvent(event: PlayerBucketFillEvent) {
+        if(event.itemStack == null) return
 
         event.isCancelled = true
-        event.player.inventory.setItem(event.hand, ItemStack(Material.WATER_BUCKET))
+        event.player.inventory.setItem(event.hand, event.itemStack!!.clone())
     }
 
     @EventHandler
@@ -1119,18 +1154,24 @@ class SnifferCaretakerController : GameBase(
         }
     }
 
+    val allowedCrafts: List<Material> = listOf(
+        Material.MUSHROOM_STEW,
+        Material.SUGAR,
+        Material.COARSE_DIRT,
+        Material.FERMENTED_SPIDER_EYE,
+        Material.BREAD,
+        Material.PUMPKIN_PIE,
+        Material.CAKE
+    )
+
     @EventHandler
     fun craftItemEvent(event: CraftItemEvent) {
         // prevent the bone meal from being turned into dye... or bone blocks...
+        // or you could just, y'know
 
-        if (event.recipe.result.type == Material.WHITE_DYE || event.recipe.result.type == Material.BONE_BLOCK) {
+        if(event.recipe.result.type !in allowedCrafts) {
             event.isCancelled = true
         }
-    }
-
-    @EventHandler
-    fun playerItemConsumeEvent(event: PlayerItemConsumeEvent) {
-        event.isCancelled = true
     }
 
     @EventHandler

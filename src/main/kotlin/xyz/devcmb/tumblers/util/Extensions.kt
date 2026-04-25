@@ -19,13 +19,13 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-val playerController: PlayerController by lazy {
+private val playerController: PlayerController by lazy {
     ControllerDelegate.getController("playerController") as PlayerController
 }
 
 val Player.tumblingPlayer: TumblingPlayer
     get() {
-        return playerController.players.find { it.bukkitPlayer == this }!!
+        return playerController.players.find { it.uuid == this.uniqueId }!!
     }
 
 val Player.formattedName: Component
@@ -136,6 +136,14 @@ fun Location.randomBetween(other: Location): Location {
     val z = (min(this.z.toInt(), other.z.toInt())..max(this.z.toInt(), other.z.toInt())).random()
 
     return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
+}
+
+fun Location.minOf(other: Location): Location {
+    return Location(this.world, min(this.x, other.x), min(this.y, other.y), min(this.z, other.z))
+}
+
+fun Location.maxOf(other: Location): Location {
+    return Location(this.world, max(this.x, other.x), max(this.y, other.y), max(this.z, other.z))
 }
 
 fun World.fill(location1: Location, location2: Location, material: Material) {

@@ -11,7 +11,6 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
-import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 abstract class PartyGame(
@@ -96,19 +95,7 @@ abstract class PartyGame(
         }
     }
 
-    @EventHandler
-    fun playerKillEvent(event: PlayerDeathEvent) {
-        val player = event.player
-
-        if(player !in matchup.players) return
-
-        player.hideToAll()
-        player.heal(20.0)
-        player.inventory.clear()
-        player.allowFlight = true
-        player.isFlying = true
-        event.isCancelled = true
-
+    fun playerDeath(player: Player) {
         alivePlayers.remove(player)
         if(!alivePlayers.any { it.tumblingPlayer.team == player.tumblingPlayer.team }) {
             when(matchup) {
@@ -147,6 +134,14 @@ abstract class PartyGame(
                 }
             }
         }
+    }
+
+    @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val player = event.player
+        if(player !in matchup.players) return
+
+        playerDeath(player)
     }
 
     @EventHandler

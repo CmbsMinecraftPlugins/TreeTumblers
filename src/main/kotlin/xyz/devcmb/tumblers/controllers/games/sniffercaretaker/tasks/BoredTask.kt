@@ -5,12 +5,13 @@ import org.bukkit.Particle
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
-import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.maxOf
+import xyz.devcmb.tumblers.util.minOf
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
@@ -38,8 +39,11 @@ class BoredTask(
         it.validateLocation(snifferCaretaker.currentMap.world)
     }
 
-    val penMin = snifferCaretaker.offsetLocation(penCoordinates[0]!!, team)
-    val penMax = snifferCaretaker.offsetLocation(penCoordinates[1]!!, team)
+    private val penStart = snifferCaretaker.offsetLocation(penCoordinates[0]!!, team)
+    private val penEnd = snifferCaretaker.offsetLocation(penCoordinates[1]!!, team)
+
+    private val penMin = penStart.minOf(penEnd)
+    private val penMax = penStart.maxOf(penEnd)
 
     @EventHandler
     fun blockPlace(event: BlockPlaceEvent) {
@@ -56,6 +60,7 @@ class BoredTask(
         this.completer = event.player
 
         snifferCaretaker.completeTask(this.team, this)
+        snifferCaretaker.eatingBlocks.add(block.location)
 
         repeat(6) {
             runTaskLater(10L*it) {
@@ -82,19 +87,7 @@ class BoredTask(
             snifferCaretaker.currentMap.world.playSound(block.location, block.blockData.soundGroup.breakSound, 1f, 1f)
 
             block.type = Material.AIR
+            snifferCaretaker.eatingBlocks.remove(block.location)
         }
-    }
-
-    @EventHandler
-    fun blockBreak(event: BlockBreakEvent) {
-        val block = event.block
-        if (block.type != item) return
-
-        if (
-            block.x < penMin.x || block.x > penMax.x ||
-            block.y < penMin.y || block.y > penMax.y ||
-            block.z < penMin.z || block.z > penMax.z) return
-
-        event.isCancelled = true
     }
 }

@@ -8,6 +8,7 @@ import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
@@ -22,7 +23,7 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
     PINK("Pink Parrots", TextColor.fromHexString("#ff5cd9")!!, "\uE00A", 8),
 
     // Non-playing teams
-    SPECTATORS("Spectators", NamedTextColor.WHITE, "\uE007", 9, false),
+    SPECTATORS("Spectators", NamedTextColor.GRAY, "\uE007", 9, false),
     DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", 10, false);
 
     val formattedName: Component =
@@ -35,9 +36,22 @@ enum class Team(val teamName: String, val color: TextColor, val icon: String, va
             return Audience.audience(getOnlinePlayers())
         }
 
+
     private val playerController: PlayerController by lazy {
         ControllerDelegate.getController("playerController") as PlayerController
     }
+
+    private val eventController: EventController by lazy {
+        ControllerDelegate.getController<EventController>()
+    }
+
+    var score: Int
+        get() {
+            return eventController.teamScores[this] ?: 0
+        }
+        set(value) {
+            eventController.teamScores.put(this, value)
+        }
 
     fun getOnlinePlayers(): Set<Player> {
         return Bukkit.getOnlinePlayers()

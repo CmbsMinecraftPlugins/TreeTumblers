@@ -2,12 +2,17 @@ package xyz.devcmb.tumblers.controllers
 
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
+import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
@@ -15,10 +20,13 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -26,9 +34,12 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -40,9 +51,14 @@ class PlayerController : IController {
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
+    var isChatMuted = false
 
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
+    }
+
+    private val gameController: GameController by lazy {
+        ControllerDelegate.getController<GameController>()
     }
 
     companion object {
@@ -77,7 +93,7 @@ class PlayerController : IController {
         players.find { it.uuid == uuid }!!.team = team
     }
 
-    @EventHandler(priority = EventPriority.NORMAL)
+    @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
         player.inventory.clear()
@@ -86,9 +102,13 @@ class PlayerController : IController {
         player.allowFlight = false
         player.clearActivePotionEffects()
 
-        if(player.vehicle != null) player.vehicle!!.remove()
+        player.vehicle?.let {
+            player.leaveVehicle()
+            it.remove()
+        }
 
         runTask { player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!)) }
+
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
 
@@ -154,10 +174,36 @@ class PlayerController : IController {
         AdvancedItemRegistry.handleDrop(event)
     }
 
+    @EventHandler
+    fun playerKillEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        if(killer == null) return
+
+        val currentGame = gameController.activeGame
+        val score = currentGame?.getScoreSource(CommonScoreSource.KILL)
+
+        MiscUtils.announceKill(killer, killed, if(score != null && score != 1) score else null)
+    }
+
     @EventHandler(priority = EventPriority.LOWEST)
     fun playerFireworkDamageEvent(event: EntityDamageEvent) {
         if(event.entity is Player && event.damageSource.damageType == DamageType.FIREWORKS)
             event.isCancelled = true
+    }
+
+
+    @EventHandler
+    fun playerMilkEvent(event: PlayerItemConsumeEvent) {
+        if(event.item.type != Material.MILK_BUCKET) return
+
+        event.isCancelled = true
+        if(event.player.inventory.itemInMainHand.type == Material.MILK_BUCKET) {
+            event.player.inventory.setItemInMainHand(ItemStack.of(Material.BUCKET))
+        } else if (event.player.inventory.itemInOffHand.type == Material.MILK_BUCKET) {
+            event.player.inventory.setItemInOffHand(ItemStack.of(Material.BUCKET))
+        }
     }
 
     /*
@@ -190,5 +236,93 @@ class PlayerController : IController {
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
             event.isCancelled = true
+    }
+
+    val channels: HashMap<Player, ChatChannel> = HashMap()
+    @EventHandler
+    fun playerMessageEvent(event: AsyncChatEvent) {
+        event.isCancelled = true
+
+        if(isChatMuted) {
+            event.player.sendMessage(Format.error("The chat is currently muted!"))
+            return
+        }
+
+        val channel = channels[event.player] ?: ChatChannel.LOCAL
+        val viewers = Bukkit.getOnlinePlayers().filter {
+            channel.canSee(event.player, it)
+        }
+
+        Audience.audience(viewers).sendMessage(
+            channel.format(event.player, event.message())
+        )
+    }
+
+    fun muteChat() {
+        isChatMuted = true
+        Bukkit.broadcast(Format.info("The chat has been muted!"))
+    }
+
+    fun unmuteChat() {
+        isChatMuted = false
+        Bukkit.broadcast(Format.info("The chat has been unmuted!"))
+    }
+
+    enum class ChatChannel(val channelName: String, val color: TextColor) {
+        LOCAL("Local", NamedTextColor.WHITE) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return true
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return true
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color.asHexString()}><sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        TEAM("Team", TextColor.fromHexString("#34d031")!!) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return sender?.tumblingPlayer?.team == receiver.tumblingPlayer.team
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return player.tumblingPlayer.team.playingTeam
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color.asHexString()}>[Team] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        STAFF("Staff", TextColor.fromHexString("#ff3c50")!!) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return receiver.hasPermission("tumbling.dev") || receiver.hasPermission("tumbling.organizer")
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return canSee(null, player)
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<color:${color.asHexString()}>[Staff] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        };
+
+        abstract fun canSee(sender: Player?, receiver: Player): Boolean
+        abstract fun canSend(player: Player): Boolean
+        abstract fun format(sender: Player, message: Component): Component
     }
 }
