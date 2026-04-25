@@ -877,6 +877,7 @@ class PartyController : GameBase(
 
                 suspendSync {
                     (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach {
+                        partyController!!.unSpectate(it)
                         it.showToAll()
                     }
                 }
