@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Location
 import org.bukkit.Material
@@ -239,12 +240,14 @@ class BreachController: GameBase(
 
         tickTask.runTaskTimer(TreeTumblers.plugin, 1, 1)
 
-        repeat(rounds) {
+        while (true) {
             preRound()
             roundStart()
             awaitEnd()
             delay(2500)
             currentRound++
+
+            if (team1score >= bestOf || team2score >= bestOf) break
         }
 
         tickTask.cancel()
@@ -254,7 +257,17 @@ class BreachController: GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
+        val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
 
+        gameParticipants.forEach {
+            it.showTitle(Title.title(
+                Component.text(winner.teamName).color(winner.color).decorate(TextDecoration.BOLD),
+                Component.text("IS VICTORIOUS!").decorate(TextDecoration.BOLD),
+                Title.Times.times(Tick.of(0), Tick.of(120), Tick.of(40))
+            ))
+        }
+
+        delay(9000)
     }
 
     suspend fun preRound() {
@@ -368,6 +381,11 @@ class BreachController: GameBase(
         if (winner == playingTeams.second) {
             team2score++
             loser = playingTeams.first
+        }
+
+        if (team1score == bestOf || team2score == bestOf) {
+            gameState = GameState.ROUND_OVER
+            return
         }
 
         winner.getOnlinePlayers().forEach {
