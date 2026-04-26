@@ -13,8 +13,10 @@ import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
+import org.bukkit.block.Block
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Item
 import org.bukkit.entity.Player
@@ -31,6 +33,7 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
+import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -54,6 +57,7 @@ import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -253,7 +257,7 @@ class BreachController: GameBase(
 
         while (true) {
             preRound()
-            roundStart()
+            roundStart(currentRound)
             awaitEnd()
             delay(2500)
             currentRound++
@@ -354,7 +358,7 @@ class BreachController: GameBase(
         gameState = GameState.GAME_ON
     }
 
-    fun roundStart() {
+    fun roundStart(round: Int) {
         val doors: List<List<List<Int>>> = (currentMap.data.getList("doors")?.map { list ->
             if (list !is List<*>) throw GameControllerException("Door locations is not a valid list")
             list.map { it ->
@@ -382,9 +386,76 @@ class BreachController: GameBase(
             }
         }
 
-        asyncCountdown(30, "round") {
-            gameState = GameState.ROUND_OVER
-            // todo : THIS SHOULD NOT HAPPEN! do SOMETHING to force rounds to end with a winner
+
+        var breakingTask: BukkitRunnable? = object : BukkitRunnable() {
+            override fun run() {
+                if (gameState == GameState.GAME_ON) {
+                    breakBlock()
+                }
+            }
+        }
+
+        fun resetTask() {
+            breakingTask = object : BukkitRunnable() {
+                override fun run() {
+                    if (gameState == GameState.GAME_ON) {
+                        breakBlock()
+                    }
+                }
+            }
+        }
+
+        asyncCountdown(150, "round") {
+            playingTeams.first.getOnlinePlayers().forEach {
+                it.isGlowing = true
+            }
+
+            playingTeams.second.getOnlinePlayers().forEach {
+                it.isGlowing = true
+            }
+
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("All players are now glowing! ")))
+            }
+        }
+
+        runTaskLater(15 * 20) {
+            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate!")))
+            }
+
+            breakingTask?.runTaskTimer(TreeTumblers.plugin, 0, 10)
+        }
+
+        runTaskLater(30 * 20 + 5) {
+            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate faster!")))
+            }
+            breakingTask?.cancel()
+            resetTask()
+            breakingTask?.runTaskTimer(TreeTumblers.plugin, 5, 7)
+        }
+
+        runTaskLater(50 * 20 + 6) {
+            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate even faster!!")))
+            }
+            breakingTask?.cancel()
+            resetTask()
+            breakingTask?.runTaskTimer(TreeTumblers.plugin, 5, 5)
+        }
+
+        runTaskLater(70 * 20 + 7) {
+            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate even, EVEN faster!!!")))
+            }
+            breakingTask?.cancel()
+            resetTask()
+            breakingTask?.runTaskTimer(TreeTumblers.plugin, 5, 3)
         }
     }
 
@@ -439,6 +510,52 @@ class BreachController: GameBase(
         }
 
         gameState = GameState.ROUND_OVER
+    }
+
+    fun breakBlock() {
+        val bounds = currentMap.data.getList("bounds")?.map {
+            if (it !is List<*>) throw GameControllerException("Map bounds is not a valid list")
+            it.validateList<Int>() ?: throw GameControllerException("Door locations does not contain exclusively Integers")
+        } ?: throw GameControllerException("Map bounds not found")
+
+        val bound1 = bounds[0].validateLocation(currentMap.world) ?: throw GameControllerException("Map bound point 1 is invalid")
+        val bound2 = bounds[1].validateLocation(currentMap.world) ?: throw GameControllerException("Map bound point 1 is invalid")
+
+        fun pickBlock(): Block {
+            val position = bound1.randomBetween(bound2)
+
+            if (position.block.type == Material.AIR) return pickBlock()
+
+            var surroundingAirs = 0
+            val surrounding = listOf(
+                Vector(1,0,0), Vector(-1,0,0),
+                Vector(0,1,0), Vector(0,-1,0),
+                Vector(0,0,1), Vector(0,0,-1)
+            )
+
+            surrounding.forEach {
+                val block = position.clone().add(it).block.type
+                if (block == Material.AIR || block == Material.PACKED_MUD) surroundingAirs++
+            }
+
+            if (surroundingAirs < 2) return pickBlock()
+            return position.block
+        }
+
+        val block = pickBlock()
+
+        gameParticipants.forEach {
+            it.sendBlockDamage(block.location, 0.5f, (0..1000000).random())
+        }
+
+        currentMap.world.spawnParticle(Particle.BLOCK, block.location, 10, 0.05, 0.05, 0.05, block.blockData)
+        currentMap.world.playSound(block.location, block.blockData.soundGroup.breakSound, 2f, 0.7f)
+
+        runTaskLater(10L) {
+            currentMap.world.spawnParticle(Particle.BLOCK, block.location, 30, 0.05, 0.05, 0.05, block.blockData)
+            currentMap.world.playSound(block.location, block.blockData.soundGroup.breakSound, 2f, 1f)
+            block.type = Material.AIR
+        }
     }
 
     fun giveKit(player: Player, kit: BreachKit, removeSelector: Boolean = false) {
