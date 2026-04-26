@@ -18,10 +18,12 @@ import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
 import org.bukkit.block.Block
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.EntityType
 import org.bukkit.entity.Item
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -225,6 +227,7 @@ class BreachController: GameBase(
                             it.showToAll()
                             it.health = 1.0
                             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
+                            it.isGlowing = false
 
                             it.openHandledInventory("breachKitSelector")
                         }
@@ -744,6 +747,17 @@ class BreachController: GameBase(
         {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun damageEvent(event: EntityDamageEvent) {
+        if (event.entityType != EntityType.PLAYER) return
+        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE) {
+            event.isCancelled = true
+            return
+        }
+
+        event.damage = 10000.0 // death
     }
 
     @EventHandler
