@@ -406,21 +406,11 @@ class BreachController: GameBase(
         }
 
         asyncCountdown(150, "round") {
-            playingTeams.first.getOnlinePlayers().forEach {
-                it.isGlowing = true
-            }
-
-            playingTeams.second.getOnlinePlayers().forEach {
-                it.isGlowing = true
-            }
-
-            Bukkit.getOnlinePlayers().forEach {
-                it.sendMessage(gameMessage(Format.mm("All players are now glowing! ")))
-            }
+            breakingTask?.cancel()
         }
 
         runTaskLater(15 * 20) {
-            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
             Bukkit.getOnlinePlayers().forEach {
                 it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate!")))
             }
@@ -429,7 +419,7 @@ class BreachController: GameBase(
         }
 
         runTaskLater(30 * 20 + 5) {
-            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
             Bukkit.getOnlinePlayers().forEach {
                 it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate faster!")))
             }
@@ -439,7 +429,7 @@ class BreachController: GameBase(
         }
 
         runTaskLater(50 * 20 + 6) {
-            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
             Bukkit.getOnlinePlayers().forEach {
                 it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate even faster!!")))
             }
@@ -449,13 +439,27 @@ class BreachController: GameBase(
         }
 
         runTaskLater(70 * 20 + 7) {
-            if (currentRound != round && gameState != GameState.GAME_ON) return@runTaskLater
+            if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
             Bukkit.getOnlinePlayers().forEach {
                 it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate even, EVEN faster!!!")))
             }
             breakingTask?.cancel()
             resetTask()
             breakingTask?.runTaskTimer(TreeTumblers.plugin, 5, 3)
+        }
+
+        runTaskLater(150*20) {
+            playingTeams.first.getOnlinePlayers().forEach {
+                it.isGlowing = true
+            }
+
+            playingTeams.second.getOnlinePlayers().forEach {
+                it.isGlowing = true
+            }
+
+            Bukkit.getOnlinePlayers().forEach {
+                it.sendMessage(gameMessage(Format.mm("All players are now glowing!")))
+            }
         }
     }
 
