@@ -54,6 +54,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.giveKit
@@ -63,6 +64,7 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.showToAll
+import xyz.devcmb.tumblers.util.sound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -227,12 +229,11 @@ class BreachController: GameBase(
                         team.getOnlinePlayers().forEach {
                             it.teleport(if (i == 0) team1spawn else team2spawn)
                             it.inventory.setItem(8, kitSelector.clone())
-                            it.showToAll()
                             it.health = 1.0
                             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
-                            it.isGlowing = false
-
                             it.openHandledInventory("breachKitSelector")
+
+                            cleanupPlayer(it)
                         }
                     }
                 }
@@ -265,10 +266,10 @@ class BreachController: GameBase(
             preRound()
             roundStart(currentRound)
             awaitEnd()
+            if (team1score >= bestOf || team2score >= bestOf) break
+
             delay(2500)
             currentRound++
-
-            if (team1score >= bestOf || team2score >= bestOf) break
         }
 
         tickTask.cancel()
@@ -278,17 +279,63 @@ class BreachController: GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
+        gameParticipants.forEach {
+            it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+            it.health = 20.0
+            it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
+            it.disableBossBar("countdownBossbar")
+            cleanupPlayer(it)
+        }
+
         val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
+
+        val bounds = currentMap.data.getList("bounds")?.map {
+            if (it !is List<*>) throw GameControllerException("Map bounds is not a valid list")
+            it.validateList<Int>() ?: throw GameControllerException("Door locations does not contain exclusively Integers")
+        } ?: throw GameControllerException("Map bounds not found")
+
+        val bound1 = bounds[0].validateLocation(currentMap.world) ?: throw GameControllerException("Map bound point 1 is invalid")
+        val bound2 = bounds[1].validateLocation(currentMap.world) ?: throw GameControllerException("Map bound point 1 is invalid")
+
+        val types = listOf(
+            FireworkEffect.Type.STAR,
+            FireworkEffect.Type.BALL_LARGE,
+            FireworkEffect.Type.BALL,
+            FireworkEffect.Type.BURST,
+        )
+
+        val fireworkTask = object : BukkitRunnable() {
+            override fun run() {
+                MiscUtils.spawnFirework(bound1.randomBetween(bound2).add(0.0,10.0,0.0), FireworkEffect.builder()
+                    .trail(true)
+                    .flicker(true)
+                    .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                    .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                    .with(types.random())
+                    .build(), (10..30).random().toLong()
+                )
+            }
+        }
+
+        fireworkTask.runTaskTimer(TreeTumblers.plugin, 0, 4)
 
         gameParticipants.forEach {
             it.showTitle(Title.title(
-                Component.text(winner.teamName).color(winner.color).decorate(TextDecoration.BOLD),
+                winner.formattedName.color(winner.color).decorate(TextDecoration.BOLD),
                 Component.text("IS VICTORIOUS!").decorate(TextDecoration.BOLD),
                 Title.Times.times(Tick.of(0), Tick.of(120), Tick.of(40))
             ))
         }
 
-        delay(9000)
+        delay(12000)
+
+        fireworkTask.cancel()
+
+        gameParticipants.forEach {
+            it.disableBossBar("breachScoreBossbar")
+        }
+
+        delay(4000)
     }
 
     /**
@@ -322,16 +369,10 @@ class BreachController: GameBase(
             playingTeams.first.getOnlinePlayers().forEach {
                 it.inventory.clear()
                 it.inventory.setItem(8, kitSelector.clone())
-                it.removePotionEffect(PotionEffectType.DARKNESS)
-                it.removePotionEffect(PotionEffectType.SLOWNESS)
-                it.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = it.getAttribute(Attribute.JUMP_STRENGTH)!!.defaultValue
             }
             playingTeams.second.getOnlinePlayers().forEach {
                 it.inventory.clear()
                 it.inventory.setItem(8, kitSelector.clone())
-                it.removePotionEffect(PotionEffectType.DARKNESS)
-                it.removePotionEffect(PotionEffectType.SLOWNESS)
-                it.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = it.getAttribute(Attribute.JUMP_STRENGTH)!!.defaultValue
             }
         }
 
@@ -341,24 +382,26 @@ class BreachController: GameBase(
         if (team1holder == null && playingTeams.first.getOnlinePlayers().isNotEmpty()) team1holder = playingTeams.first.getOnlinePlayers().random()
         if (team2holder == null && playingTeams.second.getOnlinePlayers().isNotEmpty()) team2holder = playingTeams.second.getOnlinePlayers().random()
 
-        playingTeams.first.getOnlinePlayers().forEach {
-            it.closeInventory()
+        suspendSync {
+            playingTeams.first.getOnlinePlayers().forEach {
+                it.closeInventory()
 
-            if (chosenKits.get(it) == null) {
-                chosenKits[it] = BreachKit.entries.random()
+                if (chosenKits.get(it) == null) {
+                    chosenKits[it] = BreachKit.entries.random()
+                }
+
+                giveKit(it, chosenKits[it]!!, true)
             }
 
-            giveKit(it, chosenKits[it]!!, true)
-        }
+            playingTeams.second.getOnlinePlayers().forEach {
+                it.closeInventory()
 
-        playingTeams.second.getOnlinePlayers().forEach {
-            it.closeInventory()
+                if (chosenKits.get(it) == null) {
+                    chosenKits[it] = BreachKit.entries.random()
+                }
 
-            if (chosenKits.get(it) == null) {
-                chosenKits[it] = BreachKit.entries.random()
+                giveKit(it, chosenKits[it]!!, true)
             }
-
-            giveKit(it, chosenKits[it]!!, true)
         }
 
         gameState = GameState.PRE_ROUND
@@ -459,6 +502,7 @@ class BreachController: GameBase(
         }
 
         runTaskLater(150*20) {
+            if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
             playingTeams.first.getOnlinePlayers().forEach {
                 it.isGlowing = true
             }
@@ -524,6 +568,14 @@ class BreachController: GameBase(
         }
 
         gameState = GameState.ROUND_OVER
+    }
+
+    fun cleanupPlayer(player: Player) {
+        player.removePotionEffect(PotionEffectType.DARKNESS)
+        player.removePotionEffect(PotionEffectType.SLOWNESS)
+        player.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue = player.getAttribute(Attribute.JUMP_STRENGTH)!!.defaultValue
+        player.isGlowing = false
+        player.showToAll()
     }
 
     fun breakBlock() {
