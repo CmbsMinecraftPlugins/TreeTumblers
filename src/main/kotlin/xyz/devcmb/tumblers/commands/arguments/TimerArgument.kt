@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.TimerController
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.util.Format
 
 class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
     val timerController by lazy {
@@ -23,7 +24,7 @@ class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
     ): ParseResult<Timer> {
         val timer = timerController.timers[argument]
         if(timer == null) {
-            return ParseResult.failure("Timer does not exist!")
+            return ParseResult.failure(Format.error("Timer does not exist!"))
         }
 
         return ParseResult.success(timer)

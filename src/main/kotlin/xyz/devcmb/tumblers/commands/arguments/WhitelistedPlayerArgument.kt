@@ -9,6 +9,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.util.Format
 
 class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
     val databaseController: DatabaseController by lazy {
@@ -23,7 +24,7 @@ class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseControl
         val whitelistedPlayerNames = databaseController.whitelistedPlayersCache
 
         if(!whitelistedPlayerNames.containsKey(argument)) {
-            return ParseResult.failure("Player not found or not whitelisted!")
+            return ParseResult.failure(Format.error("Player not found or not whitelisted!"))
         }
 
         return ParseResult.success(DatabaseController.WhitelistedPlayer(argument))

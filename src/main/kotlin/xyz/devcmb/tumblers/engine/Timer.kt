@@ -25,6 +25,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var endedEarly: Boolean? = null
     var paused: Boolean = false
     var isRunning: Boolean = false
+    var game: GameBase? = null
 
     val timerController by lazy {
         ControllerDelegate.getController("timerController") as TimerController
@@ -89,6 +90,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
         timerController.register(this)
         isRunning = true
+        game?.gameTimers?.add(this)
         job = TreeTumblers.pluginScope.launch {
             while(true) {
                 delay(1000)
@@ -132,6 +134,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
             endedEarly = false
             isRunning = false
             onComplete?.invoke(false)
+            game?.gameTimers?.remove(this@Timer)
             timerController.unregister(this@Timer)
         }
         if(joined) job!!.join()
@@ -149,6 +152,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         job!!.cancel()
         onComplete?.invoke(true)
         isRunning = false
+        game?.gameTimers?.remove(this)
         timerController.unregister(this)
         job = null
     }

@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.util.Format
 import java.io.File
 
 class PartyGameSchematicArgument: ArgumentResolver<CommandSender, PartyController.PartyGameSchematic>() {
@@ -18,7 +19,7 @@ class PartyGameSchematicArgument: ArgumentResolver<CommandSender, PartyControlle
     ): ParseResult<PartyController.PartyGameSchematic> {
         val validPaths = getPaths()
         if(!validPaths.contains(argument)) {
-            return ParseResult.failure("That is not a valid path")
+            return ParseResult.failure(Format.error("That is not a valid path"))
         }
 
         val parentDir = File(PartyController.partyGamesDirectory)

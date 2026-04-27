@@ -8,6 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 
 class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogLevel>() {
     override fun parse(
@@ -19,7 +20,7 @@ class DebugLogLevelArgument: ArgumentResolver<CommandSender, DebugUtil.DebugLogL
         val enum = types.find { it.name.lowercase() == argument.lowercase() }
 
         if(enum == null || enum.name == "none") {
-            return ParseResult.failure("That isn't a valid debug log level")
+            return ParseResult.failure(Format.error("That isn't a valid debug log level"))
         }
 
         return ParseResult.success(enum)
