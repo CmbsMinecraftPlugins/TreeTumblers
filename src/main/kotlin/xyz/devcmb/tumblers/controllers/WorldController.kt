@@ -5,6 +5,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
@@ -15,7 +16,6 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.GameBase.Companion.lobbyPosition
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -48,7 +48,7 @@ class WorldController : IController {
 
     fun cleanupTempWorlds() {
         Bukkit.getWorldContainer().listFiles().forEach { file ->
-            if(file.isDirectory && file.name.contains("temp_")) {
+            if(file.isDirectory && (file.name.contains("temp_") || file.name == lobbyWorld)) {
                 if(Bukkit.getWorld(file.name) !== null) {
                     Bukkit.unloadWorld(file.name, false)
                 }
@@ -113,11 +113,28 @@ class WorldController : IController {
     suspend fun saveWorld(world: World, game: GameController.Game, name: String? = null) {
         val name = name ?: world.name
         val game = game.getTemplate()
+
+        val worldsFolder = Path.of(
+            worldRoot,
+            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
+        )
+
+        saveWorld(world, File(worldsFolder.toString(), name))
+    }
+
+    suspend fun saveWorld(world: World, path: File, reload: Boolean = false) {
         val worldFolder = world.worldFolder
 
         suspendSync {
             world.players.forEach {
-                it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(GameBase.Companion.lobbyWorld)!!))
+                val hub = Bukkit.getWorld(lobbyWorld)
+                val location = if(world.name == lobbyWorld || hub == null) {
+                    Location(Bukkit.getWorld("world")!!, 0.0, 127.0, 0.0)
+                } else {
+                    lobbyPosition.unpackCoordinates(hub)
+                }
+
+                it.teleport(location)
             }
             Bukkit.unloadWorld(world, true)
         }
@@ -125,18 +142,22 @@ class WorldController : IController {
         // Seems to be a good time to wait for all the IO operations to stop, fix if not
         delay(3000)
 
-        val worldsFolder = Path.of(
-            worldRoot,
-            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
-        )
-
         withContext(Dispatchers.IO) {
-            val destination = File(worldsFolder.toString(), name)
+            val destination = path
             FileUtils.copyDirectory(worldFolder, destination)
 
             val idFile = File(destination, "uid.dat")
             if(idFile.exists()) {
                 idFile.delete()
+            }
+
+            if(reload) {
+                suspendSync {
+                    Bukkit.createWorld(
+                        WorldCreator(world.name)
+                        .generator(world.generator)
+                    )
+                }
             }
         }
     }
@@ -160,27 +181,36 @@ class WorldController : IController {
         // io halt
         delay(3000)
 
-        // my savior
-        // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
-        fun deleteDir(file2: File) {
-            val contents = file2.listFiles()
-            if (contents != null) {
-                for (f in contents) {
-                    deleteDir(f)
-                }
-            }
-            file2.delete()
-        }
-
         deleteDir(file)
+    }
+
+    // my savior
+    // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
+    private fun deleteDir(file2: File) {
+        val contents = file2.listFiles()
+        if (contents != null) {
+            for (f in contents) {
+                deleteDir(f)
+            }
+        }
+        file2.delete()
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun onServerLoad(event: ServerLoadEvent) {
-        if (Bukkit.getWorld(lobbyWorld) == null) {
-            val world = Bukkit.createWorld(WorldCreator(lobbyWorld))
-            world?.isAutoSave = false
-        }
+        val source = File(worldRoot, lobbyWorld)
+        val name = lobbyWorld
+        val destination = File(Bukkit.getWorldContainer(), name)
+
+        FileUtils.copyDirectory(
+            source,
+            destination
+        )
+
+        var worldCreator = WorldCreator(name)
+        worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
+
+        Bukkit.createWorld(worldCreator)!!
     }
 
     data class LoadableTemplate(val file: File)

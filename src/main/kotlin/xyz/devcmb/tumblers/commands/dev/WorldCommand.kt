@@ -19,6 +19,7 @@ import xyz.devcmb.tumblers.controllers.WorldController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import java.io.File
 import java.util.Optional
 import kotlin.io.path.Path
 import kotlin.jvm.optionals.getOrElse
@@ -73,6 +74,35 @@ class WorldCommand {
         } catch(e: Exception) {
             executor.sendMessage(Format.error("An error occurred while trying to save the world."))
             DebugUtil.severe("Failed to save world: ${e.message ?: "Unknown Error"}")
+        }
+    }
+
+    @Execute(name = "hub save")
+    fun hubSave(@Context executor: CommandSender, @Flag("--confirm","-c") confirm: Boolean) {
+        if(!confirm) {
+            executor.sendMessage(Format.warning("This operation will overwrite the existing hub world! Re-run with --confirm to execute."))
+            return
+        }
+
+        val world = Bukkit.getWorld(WorldController.lobbyWorld)
+        if(world == null) {
+            executor.sendMessage(Format.error("A hub world is not loaded!"))
+            return
+        }
+
+        try {
+            executor.sendMessage(Format.info("Starting save job..."))
+            TreeTumblers.pluginScope.launch {
+                worldController.saveWorld(
+                    world,
+                    File(WorldController.worldRoot, WorldController.lobbyWorld),
+                    true
+                )
+                executor.sendMessage(Format.success("Saved hub world successfully!"))
+            }
+        } catch(e: Exception) {
+            executor.sendMessage(Format.error("An error occurred while saving the hub world."))
+            DebugUtil.severe("Failed to save hub: ${e.message ?: "Unknown Error"}")
         }
     }
 

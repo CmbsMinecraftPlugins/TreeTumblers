@@ -126,6 +126,7 @@ abstract class GameBase(
             return currentTimer?.currentTime ?: 0
         }
     var currentTimer: Timer? = null
+    val gameTimers: ArrayList<Timer> = ArrayList()
 
     companion object {
         @field:Configurable("lobby.world")
@@ -292,6 +293,17 @@ abstract class GameBase(
      */
     abstract suspend fun gameOn()
 
+    suspend fun basePostGame() {
+        gameTimers.toList().forEach {
+            if(it.isRunning) {
+                it.end()
+            }
+        }
+        gameTimers.clear()
+
+        postGame()
+    }
+
     /**
      * The method to invoke after the game has ended
      */
@@ -344,6 +356,7 @@ abstract class GameBase(
     suspend fun countdown(time: Int, id: String? = null) {
         currentTimer = Timer(time) {
             id?.let { this.id = id }
+            game = this@GameBase
             joined = true
         }
         currentTimer!!.start()
@@ -358,6 +371,7 @@ abstract class GameBase(
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         currentTimer = Timer(time) {
             id?.let { this.id = it }
+            game = this@GameBase
             this.onComplete = onComplete
         }
         currentTimer!!.start()

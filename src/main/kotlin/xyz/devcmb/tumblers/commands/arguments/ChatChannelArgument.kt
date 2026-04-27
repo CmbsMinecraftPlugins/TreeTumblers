@@ -9,6 +9,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.util.Format
 
 class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.ChatChannel>() {
     override fun parse(
@@ -22,7 +23,7 @@ class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.Cha
             .find { it.name.lowercase() == argument.lowercase() }
 
         if(channel == null) {
-            return ParseResult.failure("Invalid channel name!")
+            return ParseResult.failure(Format.error("Invalid channel name!"))
         }
 
         return ParseResult.success(channel)

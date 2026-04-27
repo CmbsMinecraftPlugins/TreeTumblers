@@ -9,6 +9,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.util.Format
 
 class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
     override fun parse(
@@ -20,7 +21,7 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
         val game = gameController.games.find { it.id == argument }
 
         if(game == null) {
-            return ParseResult.failure("That isn't a valid game")
+            return ParseResult.failure(Format.error("That isn't a valid game"))
         }
 
         return ParseResult.success(GameController.Game(game.id))

@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.util.Format
 
 class DebuggingEventArgument: ArgumentResolver<CommandSender, DebugToolkit.DebuggingEvent>() {
     val gameController: GameController by lazy {
@@ -22,10 +23,10 @@ class DebuggingEventArgument: ArgumentResolver<CommandSender, DebugToolkit.Debug
         argument: String
     ): ParseResult<DebugToolkit.DebuggingEvent> {
         val events = gameController.activeGame?.debugToolkit?.events?.keys
-            ?: return ParseResult.failure("Cannot parse a debug event without an active game with a debug toolkit!")
+            ?: return ParseResult.failure(Format.error("Cannot parse a debug event without an active game with a debug toolkit!"))
 
         if(!events.contains(argument)) {
-            return ParseResult.failure("That's not a valid event for ${gameController.activeGame!!.id}!")
+            return ParseResult.failure(Format.error("That's not a valid event for ${gameController.activeGame!!.id}!"))
         }
 
         return ParseResult.success(DebugToolkit.DebuggingEvent(argument))

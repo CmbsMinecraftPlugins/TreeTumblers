@@ -6,6 +6,17 @@ The plugin adds a variety of games and an event system for playing these games i
 
 Not wanting to play with event mode? Just use the `/game start <name>` command to run a game sequence without it!
 
+## Downloading
+The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
+
+An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
+
+*Some of these platforms may not display our plugin due to review backlogs. However, Hangar should always*
+
+- [Hangar](https://hangar.papermc.io/DevCmb/tree-tumblers)
+- [Modrinth](https://modrinth.com/plugin/tree-tumblers)
+- [CurseForge](https://legacy.curseforge.com/minecraft/bukkit-plugins/tree-tumblers)
+
 ## Developing
 If you wish to contribute to the project, you're more than welcome to do so!
 
@@ -15,7 +26,7 @@ This project also has support hot-swap debugging (although after errors it may n
 
 ## Games
 
-### Crumble
+### ![Crumble](./docs/crumble_logo.png)
 *Coded by DevCmb (@29cmb)*
 
 Crumble is a team-based pvp game where teams fight in head-to-head matchups over the course of 7 rounds. Each team faces each other team once.
@@ -36,7 +47,7 @@ In game, each kit has a little section describing the ability and kill power.
 
 The game was originally designed by [MatMart](https://www.youtube.com/@MatMart), coded by [BlackilyKat](https://blackilykat.dev/), and funded by [GD Cob](https://www.youtube.com/@Cobgd), who gave us permission to use the concepts in the game!
 
-### ![Deathrun](./docs/deathrun_logo.png) 
+### ![Deathrun](./docs/deathrun_logo.png)
 *Coded by DevCmb (@29cmb)*
 
 Deathrun is a parkour face-off where a team of trappers faces off against the rest of the game as runners. Trappers have access to traps which can kill or make the path harder to traverse. 
@@ -59,7 +70,7 @@ Tasks range from:
 
 Team coordination is key in this game to make the sniffer as happy as possible, which in turn will crown you the winner!
 
-### Party
+### ![Party](./docs/party_logo.png)
 *Coded by DevCmb (@29cmb)*
 
 Party is a fast-paced minigames game where you fight in solo and team minigames.

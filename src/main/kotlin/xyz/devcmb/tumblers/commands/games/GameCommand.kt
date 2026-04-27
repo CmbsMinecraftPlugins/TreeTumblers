@@ -4,6 +4,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
@@ -38,6 +39,27 @@ class GameCommand {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))
             DebugUtil.severe("Failed to start game: ${e.message}")
         }
+    }
+
+    @Execute(name = "end")
+    fun executeEnd(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+        if(!confirm) {
+            sender.sendMessage(Format.warning("This action is destructive! Re-run with --confirm to execute."))
+            return
+        }
+
+        if(gameController.activeGame == null) {
+            sender.sendMessage(Format.error("A game is not active!"))
+            return
+        }
+
+        if(gameController.activeGameJob == null) {
+            sender.sendMessage(Format.error("The game can only be ended after it has started!"))
+            return
+        }
+
+        gameController.activeGameJob!!.cancel()
+        sender.sendMessage(Format.success("Sent signal for game end!"))
     }
 
     @Execute(name = "event")

@@ -10,6 +10,7 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.util.Format
 
 class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() {
     val playerController: PlayerController by lazy {
@@ -25,7 +26,7 @@ class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() 
         val player = players.find { it.name.lowercase() == argument.lowercase() }
 
         if(player == null) {
-            return ParseResult.failure("That isn't a valid player")
+            return ParseResult.failure(Format.error("That isn't a valid player"))
         }
 
         return ParseResult.success(player)
