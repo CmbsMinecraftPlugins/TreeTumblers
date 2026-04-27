@@ -29,6 +29,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerPickupArrowEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
@@ -80,6 +81,8 @@ class BreachController: GameBase(
     cutsceneSteps = arrayListOf(),
     flags = setOf(
         Flag.DISABLE_BLOCK_BREAKING,
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.DISABLE_FALL_DAMAGE
     ),
     icon = Component.text("\uEA00"),
     logo = Component.text("awesome logo goes here"),
@@ -339,6 +342,8 @@ class BreachController: GameBase(
         if (team2holder == null && playingTeams.second.getOnlinePlayers().isNotEmpty()) team2holder = playingTeams.second.getOnlinePlayers().random()
 
         playingTeams.first.getOnlinePlayers().forEach {
+            it.closeInventory()
+
             if (chosenKits.get(it) == null) {
                 chosenKits[it] = BreachKit.entries.random()
             }
@@ -347,6 +352,8 @@ class BreachController: GameBase(
         }
 
         playingTeams.second.getOnlinePlayers().forEach {
+            it.closeInventory()
+
             if (chosenKits.get(it) == null) {
                 chosenKits[it] = BreachKit.entries.random()
             }
@@ -752,7 +759,10 @@ class BreachController: GameBase(
     @EventHandler
     fun damageEvent(event: EntityDamageEvent) {
         if (event.entityType != EntityType.PLAYER) return
-        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE) {
+
+        val attacker = event.damageSource.causingEntity as Player
+
+        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE || (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type != Material.TRIDENT)) {
             event.isCancelled = true
             return
         }
@@ -796,6 +806,12 @@ class BreachController: GameBase(
         if (event.player == team1holder || event.player == team2holder) {
             starDrop(event.player.tumblingPlayer.team, event.player.location)
         }
+    }
+
+    @EventHandler
+    fun playerPickupArrowEvent(event: PlayerPickupArrowEvent) {
+        if (event.arrow.type != EntityType.ARROW) return
+        event.isCancelled = true
     }
 
     enum class GameState {
