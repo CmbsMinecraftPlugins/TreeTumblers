@@ -55,7 +55,8 @@ class IntermissionScoreboard(
         val placements = eventController.getEventTeamPlacements()
         placements.forEach {
             leaderboard.add(Format.mm(
-                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
+                else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
                 Placeholder.unparsed("placement", it.second.toString()),
                 Placeholder.component("team", it.first.formattedName),
                 Placeholder.unparsed("score", (eventController.teamScores[it.first] ?: 0).toString())
@@ -64,7 +65,8 @@ class IntermissionScoreboard(
 
         val playerPlacement = eventController.getEventPlayerPlacements().find { it.first.bukkitPlayer == player } ?: throw IllegalStateException("Event player placement not found")
         val playerPlacementComponent = Format.mm(
-            MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT,
+            if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
+                else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT,
             Placeholder.unparsed("placement", playerPlacement.second.toString()),
             Placeholder.parsed("head", "<head:${player.uniqueId}>"),
             Placeholder.component("name", player.formattedName),

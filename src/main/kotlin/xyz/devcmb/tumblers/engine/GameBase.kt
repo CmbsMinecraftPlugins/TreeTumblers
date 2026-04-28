@@ -483,7 +483,9 @@ abstract class GameBase(
     /**
      * Announce the team standings for this game
      */
-    fun announceTeamScores() {
+    suspend fun announceTeamScores() {
+        if(eventController.scoresHidden) return
+
         var teamScoresComponent = Component.empty()
             .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
             .appendNewline()
@@ -501,12 +503,15 @@ abstract class GameBase(
         }
         teamScoresComponent = teamScoresComponent.appendNewline()
         Bukkit.broadcast(teamScoresComponent)
+        delay(5000)
     }
 
     /**
      * Announce the individual standings for this game
      */
-    fun announceIndivScores() {
+    suspend fun announceIndivScores() {
+        if(eventController.scoresHidden) return
+
         var individualScoresComponent = Component.empty()
             .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
             .appendNewline()
@@ -525,12 +530,19 @@ abstract class GameBase(
 
         individualScoresComponent = individualScoresComponent.appendNewline()
         Bukkit.broadcast(individualScoresComponent)
+        delay(5000)
     }
 
     /**
      * Announce the event team scores
      */
-    fun announceOverallTeamScores() {
+    suspend fun announceOverallTeamScores() {
+        if(eventController.scoresHidden) {
+            Bukkit.broadcast(Format.info("Team standings will be revealed soon!"))
+            delay(5000)
+            return
+        }
+
         var eventPlacementsComponent = Component.empty()
             .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
             .appendNewline()
@@ -553,6 +565,8 @@ abstract class GameBase(
         if(!EventController.eventMode) {
             Bukkit.broadcast(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
         }
+
+        delay(5000)
     }
 
     /**

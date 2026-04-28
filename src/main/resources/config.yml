@@ -24,6 +24,14 @@ event:
   # Whether the plugin should override the server's MOTD
   override_motd: false
 
+  intermission:
+    # If the intermission period should be skipped in between games entirely
+    # Should really only be set to true for making games
+    skip: false
+
+    # How long the intermission is
+    time: 90
+
   cutscene:
     # The position of the first cutscene step
     # This is where it shows the text "Tree Tumblers" "Welcome to the event!"

@@ -88,6 +88,12 @@ class EventController : IController {
     val playedGames: ArrayList<String> = ArrayList()
     val votingQuadrants: ArrayList<ArrayList<Location>> = ArrayList()
 
+    var scoresHidden: Boolean = false
+        set(value) {
+            field = value
+            sendDefaultTopbar()
+        }
+
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
@@ -121,6 +127,12 @@ class EventController : IController {
             get() {
                 return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
             }
+
+        @field:Configurable("event.intermission.skip")
+        var skipIntermission: Boolean = false
+
+        @field:Configurable("event.intermission.time")
+        var intermissionLength: Int = 90
     }
 
     override fun init() {
@@ -178,7 +190,7 @@ class EventController : IController {
                 eventLoop()
             }
 
-            // TODO: Finale
+            finale()
             cleanupEvent()
         }
     }
@@ -194,13 +206,46 @@ class EventController : IController {
     var nextGame: String? = null
     suspend fun eventLoop() {
         game++
+
+        if(game != 1 && !skipIntermission) {
+            state = State.INTERMISSION
+            eventTimer = Timer(intermissionLength) {
+                id = "event_intermission_timer"
+                joined = true
+            }
+            eventTimerTitle = "Intermission"
+            eventTimer!!.start()
+        }
+
+        if(game == totalGames) {
+            scoresHidden = true
+            Bukkit.broadcast(Format.info("Scores have been hidden for the final game!"))
+        }
+
         voting()
         state = State.NORMAL_GAME
         gameController.startGame(nextGame!!)
         playedGames.add(nextGame!!)
         nextGame = null
-        state = State.INTERMISSION
-        delay(10000)
+    }
+
+    suspend fun finale() {
+        eventTimer = Timer(10) {
+            id = "event_finale_introduction"
+            joined = true
+        }
+        eventTimerTitle = "Finale"
+        eventTimer!!.start()
+
+        Bukkit.broadcast(Format.mm("<aqua><line:30></aqua><br>" +
+                "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
+                "Now it's time to see who moves on to the finale!</white><br>" +
+                "<line:30>"
+        ))
+
+        delay(3000)
+        // TODO: Maybe go through the top 10 indiv
+        // TODO: Team score breakdown
     }
 
     suspend fun readyCheck(): Boolean {
@@ -609,37 +654,7 @@ class EventController : IController {
     }
 
     fun sendDefaultTopbar() {
-        var teamComponent = Component.empty()
-
-        getEventTeamPlacements().forEachIndexed { i, it ->
-            var playersComponent = Component.text(" ")
-            databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
-                val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
-                val onlinePlayer = Bukkit.getPlayer(uuid)
-                var name = Component.empty()
-                if(index != 0) {
-                    name = name.append(Component.text(" • ", NamedTextColor.WHITE))
-                }
-
-                name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
-                    if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
-                    else Component.text(entry.first, NamedTextColor.GRAY)
-                )
-
-                playersComponent = playersComponent.append(name)
-            }
-            playersComponent = playersComponent.append(Component.text(" "))
-
-            teamComponent = teamComponent.append(
-                Format.mm(
-                    " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
-                    Placeholder.component("team", it.first.formattedName),
-                    // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
-                    Placeholder.component("players", playersComponent)
-                )
-            )
-        }
+        val teamComponent = getTopbarPlayersComponent()
 
         Bukkit.getOnlinePlayers().forEach {
             it.sendPlayerListHeader(
@@ -674,6 +689,70 @@ class EventController : IController {
                 "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
             ))
         }
+    }
+
+    fun getTopbarPlayersComponent(): Component {
+        var teamComponent = Component.empty()
+
+        if(scoresHidden) {
+            repeat(Team.entries.filter { it.playingTeam }.size) {
+                var playersComponent = Component.text(" ")
+                repeat(4) { index ->
+                    val uuid = "606e2ff0-ed77-4842-9d6c-e1d3321c7838"
+                    var name = Component.empty()
+                    if(index != 0) {
+                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
+                    }
+
+                    name = name.append(Format.mm("<white><head:$uuid></white> <dark_gray><obf>Player</obf><dark_gray>"))
+
+                    playersComponent = playersComponent.append(name)
+                }
+                playersComponent = playersComponent.append(Component.text(" "))
+
+                teamComponent = teamComponent.append(
+                    Format.mm(
+                        " <br><white>#?</white> <team><shift>${" ".repeat(60)}<gray>?????</gray> <br><players><br>",
+                        Placeholder.parsed("team", "<white><font:tumbling:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
+                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("????????") + 11)),
+                        Placeholder.component("players", playersComponent)
+                    )
+                )
+            }
+        } else {
+            getEventTeamPlacements().forEachIndexed { i, it ->
+                var playersComponent = Component.text(" ")
+                databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
+                    val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
+                    val onlinePlayer = Bukkit.getPlayer(uuid)
+                    var name = Component.empty()
+                    if(index != 0) {
+                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
+                    }
+
+                    name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
+                        if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
+                        else Component.text(entry.first, NamedTextColor.GRAY)
+                    )
+
+                    playersComponent = playersComponent.append(name)
+                }
+                playersComponent = playersComponent.append(Component.text(" "))
+
+                teamComponent = teamComponent.append(
+                    Format.mm(
+                        " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
+                        Placeholder.component("team", it.first.formattedName),
+                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
+                        Placeholder.component("players", playersComponent)
+                    )
+                )
+            }
+        }
+
+        return teamComponent
     }
 
     fun grantScore(player: TumblingPlayer, amount: Int) {

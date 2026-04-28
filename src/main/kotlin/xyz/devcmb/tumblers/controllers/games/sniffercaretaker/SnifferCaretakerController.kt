@@ -691,12 +691,8 @@ class SnifferCaretakerController : GameBase(
 
         delay(5000)
         announceTeamScores()
-        delay(5000)
         announceIndivScores()
-
-        delay(5000)
         announceOverallTeamScores()
-        delay(5000)
     }
 
     /**
