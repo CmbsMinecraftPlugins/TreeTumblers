@@ -381,12 +381,14 @@ class BreachController: GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        gameParticipants.forEach {
-            it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-            it.health = 20.0
-            it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
-            it.disableBossBar("countdownBossbar")
-            cleanupPlayer(it)
+        suspendSync {
+            gameParticipants.forEach {
+                it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+                it.health = 20.0
+                it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
+                it.disableBossBar("countdownBossbar")
+                cleanupPlayer(it)
+            }
         }
 
         val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
@@ -798,6 +800,8 @@ class BreachController: GameBase(
 
     fun checkItemPickup() {
         playingTeams.first.getOnlinePlayers().forEach {
+            if (deadPlayers[it] == true) return@forEach
+
             if (team1droppedStar != null) {
                 if (it.location.distance(team1droppedStar!!.location) < 2 && it != team1holder) {
                     team1holder = it
@@ -821,6 +825,8 @@ class BreachController: GameBase(
         }
 
         playingTeams.second.getOnlinePlayers().forEach {
+            if (deadPlayers[it] == true) return@forEach
+
             if (team2droppedStar != null) {
                 if (it.location.distance(team2droppedStar!!.location) < 2 && it != team2holder) {
                     team2holder = it
@@ -916,7 +922,17 @@ class BreachController: GameBase(
 
         val attacker = event.damageSource.causingEntity as Player
 
-        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE || (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type != Material.TRIDENT)) {
+        if (deadPlayers[attacker] == true) {
+            event.isCancelled = true
+            return
+        }
+
+        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE) {
+            event.isCancelled = true
+            return
+        }
+
+        if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type != Material.TRIDENT) {
             event.isCancelled = true
             return
         }
