@@ -287,7 +287,7 @@ class EventController : IController {
 
         Bukkit.broadcast(Format.mm(
             "<br>".repeat(15) +
-            "First, with <gold>${teamScores[placements[0].first]}</gold> score...<br>" +
+            "First, with <gold>${teamScores[first]}</gold> score...<br>" +
             "<team1>" +
             "<br>".repeat(4),
             Placeholder.component("team1", first.formattedName)
@@ -311,7 +311,7 @@ class EventController : IController {
 
         Bukkit.broadcast(Format.mm(
             "<br>".repeat(15) +
-                    "Secondly, with <gold>${teamScores[placements[0].first]}</gold> score...<br>" +
+                    "Secondly, with <gold>${teamScores[second]}</gold> score...<br>" +
                     "<team2>" +
                     "<br>".repeat(4),
             Placeholder.component("team2", second.formattedName)
@@ -1026,7 +1026,7 @@ class EventController : IController {
     fun severListPingEvent(event: ServerListPingEvent) {
         if(!overrideMotd) return
 
-        val firstGames = gameController.games.take(4)
+        val firstGames = gameController.games.filter { it.votable }.take(4)
         val colors = arrayListOf("red", "blue", "green", "yellow")
         val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
         event.motd(Format.mm(
