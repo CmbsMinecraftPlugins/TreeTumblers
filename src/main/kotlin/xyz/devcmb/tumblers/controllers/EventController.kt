@@ -172,10 +172,12 @@ class EventController : IController {
         }
     }
 
-    fun startEvent() {
+    fun startEvent(finale: Boolean) {
         TreeTumblers.pluginScope.launch {
             val ready = readyCheck()
             if(!ready) return@launch
+
+            if(finale) game = totalGames
 
             state = State.PRE_EVENT
             eventTimer = Timer(5) {
@@ -205,6 +207,7 @@ class EventController : IController {
 
     var nextGame: String? = null
     suspend fun eventLoop() {
+        if(game >= totalGames) return
         game++
 
         if(game != 1 && !skipIntermission) {
@@ -230,22 +233,239 @@ class EventController : IController {
     }
 
     suspend fun finale() {
-        eventTimer = Timer(10) {
+        eventTimer = Timer(5) {
+            id = "event_finale_introduction"
+            joined = true
+        }
+        eventTimerTitle = "Score breakdown"
+        eventTimer!!.start()
+
+        playerController.muteChat()
+        Bukkit.broadcast(Format.mm("<aqua><line:30></aqua><br>" +
+                "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
+                "Now it's time to see who moves on to the finale!</white><br>" +
+                "<aqua><line:30></aqua>"
+        ))
+
+        delay(5000)
+        // TODO: Maybe go through the top 10 indiv
+        announceNonFinaleParticipants()
+
+        delay(1000)
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "And now...let's reveal our <gold>finalists!</gold>" +
+            "<br>".repeat(5)
+        ))
+
+        delay(4000)
+
+        val placements = getEventTeamPlacements()
+        val first = placements[0].first
+        val second = placements[1].first
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Component.empty(),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        delay(3000)
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "First, with <gold>${teamScores[first]}</gold> score..." +
+            "<br>".repeat(5)
+        ))
+
+        delay(3000)
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm("<team1>", Placeholder.component("team1", first.formattedName)),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "First, with <gold>${teamScores[placements[0].first]}</gold> score...<br>" +
+            "<team1>" +
+            "<br>".repeat(4),
+            Placeholder.component("team1", first.formattedName)
+        ))
+
+        delay(4000)
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+                    "Secondly, with <gold>${teamScores[second]}</gold> score..." +
+                    "<br>".repeat(5)
+        ))
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm("<team1> <white>vs.</white>", Placeholder.component("team1", first.formattedName)),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        delay(3000)
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+                    "Secondly, with <gold>${teamScores[placements[0].first]}</gold> score...<br>" +
+                    "<team2>" +
+                    "<br>".repeat(4),
+            Placeholder.component("team2", second.formattedName)
+        ))
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm(
+                "<team1> <white>vs.</white> <team2>",
+                Placeholder.component("team1", first.formattedName),
+                Placeholder.component("team2", second.formattedName)
+            ),
+            Title.Times.times(Tick.of(0), Tick.of(80), Tick.of(20))
+        ))
+
+        delay(5000)
+        // TODO: Unhardcode?
+        Bukkit.broadcast(Format.mm(
+            "<aqua><line:30></aqua><br>" +
+                "Thank you all so much for attending <red>❤</red><br>" +
+                "Now, onto our finale, <gold><b>Breach!</b></gold><br>" +
+                "<aqua><line:30></aqua>"
+        ))
+
+        playerController.unmuteChat()
+        eventTimer = Timer(60) {
             id = "event_finale_introduction"
             joined = true
         }
         eventTimerTitle = "Finale"
         eventTimer!!.start()
 
-        Bukkit.broadcast(Format.mm("<aqua><line:30></aqua><br>" +
-                "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
-                "Now it's time to see who moves on to the finale!</white><br>" +
-                "<line:30>"
-        ))
+        gameController.startGame("breach")
+    }
 
-        delay(3000)
-        // TODO: Maybe go through the top 10 indiv
-        // TODO: Team score breakdown
+    suspend fun announceNonFinaleParticipants() {
+        val placementsDone: ArrayList<Int> = ArrayList()
+        val placements = getReverseEventTeamPlacements()
+
+        // this is very unoptimized
+        // welcome to crunch time
+        placements.dropLast(3).forEach { (team, placement) ->
+            // teams that have already been announced as tied with another team
+            if(placement in placementsDone) return@forEach
+            placementsDone.add(placement)
+
+            Bukkit.broadcast(Format.mm(
+                "<br>".repeat(15) +
+                        "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place..." +
+                        "<br>".repeat(5)
+            ))
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Component.empty(),
+                Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                Title.Times.times(Tick.of(0), Tick.of(9999), Tick.of(0))
+            ))
+
+            delay(2000)
+
+            val ties = placements.filter { it.second == placement && team != it.first }
+            if(ties.isNotEmpty()) {
+                val teams = ties.joinToString(" & ") { "<${it.first.name.lowercase()}>" }
+                    .let { if(it.isEmpty()) "<${team.name.lowercase()}>" else "<${team.name.lowercase()}> & $it" }
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    Format.mm(
+                        teams,
+                        *Team.entries
+                            .filter { it.playingTeam }
+                            .map { Placeholder.component(
+                                it.name.lowercase(),
+                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+                            }
+                            .toTypedArray()
+                    ),
+                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            teams +
+                            "<br>".repeat(4),
+                    *Team.entries
+                        .filter { it.playingTeam }
+                        .map { Placeholder.component(
+                            it.name.lowercase(),
+                            it.formattedName
+                        ) }
+                        .toTypedArray()
+                ))
+
+                delay(1000)
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    Format.mm(
+                        teams,
+                        *Team.entries
+                            .filter { it.playingTeam }
+                            .map { Placeholder.component(
+                                it.name.lowercase(),
+                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+                            }
+                            .toTypedArray()
+                    ),
+                    Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "$teams<br>" +
+                            "With <gold>${teamScores[team] ?: 0}</gold> score!" +
+                            "<br>".repeat(3),
+                    *Team.entries
+                        .filter { it.playingTeam }
+                        .map { Placeholder.component(
+                            it.name.lowercase(),
+                            it.formattedName
+                        ) }
+                        .toTypedArray()
+                ))
+            } else {
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    team.formattedName,
+                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "<team>" +
+                            "<br>".repeat(4),
+                    Placeholder.component("team", team.formattedName)
+                ))
+
+                delay(1000)
+
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    team.formattedName,
+                    Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "<team><br>" +
+                            "With <gold>${teamScores[team] ?: 0}</gold> score!"+
+                            "<br>".repeat(3),
+                    Placeholder.component("team", team.formattedName)
+                ))
+            }
+
+            delay(4000)
+        }
     }
 
     suspend fun readyCheck(): Boolean {
@@ -766,6 +986,10 @@ class EventController : IController {
                 .thenBy { it.key.priority }
         )
         return MiscUtils.calculatePlacements(sorted)
+    }
+
+    fun getReverseEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
+        return getEventTeamPlacements().apply { reverse() }
     }
 
     fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
