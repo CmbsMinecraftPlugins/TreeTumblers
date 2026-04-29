@@ -231,6 +231,7 @@ class BreachController: GameBase(
 
     var chosenKits: HashMap<Player, BreachKit> = hashMapOf()
     var deadPlayers: HashMap<Player, Boolean> = hashMapOf()
+    var deathLocations: HashMap<Player, Location> = hashMapOf()
     var starPickupTimes: HashMap<Player, Int> = hashMapOf()
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
@@ -327,6 +328,9 @@ class BreachController: GameBase(
                     val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
                         ?: throw GameControllerException("Team 2 spawn not found")
 
+                    val spectatorSpawn = currentMap.data.getList("spectator_spawn")?.validateLocation(currentMap.world)
+                        ?: throw GameControllerException("Spectator spawn not found")
+
                     listOf(playingTeams.first, playingTeams.second).forEachIndexed { i, team ->
                         team.getOnlinePlayers().forEach {
                             it.teleport(if (i == 0) team1spawn else team2spawn)
@@ -336,6 +340,13 @@ class BreachController: GameBase(
                             it.openHandledInventory("breachKitSelector")
 
                             cleanupPlayer(it)
+                        }
+                    }
+
+                    gamePlayers.forEach {
+                        if (it.tumblingPlayer.team != playingTeams.first && it.tumblingPlayer.team != playingTeams.second) {
+                            makeSpectator(it, true, false)
+                            it.teleport(spectatorSpawn)
                         }
                     }
                 }
@@ -351,7 +362,7 @@ class BreachController: GameBase(
     override suspend fun gameOn() {
         currentRound = 1
 
-        gameParticipants.forEach {
+        gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
             it.enableBossBar("breachScoreBossbar")
         }
@@ -451,19 +462,71 @@ class BreachController: GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
+        player.enableBossBar("countdownBossbar")
+        player.enableBossBar("breachScoreBossbar")
 
+        val team = player.tumblingPlayer.team
+        val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Team 1 spawn not found")
+
+        val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Team 2 spawn not found")
+
+        val spectatorSpawn = currentMap.data.getList("spectator_spawn")?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Spectator spawn not found")
+
+        if (team == playingTeams.first || team == playingTeams.second) {
+            if (deathLocations[player] != null) {
+                player.teleport(deathLocations[player]!!)
+            } else {
+                player.teleport(if (team == playingTeams.first) team1spawn else team2spawn)
+            }
+
+
+            if (gameState == GameState.KIT_SELECT) {
+                if (chosenKits.get(player) != null) {
+                    giveKit(player, chosenKits[player]!!)
+                } else {
+                    player.inventory.setItem(8, kitSelector.clone())
+                }
+            }
+
+            if (gameState == GameState.PRE_ROUND) {
+                player.closeInventory()
+
+                if (chosenKits.get(player) == null) {
+                    chosenKits[player] = BreachKit.entries.random()
+                }
+
+                giveKit(player, chosenKits[player]!!, true)
+            }
+
+            player.health = 1.0
+            player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
+
+            if (gameState == GameState.GAME_ON) {
+                player.health = 0.0
+            }
+        } else {
+            player.teleport(spectatorSpawn)
+            makeSpectator(player, true, false)
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
     override fun playerLeave(player: Player) {
-
+        if ((player == team1holder || player == team2holder) && gameState == GameState.GAME_ON) {
+            deathLocations[player] = player.location
+            starDrop(player.tumblingPlayer.team, player.location)
+        }
     }
 
     suspend fun preRound() {
         chosenKits.clear()
         deadPlayers.clear()
+        deathLocations.clear()
         team1holder = null
         team2holder = null
         suspendSync {
@@ -807,6 +870,7 @@ class BreachController: GameBase(
                     team1holder = it
                     it.inventory.setItemInOffHand(team1star.clone())
                     team1droppedStar!!.remove()
+                    team1droppedStar = null
                 }
             }
 
@@ -831,6 +895,8 @@ class BreachController: GameBase(
                 if (it.location.distance(team2droppedStar!!.location) < 2 && it != team2holder) {
                     team2holder = it
                     it.inventory.setItemInOffHand(team2star.clone())
+                    team2droppedStar!!.remove()
+                    team2droppedStar = null
                 }
             }
 
@@ -850,6 +916,19 @@ class BreachController: GameBase(
     }
 
     fun starDrop(team: Team, location: Location) {
+        if (team == playingTeams.first) {
+            if (team1droppedStar != null) return
+            team1droppedStar = currentMap.world.dropItem(location, team1star.clone())
+            team1droppedStar?.isGlowing = true
+
+            team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
+        } else if (team == playingTeams.second) {
+            if (team2droppedStar != null) return
+            team2droppedStar = currentMap.world.dropItem(location, team2star.clone())
+            team2droppedStar?.isGlowing = true
+            team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.  x2
+        }
+
         val message = Component.empty()
             .append(Component.text(team.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
             .append(Component.text(" ${team.teamName}", team.color))
@@ -860,16 +939,7 @@ class BreachController: GameBase(
             it.sendMessage(message)
         }
 
-        if (team == playingTeams.first) {
-            team1droppedStar = currentMap.world.dropItem(location, team1star.clone())
-            team1droppedStar?.isGlowing = true
 
-            team1droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.
-        } else if (team == playingTeams.second) {
-            team2droppedStar = currentMap.world.dropItem(location, team2star.clone())
-            team2droppedStar?.isGlowing = true
-            team2droppedStar?.owner = UUID.randomUUID() // If this lands on DevCmb, I wouldn't even be suprised.  x2
-        }
     }
 
     @EventHandler
@@ -963,6 +1033,7 @@ class BreachController: GameBase(
         event.player.inventory.clear()
 
         deadPlayers[event.player] = true
+        deathLocations[event.player] = event.player.location
         event.player.addPotionEffect(PotionEffect(
             PotionEffectType.DARKNESS,
             PotionEffect.INFINITE_DURATION,
