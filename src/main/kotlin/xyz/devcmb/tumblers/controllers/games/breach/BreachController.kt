@@ -549,13 +549,7 @@ class BreachController: GameBase(
         }
 
 
-        var breakingTask: BukkitRunnable? = object : BukkitRunnable() {
-            override fun run() {
-                if (gameState == GameState.GAME_ON) {
-                    breakBlock()
-                }
-            }
-        }
+        var breakingTask: BukkitRunnable? = null
 
         fun resetTask() {
             breakingTask = object : BukkitRunnable() {
@@ -577,6 +571,7 @@ class BreachController: GameBase(
                 it.sendMessage(gameMessage(Format.mm("The map is starting to deteriorate!")))
             }
 
+            resetTask()
             breakingTask?.runTaskTimer(TreeTumblers.plugin, 0, 10)
         }
 

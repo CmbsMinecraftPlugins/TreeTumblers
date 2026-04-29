@@ -234,7 +234,7 @@ class EventController : IController {
 
     suspend fun finale() {
         eventTimer = Timer(5) {
-            id = "event_finale_introduction"
+            id = "score_breakdown_timer"
             joined = true
         }
         eventTimerTitle = "Score breakdown"
@@ -341,7 +341,7 @@ class EventController : IController {
 
         playerController.unmuteChat()
         eventTimer = Timer(60) {
-            id = "event_finale_introduction"
+            id = "event_finale_countdown"
             joined = true
         }
         eventTimerTitle = "Finale"
