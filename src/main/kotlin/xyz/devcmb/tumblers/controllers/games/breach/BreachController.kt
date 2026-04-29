@@ -16,6 +16,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
+import org.bukkit.block.Barrel
 import org.bukkit.block.Block
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
@@ -27,6 +28,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.inventory.InventoryClickEvent
+import org.bukkit.event.inventory.InventoryOpenEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerPickupArrowEvent
@@ -381,17 +383,20 @@ class BreachController: GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
+        val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
+        gameState = GameState.GAME_OVER
+
         suspendSync {
             gameParticipants.forEach {
                 it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
                 it.health = 20.0
                 it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
                 it.disableBossBar("countdownBossbar")
+                it.inventory.clear()
                 cleanupPlayer(it)
             }
         }
 
-        val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
 
         val bounds = currentMap.data.getList("bounds")?.map {
             if (it !is List<*>) throw GameControllerException("Map bounds is not a valid list")
@@ -917,7 +922,23 @@ class BreachController: GameBase(
     }
 
     @EventHandler
+    fun playerSwapOffhand(event: PlayerSwapHandItemsEvent) {
+        event.isCancelled = true
+    }
+
+    @EventHandler
+    fun barrelOpenEvent(event: InventoryOpenEvent) {
+        if (event.inventory.holder is Barrel) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
     fun damageEvent(event: EntityDamageEvent) {
+        if (gameState != GameState.GAME_ON) {
+            event.isCancelled = true
+            return
+        }
         if (event.entityType != EntityType.PLAYER) return
 
         val attacker = event.damageSource.causingEntity as Player
@@ -932,15 +953,12 @@ class BreachController: GameBase(
             return
         }
 
-        if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE) {
+        if (event.cause == EntityDamageEvent.DamageCause.PROJECTILE) {
             event.damage = 10000.0 // death
             return
         }
 
         event.isCancelled = true
-
-
-
     }
 
     @EventHandler
@@ -991,6 +1009,7 @@ class BreachController: GameBase(
         KIT_SELECT,
         PRE_ROUND,
         GAME_ON,
-        ROUND_OVER
+        ROUND_OVER,
+        GAME_OVER
     }
 }
