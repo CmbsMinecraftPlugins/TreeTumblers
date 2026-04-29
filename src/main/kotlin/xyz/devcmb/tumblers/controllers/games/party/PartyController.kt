@@ -442,7 +442,7 @@ class PartyController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossBar")
+        player.enableBossBar("countdownBossbar")
 
         val tumbling = player.tumblingPlayer
         if(!tumbling.team.playingTeam) {

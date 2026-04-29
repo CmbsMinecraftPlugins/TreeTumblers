@@ -22,6 +22,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.Sound
+import org.bukkit.block.BlockFace
 import org.bukkit.block.Chest
 import org.bukkit.block.data.Ageable
 import org.bukkit.block.data.Levelled
@@ -37,6 +38,8 @@ import org.bukkit.event.HandlerList
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockExpEvent
+import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.entity.EntityChangeBlockEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.inventory.CraftItemEvent
 import org.bukkit.event.inventory.InventoryClickEvent
@@ -707,7 +710,7 @@ class SnifferCaretakerController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossBar")
+        player.enableBossBar("countdownBossbar")
         spawnPlayer(player)
     }
 
@@ -1239,6 +1242,21 @@ class SnifferCaretakerController : GameBase(
 
         kit.forEach { item ->
             player.inventory.addItem(item)
+        }
+    }
+
+    @EventHandler
+    fun entityChangeBlockEvent(event: EntityChangeBlockEvent) {
+        if (event.block.type == Material.FARMLAND) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun blockPlaceEvent(event: BlockPlaceEvent) {
+        if(event.block.getRelative(BlockFace.DOWN).type == Material.FARMLAND) {
+            event.isCancelled = true
+            return
         }
     }
 

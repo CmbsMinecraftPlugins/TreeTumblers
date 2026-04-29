@@ -637,7 +637,7 @@ class CrumbleController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossBar")
+        player.enableBossBar("countdownBossbar")
 
         if(!player.tumblingPlayer.team.playingTeam) {
             val arena1Center: Location = currentMap.data
