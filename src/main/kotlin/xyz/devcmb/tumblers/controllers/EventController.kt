@@ -247,7 +247,7 @@ class EventController : IController {
                 "<aqua><line:30></aqua>"
         ))
 
-        delay(3000)
+        delay(5000)
         // TODO: Maybe go through the top 10 indiv
         announceNonFinaleParticipants()
 
