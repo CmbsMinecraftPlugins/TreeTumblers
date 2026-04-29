@@ -52,7 +52,13 @@ class BreachKitSelector(
                 },
 
                 onClick = { page, item ->
+                    if(gameController.activeGame?.id != "breach") {
+                        DebugUtil.severe("Attempted to use items in the BreachKitSelector while the game is not active")
+                        return@InventoryItem
+                    }
+
                     val breach = gameController.activeGame as BreachController
+
                     breach.giveKit(player, kit)
                     player.buttonClickSound()
                 },
@@ -108,8 +114,14 @@ class BreachKitSelector(
             },
 
             onClick = { page, item ->
+                if(gameController.activeGame?.id != "breach") {
+                    DebugUtil.severe("Attempted to use items in the BreachKitSelector while the game is not active")
+                    return@InventoryItem
+                }
+
                 val breach = gameController.activeGame as BreachController
                 breach.takeItem(player)
+
                 player.buttonClickSound()
                 UserInterfaceUtility.refreshAll(id)
             },

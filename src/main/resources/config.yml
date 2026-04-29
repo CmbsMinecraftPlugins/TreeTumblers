@@ -505,10 +505,9 @@ games:
             second: [-9.6, 38.5, 13.1, 1.3, 4.9]
             third: [-9.3, 38.2, 15.4, -30.6, 8.1]
             fourth: [-11.8, 38.1, 14.5, 16.7, 4.5]
-
   breach:
     worlds_folder: "breach"
-    # The required rounds a team needs to win to win the entire game
+    # The amount of rounds a team will need to win in order to win the game
     best_of: 3
     # The amount of time, in ticks, it takes for someone to pick up a star from the opposite team
     star_pickup_ticks: 60

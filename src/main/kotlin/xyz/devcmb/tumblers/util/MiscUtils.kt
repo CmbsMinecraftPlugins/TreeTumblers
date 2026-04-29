@@ -244,8 +244,6 @@ object MiscUtils {
             }
         }
 
-        
-
         runTaskLater(detonationDelay) {
             firework.detonate()
         }
