@@ -11,7 +11,7 @@ The plugin can be found on many distribution websites, including the [github rel
 
 An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
 
-*Some of these platforms may not display our plugin due to review backlogs. However, Hangar should always*
+*Some of these platforms may not display our plugin due to review backlogs. However, Hangar should always be up to date.*
 
 - [Hangar](https://hangar.papermc.io/DevCmb/tree-tumblers)
 - [Modrinth](https://modrinth.com/plugin/tree-tumblers)
@@ -79,7 +79,18 @@ For the first 5m of the game, players will fight head-to-head in individual mini
 
 This game uses a matchmaker to give players new matches as quick as possible (while trying to minimize playing against the same person twice)
 
-### AI Disclosure
+### Breach
+*Coded by Nibbl_z (@Nibbl-z)*
+
+Breach is the high-stakes finale game for the event, in which the 1st and 2nd place teams compete against eachother to determine who are the best players of all.
+
+Each round, you can pick to use either a bow, crossbow, or trident. One player on each team also needs to hold the star.
+
+All players are spawned in with half a heart, meaning any attack will instantly kill. Teams need to keep the holder of the star safe, while at the same time attempting to kill the other team's star holder, in order to steal it. Stealing the other teams star awards you a win for that round.
+
+Whichever team wins 3 rounds first, is the winner.
+
+## AI Disclosure
 AI was used for pull request review and some debugging. It was NOT used for major features, and any AI code is declared with a comment.
 
 All assets are **human made** by Nibbl_z, DevCmb, and TheMasked_Panda

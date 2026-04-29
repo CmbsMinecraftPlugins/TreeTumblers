@@ -508,26 +508,35 @@ games:
 
   breach:
     worlds_folder: "breach"
+    # The required rounds a team needs to win to win the entire game
     best_of: 3
+    # The amount of time, in ticks, it takes for someone to pick up a star from the opposite team
     star_pickup_ticks: 60
     maps:
       stadium:
         world: "stadium"
         data:
           cutscene:
+            # x,y,z,pitch,yaw
             start: [-32.5, 75.0, 44.3, -135.0, 35.0]
             preround: [-0.2, 65.0, 12.2, 45.0, -5.0]
             star: [-14.1, 65.2, 30.0, 45.0, 15.0]
+            # This is the location that the star spawns during the cutscene
             star_spawn: [-17.0, 66.0, 32.0]
             breaking: [-28.1, 70.2, 39.4, -127.0, 12.0]
             end: [-3.9, 84.3, 40.1, 135.0, 40.0]
+          # The location that all players on the 1st place team spawn every round
           team_1_spawn: [-3.0, 65.0, 14.0, 45.0, 0.0]
+          # The location that all players on team 2nd place team spawn every round
           team_2_spawn: [-34.0, 65.0, 45.0, -135.0, 0.0]
+          # The location that all players who did not make it to the finale game spawn every round
           spectator_spawn: [-20.8, 69.7, 30.8, -180.0, 0.0]
+          # A list of areas of blocks that will be opened vertically at the start of every round
           doors:
             - [[-4, 65, 18], [-2, 67, 18]]
             - [[-7, 65, 13], [-7, 67, 15]]
             - [[-33, 65, 41], [-35, 67, 41]]
             - [[-30, 65, 44], [-30, 67, 46]]
+          # The range of blocks in the map can break once the map starts to deteriorate
           bounds:
             [[0, 72, 48], [-37, 65, 11]]
