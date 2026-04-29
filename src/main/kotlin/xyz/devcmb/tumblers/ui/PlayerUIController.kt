@@ -7,6 +7,7 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Objective
+import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.EventController
@@ -76,6 +77,10 @@ class PlayerUIController(val player: Player) {
         }
 
         player.scoreboard = playerScoreboard
+
+        playerScoreboard.registerNewTeam("hiddenNames")
+        val team = playerScoreboard.getTeam("hiddenNames")
+        team!!.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
 
         updateTask = runTaskTimer(0, 5) {
             bossBars.forEach {

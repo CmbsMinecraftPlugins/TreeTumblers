@@ -45,6 +45,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
@@ -218,6 +219,10 @@ class BreachController: GameBase(
     val eventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
     }
+    val playerController: PlayerController by lazy {
+        ControllerDelegate.getController("playerController") as PlayerController
+    }
+
     var team1score: Int = 0
     var team2score: Int = 0
     var currentRound: Int = 0
@@ -346,6 +351,11 @@ class BreachController: GameBase(
                             it.health = 1.0
                             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
                             it.openHandledInventory("breachKitSelector")
+                            val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
+                            team.getOnlinePlayers().forEach { plr ->
+                                hiddenTeam?.addEntry(plr.name)
+                            }
+
 
                             cleanupPlayer(it)
                         }
@@ -412,6 +422,11 @@ class BreachController: GameBase(
                 it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
                 it.disableBossBar("countdownBossbar")
                 it.inventory.clear()
+                val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
+                gameParticipants.forEach { plr ->
+                    hiddenTeam?.addEntry(plr.name)
+                }
+                // #crunch maxxing
                 cleanupPlayer(it)
             }
         }
@@ -472,6 +487,15 @@ class BreachController: GameBase(
     override fun playerJoin(player: Player) {
         player.enableBossBar("countdownBossbar")
         player.enableBossBar("breachScoreBossbar")
+
+        gameParticipants.forEach {
+            val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
+            gameParticipants.forEach { plr ->
+                hiddenTeam?.addEntry(plr.name)
+            } // You know when.. you.. w....uh..
+        }// its getting to me.
+        // its painfu.l. its not good.but   works. it wokrs... it works.
+
 
         val team = player.tumblingPlayer.team
         val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
@@ -1015,6 +1039,11 @@ class BreachController: GameBase(
         if (event.entityType != EntityType.PLAYER) return
 
         val attacker = event.damageSource.causingEntity as Player
+        val victim = event.entity as Player
+        if (attacker.tumblingPlayer.team == victim.tumblingPlayer.team) {
+            event.isCancelled = true
+            return
+        }
 
         if (deadPlayers[attacker] == true) {
             event.isCancelled = true
@@ -1023,14 +1052,14 @@ class BreachController: GameBase(
 
         if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type == Material.TRIDENT) {
             event.damage = 10000.0 // death
-            kills[attacker] = kills[attacker]!! + 1
+            kills[attacker] = kills.getOrDefault(attacker, 0) + 1
 
             return
         }
 
         if (event.cause == EntityDamageEvent.DamageCause.PROJECTILE) {
             event.damage = 10000.0 // death
-            kills[attacker] = kills[attacker]!! + 1
+            kills[attacker] = kills.getOrDefault(attacker, 0) + 1
 
             return
         }
@@ -1045,7 +1074,7 @@ class BreachController: GameBase(
         event.player.inventory.clear()
 
         if (deadPlayers[event.player] != true) {
-            deaths[event.player] = deaths[event.player]!! + 1
+            deaths[event.player] = deaths.getOrDefault(event.player, 0) + 1
         }
 
         deadPlayers[event.player] = true
