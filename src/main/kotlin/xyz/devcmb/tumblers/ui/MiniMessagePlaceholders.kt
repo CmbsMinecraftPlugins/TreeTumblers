@@ -11,6 +11,8 @@ object MiniMessagePlaceholders {
          */
         const val TEAM_SCOREBOARD_PLACEMENT = "<placement>. <team> - <gold><score></gold>"
 
+        const val HIDDEN_TEAM_SCOREBOARD_PLACEMENT = "<white>?. <font:tumbling:icons>\uE007</font></white> <dark_gray>????????</dark_gray> - <gray>?????</gray>"
+
         /**
          * placement - The player's placement
          *
@@ -21,6 +23,20 @@ object MiniMessagePlaceholders {
          * score - The player's score
          */
         const val INDIVIDUAL_SCOREBOARD_PLACEMENT = "<placement>. <head> <name> - <gold><score></gold>"
+
+        /**
+         * head - The player's head component
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         */
+        const val HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT = "<white>?.</white> <head> <name> - <gray>????</gray>"
+
+        /**
+         * head - The player's head component
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         */
+        const val HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_WITH_SCORE = "<white>?.</white> <head> <name> - <gold><score></gold>"
 
         /**
          * current - The current round

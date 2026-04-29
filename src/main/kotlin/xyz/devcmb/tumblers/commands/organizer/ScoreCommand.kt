@@ -106,6 +106,18 @@ class ScoreCommand {
         sender.sendMessage(Format.success("Scores have been nuked successfully!"))
     }
 
+    @Execute(name = "hide")
+    fun hideScores(@Context sender: CommandSender) {
+        eventController.scoresHidden = true
+        sender.sendMessage(Format.success("Scores have been hidden successfully!"))
+    }
+
+    @Execute(name = "show")
+    fun showScores(@Context sender: CommandSender) {
+        eventController.scoresHidden = false
+        sender.sendMessage(Format.success("Scores have been shown successfully!"))
+    }
+
     @Execute(name = "replicate")
     fun replicateScores(@Context sender: CommandSender) {
         sender.sendMessage(Format.info("Starting replication job..."))

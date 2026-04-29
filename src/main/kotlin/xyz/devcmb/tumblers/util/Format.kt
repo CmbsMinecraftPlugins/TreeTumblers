@@ -117,7 +117,7 @@ object Format {
             Placeholder.component("killer", killerName)
         )
 
-        if(receiver == killer) {
+        if(receiver == killer && score > 0) {
             component = component.append(Component.text(" [+$score]", NamedTextColor.GOLD))
         }
 

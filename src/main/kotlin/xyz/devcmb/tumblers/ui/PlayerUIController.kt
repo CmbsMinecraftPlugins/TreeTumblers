@@ -7,6 +7,7 @@ import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Objective
+import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.EventController
@@ -14,14 +15,17 @@ import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
 import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
+import xyz.devcmb.tumblers.ui.bossbar.games.breach.ScoreBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.ReadyCheckInventory
 import xyz.devcmb.tumblers.ui.inventory.SpectateInventory
+import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.games.BreachScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.PartyScoreboard
@@ -46,12 +50,14 @@ class PlayerUIController(val player: Player) {
 
     init {
         registerInventory(CrumbleKitSelector(player, gameController))
+        registerInventory(BreachKitSelector(player, gameController))
         registerInventory(ReadyCheckInventory(player, eventController))
         registerInventory(SpectateInventory(player, gameController))
 
         registerBossBar(AliveTeamsBossbar(gameController))
         registerBossBar(CountdownBossbar(gameController))
         registerBossBar(CooldownBossbar(player, gameController))
+        registerBossBar(ScoreBossbar(gameController))
         registerBossBar(DebugBossbar())
 
         if(Constants.IS_DEVELOPMENT) {
@@ -62,6 +68,8 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
         registerScoreboard(PartyScoreboard(gameController, player))
+        registerScoreboard(BreachScoreboard(gameController, player))
+
         registerScoreboard(IntermissionScoreboard(eventController, player))
 
         if(gameController.activeGame == null) {
@@ -69,6 +77,10 @@ class PlayerUIController(val player: Player) {
         }
 
         player.scoreboard = playerScoreboard
+
+        playerScoreboard.registerNewTeam("hiddenNames")
+        val team = playerScoreboard.getTeam("hiddenNames")
+        team!!.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
 
         updateTask = runTaskTimer(0, 5) {
             bossBars.forEach {

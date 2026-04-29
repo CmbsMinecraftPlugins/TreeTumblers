@@ -6,6 +6,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.Format
@@ -141,8 +142,20 @@ object UserInterfaceUtility {
         }
     }
 
+    val eventController by lazy {
+        ControllerDelegate.getController<EventController>()
+    }
+
     fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {
         val leaderboard: ArrayList<Component> = arrayListOf()
+        if(eventController.scoresHidden) {
+            repeat(4) {
+                leaderboard.add(Format.mm(MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT))
+            }
+
+            return leaderboard
+        }
+
         val placements = activeGame.getTeamPlacements().take(4)
 
         placements.forEach { (team, placement) ->
@@ -173,7 +186,8 @@ object UserInterfaceUtility {
         val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }!!
 
         return Format.mm(
-            MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT,
+            if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
+                else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_WITH_SCORE,
             Placeholder.unparsed("placement", playerPlacement.second.toString()),
             Placeholder.parsed("head", "<head:${player.uniqueId}>"),
             Placeholder.component("name", player.formattedName),

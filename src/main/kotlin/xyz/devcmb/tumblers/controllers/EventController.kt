@@ -88,6 +88,12 @@ class EventController : IController {
     val playedGames: ArrayList<String> = ArrayList()
     val votingQuadrants: ArrayList<ArrayList<Location>> = ArrayList()
 
+    var scoresHidden: Boolean = false
+        set(value) {
+            field = value
+            sendDefaultTopbar()
+        }
+
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
@@ -121,6 +127,12 @@ class EventController : IController {
             get() {
                 return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
             }
+
+        @field:Configurable("event.intermission.skip")
+        var skipIntermission: Boolean = false
+
+        @field:Configurable("event.intermission.time")
+        var intermissionLength: Int = 90
     }
 
     override fun init() {
@@ -160,10 +172,12 @@ class EventController : IController {
         }
     }
 
-    fun startEvent() {
+    fun startEvent(finale: Boolean) {
         TreeTumblers.pluginScope.launch {
             val ready = readyCheck()
             if(!ready) return@launch
+
+            if(finale) game = totalGames
 
             state = State.PRE_EVENT
             eventTimer = Timer(5) {
@@ -178,7 +192,7 @@ class EventController : IController {
                 eventLoop()
             }
 
-            // TODO: Finale
+            finale()
             cleanupEvent()
         }
     }
@@ -193,14 +207,268 @@ class EventController : IController {
 
     var nextGame: String? = null
     suspend fun eventLoop() {
+        if(game >= totalGames) return
         game++
+
+        if(game != 1 && !skipIntermission) {
+            state = State.INTERMISSION
+            eventTimer = Timer(intermissionLength) {
+                id = "event_intermission_timer"
+                joined = true
+            }
+            eventTimerTitle = "Intermission"
+            eventTimer!!.start()
+        }
+
+        if(game == totalGames) {
+            scoresHidden = true
+            Bukkit.broadcast(Format.info("Scores have been hidden for the final game!"))
+        }
+
         voting()
         state = State.NORMAL_GAME
         gameController.startGame(nextGame!!)
         playedGames.add(nextGame!!)
         nextGame = null
-        state = State.INTERMISSION
-        delay(10000)
+    }
+
+    suspend fun finale() {
+        eventTimer = Timer(5) {
+            id = "score_breakdown_timer"
+            joined = true
+        }
+        eventTimerTitle = "Score breakdown"
+        eventTimer!!.start()
+
+        playerController.muteChat()
+        Bukkit.broadcast(Format.mm("<aqua><line:30></aqua><br>" +
+                "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
+                "Now it's time to see who moves on to the finale!</white><br>" +
+                "<aqua><line:30></aqua>"
+        ))
+
+        delay(5000)
+        // TODO: Maybe go through the top 10 indiv
+        announceNonFinaleParticipants()
+
+        delay(1000)
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "And now...let's reveal our <gold>finalists!</gold>" +
+            "<br>".repeat(5)
+        ))
+
+        delay(4000)
+
+        val placements = getEventTeamPlacements()
+        val first = placements[0].first
+        val second = placements[1].first
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Component.empty(),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        delay(3000)
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "First, with <gold>${teamScores[first]}</gold> score..." +
+            "<br>".repeat(5)
+        ))
+
+        delay(3000)
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm("<team1>", Placeholder.component("team1", first.formattedName)),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+            "First, with <gold>${teamScores[first]}</gold> score...<br>" +
+            "<team1>" +
+            "<br>".repeat(4),
+            Placeholder.component("team1", first.formattedName)
+        ))
+
+        delay(4000)
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+                    "Secondly, with <gold>${teamScores[second]}</gold> score..." +
+                    "<br>".repeat(5)
+        ))
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm("<team1> <white>vs.</white>", Placeholder.component("team1", first.formattedName)),
+            Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
+        ))
+
+        delay(3000)
+
+        Bukkit.broadcast(Format.mm(
+            "<br>".repeat(15) +
+                    "Secondly, with <gold>${teamScores[second]}</gold> score...<br>" +
+                    "<team2>" +
+                    "<br>".repeat(4),
+            Placeholder.component("team2", second.formattedName)
+        ))
+
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<gold><b>FINALISTS</b></gold>"),
+            Format.mm(
+                "<team1> <white>vs.</white> <team2>",
+                Placeholder.component("team1", first.formattedName),
+                Placeholder.component("team2", second.formattedName)
+            ),
+            Title.Times.times(Tick.of(0), Tick.of(80), Tick.of(20))
+        ))
+
+        scoresHidden = false
+
+        delay(5000)
+        // TODO: Unhardcode?
+        Bukkit.broadcast(Format.mm(
+            "<aqua><line:30></aqua><br>" +
+                "Thank you all so much for attending <red>❤</red><br>" +
+                "Now, onto our finale, <gold><b>Breach!</b></gold><br>" +
+                "<aqua><line:30></aqua>"
+        ))
+
+
+        playerController.unmuteChat()
+        eventTimer = Timer(60) {
+            id = "event_finale_countdown"
+            joined = true
+        }
+        eventTimerTitle = "Finale"
+        eventTimer!!.start()
+
+        gameController.startGame("breach")
+    }
+
+    suspend fun announceNonFinaleParticipants() {
+        val placementsDone: ArrayList<Int> = ArrayList()
+        val placements = getReverseEventTeamPlacements()
+
+        // this is very unoptimized
+        // welcome to crunch time
+        placements.dropLast(3).forEach { (team, placement) ->
+            // teams that have already been announced as tied with another team
+            if(placement in placementsDone) return@forEach
+            placementsDone.add(placement)
+
+            Bukkit.broadcast(Format.mm(
+                "<br>".repeat(15) +
+                        "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place..." +
+                        "<br>".repeat(5)
+            ))
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Component.empty(),
+                Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                Title.Times.times(Tick.of(0), Tick.of(9999), Tick.of(0))
+            ))
+
+            delay(2000)
+
+            val ties = placements.filter { it.second == placement && team != it.first }
+            if(ties.isNotEmpty()) {
+                val teams = ties.joinToString(" & ") { "<${it.first.name.lowercase()}>" }
+                    .let { if(it.isEmpty()) "<${team.name.lowercase()}>" else "<${team.name.lowercase()}> & $it" }
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    Format.mm(
+                        teams,
+                        *Team.entries
+                            .filter { it.playingTeam }
+                            .map { Placeholder.component(
+                                it.name.lowercase(),
+                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+                            }
+                            .toTypedArray()
+                    ),
+                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            teams +
+                            "<br>".repeat(4),
+                    *Team.entries
+                        .filter { it.playingTeam }
+                        .map { Placeholder.component(
+                            it.name.lowercase(),
+                            it.formattedName
+                        ) }
+                        .toTypedArray()
+                ))
+
+                delay(1000)
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    Format.mm(
+                        teams,
+                        *Team.entries
+                            .filter { it.playingTeam }
+                            .map { Placeholder.component(
+                                it.name.lowercase(),
+                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+                            }
+                            .toTypedArray()
+                    ),
+                    Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "$teams<br>" +
+                            "With <gold>${teamScores[team] ?: 0}</gold> score!" +
+                            "<br>".repeat(3),
+                    *Team.entries
+                        .filter { it.playingTeam }
+                        .map { Placeholder.component(
+                            it.name.lowercase(),
+                            it.formattedName
+                        ) }
+                        .toTypedArray()
+                ))
+            } else {
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    team.formattedName,
+                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "<team>" +
+                            "<br>".repeat(4),
+                    Placeholder.component("team", team.formattedName)
+                ))
+
+                delay(1000)
+
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                    team.formattedName,
+                    Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
+                    Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
+                ))
+                Bukkit.broadcast(Format.mm(
+                    "<br>".repeat(15) +
+                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "<team><br>" +
+                            "With <gold>${teamScores[team] ?: 0}</gold> score!"+
+                            "<br>".repeat(3),
+                    Placeholder.component("team", team.formattedName)
+                ))
+            }
+
+            delay(4000)
+        }
     }
 
     suspend fun readyCheck(): Boolean {
@@ -403,7 +671,7 @@ class EventController : IController {
 
         repeat(4) {
             val quadrant = votingQuadrants[it]
-            val games = gameController.games.filter { game -> !playedGames.contains(game.id) && !quadrantGames.containsValue(game) }
+            val games = gameController.games.filter { game -> !playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
             if(games.isEmpty()) return@repeat
 
             val game = games.random()
@@ -609,37 +877,7 @@ class EventController : IController {
     }
 
     fun sendDefaultTopbar() {
-        var teamComponent = Component.empty()
-
-        getEventTeamPlacements().forEachIndexed { i, it ->
-            var playersComponent = Component.text(" ")
-            databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
-                val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
-                val onlinePlayer = Bukkit.getPlayer(uuid)
-                var name = Component.empty()
-                if(index != 0) {
-                    name = name.append(Component.text(" • ", NamedTextColor.WHITE))
-                }
-
-                name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
-                    if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
-                    else Component.text(entry.first, NamedTextColor.GRAY)
-                )
-
-                playersComponent = playersComponent.append(name)
-            }
-            playersComponent = playersComponent.append(Component.text(" "))
-
-            teamComponent = teamComponent.append(
-                Format.mm(
-                    " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
-                    Placeholder.component("team", it.first.formattedName),
-                    // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
-                    Placeholder.component("players", playersComponent)
-                )
-            )
-        }
+        val teamComponent = getTopbarPlayersComponent()
 
         Bukkit.getOnlinePlayers().forEach {
             it.sendPlayerListHeader(
@@ -676,6 +914,70 @@ class EventController : IController {
         }
     }
 
+    fun getTopbarPlayersComponent(): Component {
+        var teamComponent = Component.empty()
+
+        if(scoresHidden) {
+            repeat(Team.entries.filter { it.playingTeam }.size) {
+                var playersComponent = Component.text(" ")
+                repeat(4) { index ->
+                    val uuid = "606e2ff0-ed77-4842-9d6c-e1d3321c7838"
+                    var name = Component.empty()
+                    if(index != 0) {
+                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
+                    }
+
+                    name = name.append(Format.mm("<white><head:$uuid></white> <dark_gray><obf>Player</obf><dark_gray>"))
+
+                    playersComponent = playersComponent.append(name)
+                }
+                playersComponent = playersComponent.append(Component.text(" "))
+
+                teamComponent = teamComponent.append(
+                    Format.mm(
+                        " <br><white>#?</white> <team><shift>${" ".repeat(60)}<gray>?????</gray> <br><players><br>",
+                        Placeholder.parsed("team", "<white><font:tumbling:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
+                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("????????") + 11)),
+                        Placeholder.component("players", playersComponent)
+                    )
+                )
+            }
+        } else {
+            getEventTeamPlacements().forEachIndexed { i, it ->
+                var playersComponent = Component.text(" ")
+                databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
+                    val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
+                    val onlinePlayer = Bukkit.getPlayer(uuid)
+                    var name = Component.empty()
+                    if(index != 0) {
+                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
+                    }
+
+                    name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
+                        if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
+                        else Component.text(entry.first, NamedTextColor.GRAY)
+                    )
+
+                    playersComponent = playersComponent.append(name)
+                }
+                playersComponent = playersComponent.append(Component.text(" "))
+
+                teamComponent = teamComponent.append(
+                    Format.mm(
+                        " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
+                        Placeholder.component("team", it.first.formattedName),
+                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
+                        Placeholder.component("players", playersComponent)
+                    )
+                )
+            }
+        }
+
+        return teamComponent
+    }
+
     fun grantScore(player: TumblingPlayer, amount: Int) {
         player.score += amount
         teamScores.put(player.team, (teamScores[player.team] ?: 0) + amount)
@@ -687,6 +989,10 @@ class EventController : IController {
                 .thenBy { it.key.priority }
         )
         return MiscUtils.calculatePlacements(sorted)
+    }
+
+    fun getReverseEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
+        return getEventTeamPlacements().apply { reverse() }
     }
 
     fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
@@ -723,7 +1029,7 @@ class EventController : IController {
     fun severListPingEvent(event: ServerListPingEvent) {
         if(!overrideMotd) return
 
-        val firstGames = gameController.games.take(4)
+        val firstGames = gameController.games.filter { it.votable }.take(4)
         val colors = arrayListOf("red", "blue", "green", "yellow")
         val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
         event.motd(Format.mm(
