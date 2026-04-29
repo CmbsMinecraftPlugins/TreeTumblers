@@ -23,7 +23,7 @@ class EventCommand {
     }
 
     @Execute(name = "start")
-    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean) {
         if(eventController.state != EventController.State.EVENT_INACTIVE) {
             sender.sendMessage(Format.error("The event is already active!"))
             return
@@ -44,7 +44,8 @@ class EventCommand {
             }
         }
 
-        eventController.startEvent()
+
+        eventController.startEvent(finale)
         sender.sendMessage(Format.success("Start signal sent successfully!"))
     }
 
