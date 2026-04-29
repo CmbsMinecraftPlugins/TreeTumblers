@@ -103,6 +103,13 @@ class ScoreCommand {
             it.score = 0
         }
 
+        TreeTumblers.pluginScope.launch {
+            databaseController.replicateTeamData(eventController.teamScores)
+            playerController.players.forEach {
+                databaseController.replicatePlayerData(it)
+            }
+        }
+
         sender.sendMessage(Format.success("Scores have been nuked successfully!"))
     }
 

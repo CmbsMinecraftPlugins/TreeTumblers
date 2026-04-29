@@ -442,6 +442,8 @@ class PartyController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
+        player.enableBossBar("countdownBossBar")
+
         val tumbling = player.tumblingPlayer
         if(!tumbling.team.playingTeam) {
             // do true for pregame here because otherwise it'd just put a spectating player back into spectating again

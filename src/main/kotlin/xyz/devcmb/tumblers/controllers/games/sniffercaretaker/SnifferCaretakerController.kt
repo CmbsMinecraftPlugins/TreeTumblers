@@ -69,6 +69,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.randomBetween
@@ -695,10 +696,18 @@ class SnifferCaretakerController : GameBase(
         announceOverallTeamScores()
     }
 
+    override suspend fun cleanup() {
+        Bukkit.getOnlinePlayers().forEach {
+            it.disableBossBar("countdownBossbar")
+        }
+        super.cleanup()
+    }
+
     /**
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
+        player.enableBossBar("countdownBossBar")
         spawnPlayer(player)
     }
 
