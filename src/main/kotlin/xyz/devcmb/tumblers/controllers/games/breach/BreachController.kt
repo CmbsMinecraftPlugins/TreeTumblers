@@ -927,17 +927,20 @@ class BreachController: GameBase(
             return
         }
 
+        if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type == Material.TRIDENT) {
+            event.damage = 10000.0 // death
+            return
+        }
+
         if (event.cause != EntityDamageEvent.DamageCause.PROJECTILE) {
-            event.isCancelled = true
+            event.damage = 10000.0 // death
             return
         }
 
-        if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type != Material.TRIDENT) {
-            event.isCancelled = true
-            return
-        }
+        event.isCancelled = true
 
-        event.damage = 10000.0 // death
+
+
     }
 
     @EventHandler
