@@ -249,7 +249,7 @@ class BreachController: GameBase(
     }.build()
 
     val team2star: ItemStack = AdvancedItemStack(Material.NETHER_STAR) {
-        name(Format.mm("<light_purple></light_purple>"))
+        name(Format.mm("<light_purple>Star</light_purple>"))
         persistentDataContainer {
             set(team2starKey, PersistentDataType.BOOLEAN, true)
         }
