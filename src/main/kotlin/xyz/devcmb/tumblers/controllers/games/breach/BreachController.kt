@@ -348,16 +348,20 @@ class BreachController: GameBase(
             val spectatorSpawn = currentMap.data.getList("spectator_spawn")?.validateLocation(currentMap.world)
                 ?: throw GameControllerException("Spectator spawn not found")
 
-            listOf(playingTeams.first, playingTeams.second).forEachIndexed { i, team ->
+            val teams = listOf(playingTeams.first, playingTeams.second)
+            teams.forEachIndexed { i, team ->
                 team.getOnlinePlayers().forEach {
                     it.teleport(if (i == 0) team1spawn else team2spawn)
                     it.inventory.setItem(8, kitSelector.clone())
                     it.health = 1.0
                     it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
                     it.openHandledInventory("breachKitSelector")
+
                     val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
-                    team.getOnlinePlayers().forEach { plr ->
-                        hiddenTeam?.addEntry(plr.name)
+                    teams.filter { t -> t != team }.forEach { team ->
+                        team.getOnlinePlayers().forEach { plr ->
+                            hiddenTeam?.addEntry(plr.name)
+                        }
                     }
 
 
