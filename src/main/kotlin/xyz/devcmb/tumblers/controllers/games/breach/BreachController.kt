@@ -234,6 +234,9 @@ class BreachController: GameBase(
     var deathLocations: HashMap<Player, Location> = hashMapOf()
     var starPickupTimes: HashMap<Player, Int> = hashMapOf()
 
+    val kills: HashMap<Player, Int> = hashMapOf()
+    val deaths: HashMap<Player, Int> = hashMapOf()
+
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
         persistentDataContainer {
@@ -295,6 +298,11 @@ class BreachController: GameBase(
      * Anything that needs to be executed before players can access the game should be done here
      */
     override suspend fun gameLoad() {
+        gamePlayers.forEach {
+            deaths[it] = 0
+            kills[it] = 0
+        }
+
         val placements = eventController.getEventTeamPlacements()
 
         val team1 = placements.find { it.second == 1 }?.first ?: throw GameControllerException("No first place team found!")
@@ -1015,11 +1023,15 @@ class BreachController: GameBase(
 
         if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type == Material.TRIDENT) {
             event.damage = 10000.0 // death
+            kills[attacker] = kills[attacker]!! + 1
+
             return
         }
 
         if (event.cause == EntityDamageEvent.DamageCause.PROJECTILE) {
             event.damage = 10000.0 // death
+            kills[attacker] = kills[attacker]!! + 1
+
             return
         }
 
@@ -1031,6 +1043,10 @@ class BreachController: GameBase(
         event.drops.clear()
         event.isCancelled = true
         event.player.inventory.clear()
+
+        if (deadPlayers[event.player] != true) {
+            deaths[event.player] = deaths[event.player]!! + 1
+        }
 
         deadPlayers[event.player] = true
         deathLocations[event.player] = event.player.location

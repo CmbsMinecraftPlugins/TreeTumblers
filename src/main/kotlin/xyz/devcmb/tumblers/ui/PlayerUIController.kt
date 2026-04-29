@@ -67,7 +67,7 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
         registerScoreboard(DeathrunScoreboard(gameController, player))
         registerScoreboard(PartyScoreboard(gameController, player))
-        registerScoreboard(BreachScoreboard())
+        registerScoreboard(BreachScoreboard(gameController, player))
 
         registerScoreboard(IntermissionScoreboard(eventController, player))
 
