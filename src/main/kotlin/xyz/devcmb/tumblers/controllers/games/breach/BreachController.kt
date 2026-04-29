@@ -186,7 +186,7 @@ class BreachController: GameBase(
         Flag.DISABLE_NATURAL_REGENERATION,
         Flag.DISABLE_FALL_DAMAGE
     ),
-    icon = Component.text("\uEA00"),
+    icon = Component.text("\uEA00").font(font),
     logo = Component.text("awesome logo goes here"),
     scores = hashMapOf(),
     scoreboard = "breachScoreboard"
