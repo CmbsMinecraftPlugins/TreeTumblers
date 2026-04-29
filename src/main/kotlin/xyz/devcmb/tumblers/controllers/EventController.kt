@@ -327,6 +327,8 @@ class EventController : IController {
             Title.Times.times(Tick.of(0), Tick.of(80), Tick.of(20))
         ))
 
+        scoresHidden = false
+
         delay(5000)
         // TODO: Unhardcode?
         Bukkit.broadcast(Format.mm(
@@ -335,6 +337,7 @@ class EventController : IController {
                 "Now, onto our finale, <gold><b>Breach!</b></gold><br>" +
                 "<aqua><line:30></aqua>"
         ))
+
 
         playerController.unmuteChat()
         eventTimer = Timer(60) {
