@@ -10,7 +10,10 @@ The plugin adds a variety of games and an event system for playing these games i
 Not wanting to play with event mode? Just use the `/game start <name>` command to run a game sequence without it!
 
 ## Downloading
-The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
+
+You need a lot of setup to use this plugin properly, so you can find an example server in the [releases tab!](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases) (all default config keys are for this)
+
+If you want to go through setting up the plugin yourself, The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
 
 An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
 
