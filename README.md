@@ -11,11 +11,8 @@ The plugin can be found on many distribution websites, including the [github rel
 
 An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
 
-*Some of these platforms may not display our plugin due to review backlogs. However, Hangar should always be up to date.*
-
 - [Hangar](https://hangar.papermc.io/DevCmb/tree-tumblers)
 - [Modrinth](https://modrinth.com/plugin/tree-tumblers)
-- [CurseForge](https://legacy.curseforge.com/minecraft/bukkit-plugins/tree-tumblers)
 
 ## Developing
 If you wish to contribute to the project, you're more than welcome to do so!
