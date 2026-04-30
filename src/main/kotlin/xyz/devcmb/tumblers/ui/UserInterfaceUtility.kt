@@ -168,7 +168,9 @@ object UserInterfaceUtility {
         }
 
         if(placements.find { it.first == player.tumblingPlayer.team } == null) {
-            val teamPlacement = activeGame.getTeamPlacements().find { it.first == player.tumblingPlayer.team }!!
+            val teamPlacement = activeGame.getTeamPlacements().find { it.first == player.tumblingPlayer.team }
+                ?: Pair(player.tumblingPlayer.team, activeGame.getTeamPlacements().size + 1)
+
             leaderboard.add(Component.empty())
             leaderboard.add(Format.mm(
                 MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
@@ -183,7 +185,8 @@ object UserInterfaceUtility {
 
     fun getIndividualScoreComponent(player: Player, activeGame: GameBase): Component {
         val tumblingPlayer = player.tumblingPlayer
-        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }!!
+        val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }
+            ?: Pair(tumblingPlayer,activeGame.getIndividualPlacements().size + 1)
 
         return Format.mm(
             if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
