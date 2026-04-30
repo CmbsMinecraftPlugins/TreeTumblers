@@ -79,7 +79,7 @@ For the first 5m of the game, players will fight head-to-head in individual mini
 
 This game uses a matchmaker to give players new matches as quick as possible (while trying to minimize playing against the same person twice)
 
-### Breach
+### ![Breach](./docs/breach_logo.png)
 *Coded by Nibbl_z (@Nibbl-z)*
 
 Breach is the high-stakes finale game for the event, in which the 1st and 2nd place teams compete against eachother to determine who are the best players of all.
