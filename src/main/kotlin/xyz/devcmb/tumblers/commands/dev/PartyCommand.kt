@@ -13,6 +13,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -26,6 +27,7 @@ import java.io.FileOutputStream
 import kotlin.io.path.Path
 
 @Command(name = "party")
+@Permission("tumbling.dev")
 class PartyCommand {
     @Execute(name = "template save")
     fun executeTemplateSave(@Context player: Player, @Arg("party game") partyGame: PartyController.PartyGameIdentifier, @Arg("identifier") identifier: String) {
