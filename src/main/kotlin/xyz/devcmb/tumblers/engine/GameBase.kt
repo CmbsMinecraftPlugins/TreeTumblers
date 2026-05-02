@@ -45,7 +45,6 @@ import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.uiController
-import xyz.devcmb.tumblers.util.unpackCoordinates
 
 /**
  * Base class for all games
@@ -132,9 +131,6 @@ abstract class GameBase(
     companion object {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
-
-        @field:Configurable("lobby.spawn")
-        var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 
     /**
@@ -334,7 +330,7 @@ abstract class GameBase(
 
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
-                it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+                playerController.spawnHub(it)
                 it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                 it.foodLevel = 20
 
