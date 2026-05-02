@@ -251,6 +251,7 @@ class PlayerController : IController {
         }
 
         val channel = channels[event.player] ?: ChatChannel.LOCAL
+
         val viewers = Bukkit.getOnlinePlayers().filter {
             channel.canSee(event.player, it)
         }
@@ -317,6 +318,24 @@ class PlayerController : IController {
             override fun format(sender: Player, message: Component): Component {
                 return Format.mm(
                     "<color:${color.asHexString()}>[Staff] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        // maybe add some protection so you're not wc-ing the announcement channel
+        ANNOUNCEMENT("Announcement", NamedTextColor.GOLD) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return true
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return player.hasPermission("tumbling.dev") || player.hasPermission("tumbling.organizer")
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<aqua><line:30></aqua><br><br><br><sender>: <message><br><br><br><aqua><line:30></aqua>",
                     Placeholder.component("sender", sender.formattedName),
                     Placeholder.component("message", message)
                 )
