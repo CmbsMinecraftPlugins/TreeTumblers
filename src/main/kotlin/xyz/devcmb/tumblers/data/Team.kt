@@ -12,19 +12,86 @@ import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
-enum class Team(val teamName: String, val color: TextColor, val icon: String, val priority: Int, val playingTeam: Boolean = true) {
-    RED("Red Raccoons", NamedTextColor.RED, "\uE000", 1),
-    ORANGE("Orange Orcas", TextColor.fromHexString("#ff9100")!!, "\uE001", 2),
-    YELLOW("Yellow Yaks", NamedTextColor.YELLOW, "\uE002", 3),
-    GREEN("Green Grasshoppers", NamedTextColor.GREEN,  "\uE003", 4),
-    AQUA("Aqua Alpacas", NamedTextColor.AQUA, "\uE009", 5),
-    BLUE("Blue Boars", NamedTextColor.BLUE, "\uE004", 6),
-    PURPLE("Purple Pufferfish", TextColor.fromHexString("#bb00ff")!!, "\uE005", 7),
-    PINK("Pink Parrots", TextColor.fromHexString("#ff5cd9")!!, "\uE00A", 8),
+enum class Team(
+    val teamName: String,
+    val color: TextColor,
+    val namedColor: NamedTextColor,
+    val icon: String,
+    val priority: Int,
+    val playingTeam: Boolean = true
+) {
+    RED(
+        "Red Raccoons",
+        NamedTextColor.RED,
+        NamedTextColor.RED,
+        "\uE000",
+        1
+    ),
+    ORANGE(
+        "Orange Orcas",
+        TextColor.fromHexString("#ff9100")!!,
+        NamedTextColor.GOLD,
+        "\uE001",
+        2
+    ),
+    YELLOW(
+        "Yellow Yaks",
+        NamedTextColor.YELLOW,
+        NamedTextColor.YELLOW,
+        "\uE002",
+        3
+    ),
+    GREEN(
+        "Green Grasshoppers",
+        NamedTextColor.GREEN,
+        NamedTextColor.GREEN,
+        "\uE003",
+        4
+    ),
+    AQUA("Aqua Alpacas",
+        NamedTextColor.AQUA,
+        NamedTextColor.AQUA,
+        "\uE009",
+        5
+    ),
+    BLUE("Blue Boars",
+        NamedTextColor.BLUE,
+        NamedTextColor.BLUE,
+        "\uE004",
+        6
+    ),
+    PURPLE(
+        "Purple Pufferfish",
+        TextColor.fromHexString("#bb00ff")!!,
+        NamedTextColor.DARK_PURPLE,
+        "\uE005",
+        7
+    ),
+    PINK(
+        "Pink Parrots",
+        TextColor.fromHexString("#ff5cd9")!!,
+        NamedTextColor.LIGHT_PURPLE,
+        "\uE00A",
+        8
+    ),
 
     // Non-playing teams
-    SPECTATORS("Spectators", NamedTextColor.GRAY, "\uE007", 9, false),
-    DEVELOPERS("Developers", TextColor.fromHexString("#00c8ff")!!, "\uE008", 10, false);
+    SPECTATORS(
+        "Spectators",
+        NamedTextColor.GRAY,
+        NamedTextColor.GRAY,
+        "\uE007",
+        9,
+        false
+    ),
+    DEVELOPERS(
+        "Developers",
+        TextColor.fromHexString("#00c8ff")!!,
+        NamedTextColor.AQUA,
+        "\uE008",
+        10,
+        false
+    );
 
     val formattedName: Component =
         Component.empty()

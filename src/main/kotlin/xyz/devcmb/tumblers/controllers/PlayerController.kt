@@ -65,7 +65,7 @@ class PlayerController : IController {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @field:Configurable("lobby.position")
+        @field:Configurable("lobby.spawn")
         var lobbySpawn: List<Double> = listOf(0.0, 127.0, 0.0)
     }
 
@@ -122,6 +122,7 @@ class PlayerController : IController {
         }
 
         event.joinMessage(Component.empty())
+        playerUIControllers.forEach { it.value.playerJoin(player) }
         playerUIControllers.put(player, PlayerUIController(player))
 
         if(Constants.IS_DEVELOPMENT) {
@@ -153,6 +154,7 @@ class PlayerController : IController {
 
         playerUIControllers[player]?.cleanup()
         playerUIControllers.remove(player)
+        playerUIControllers.forEach { it.value.playerLeave(player) }
 
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)

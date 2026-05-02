@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.ui.PlayerUIController
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -26,6 +27,11 @@ private val playerController: PlayerController by lazy {
 val Player.tumblingPlayer: TumblingPlayer
     get() {
         return playerController.players.find { it.uuid == this.uniqueId }!!
+    }
+
+val Player.uiController: PlayerUIController
+    get() {
+        return playerController.playerUIControllers[this]!!
     }
 
 val Player.formattedName: Component

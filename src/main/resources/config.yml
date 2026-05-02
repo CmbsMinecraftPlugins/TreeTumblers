@@ -84,11 +84,10 @@ templates:
   dioramas: "&/templates/dioramas"
 
 lobby:
-  # Name of a world folder in the `world_root` directory
+  # The hub world
   world: hub
-
   # Where to teleport players in the hub world
-  position: [-20.0, 209.0, 5.0,-90.0,0.0]
+  spawn: [ -23.0, 194.0, 8.0,-90.0,0.0]
 
 games:
   crumble:

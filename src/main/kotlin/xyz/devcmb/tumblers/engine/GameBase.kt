@@ -1,5 +1,9 @@
 package xyz.devcmb.tumblers.engine
 
+import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -44,6 +48,7 @@ import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.uiController
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 /**
@@ -132,7 +137,7 @@ abstract class GameBase(
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @field:Configurable("lobby.position")
+        @field:Configurable("lobby.spawn")
         var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 
@@ -253,6 +258,12 @@ abstract class GameBase(
 
         gamePlayers.forEach {
             it.activateScoreboard(scoreboard)
+            if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+                it.uiController.otherPlayers.setOption(
+                    org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                    org.bukkit.scoreboard.Team.OptionStatus.NEVER
+                )
+            }
         }
 
         gamePregame()
@@ -283,7 +294,28 @@ abstract class GameBase(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
+        if(!flags.contains(Flag.DISABLE_TEAM_GLOW)) glowTeammates()
         gameOn()
+    }
+
+    private fun glowTeammates() {
+        DebugUtil.info("Glowing teammates")
+        gameParticipants.forEach {
+            val team = it.tumblingPlayer.team
+            team.getOnlinePlayers().filter { p -> p != it }.forEach { player ->
+                // https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata#Entity_Metadata_Format
+                val packet = WrapperPlayServerEntityMetadata(
+                    player.entityId,
+                    listOf(EntityData(0, EntityDataTypes.BYTE, 0x40))
+                )
+
+                PacketEvents.getAPI().playerManager.sendPacket(it, packet)
+            }
+        }
+    }
+
+    private fun unGlowTeammates() {
+
     }
 
     /**
@@ -326,6 +358,11 @@ abstract class GameBase(
 
                 it.deactivateScoreboard(scoreboard)
                 it.activateScoreboard("intermissionScoreboard")
+
+                it.uiController.otherPlayers.setOption(
+                    org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                    org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
+                )
 
                 if(it.gameMode != GameMode.CREATIVE) {
                     it.gameMode = GameMode.ADVENTURE

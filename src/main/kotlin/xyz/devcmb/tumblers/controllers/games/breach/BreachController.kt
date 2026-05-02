@@ -47,7 +47,6 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
@@ -189,7 +188,8 @@ class BreachController: GameBase(
     flags = setOf(
         Flag.DISABLE_BLOCK_BREAKING,
         Flag.DISABLE_NATURAL_REGENERATION,
-        Flag.DISABLE_FALL_DAMAGE
+        Flag.DISABLE_FALL_DAMAGE,
+        Flag.HIDE_ENEMY_NAMETAGS
     ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font),
@@ -220,9 +220,6 @@ class BreachController: GameBase(
     lateinit var playingTeams: Pair<Team, Team>
     val eventController by lazy {
         ControllerDelegate.getController("eventController") as EventController
-    }
-    val playerController: PlayerController by lazy {
-        ControllerDelegate.getController("playerController") as PlayerController
     }
 
     var team1score: Int = 0
@@ -357,14 +354,6 @@ class BreachController: GameBase(
                     it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
                     it.openHandledInventory("breachKitSelector")
 
-                    val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
-                    teams.filter { t -> t != team }.forEach { team ->
-                        team.getOnlinePlayers().forEach { plr ->
-                            hiddenTeam?.addEntry(plr.name)
-                        }
-                    }
-
-
                     cleanupPlayer(it)
                 }
             }
@@ -431,10 +420,6 @@ class BreachController: GameBase(
                 it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
                 it.disableBossBar("countdownBossbar")
                 it.inventory.clear()
-                val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
-                gameParticipants.forEach { plr ->
-                    hiddenTeam?.addEntry(plr.name)
-                }
                 // #crunch maxxing
                 cleanupPlayer(it)
             }
@@ -496,15 +481,6 @@ class BreachController: GameBase(
     override fun playerJoin(player: Player) {
         player.enableBossBar("countdownBossbar")
         player.enableBossBar("breachScoreBossbar")
-
-        gameParticipants.forEach {
-            val hiddenTeam = playerController.playerUIControllers[it]?.playerScoreboard?.getTeam("hiddenNames")
-            gameParticipants.forEach { plr ->
-                hiddenTeam?.addEntry(plr.name)
-            } // You know when.. you.. w....uh..
-        }// its getting to me.
-        // its painfu.l. its not good.but   works. it wokrs... it works.
-
 
         val team = player.tumblingPlayer.team
         val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
