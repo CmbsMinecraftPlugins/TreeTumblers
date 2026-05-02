@@ -31,6 +31,7 @@ import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.PartyScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.SnifferCaretakerScoreboard
 import xyz.devcmb.tumblers.util.runTaskTimer
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class PlayerUIController(val player: Player) {
     val inventories: ArrayList<HandledInventory> = ArrayList()
@@ -48,39 +49,41 @@ class PlayerUIController(val player: Player) {
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
     val updateTask: BukkitTask
 
+    val playerTeam: Team
+    val otherTeams: HashMap<xyz.devcmb.tumblers.data.Team, Team> = HashMap()
+
     init {
-        registerInventory(CrumbleKitSelector(player, gameController))
-        registerInventory(BreachKitSelector(player, gameController))
-        registerInventory(ReadyCheckInventory(player, eventController))
-        registerInventory(SpectateInventory(player, gameController))
+        registerInventories()
+        registerBossBars()
+        registerScoreboards()
 
-        registerBossBar(AliveTeamsBossbar(gameController))
-        registerBossBar(CountdownBossbar(gameController))
-        registerBossBar(CooldownBossbar(player, gameController))
-        registerBossBar(ScoreBossbar(gameController))
-        registerBossBar(DebugBossbar())
+        val playerTumblingTeam = player.tumblingPlayer.team
+        playerTeam = playerScoreboard.registerNewTeam("playerTeam")
+        playerTeam.prefix(Component.text(" ").append(playerTumblingTeam.formattedIcon).append(Component.text(" ")))
+        playerTeam.color(playerTumblingTeam.namedColor)
+        playerTeam.suffix(Component.text(" "))
+        // just sent always because teams are local anyways
+        // i love not having to worry about 2 environments
+        // unlike SOME OTHER PLATFORM
+        playerTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
 
-        if(Constants.IS_DEVELOPMENT) {
-            enableBossBar("debugBossbar")
+        xyz.devcmb.tumblers.data.Team.entries.forEach {
+            val team = playerScoreboard.registerNewTeam(it.name.lowercase())
+            team.color(it.namedColor)
+            team.prefix(Component.text(" ").append(it.formattedIcon).append(Component.text(" ")))
+            team.suffix(Component.text(" "))
+            otherTeams.put(it, team)
         }
 
-        registerScoreboard(CrumbleScoreboard(gameController, player))
-        registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
-        registerScoreboard(DeathrunScoreboard(gameController, player))
-        registerScoreboard(PartyScoreboard(gameController, player))
-        registerScoreboard(BreachScoreboard(gameController, player))
-
-        registerScoreboard(IntermissionScoreboard(eventController, player))
-
-        if(gameController.activeGame == null) {
-            activateScoreboard("intermissionScoreboard")
+        Bukkit.getOnlinePlayers().forEach {
+            if(it.tumblingPlayer.team == player.tumblingPlayer.team) {
+                playerTeam.addEntry(it.name)
+            } else {
+                otherTeams[it.tumblingPlayer.team]!!.addEntry(it.name)
+            }
         }
 
         player.scoreboard = playerScoreboard
-
-        playerScoreboard.registerNewTeam("hiddenNames")
-        val team = playerScoreboard.getTeam("hiddenNames")
-        team!!.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
 
         updateTask = runTaskTimer(0, 5) {
             bossBars.forEach {
@@ -98,6 +101,52 @@ class PlayerUIController(val player: Player) {
                 val scoreboard = scoreboards.find { it.id == id }!!
                 scoreboard.getObjectives(playerScoreboard)
             }
+        }
+    }
+
+    fun playerJoin(plr: Player) {
+        if(plr.tumblingPlayer.team == player.tumblingPlayer.team) {
+            playerTeam.addEntry(plr.name)
+        } else {
+            otherTeams[plr.tumblingPlayer.team]!!.addEntry(plr.name)
+        }
+    }
+
+    fun playerLeave(plr: Player) {
+        playerTeam.removeEntry(plr.name)
+        otherTeams[plr.tumblingPlayer.team]!!.removeEntry(plr.name)
+    }
+
+    fun registerInventories() {
+        registerInventory(CrumbleKitSelector(player, gameController))
+        registerInventory(BreachKitSelector(player, gameController))
+        registerInventory(ReadyCheckInventory(player, eventController))
+        registerInventory(SpectateInventory(player, gameController))
+    }
+
+    fun registerBossBars() {
+        registerBossBar(AliveTeamsBossbar(gameController))
+        registerBossBar(CountdownBossbar(gameController))
+        registerBossBar(CooldownBossbar(player, gameController))
+        registerBossBar(ScoreBossbar(gameController))
+        registerBossBar(DebugBossbar())
+
+        if(Constants.IS_DEVELOPMENT) {
+            enableBossBar("debugBossbar")
+        }
+    }
+
+    fun registerScoreboards() {
+        registerScoreboard(CrumbleScoreboard(gameController, player))
+        registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
+        registerScoreboard(DeathrunScoreboard(gameController, player))
+        registerScoreboard(PartyScoreboard(gameController, player))
+        registerScoreboard(BreachScoreboard(gameController, player))
+
+        registerScoreboard(IntermissionScoreboard(eventController, player))
+
+        if(gameController.activeGame == null) {
+            activateScoreboard("intermissionScoreboard")
         }
     }
 

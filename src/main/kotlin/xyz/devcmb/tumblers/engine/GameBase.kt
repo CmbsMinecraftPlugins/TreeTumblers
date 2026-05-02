@@ -44,7 +44,7 @@ import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
-import xyz.devcmb.tumblers.util.unpackCoordinates
+import xyz.devcmb.tumblers.util.uiController
 
 /**
  * Base class for all games
@@ -131,9 +131,6 @@ abstract class GameBase(
     companion object {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
-
-        @field:Configurable("lobby.position")
-        var lobbyPosition: List<Double> = listOf(0.0,78.0,0.0)
     }
 
     /**
@@ -253,6 +250,14 @@ abstract class GameBase(
 
         gamePlayers.forEach {
             it.activateScoreboard(scoreboard)
+            if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+                it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                    team.setOption(
+                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                        org.bukkit.scoreboard.Team.OptionStatus.NEVER
+                    )
+                }
+            }
         }
 
         gamePregame()
@@ -283,6 +288,11 @@ abstract class GameBase(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
+        if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
+            Bukkit.getOnlinePlayers().forEach {
+                it.activateScoreboard("healthIndicatorScoreboard")
+            }
+        }
         gameOn()
     }
 
@@ -320,12 +330,20 @@ abstract class GameBase(
 
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
-                it.teleport(lobbyPosition.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!))
+                playerController.spawnHub(it)
                 it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                 it.foodLevel = 20
 
                 it.deactivateScoreboard(scoreboard)
+                it.deactivateScoreboard("healthIndicatorScoreboard")
                 it.activateScoreboard("intermissionScoreboard")
+
+                it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                    team.setOption(
+                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                        org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
+                    )
+                }
 
                 if(it.gameMode != GameMode.CREATIVE) {
                     it.gameMode = GameMode.ADVENTURE
@@ -608,6 +626,7 @@ abstract class GameBase(
 
         gamePlayers.add(player)
         player.activateScoreboard(scoreboard)
+
         if(player.tumblingPlayer.team.playingTeam) {
             gameParticipants.add(player)
         } else {
@@ -624,6 +643,9 @@ abstract class GameBase(
                 }
                 State.PREGAME,
                 State.GAME_ON -> {
+                    if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
+                        player.activateScoreboard("healthIndicatorScoreboard")
+                    }
                     playerJoin(player)
                 }
                 else -> return@runTaskLater

@@ -12,14 +12,13 @@ import org.bukkit.WorldCreator
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.server.ServerLoadEvent
+import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.engine.GameBase.Companion.lobbyPosition
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
-import xyz.devcmb.tumblers.util.unpackCoordinates
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -37,6 +36,10 @@ class WorldController : IController {
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
+    }
+
+    val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
     }
 
     override fun init() {
@@ -131,7 +134,7 @@ class WorldController : IController {
                 val location = if(world.name == lobbyWorld || hub == null) {
                     Location(Bukkit.getWorld("world")!!, 0.0, 127.0, 0.0)
                 } else {
-                    lobbyPosition.unpackCoordinates(hub)
+                    playerController.getLobbyPosition()
                 }
 
                 it.teleport(location)

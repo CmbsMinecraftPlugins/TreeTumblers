@@ -353,7 +353,8 @@ class SnifferCaretakerController : GameBase(
         Material.BROWN_MUSHROOM,
         Material.RED_MUSHROOM,
         Material.LADDER, // because you can craft them, and im not stopping you!
-        Material.GLASS
+        Material.GLASS,
+        Material.SUGAR_CANE
     )
 
     val kit: List<ItemStack> = listOf(
@@ -1252,9 +1253,14 @@ class SnifferCaretakerController : GameBase(
         }
     }
 
+    val farmlandPlacables = setOf(
+        Material.WHEAT,
+        Material.PUMPKIN_STEM,
+    )
+
     @EventHandler
     fun blockPlaceEvent(event: BlockPlaceEvent) {
-        if(event.block.getRelative(BlockFace.DOWN).type == Material.FARMLAND) {
+        if(event.block.getRelative(BlockFace.DOWN).type == Material.FARMLAND && !farmlandPlacables.contains(event.block.type)) {
             event.isCancelled = true
             return
         }

@@ -12,8 +12,10 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
+import org.bukkit.block.BlockFace
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
@@ -30,6 +32,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
@@ -39,11 +42,12 @@ import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.unpackCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 
 @Controller("playerController", Controller.Priority.MEDIUM)
@@ -65,8 +69,20 @@ class PlayerController : IController {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "world"
 
-        @field:Configurable("lobby.position")
-        var lobbySpawn: List<Double> = listOf(0.0, 127.0, 0.0)
+        @field:Configurable("lobby.spawn.start")
+        val lobbySpawnStart: List<Int> = listOf(-56, 190, 13)
+
+        @field:Configurable("lobby.spawn.end")
+        val lobbySpawnEnd: List<Int> = listOf(-80,190,3)
+
+        @field:Configurable("lobby.spawn.yaw")
+        val lobbySpawnYaw: Double = -90.0
+
+        @field:Configurable("lobby.spawn.pitch")
+        val lobbySpawnPitch: Double = 0.0
+
+        @field:Configurable("lobby.spawn.floor")
+        val lobbySpawnFloor: Material = Material.SMOOTH_STONE
     }
 
     override fun init() {
@@ -93,6 +109,31 @@ class PlayerController : IController {
         players.find { it.uuid == uuid }!!.team = team
     }
 
+    fun spawnHub(player: Player) {
+        player.teleport(getLobbyPosition())
+    }
+
+    fun getLobbyPosition(): Location {
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val startLocation = lobbySpawnStart.validateLocation(hub)
+            ?: throw TumblingGenericException("Start location for hub spawning is not a valid location list")
+
+        val endLocation = lobbySpawnEnd.validateLocation(hub)
+            ?: throw TumblingGenericException("End location for hub spawning is not a valid location list")
+
+        val validSpawns: ArrayList<Location> = ArrayList()
+        startLocation.forEachRegion(endLocation) {
+            if(it.type == lobbySpawnFloor && it.getRelative(BlockFace.UP).isEmpty) {
+                validSpawns.add(it.location.clone().add(0.0,1.0,0.0))
+            }
+        }
+
+        val location = validSpawns.random().clone().toCenterLocation()
+        location.pitch = lobbySpawnPitch.toFloat()
+        location.yaw = lobbySpawnYaw.toFloat()
+        return location
+    }
+
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -107,7 +148,7 @@ class PlayerController : IController {
             it.remove()
         }
 
-        runTask { player.teleport(lobbySpawn.unpackCoordinates(Bukkit.getWorld(lobbyWorld)!!)) }
+        runTask { spawnHub(player) }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
@@ -122,6 +163,7 @@ class PlayerController : IController {
         }
 
         event.joinMessage(Component.empty())
+        playerUIControllers.forEach { it.value.playerJoin(player) }
         playerUIControllers.put(player, PlayerUIController(player))
 
         if(Constants.IS_DEVELOPMENT) {
@@ -153,6 +195,7 @@ class PlayerController : IController {
 
         playerUIControllers[player]?.cleanup()
         playerUIControllers.remove(player)
+        playerUIControllers.forEach { it.value.playerLeave(player) }
 
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
@@ -249,6 +292,7 @@ class PlayerController : IController {
         }
 
         val channel = channels[event.player] ?: ChatChannel.LOCAL
+
         val viewers = Bukkit.getOnlinePlayers().filter {
             channel.canSee(event.player, it)
         }
@@ -315,6 +359,24 @@ class PlayerController : IController {
             override fun format(sender: Player, message: Component): Component {
                 return Format.mm(
                     "<color:${color.asHexString()}>[Staff] <sender>: <message></color>",
+                    Placeholder.component("sender", sender.formattedName),
+                    Placeholder.component("message", message)
+                )
+            }
+        },
+        // maybe add some protection so you're not wc-ing the announcement channel
+        ANNOUNCEMENT("Announcement", NamedTextColor.GOLD) {
+            override fun canSee(sender: Player?, receiver: Player): Boolean {
+                return true
+            }
+
+            override fun canSend(player: Player): Boolean {
+                return player.hasPermission("tumbling.dev") || player.hasPermission("tumbling.organizer")
+            }
+
+            override fun format(sender: Player, message: Component): Component {
+                return Format.mm(
+                    "<aqua><line:30></aqua><br><br><br><sender>: <message><br><br><br><aqua><line:30></aqua>",
                     Placeholder.component("sender", sender.formattedName),
                     Placeholder.component("message", message)
                 )

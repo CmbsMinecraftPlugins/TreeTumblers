@@ -49,6 +49,7 @@ tasks {
             modrinth("fastasyncworldedit", "2.15.0")
             modrinth("axiom-paper-plugin", "5.0.4+1.21.11")
             github("libraryaddict", "LibsDisguises", "v11.0.16", "LibsDisguises-11.0.16-Github.jar")
+//            url("https://ci.citizensnpcs.co/job/Citizens2/4171/artifact/dist/target/Citizens-2.0.42-b4171.jar")
         }
         minecraftVersion("1.21.11")
     }
