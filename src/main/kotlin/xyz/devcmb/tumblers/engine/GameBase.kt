@@ -1,9 +1,5 @@
 package xyz.devcmb.tumblers.engine
 
-import com.github.retrooper.packetevents.PacketEvents
-import com.github.retrooper.packetevents.protocol.entity.data.EntityData
-import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
-import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -294,28 +290,7 @@ abstract class GameBase(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
-        if(!flags.contains(Flag.DISABLE_TEAM_GLOW)) glowTeammates()
         gameOn()
-    }
-
-    private fun glowTeammates() {
-        DebugUtil.info("Glowing teammates")
-        gameParticipants.forEach {
-            val team = it.tumblingPlayer.team
-            team.getOnlinePlayers().filter { p -> p != it }.forEach { player ->
-                // https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata#Entity_Metadata_Format
-                val packet = WrapperPlayServerEntityMetadata(
-                    player.entityId,
-                    listOf(EntityData(0, EntityDataTypes.BYTE, 0x40))
-                )
-
-                PacketEvents.getAPI().playerManager.sendPacket(it, packet)
-            }
-        }
-    }
-
-    private fun unGlowTeammates() {
-
     }
 
     /**

@@ -24,6 +24,7 @@ class OverheadNameListener : PacketListener {
         }
 
         packet.entityMetadata.add(EntityData(2, EntityDataTypes.OPTIONAL_ADV_COMPONENT, Optional.of(player.formattedName)))
+        packet.entityMetadata.add(EntityData(3, EntityDataTypes.BOOLEAN, true))
         event.markForReEncode(true)
     }
 }
