@@ -9,7 +9,6 @@ import org.bukkit.event.server.ServerLoadEvent
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.packet.GlowingPlayersListener
-import xyz.devcmb.tumblers.packet.OverheadNameListener
 import xyz.devcmb.tumblers.packet.ScoreboardNumbersListener
 
 @Controller("packetController", Controller.Priority.MEDIUM)
@@ -21,7 +20,6 @@ class PacketController : IController {
 
         loadListener(ScoreboardNumbersListener(), PacketListenerPriority.LOW)
         loadListener(GlowingPlayersListener(), PacketListenerPriority.LOW)
-        loadListener(OverheadNameListener(), PacketListenerPriority.LOW)
     }
 
     private fun loadListener(listener: PacketListener, priority: PacketListenerPriority) {

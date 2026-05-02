@@ -12,7 +12,6 @@ import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class GlowingPlayersListener : PacketListener {
@@ -34,10 +33,7 @@ class GlowingPlayersListener : PacketListener {
         val packet = WrapperPlayServerEntityMetadata(event)
         val metaPlayer = Bukkit.getOnlinePlayers().find { it.entityId == packet.entityId }
 
-        if(metaPlayer == null) {
-            DebugUtil.severe("Attempted to update metadata for a nonexistent player ${packet.entityId}")
-            return
-        }
+        if(metaPlayer == null) return
 
         if(receiver.tumblingPlayer.team == metaPlayer.tumblingPlayer.team && receiver != metaPlayer) {
             packet.entityMetadata.add(EntityData(0, EntityDataTypes.BYTE, 0x40))
