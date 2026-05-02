@@ -50,26 +50,36 @@ class PlayerUIController(val player: Player) {
     val updateTask: BukkitTask
 
     val playerTeam: Team
-    val otherPlayers: Team
+    val otherTeams: HashMap<xyz.devcmb.tumblers.data.Team, Team> = HashMap()
 
     init {
         registerInventories()
         registerBossBars()
         registerScoreboards()
 
+        val playerTumblingTeam = player.tumblingPlayer.team
         playerTeam = playerScoreboard.registerNewTeam("playerTeam")
-        playerTeam.color(player.tumblingPlayer.team.namedColor)
+        playerTeam.prefix(Component.text(" ").append(playerTumblingTeam.formattedIcon).append(Component.text(" ")))
+        playerTeam.color(playerTumblingTeam.namedColor)
+        playerTeam.suffix(Component.text(" "))
         // just sent always because teams are local anyways
         // i love not having to worry about 2 environments
         // unlike SOME OTHER PLATFORM
         playerTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
 
-        otherPlayers = playerScoreboard.registerNewTeam("otherPlayers")
+        xyz.devcmb.tumblers.data.Team.entries.forEach {
+            val team = playerScoreboard.registerNewTeam(it.name.lowercase())
+            team.color(it.namedColor)
+            team.prefix(Component.text(" ").append(it.formattedIcon).append(Component.text(" ")))
+            team.suffix(Component.text(" "))
+            otherTeams.put(it, team)
+        }
+
         Bukkit.getOnlinePlayers().forEach {
             if(it.tumblingPlayer.team == player.tumblingPlayer.team) {
-                playerTeam.addPlayer(it)
+                playerTeam.addEntry(it.name)
             } else {
-                otherPlayers.addPlayer(it)
+                otherTeams[it.tumblingPlayer.team]!!.addEntry(it.name)
             }
         }
 
@@ -98,13 +108,13 @@ class PlayerUIController(val player: Player) {
         if(plr.tumblingPlayer.team == player.tumblingPlayer.team) {
             playerTeam.addEntry(plr.name)
         } else {
-            otherPlayers.addEntry(plr.name)
+            otherTeams[plr.tumblingPlayer.team]!!.addEntry(plr.name)
         }
     }
 
     fun playerLeave(plr: Player) {
         playerTeam.removeEntry(plr.name)
-        otherPlayers.removeEntry(plr.name)
+        otherTeams[plr.tumblingPlayer.team]!!.removeEntry(plr.name)
     }
 
     fun registerInventories() {

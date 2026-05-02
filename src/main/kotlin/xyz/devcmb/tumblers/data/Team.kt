@@ -93,9 +93,12 @@ enum class Team(
         false
     );
 
+    val formattedIcon: Component =
+        Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons"))
+
     val formattedName: Component =
         Component.empty()
-            .append(Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons")))
+            .append(formattedIcon)
             .append(Component.text(" $teamName").color(color))
 
     val audience: Audience

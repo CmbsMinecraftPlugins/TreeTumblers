@@ -255,10 +255,12 @@ abstract class GameBase(
         gamePlayers.forEach {
             it.activateScoreboard(scoreboard)
             if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
-                it.uiController.otherPlayers.setOption(
-                    org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                    org.bukkit.scoreboard.Team.OptionStatus.NEVER
-                )
+                it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                    team.setOption(
+                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                        org.bukkit.scoreboard.Team.OptionStatus.NEVER
+                    )
+                }
             }
         }
 
@@ -334,10 +336,12 @@ abstract class GameBase(
                 it.deactivateScoreboard(scoreboard)
                 it.activateScoreboard("intermissionScoreboard")
 
-                it.uiController.otherPlayers.setOption(
-                    org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                    org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
-                )
+                it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                    team.setOption(
+                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                        org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
+                    )
+                }
 
                 if(it.gameMode != GameMode.CREATIVE) {
                     it.gameMode = GameMode.ADVENTURE
