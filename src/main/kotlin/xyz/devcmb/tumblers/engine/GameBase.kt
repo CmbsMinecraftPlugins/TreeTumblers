@@ -292,6 +292,11 @@ abstract class GameBase(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
+        if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
+            Bukkit.getOnlinePlayers().forEach {
+                it.activateScoreboard("healthIndicatorScoreboard")
+            }
+        }
         gameOn()
     }
 
@@ -334,6 +339,7 @@ abstract class GameBase(
                 it.foodLevel = 20
 
                 it.deactivateScoreboard(scoreboard)
+                it.deactivateScoreboard("healthIndicatorScoreboard")
                 it.activateScoreboard("intermissionScoreboard")
 
                 it.uiController.otherTeams.forEach { tumblingTeam, team ->
@@ -624,6 +630,7 @@ abstract class GameBase(
 
         gamePlayers.add(player)
         player.activateScoreboard(scoreboard)
+
         if(player.tumblingPlayer.team.playingTeam) {
             gameParticipants.add(player)
         } else {
@@ -640,6 +647,9 @@ abstract class GameBase(
                 }
                 State.PREGAME,
                 State.GAME_ON -> {
+                    if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
+                        player.activateScoreboard("healthIndicatorScoreboard")
+                    }
                     playerJoin(player)
                 }
                 else -> return@runTaskLater
