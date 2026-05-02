@@ -70,6 +70,10 @@ class EventController : IController {
         ControllerDelegate.getController<PlayerController>()
     }
 
+    private val musicController: MusicController by lazy {
+        ControllerDelegate.getController<MusicController>()
+    }
+
     lateinit var topbarRunnable: BukkitRunnable
     var state: State = State.EVENT_INACTIVE
 
@@ -226,6 +230,7 @@ class EventController : IController {
         }
 
         voting()
+        musicController.stopMusic()
         state = State.NORMAL_GAME
         gameController.startGame(nextGame!!)
         playedGames.add(nextGame!!)
@@ -626,6 +631,7 @@ class EventController : IController {
             logoLocations.add(location)
         }
 
+        musicController.playMusic(MusicController.Music.VOTING)
         state = State.VOTING
 
         suspendSync {
