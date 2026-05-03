@@ -1,45 +1,36 @@
 package xyz.devcmb.tumblers.ui.scoreboard.games
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import org.bukkit.scoreboard.Criteria
-import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Objective
-import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
 
 class SnifferCaretakerScoreboard(
     val gameController: GameController,
     val player: Player,
+    override val displayName: Component = Format.mm(
+        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
+        Placeholder.unparsed("name", "Sniffer Caretaker")
+    ),
     override val id: String = "snifferCaretakerScoreboard"
-) : HandledScoreboard {
-    override fun getObjectives(scoreboard: Scoreboard): Set<Objective> {
+) : HandledScoreboard.SidebarScoreboard() {
+    override fun getLines(): ArrayList<Component> {
         val activeGame = gameController.activeGame
-        if(activeGame !is SnifferCaretakerController) return emptySet()
-
-        val objective = scoreboard.registerNewObjective(
-            "snifferCaretakerScoreboard",
-            Criteria.create("dummy"),
-            Format.mm("<yellow><b>Sniffer Caretaker</b></yellow>")
-        )
-
-        objective.displaySlot = DisplaySlot.SIDEBAR
+        if(activeGame !is SnifferCaretakerController) return arrayListOf()
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
 
-        MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+        return arrayListOf(
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty()
-        ))
-
-        return setOf(objective)
+        )
     }
 }

@@ -94,13 +94,9 @@ class PlayerUIController(val player: Player) {
                 }
             }
 
-            playerScoreboard.objectives.forEach {
-                it.unregister()
-            }
-
             activeScoreboards.forEach { id ->
                 val scoreboard = scoreboards.find { it.id == id }!!
-                scoreboard.getObjectives(playerScoreboard)
+                scoreboard.update(playerScoreboard)
             }
         }
     }
@@ -233,6 +229,7 @@ class PlayerUIController(val player: Player) {
 
         if(activeScoreboards.contains(id)) return
 
+        scoreboard.enable(playerScoreboard)
         activeScoreboards.add(id)
     }
 
@@ -242,6 +239,7 @@ class PlayerUIController(val player: Player) {
 
         if(!activeScoreboards.contains(id)) return
         activeScoreboards.remove(id)
+        scoreboard.disable(playerScoreboard)
 
         val activeObjectives = activeScoreboardObjectives[id] ?: arrayListOf()
         activeObjectives.forEach {

@@ -3,31 +3,29 @@ package xyz.devcmb.tumblers.ui.scoreboard
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import org.bukkit.scoreboard.Criteria
-import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Objective
-import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class IntermissionScoreboard(
     val eventController: EventController,
     val player: Player,
-    override val id: String = "intermissionScoreboard"
-) : HandledScoreboard {
-    override fun getObjectives(scoreboard: Scoreboard): Set<Objective> {
-        val objective = scoreboard.registerNewObjective(
-            "intermissionScoreboard",
-            Criteria.create("dummy"),
-            Format.mm(
-                MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE
+    override val id: String = "intermissionScoreboard",
+    override val displayName: Component = Format.mm(MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE)
+) : HandledScoreboard.SidebarScoreboard() {
+    override fun getLines(): ArrayList<Component> {
+        val playerPlacement = eventController.getEventPlayerPlacements()
+            .find { it.first.bukkitPlayer == player }
+
+        if(playerPlacement == null) {
+            return arrayListOf(
+                Component.empty(),
+                Format.mm("<aqua>Loading...</aqua>"),
+                Component.empty()
             )
-        )
-        objective.displaySlot = DisplaySlot.SIDEBAR
+        }
 
         val timer: Component = when {
             eventController.readyCheckTimer != null ->
@@ -63,7 +61,6 @@ class IntermissionScoreboard(
             ))
         }
 
-        val playerPlacement = eventController.getEventPlayerPlacements().find { it.first.bukkitPlayer == player } ?: throw IllegalStateException("Event player placement not found")
         val playerPlacementComponent = Format.mm(
             if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
                 else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT,
@@ -73,7 +70,7 @@ class IntermissionScoreboard(
             Placeholder.parsed("score", player.tumblingPlayer.score.toString())
         )
 
-        MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+        return arrayListOf(
             Component.empty(),
             timer,
             gameComponent,
@@ -82,8 +79,6 @@ class IntermissionScoreboard(
             Component.empty(),
             playerPlacementComponent,
             Component.empty()
-        ))
-
-        return setOf(objective)
+        )
     }
 }

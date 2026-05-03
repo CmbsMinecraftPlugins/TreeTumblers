@@ -27,6 +27,7 @@ import org.bukkit.generator.WorldInfo
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.Objective
+import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
 import kotlin.coroutines.resume
@@ -183,12 +184,16 @@ object MiscUtils {
         }
     }
 
-    fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>) {
+    fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>): ArrayList<Score> {
+        val scores: ArrayList<Score> = ArrayList()
         lines.forEachIndexed { index, text ->
             val score = objective.getScore("line$index")
             score.customName(text)
             score.score = lines.size - index
+            scores.add(score)
         }
+
+        return scores
     }
 
     suspend fun titleCountdown(audience: Audience, subtitle: Component, length: Int) {
