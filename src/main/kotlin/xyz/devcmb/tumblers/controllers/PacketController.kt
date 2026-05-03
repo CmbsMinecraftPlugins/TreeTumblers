@@ -11,7 +11,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.packet.GlowingPlayersListener
 import xyz.devcmb.tumblers.packet.ScoreboardNumbersListener
 
-@Controller("packetController", Controller.Priority.MEDIUM)
+@Controller("packetController", Controller.Priority.HIGH)
 class PacketController : IController {
     override fun init() {
         val api = SpigotPacketEventsBuilder.build(TreeTumblers.plugin)

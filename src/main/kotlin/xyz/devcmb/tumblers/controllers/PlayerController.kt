@@ -82,7 +82,7 @@ class PlayerController : IController {
         val lobbySpawnPitch: Double = 0.0
 
         @field:Configurable("lobby.spawn.floor")
-        val lobbySpawnFloor: Material = Material.SMOOTH_STONE
+        val lobbySpawnFloor: Material = Material.STONE_BRICKS
     }
 
     override fun init() {
