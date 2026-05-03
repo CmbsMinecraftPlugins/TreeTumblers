@@ -31,6 +31,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
@@ -58,6 +59,7 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -1041,8 +1043,7 @@ class EventController : IController {
         }
 
         val sorted = playerScores.entries.sortedWith(
-            compareByDescending<MutableMap.MutableEntry<TumblingPlayer, Int>> { it.value }
-                .thenBy { it.key.bukkitPlayer?.name }
+            compareBy({ -it.value }, { it.key.team.priority }),
         )
         return MiscUtils.calculatePlacements(sorted)
     }
@@ -1062,6 +1063,7 @@ class EventController : IController {
 
     val mannequins: ArrayList<Mannequin> = ArrayList()
     val playerSpecificMannequins: HashMap<Player, ArrayList<Mannequin>> = HashMap()
+    val scoreMannequins: ArrayList<Mannequin> = ArrayList()
 
     val mannequinNameTags: ArrayList<TextDisplay> = ArrayList()
     val playerSpecificMannequinNameTags: HashMap<Player, ArrayList<TextDisplay>> = HashMap()
@@ -1072,10 +1074,14 @@ class EventController : IController {
         mannequins.forEach {
             it.remove()
         }
+        mannequins.clear()
 
         mannequinNameTags.forEach {
             it.remove()
         }
+        mannequinNameTags.clear()
+
+        scoreMannequins.clear()
 
         val placements = getEventPlayerPlacements()
         val top = placements.take(3)
@@ -1101,8 +1107,35 @@ class EventController : IController {
         pos.y = individualPosition.y
 
         placements.forEach {
-            if(it.first.bukkitPlayer == null) return@forEach
-            spawnScoreMannequin(pos, it, it.first.bukkitPlayer)
+            val player = it.first.bukkitPlayer
+            if(player == null) return@forEach
+
+            spawnPlayerIndividualMannequin(player)
+        }
+    }
+
+    fun spawnPlayerIndividualMannequin(player: Player) {
+        val placements = getEventPlayerPlacements()
+        val playerPlacement = placements.find { it.first == player.tumblingPlayer }
+        if(playerPlacement == null) return
+
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+
+        val individualPosition = Podiums.individualPodium.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual podium position is not valid!")
+
+        val pos = individualPosition.toCenterLocation()
+        pos.y = individualPosition.y
+
+        val (npc, _) = spawnScoreMannequin(pos, playerPlacement, player)
+        scoreMannequins.add(npc)
+
+        hub.spawn(pos.clone().add(0.0,2.9,0.0), TextDisplay::class.java) { display ->
+            display.isVisibleByDefault = false
+            player.showEntity(TreeTumblers.plugin, display)
+            playerSpecificMannequinNameTags[player]!!.add(display)
+
+            display.text(Format.mm("<green>> View placements <</green>"))
         }
     }
 
@@ -1219,19 +1252,7 @@ class EventController : IController {
         playerSpecificMannequins.put(player, arrayListOf())
         playerSpecificMannequinNameTags.put(player, arrayListOf())
 
-        val placements = getEventPlayerPlacements()
-        val playerPlacement = placements.find { it.first == player.tumblingPlayer }
-
-        if(playerPlacement == null) return
-
-        val hub = Bukkit.getWorld(lobbyWorld)!!
-        val individualPosition = Podiums.individualPodium.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual podium position is not valid!")
-
-        val pos = individualPosition.toCenterLocation()
-        pos.y = individualPosition.y
-
-        spawnScoreMannequin(pos, playerPlacement, player)
+        spawnPlayerIndividualMannequin(player)
     }
 
     @EventHandler
@@ -1249,6 +1270,40 @@ class EventController : IController {
 
         playerSpecificMannequins.remove(player)
         playerSpecificMannequinNameTags.remove(player)
+    }
+
+    val debounces: ArrayList<Player> = ArrayList()
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEntityEvent) {
+        val player = event.player
+        if(player in debounces) return
+        if(event.rightClicked in scoreMannequins) {
+            debounces.add(player)
+            var message = Format.mm("<aqua><line:30></aqua>")
+            val placements = getEventPlayerPlacements()
+            placements.forEach {
+                val plr = it.first
+                message = message.append(Format.mm(
+                    "<br><white><b>${it.second}.</b></white> <player> - <gold>${plr.score}</gold>",
+                    Placeholder.component("player", plr.formattedName)
+                ))
+            }
+            message = message.append(Format.mm("<br><aqua><line:30></aqua>"))
+
+            val playerPlacement = placements.find { it.first == player.tumblingPlayer }
+            if(playerPlacement != null) {
+                message = message.append(Format.mm(
+                    "<br><white><b>${playerPlacement.second}.</b></white> <player> - <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
+                    Placeholder.component("player", player.formattedName)
+                ))
+            }
+
+            player.sendMessage(message)
+            runTaskLater(20) {
+                debounces.remove(player)
+            }
+        }
     }
 
     enum class State {
