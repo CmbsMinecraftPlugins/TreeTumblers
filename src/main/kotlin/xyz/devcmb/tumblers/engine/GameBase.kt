@@ -326,6 +326,7 @@ abstract class GameBase(
      */
     open suspend fun cleanup() {
         suspendSync {
+            eventController.setupIndividualPodiums()
             gameSpectators.toList().forEach(this::unSpectate)
 
             Bukkit.getOnlinePlayers().forEach {

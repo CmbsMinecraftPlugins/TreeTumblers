@@ -17,6 +17,14 @@ event:
   # Whether the plugin should override the server's MOTD
   override_motd: false
 
+  podiums:
+    yaw: -180.0
+    pitch: 0.0
+    first: [-63, 196, 29]
+    second: [-65, 195, 29]
+    third: [-67, 194, 29]
+    individual: [-61, 192, 27, 135, 0]
+
   intermission:
     # If the intermission period should be skipped in between games entirely
     # Should really only be set to true for making games
