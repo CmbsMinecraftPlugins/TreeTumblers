@@ -139,7 +139,9 @@ abstract class GameBase(
     suspend fun load() {
         currentState = State.LOADING
 
-        Bukkit.getOnlinePlayers().forEach { it.deactivateScoreboard("intermissionScoreboard") }
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach { it.deactivateScoreboard("intermissionScoreboard") }
+        }
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
         gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
         gameParticipants.forEach {
@@ -248,14 +250,16 @@ abstract class GameBase(
 
         spawn(SpawnCycle.PREGAME)
 
-        gamePlayers.forEach {
-            it.activateScoreboard(scoreboard)
-            if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
-                it.uiController.otherTeams.forEach { tumblingTeam, team ->
-                    team.setOption(
-                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                        org.bukkit.scoreboard.Team.OptionStatus.NEVER
-                    )
+        suspendSync {
+            gamePlayers.forEach {
+                it.activateScoreboard(scoreboard)
+                if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+                    it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                        team.setOption(
+                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                            org.bukkit.scoreboard.Team.OptionStatus.NEVER
+                        )
+                    }
                 }
             }
         }
@@ -289,8 +293,10 @@ abstract class GameBase(
     suspend fun gameMain() {
         currentState = State.GAME_ON
         if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
-            Bukkit.getOnlinePlayers().forEach {
-                it.activateScoreboard("healthIndicatorScoreboard")
+            suspendSync {
+                Bukkit.getOnlinePlayers().forEach {
+                    it.activateScoreboard("healthIndicatorScoreboard")
+                }
             }
         }
         gameOn()
@@ -326,6 +332,7 @@ abstract class GameBase(
      */
     open suspend fun cleanup() {
         suspendSync {
+            eventController.setupIndividualPodiums()
             gameSpectators.toList().forEach(this::unSpectate)
 
             Bukkit.getOnlinePlayers().forEach {

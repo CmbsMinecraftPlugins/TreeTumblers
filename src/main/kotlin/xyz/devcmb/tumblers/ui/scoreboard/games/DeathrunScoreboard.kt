@@ -3,10 +3,6 @@ package xyz.devcmb.tumblers.ui.scoreboard.games
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import org.bukkit.scoreboard.Criteria
-import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Objective
-import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
@@ -18,21 +14,15 @@ import xyz.devcmb.tumblers.util.MiscUtils
 class DeathrunScoreboard(
     val gameController: GameController,
     val player: Player,
+    override val displayName: Component = Format.mm(
+        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
+        Placeholder.unparsed("name", "Deathrun")
+    ),
     override val id: String = "deathrunScoreboard"
-) : HandledScoreboard {
-    override fun getObjectives(scoreboard: Scoreboard): Set<Objective> {
+) : HandledScoreboard.SidebarScoreboard() {
+    override fun getLines(): ArrayList<Component> {
         val activeGame = gameController.activeGame
-        if(activeGame !is DeathrunController) return emptySet()
-
-        val objective = scoreboard.registerNewObjective(
-            "deathrunGameScoreboard",
-            Criteria.create("dummy"),
-            Format.mm(
-                MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-                Placeholder.unparsed("name", "Deathrun")
-            )
-        )
-        objective.displaySlot = DisplaySlot.SIDEBAR
+        if(activeGame !is DeathrunController) return arrayListOf()
 
         val rounds = arrayListOf<Component>()
         repeat((activeGame.rounds + 3) / 4) { set ->
@@ -57,7 +47,7 @@ class DeathrunScoreboard(
         }
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
-        MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+        return arrayListOf(
             Component.empty(),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
@@ -70,8 +60,6 @@ class DeathrunScoreboard(
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty()
-        ))
-
-        return setOf(objective)
+        )
     }
 }

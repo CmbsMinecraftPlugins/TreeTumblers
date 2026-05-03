@@ -61,6 +61,7 @@ fun Player.deactivateScoreboard(id: String) {
     playerController.playerUIControllers[this]!!.deactivateScoreboard(id)
 }
 
+
 fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
 }

@@ -3,38 +3,26 @@ package xyz.devcmb.tumblers.ui.scoreboard.games
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import org.bukkit.scoreboard.Criteria
-import org.bukkit.scoreboard.DisplaySlot
-import org.bukkit.scoreboard.Objective
-import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleScoreboard(
     val gameController: GameController,
     val player: Player,
+    override val displayName: Component = Format.mm(
+        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
+        Placeholder.unparsed("name", "Crumble")
+    ),
     override val id: String = "crumbleScoreboard"
-) : HandledScoreboard {
-    override fun getObjectives(scoreboard: Scoreboard): Set<Objective> {
+) : HandledScoreboard.SidebarScoreboard() {
+    override fun getLines(): ArrayList<Component> {
         val activeGame = gameController.activeGame
-        if(activeGame !is CrumbleController) return emptySet()
-
-        val objective = scoreboard.registerNewObjective(
-            "crumbleGameScoreboard",
-            Criteria.create("dummy"),
-            Format.mm(
-                MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-                Placeholder.unparsed("name", "Crumble")
-            )
-        )
-
-        objective.displaySlot = DisplaySlot.SIDEBAR
+        if(activeGame !is CrumbleController) return arrayListOf()
 
         var rounds = Format.mm("<aqua>Rounds: </aqua>")
         repeat(activeGame.rounds) {
@@ -49,7 +37,7 @@ class CrumbleScoreboard(
         }
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
-        MiscUtils.addScoreboardObjectiveLines(objective, arrayListOf(
+        return arrayListOf(
             Component.empty(),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
@@ -62,8 +50,6 @@ class CrumbleScoreboard(
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty()
-        ))
-
-        return setOf(objective)
+        )
     }
 }

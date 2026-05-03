@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers
 
+import com.destroystokyo.paper.profile.ProfileProperty
 import com.sk89q.worldedit.EditSession
 import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.bukkit.BukkitAdapter
@@ -8,9 +9,13 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.transform.AffineTransform
 import com.sk89q.worldedit.session.ClipboardHolder
+import io.ktor.client.call.body
+import io.ktor.client.request.get
+import io.papermc.paper.datacomponent.item.ResolvableProfile
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -21,9 +26,14 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Display
+import org.bukkit.entity.Mannequin
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.player.PlayerInteractEntityEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
@@ -33,6 +43,7 @@ import org.joml.Vector3f
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
+import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -48,10 +59,12 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
+import java.util.UUID
 import kotlin.math.min
 
 @Controller("eventController", Controller.Priority.MEDIUM)
@@ -108,35 +121,57 @@ class EventController : IController {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
 
-        @field:Configurable("event.voting.inactive_quadrant_material")
-        var inactiveQuadrantMaterial: Material = Material.GRAY_CONCRETE
+        object Voting {
+            @field:Configurable("event.voting.inactive_quadrant_material")
+            var inactiveQuadrantMaterial: Material = Material.GRAY_CONCRETE
 
-        @field:Configurable("event.voting.center")
-        var voteCenter: List<Int> = listOf(0,0,0)
+            @field:Configurable("event.voting.center")
+            var voteCenter: List<Int> = listOf(0,0,0)
 
-        @field:Configurable("event.voting.quadrant_separator")
-        var quadrantSeparator: Material = Material.SMOOTH_QUARTZ_SLAB
+            @field:Configurable("event.voting.quadrant_separator")
+            var quadrantSeparator: Material = Material.SMOOTH_QUARTZ_SLAB
 
-        @field:Configurable("event.voting.quadrant_replacement")
-        var quadrantReplacement: Material = Material.SMOOTH_QUARTZ
+            @field:Configurable("event.voting.quadrant_replacement")
+            var quadrantReplacement: Material = Material.SMOOTH_QUARTZ
 
-        @field:Configurable("event.voting.dome_start")
-        var domeStart: List<Int> = listOf(-8,189,24)
+            @field:Configurable("event.voting.dome_start")
+            var domeStart: List<Int> = listOf(-8,189,24)
 
-        @field:Configurable("event.voting.dome_end")
-        var domeEnd: List<Int> = listOf(26,197,-11)
+            @field:Configurable("event.voting.dome_end")
+            var domeEnd: List<Int> = listOf(26,197,-11)
 
-        @field:Configurable("templates.dioramas")
-        var dioramasFolder: String = "&/templates/dioramas"
-            get() {
-                return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
-            }
+            @field:Configurable("templates.dioramas")
+            var dioramasFolder: String = "&/templates/dioramas"
+                get() {
+                    return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
+                }
+        }
 
         @field:Configurable("event.intermission.skip")
         var skipIntermission: Boolean = false
 
         @field:Configurable("event.intermission.time")
         var intermissionLength: Int = 90
+
+        object Podiums {
+            @field:Configurable("event.podiums.yaw")
+            var podiumYaw: Double = -180.0
+
+            @field:Configurable("event.podiums.pitch")
+            var podiumPitch: Double = 0.0
+
+            @field:Configurable("event.podiums.first")
+            var firstPodium: List<Int> = listOf(-63, 196, 29)
+
+            @field:Configurable("event.podiums.second")
+            var secondPodium: List<Int> = listOf(-65, 195, 29)
+
+            @field:Configurable("event.podiums.third")
+            var thirdPodiums: List<Int> = listOf(-67, 194, 29)
+
+            @field:Configurable("event.podiums.individual")
+            var individualPodium: List<Int> = listOf(-61, 192, 27, 135, 0)
+        }
     }
 
     override fun init() {
@@ -167,7 +202,7 @@ class EventController : IController {
 
             val blocks: ArrayList<Location> = ArrayList()
             from.forEachRegion(to) { block ->
-                if(block.type == inactiveQuadrantMaterial) {
+                if(block.type == Voting.inactiveQuadrantMaterial) {
                     blocks.add(block.location)
                 }
             }
@@ -636,7 +671,7 @@ class EventController : IController {
 
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
-                val location = voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val location = Voting.voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting arena does not have a center location")
 
                 it.teleport(location.toCenterLocation())
@@ -649,14 +684,14 @@ class EventController : IController {
             joined = true
 
             timeExecution(2) {
-                val domeFrom = domeStart.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val domeFrom = Voting.domeStart.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Dome from coordinates aren't valid!")
-                val domeTo = domeEnd.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val domeTo = Voting.domeEnd.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Dome to coordinates aren't valid!")
 
                 val blocks: ArrayList<Location> = ArrayList()
                 domeFrom.forEachRegion(domeTo) {
-                    if(it.type != quadrantSeparator) return@forEachRegion
+                    if(it.type != Voting.quadrantSeparator) return@forEachRegion
                     blocks.add(it.location.clone())
                 }
 
@@ -665,7 +700,7 @@ class EventController : IController {
                         blocks.forEach { base ->
                             val location = Location(base.world, base.x, base.y + i, base.z)
                             originalBlocks.put(location, location.block.type)
-                            location.block.type = quadrantReplacement
+                            location.block.type = Voting.quadrantReplacement
                         }
                     }
 
@@ -733,7 +768,7 @@ class EventController : IController {
         suspendSync {
             votingQuadrants.forEach { quadrant ->
                 quadrant.forEach { loc ->
-                    loc.block.type = inactiveQuadrantMaterial
+                    loc.block.type = Voting.inactiveQuadrantMaterial
                 }
             }
         }
@@ -800,7 +835,7 @@ class EventController : IController {
 
     val currentDioramaSessions: ArrayList<EditSession> = ArrayList()
     fun loadDiorama(id: String, index: Int) {
-        val schematic = File(dioramasFolder, "$id.schem")
+        val schematic = File(Voting.dioramasFolder, "$id.schem")
         if(!schematic.exists()) {
             DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
             return
@@ -818,7 +853,7 @@ class EventController : IController {
         }
 
         val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
-        clipboard.origin = BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
+        clipboard.origin = BukkitAdapter.adapt(Voting.voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
 
         val editSession = WorldEdit.getInstance()
             .newEditSessionBuilder()
@@ -833,7 +868,7 @@ class EventController : IController {
         try {
             val operation = holder
                 .createPaste(editSession)
-                .to(BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint())
+                .to(BukkitAdapter.adapt(Voting.voteCenter.validateLocation(lobbyWorld)).toBlockPoint())
                 .ignoreAirBlocks(true)
                 .build()
 
@@ -1008,8 +1043,7 @@ class EventController : IController {
         }
 
         val sorted = playerScores.entries.sortedWith(
-            compareByDescending<MutableMap.MutableEntry<TumblingPlayer, Int>> { it.value }
-                .thenBy { it.key.bukkitPlayer?.name }
+            compareBy({ -it.value }, { it.key.team.priority }),
         )
         return MiscUtils.calculatePlacements(sorted)
     }
@@ -1027,12 +1061,179 @@ class EventController : IController {
         }
     }
 
+    val mannequins: ArrayList<Mannequin> = ArrayList()
+    val playerSpecificMannequins: HashMap<Player, ArrayList<Mannequin>> = HashMap()
+    val scoreMannequins: ArrayList<Mannequin> = ArrayList()
+
+    val mannequinNameTags: ArrayList<TextDisplay> = ArrayList()
+    val playerSpecificMannequinNameTags: HashMap<Player, ArrayList<TextDisplay>> = HashMap()
+
+    val skinResponseCache: HashMap<TumblingPlayer, SkinDataResponse> = HashMap()
+
+    fun setupIndividualPodiums() {
+        mannequins.forEach {
+            it.remove()
+        }
+        mannequins.clear()
+
+        mannequinNameTags.forEach {
+            it.remove()
+        }
+        mannequinNameTags.clear()
+
+        scoreMannequins.clear()
+
+        val placements = getEventPlayerPlacements()
+        val top = placements.take(3)
+
+        val podiums = arrayListOf(Podiums.firstPodium, Podiums.secondPodium, Podiums.thirdPodiums)
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+        top.forEachIndexed { i, placement ->
+            val podium = podiums[i].validateLocation(hub)
+                ?: throw TumblingGenericException("Podium ${i + 1} position is not valid!")
+
+            val pos = podium.toCenterLocation()
+            pos.y = podium.y
+            pos.yaw = Podiums.podiumYaw.toFloat()
+            pos.pitch = Podiums.podiumPitch.toFloat()
+
+            spawnScoreMannequin(pos, placement)
+        }
+
+        val individualPosition = Podiums.individualPodium.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual podium position is not valid!")
+
+        val pos = individualPosition.toCenterLocation()
+        pos.y = individualPosition.y
+
+        placements.forEach {
+            val player = it.first.bukkitPlayer
+            if(player == null) return@forEach
+
+            spawnPlayerIndividualMannequin(player)
+        }
+    }
+
+    fun spawnPlayerIndividualMannequin(player: Player) {
+        val placements = getEventPlayerPlacements()
+        val playerPlacement = placements.find { it.first == player.tumblingPlayer }
+        if(playerPlacement == null) return
+
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+
+        val individualPosition = Podiums.individualPodium.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual podium position is not valid!")
+
+        val pos = individualPosition.toCenterLocation()
+        pos.y = individualPosition.y
+
+        val (npc, _) = spawnScoreMannequin(pos, playerPlacement, player)
+        scoreMannequins.add(npc)
+
+        hub.spawn(pos.clone().add(0.0,2.9,0.0), TextDisplay::class.java) { display ->
+            display.isVisibleByDefault = false
+            player.showEntity(TreeTumblers.plugin, display)
+            playerSpecificMannequinNameTags[player]!!.add(display)
+
+            display.text(Format.mm("<green>> View placements <</green>"))
+        }
+    }
+
+    @Suppress("UnstableApiUsage")
+    fun spawnScoreMannequin(location: Location, placement: Pair<TumblingPlayer, Int>, player: Player? = null): Pair<Mannequin, ArrayList<TextDisplay>> {
+        val npc = location.world.spawn(location, Mannequin::class.java) { npc ->
+            mannequins.add(npc)
+            npc.isInvulnerable = true
+            npc.isImmovable = true
+
+            if(player != null) {
+                npc.isVisibleByDefault = false
+                player.showEntity(TreeTumblers.plugin, npc)
+                playerSpecificMannequins[player]!!.add(npc)
+            }
+
+            val player = placement.first
+            TreeTumblers.pluginScope.launch {
+                val data = getSkinData(player)
+                val skin = data.properties.first()
+
+                val uuid = UUID.randomUUID()
+                val profile = Bukkit.createProfile(uuid, uuid.toString().take(16))
+                profile.properties.add(
+                    ProfileProperty("textures", skin.value, skin.signature)
+                )
+
+                suspendSync {
+                    npc.profile = ResolvableProfile.resolvableProfile(profile)
+                }
+            }
+        }
+
+        val textDisplays = arrayListOf(
+            location.world.spawn(location.clone().add(0.0,2.6,0.0), TextDisplay::class.java) {
+                if(player != null) {
+                    it.isVisibleByDefault = false
+                    player.showEntity(TreeTumblers.plugin, it)
+                    playerSpecificMannequinNameTags[player]!!.add(it)
+                }
+
+                it.text(Format.mm("<bold>#${placement.second}</bold>"))
+            },
+
+            location.world.spawn(location.clone().add(0.0,2.3,0.0), TextDisplay::class.java) {
+                if(player != null) {
+                    it.isVisibleByDefault = false
+                    player.showEntity(TreeTumblers.plugin, it)
+                    playerSpecificMannequinNameTags[player]!!.add(it)
+                }
+
+                it.text(placement.first.formattedName)
+            },
+
+            location.world.spawn(location.clone().add(0.0,2.0,0.0), TextDisplay::class.java) {
+                if(player != null) {
+                    it.isVisibleByDefault = false
+                    player.showEntity(TreeTumblers.plugin, it)
+                    playerSpecificMannequinNameTags[player]!!.add(it)
+                }
+
+                it.text(Format.mm("<white><gold>${placement.first.score}</gold> score</white>"))
+            }
+        )
+
+        mannequinNameTags.addAll(textDisplays)
+
+        return Pair(npc, textDisplays)
+    }
+
+    suspend fun getSkinData(player: TumblingPlayer): SkinDataResponse {
+        if(skinResponseCache.containsKey(player)) return skinResponseCache[player]!!
+
+        return TreeTumblers.httpClient.get(
+            "https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}?unsigned=false"
+        ).body<SkinDataResponse>()
+    }
+
+    @Serializable
+    data class SkinDataResponse(
+        val id: String,
+        val name: String,
+        val properties: List<SkinDataResponseProperty>
+    ) {
+        @Serializable
+        data class SkinDataResponseProperty(
+            val name: String,
+            val value: String,
+            val signature: String
+        )
+    }
+
     override fun cleanup() {
         replicateScores()
     }
 
     @EventHandler
-    fun severListPingEvent(event: ServerListPingEvent) {
+    fun serverListPingEvent(event: ServerListPingEvent) {
         if(!overrideMotd) return
 
         val firstGames = gameController.games.filter { it.votable }.take(4)
@@ -1043,6 +1244,66 @@ class EventController : IController {
                     "<color:#64ffb8>■ <footer> ■</color>",
             Placeholder.parsed("footer", footer)
         ))
+    }
+
+    @EventHandler(priority = EventPriority.HIGH)
+    fun playerJoinEvent(event: PlayerJoinEvent) {
+        val player = event.player
+        playerSpecificMannequins.put(player, arrayListOf())
+        playerSpecificMannequinNameTags.put(player, arrayListOf())
+
+        spawnPlayerIndividualMannequin(player)
+    }
+
+    @EventHandler
+    fun playerLeaveEvent(event: PlayerQuitEvent) {
+        val player = event.player
+        playerSpecificMannequins[player]!!.forEach {
+            mannequins.remove(it)
+            it.remove()
+        }
+
+        playerSpecificMannequinNameTags[player]!!.forEach {
+            mannequinNameTags.remove(it)
+            it.remove()
+        }
+
+        playerSpecificMannequins.remove(player)
+        playerSpecificMannequinNameTags.remove(player)
+    }
+
+    val debounces: ArrayList<Player> = ArrayList()
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEntityEvent) {
+        val player = event.player
+        if(player in debounces) return
+        if(event.rightClicked in scoreMannequins) {
+            debounces.add(player)
+            var message = Format.mm("<aqua><line:30></aqua>")
+            val placements = getEventPlayerPlacements()
+            placements.forEach {
+                val plr = it.first
+                message = message.append(Format.mm(
+                    "<br><white><b>${it.second}.</b></white> <player> - <gold>${plr.score}</gold>",
+                    Placeholder.component("player", plr.formattedName)
+                ))
+            }
+            message = message.append(Format.mm("<br><aqua><line:30></aqua>"))
+
+            val playerPlacement = placements.find { it.first == player.tumblingPlayer }
+            if(playerPlacement != null) {
+                message = message.append(Format.mm(
+                    "<br><white><b>${playerPlacement.second}.</b></white> <player> - <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
+                    Placeholder.component("player", player.formattedName)
+                ))
+            }
+
+            player.sendMessage(message)
+            runTaskLater(20) {
+                debounces.remove(player)
+            }
+        }
     }
 
     enum class State {

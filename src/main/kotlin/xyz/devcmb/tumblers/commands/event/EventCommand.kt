@@ -90,4 +90,10 @@ class EventCommand {
         eventController.eventTimer!!.currentTime = time
         sender.sendMessage(Format.success("Event timer set successfully!"))
     }
+
+    @Execute(name = "podiums refresh")
+    fun executePodiumsRefresh(@Context sender: CommandSender) {
+        eventController.setupIndividualPodiums()
+        sender.sendMessage(Format.success("Podiums refreshed successfully!"))
+    }
 }

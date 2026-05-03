@@ -8,10 +8,12 @@ import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerSc
 
 class ScoreboardNumbersListener : PacketListener {
     // https://github.com/maximjsx/CustomScoreNumbers/blob/master/core/src/main/java/com/maximde/customscores/core/packet/listeners/PacketSendListener.java
-    override fun onPacketSend(event: PacketSendEvent?) {
-        if (event!!.packetType !== PacketType.Play.Server.SCOREBOARD_OBJECTIVE) return
+    override fun onPacketSend(event: PacketSendEvent) {
+        if (event.packetType !== PacketType.Play.Server.SCOREBOARD_OBJECTIVE) return
 
         val objective = WrapperPlayServerScoreboardObjective(event)
+        if(objective.renderType == WrapperPlayServerScoreboardObjective.RenderType.HEARTS) return
+
         objective.scoreFormat = ScoreFormat.blankScore()
 
         event.markForReEncode(true)
