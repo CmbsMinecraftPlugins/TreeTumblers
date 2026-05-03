@@ -1,5 +1,8 @@
 ![Tree tumblers thumbnail](./docs/thumbnail.png)
+Demo video: https://youtu.be/WFtXUpfsdHM
+
 # Tree Tumblers
+
 Tree Tumblers is a mcc-styled event plugin for 1.21.11 paper servers that allow teams to face in head-to-head games to determine the best among them.
 
 The plugin adds a variety of games and an event system for playing these games in a loop. This system allows for players to play through all of the event games that are currently apart of the plugin (maximum of 8, depends on how many games are implemented in the version you have installed)
@@ -7,15 +10,15 @@ The plugin adds a variety of games and an event system for playing these games i
 Not wanting to play with event mode? Just use the `/game start <name>` command to run a game sequence without it!
 
 ## Downloading
-The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
+
+You need a lot of setup to use this plugin properly, so you can find an example server in the [releases tab!](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases) (all default config keys are for this)
+
+If you want to go through setting up the plugin yourself, The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
 
 An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
 
-*Some of these platforms may not display our plugin due to review backlogs. However, Hangar should always be up to date.*
-
 - [Hangar](https://hangar.papermc.io/DevCmb/tree-tumblers)
 - [Modrinth](https://modrinth.com/plugin/tree-tumblers)
-- [CurseForge](https://legacy.curseforge.com/minecraft/bukkit-plugins/tree-tumblers)
 
 ## Developing
 If you wish to contribute to the project, you're more than welcome to do so!

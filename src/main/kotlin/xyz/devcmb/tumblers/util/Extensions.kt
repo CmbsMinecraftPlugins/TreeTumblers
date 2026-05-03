@@ -179,6 +179,10 @@ fun Player.sound(sound: Sound) {
     player!!.playSound(player!!.location, sound, 10f, 1f)
 }
 
+fun Player.sound(sound: String) {
+    player!!.playSound(player!!.location, sound, 10f, 1f)
+}
+
 fun Player.hideToAll() {
     playerController.hiddenPlayers.add(this)
     Bukkit.getOnlinePlayers().forEach {
