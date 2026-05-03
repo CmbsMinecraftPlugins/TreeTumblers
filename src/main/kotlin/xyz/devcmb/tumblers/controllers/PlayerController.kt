@@ -70,19 +70,19 @@ class PlayerController : IController {
         var lobbyWorld: String = "world"
 
         @field:Configurable("lobby.spawn.start")
-        val lobbySpawnStart: List<Int> = listOf(-56, 190, 13)
+        var lobbySpawnStart: List<Int> = listOf(-56, 190, 13)
 
         @field:Configurable("lobby.spawn.end")
-        val lobbySpawnEnd: List<Int> = listOf(-80,190,3)
+        var lobbySpawnEnd: List<Int> = listOf(-80,190,3)
 
         @field:Configurable("lobby.spawn.yaw")
-        val lobbySpawnYaw: Double = -90.0
+        var lobbySpawnYaw: Double = -90.0
 
         @field:Configurable("lobby.spawn.pitch")
-        val lobbySpawnPitch: Double = 0.0
+        var lobbySpawnPitch: Double = 0.0
 
         @field:Configurable("lobby.spawn.floor")
-        val lobbySpawnFloor: Material = Material.STONE_BRICKS
+        var lobbySpawnFloor: Material = Material.STONE_BRICKS
     }
 
     override fun init() {
