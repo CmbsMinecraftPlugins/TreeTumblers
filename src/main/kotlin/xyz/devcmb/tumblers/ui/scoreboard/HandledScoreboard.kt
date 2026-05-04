@@ -7,7 +7,6 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.RenderType
 import org.bukkit.scoreboard.Score
 import org.bukkit.scoreboard.Scoreboard
-import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.MiscUtils
 
 sealed interface HandledScoreboard {
@@ -38,8 +37,6 @@ sealed interface HandledScoreboard {
         override fun update(scoreboard: Scoreboard) {
             val lines = getLines()
             if(lastLines == lines) return
-
-            DebugUtil.info("Updating scoreboard $id")
 
             scores.forEach {
                 it.resetScore()

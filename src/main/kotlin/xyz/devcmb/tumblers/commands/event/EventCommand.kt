@@ -93,7 +93,7 @@ class EventCommand {
 
     @Execute(name = "podiums refresh")
     fun executePodiumsRefresh(@Context sender: CommandSender) {
-        eventController.setupIndividualPodiums()
+        eventController.refreshLeaderboards()
         sender.sendMessage(Format.success("Podiums refreshed successfully!"))
     }
 }
