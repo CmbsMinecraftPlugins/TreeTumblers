@@ -111,6 +111,11 @@ class EventController : IController {
             sendDefaultTopbar()
         }
 
+    var lastGameTeamPlacements: ArrayList<Pair<Team, Int>>? = null
+    var lastGamePlayerPlacements: ArrayList<Pair<TumblingPlayer, Int>>? = null
+    var lastGameTeamScores: HashMap<Team, Int>? = null
+    var lastGamePlayerScores: HashMap<TumblingPlayer, Int>? = null
+
     companion object {
         @field:Configurable("event.event_mode")
         var eventMode: Boolean = false
@@ -171,6 +176,17 @@ class EventController : IController {
 
             @field:Configurable("event.podiums.individual")
             var individualPodium: List<Int> = listOf(-61, 192, 27, 135, 0)
+        }
+
+        object Leaderboards {
+            @field:Configurable("event.leaderboards.last_game_team")
+            var lastGameTeamPosition: List<Double> = listOf(-90.0, 203.0, 29.0, -180.0, 0.0)
+
+            @field:Configurable("event.leaderboards.last_game_indiv")
+            var lastGameIndividualPosition: List<Double> = listOf(-93.75, 203.0, 27.5, -135.0, 0.0)
+
+            @field:Configurable("event.leaderboards.overall_team")
+            var overallTeamPosition: List<Double> = listOf(-95.5, 203.0, 24.0, -90.0, 0.0)
         }
     }
 
@@ -1065,24 +1081,31 @@ class EventController : IController {
     val playerSpecificMannequins: HashMap<Player, ArrayList<Mannequin>> = HashMap()
     val scoreMannequins: ArrayList<Mannequin> = ArrayList()
 
-    val mannequinNameTags: ArrayList<TextDisplay> = ArrayList()
+    val textDisplays: ArrayList<TextDisplay> = ArrayList()
     val playerSpecificMannequinNameTags: HashMap<Player, ArrayList<TextDisplay>> = HashMap()
 
     val skinResponseCache: HashMap<TumblingPlayer, SkinDataResponse> = HashMap()
 
-    fun setupIndividualPodiums() {
+    fun refreshLeaderboards() {
         mannequins.forEach {
             it.remove()
         }
         mannequins.clear()
 
-        mannequinNameTags.forEach {
+        textDisplays.forEach {
             it.remove()
         }
-        mannequinNameTags.clear()
+        textDisplays.clear()
 
         scoreMannequins.clear()
 
+        refreshPodiums()
+        refreshLastGameTeamScoreboard()
+        refreshLastGameIndividualScoreboard()
+        refreshOverallTeamScoreboard()
+    }
+
+    fun refreshPodiums() {
         val placements = getEventPlayerPlacements()
         val top = placements.take(3)
 
@@ -1114,6 +1137,87 @@ class EventController : IController {
         }
     }
 
+    fun refreshLastGameTeamScoreboard() {
+        if(lastGameTeamPlacements == null || lastGameTeamScores == null) return
+
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val startPos = Leaderboards.lastGameTeamPosition.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+
+        if(!startPos.chunk.isLoaded) startPos.chunk.load()
+
+        lastGameTeamPlacements!!.reversed().forEachIndexed { i, placement ->
+            hub.spawn(startPos.clone().add(0.0, 0.3 * i, 0.0), TextDisplay::class.java) {
+                textDisplays.add(it)
+                it.text(Format.mm(
+                    "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGameTeamScores!![placement.first] ?: 0}</gold>",
+                    Placeholder.component("team", placement.first.formattedName)
+                ))
+            }
+        }
+
+        hub.spawn(startPos.clone().add(0.0, 0.3 * lastGameTeamPlacements!!.size, 0.0), TextDisplay::class.java) {
+            textDisplays.add(it)
+            it.text(Format.mm("<white><b>Last game team placements</b></white>"))
+        }
+    }
+
+    fun refreshLastGameIndividualScoreboard() {
+        if(lastGamePlayerPlacements == null || lastGamePlayerScores == null) return
+
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val startPos = Leaderboards.lastGameIndividualPosition.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+
+        if(!startPos.chunk.isLoaded) startPos.chunk.load()
+
+        // use team count for consistency
+        val playingTeams = Team.entries.filter { it.playingTeam }.size
+        lastGamePlayerPlacements!!
+            .take(playingTeams) // don't reverse since its top-to-bottom
+            .forEachIndexed { i, placement ->
+                val pos = startPos.clone().add(0.0, 0.3 * (playingTeams - (i + 1)), 0.0)
+                hub.spawn(pos, TextDisplay::class.java) {
+                    textDisplays.add(it)
+                    it.text(Format.mm(
+                        "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGamePlayerScores!![placement.first] ?: 0}</gold>",
+                        Placeholder.component("team", placement.first.formattedName)
+                    ))
+                }
+            }
+
+        hub.spawn(startPos.clone().add(0.0, 0.3 * playingTeams, 0.0), TextDisplay::class.java) {
+            textDisplays.add(it)
+            it.text(Format.mm("<white><b>Last game player placements</b></white>"))
+        }
+    }
+
+    fun refreshOverallTeamScoreboard() {
+        if(!teamScores.any { it.value != 0 }) return
+
+        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val startPos = Leaderboards.overallTeamPosition.validateLocation(hub)
+            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+
+        if(!startPos.chunk.isLoaded) startPos.chunk.load()
+
+        val placements = getEventTeamPlacements()
+        placements.reversed().forEachIndexed { i, placement ->
+            hub.spawn(startPos.clone().add(0.0, 0.3 * i, 0.0), TextDisplay::class.java) {
+                textDisplays.add(it)
+                it.text(Format.mm(
+                    "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${teamScores[placement.first] ?: 0}</gold>",
+                    Placeholder.component("team", placement.first.formattedName)
+                ))
+            }
+        }
+
+        hub.spawn(startPos.clone().add(0.0, 0.3 * placements.size, 0.0), TextDisplay::class.java) {
+            textDisplays.add(it)
+            it.text(Format.mm("<white><b>Overall team placements</b></white>"))
+        }
+    }
+
     fun spawnPlayerIndividualMannequin(player: Player) {
         val placements = getEventPlayerPlacements()
         val playerPlacement = placements.find { it.first == player.tumblingPlayer }
@@ -1127,12 +1231,16 @@ class EventController : IController {
         val pos = individualPosition.toCenterLocation()
         pos.y = individualPosition.y
 
+        if(!pos.chunk.isLoaded) pos.chunk.load()
+
         val (npc, _) = spawnScoreMannequin(pos, playerPlacement, player)
         scoreMannequins.add(npc)
 
         hub.spawn(pos.clone().add(0.0,2.9,0.0), TextDisplay::class.java) { display ->
             display.isVisibleByDefault = false
             player.showEntity(TreeTumblers.plugin, display)
+
+            textDisplays.add(display)
             playerSpecificMannequinNameTags[player]!!.add(display)
 
             display.text(Format.mm("<green>> View placements <</green>"))
@@ -1169,7 +1277,7 @@ class EventController : IController {
             }
         }
 
-        val textDisplays = arrayListOf(
+        val displays = arrayListOf(
             location.world.spawn(location.clone().add(0.0,2.6,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
@@ -1201,9 +1309,9 @@ class EventController : IController {
             }
         )
 
-        mannequinNameTags.addAll(textDisplays)
+        textDisplays.addAll(displays)
 
-        return Pair(npc, textDisplays)
+        return Pair(npc, displays)
     }
 
     suspend fun getSkinData(player: TumblingPlayer): SkinDataResponse {
@@ -1264,7 +1372,7 @@ class EventController : IController {
         }
 
         playerSpecificMannequinNameTags[player]!!.forEach {
-            mannequinNameTags.remove(it)
+            textDisplays.remove(it)
             it.remove()
         }
 
@@ -1285,7 +1393,7 @@ class EventController : IController {
             placements.forEach {
                 val plr = it.first
                 message = message.append(Format.mm(
-                    "<br><white><b>${it.second}.</b></white> <player> - <gold>${plr.score}</gold>",
+                    "<br><white><b>${it.second}.</b></white> <player> <white>-</white> <gold>${plr.score}</gold>",
                     Placeholder.component("player", plr.formattedName)
                 ))
             }
@@ -1294,7 +1402,7 @@ class EventController : IController {
             val playerPlacement = placements.find { it.first == player.tumblingPlayer }
             if(playerPlacement != null) {
                 message = message.append(Format.mm(
-                    "<br><white><b>${playerPlacement.second}.</b></white> <player> - <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
+                    "<br><white><b>${playerPlacement.second}.</b></white> <player> <white>-</white> <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
                     Placeholder.component("player", player.formattedName)
                 ))
             }

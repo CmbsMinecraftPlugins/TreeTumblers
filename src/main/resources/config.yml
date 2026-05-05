@@ -15,7 +15,7 @@ event:
   event_mode: true
 
   # Whether the plugin should override the server's MOTD
-  override_motd: false
+  override_motd: true
 
   podiums:
     yaw: -180.0
@@ -24,6 +24,11 @@ event:
     second: [-85, 205, 29]
     third: [-87, 204, 29]
     individual: [-81, 202, 27, 135, 0]
+
+  leaderboards:
+    last_game_team: [-90.0, 203.0, 29.0, -180.0, 0.0]
+    last_game_indiv: [-93.75, 203.0, 27.5, -135.0, 0.0]
+    overall_team: [-95.5, 203.0, 24.0, -90.0, 0.0]
 
   intermission:
     # If the intermission period should be skipped in between games entirely

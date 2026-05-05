@@ -331,8 +331,14 @@ abstract class GameBase(
      * This should be expanded upon if the game has any listeners registered not in the main class.
      */
     open suspend fun cleanup() {
+        eventController.lastGameTeamPlacements = getTeamPlacements()
+        eventController.lastGamePlayerPlacements = getIndividualPlacements()
+
+        eventController.lastGameTeamScores = teamScores
+        eventController.lastGamePlayerScores = playerScores
+
         suspendSync {
-            eventController.setupIndividualPodiums()
+            eventController.refreshLeaderboards()
             gameSpectators.toList().forEach(this::unSpectate)
 
             Bukkit.getOnlinePlayers().forEach {
