@@ -61,6 +61,7 @@ import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -425,6 +426,8 @@ class SnifferCaretakerController : GameBase(
     val taskQueue: MutableList<String> = mutableListOf()
     val taskIndexes: HashMap<Team, Int> = hashMapOf()
     val currentTasks: HashMap<Team, MutableList<Task>> = hashMapOf()
+    val completedTasks: HashMap<TumblingPlayer, Int> = HashMap()
+    val starsCollected: HashMap<TumblingPlayer, Int> = HashMap()
 
     val signs: HashMap<Team, HashMap<String, TextDisplay>> = hashMapOf()
     val sniffers: HashMap<Team, Sniffer> = hashMapOf()
@@ -924,6 +927,9 @@ class SnifferCaretakerController : GameBase(
 
         if (task.completer != null && task.completer!!.isOnline) {
             grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+
+            completedTasks.put(task.completer!!.tumblingPlayer, (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + 1)
+            starsCollected.put(task.completer!!.tumblingPlayer, (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + task.stars)
         } else {
             grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
         }

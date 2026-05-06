@@ -28,6 +28,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerStatisticIncrementEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
@@ -247,6 +248,11 @@ class PlayerController : IController {
         } else if (event.player.inventory.itemInOffHand.type == Material.MILK_BUCKET) {
             event.player.inventory.setItemInOffHand(ItemStack.of(Material.BUCKET))
         }
+    }
+
+    @EventHandler
+    fun playerStatEvent(event: PlayerStatisticIncrementEvent) {
+        event.isCancelled = true
     }
 
     /*

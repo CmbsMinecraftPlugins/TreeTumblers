@@ -168,16 +168,22 @@ object UserInterfaceUtility {
 
             leaderboard.add(Component.empty())
 
-            var teamPlacementIndex = activeGame.getTeamPlacements().indexOfFirst { it.first == player.tumblingPlayer.team }
-            if(teamPlacementIndex == -1) teamPlacementIndex = activeGame.getTeamPlacements().size + 1
+            val placements = activeGame.getTeamPlacements()
+            var teamPlacementIndex = placements.indexOfFirst { it.first == player.tumblingPlayer.team }
+            if(teamPlacementIndex == -1) teamPlacementIndex = placements.size + 1
 
             val teams = arrayListOf(
-                activeGame.getTeamPlacements().getOrNull(teamPlacementIndex + 1),
-                activeGame.getTeamPlacements()[teamPlacementIndex],
-                activeGame.getTeamPlacements().getOrNull(teamPlacementIndex - 1)
+                placements.getOrNull(teamPlacementIndex - 1),
+                placements[teamPlacementIndex],
+                placements.getOrNull(teamPlacementIndex + 1)
             )
 
-            teams.reversed().forEach {
+            val nextPlacement = placements.getOrNull(teamPlacementIndex - 2)
+            if(teams.filter { it != null }.size != 3 && nextPlacement != null) {
+                teams.addFirst(nextPlacement)
+            }
+
+            teams.forEach {
                 if(it == null) return@forEach
 
                 val (team, placement) = it

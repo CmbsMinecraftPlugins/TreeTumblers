@@ -9,6 +9,7 @@ import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SnifferCaretakerScoreboard(
     val gameController: GameController,
@@ -30,6 +31,9 @@ class SnifferCaretakerScoreboard(
             *leaderboard.toTypedArray(),
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
+            Component.empty(),
+            Format.mm(" <white>Tasks completed: <green>${activeGame.completedTasks[player.tumblingPlayer] ?: 0}</green></white>"),
+            Format.mm(" <white>Stars collected: <yellow>${activeGame.starsCollected[player.tumblingPlayer] ?: 0}</yellow></white>"),
             Component.empty()
         )
     }
