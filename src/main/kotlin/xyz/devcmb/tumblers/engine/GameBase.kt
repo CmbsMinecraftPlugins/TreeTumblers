@@ -659,6 +659,12 @@ abstract class GameBase(
                     if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
                         player.activateScoreboard("healthIndicatorScoreboard")
                     }
+
+                    // this might be problematic in the future, but idk
+                    if(flags.contains(Flag.SURVIVAL_MODE)) {
+                        player.gameMode = GameMode.SURVIVAL
+                    }
+
                     playerJoin(player)
                 }
                 else -> return@runTaskLater
