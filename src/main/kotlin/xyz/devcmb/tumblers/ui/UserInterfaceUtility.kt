@@ -156,28 +156,48 @@ object UserInterfaceUtility {
             return leaderboard
         }
 
-        val placements = activeGame.getTeamPlacements().take(4)
-
-        placements.forEach { (team, placement) ->
+        val placements = activeGame.getTeamPlacements().take(3)
+        if(placements.find { it.first == player.tumblingPlayer.team } == null && player.tumblingPlayer.team.playingTeam) {
+            val top = placements.first()
             leaderboard.add(Format.mm(
                 MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
-                Placeholder.unparsed("placement", placement.toString()),
-                Placeholder.component("team", team.formattedName),
-                Placeholder.parsed("score", activeGame.teamScores[team]!!.toString())
+                Placeholder.unparsed("placement", top.second.toString()),
+                Placeholder.component("team", top.first.formattedName),
+                Placeholder.parsed("score", activeGame.teamScores[top.first]!!.toString())
             ))
-        }
-
-        if(placements.find { it.first == player.tumblingPlayer.team } == null) {
-            val teamPlacement = activeGame.getTeamPlacements().find { it.first == player.tumblingPlayer.team }
-                ?: Pair(player.tumblingPlayer.team, activeGame.getTeamPlacements().size + 1)
 
             leaderboard.add(Component.empty())
-            leaderboard.add(Format.mm(
-                MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
-                Placeholder.unparsed("placement", teamPlacement.second.toString()),
-                Placeholder.component("team", teamPlacement.first.formattedName),
-                Placeholder.parsed("score", activeGame.teamScores[teamPlacement.first]!!.toString())
-            ))
+
+            var teamPlacementIndex = activeGame.getTeamPlacements().indexOfFirst { it.first == player.tumblingPlayer.team }
+            if(teamPlacementIndex == -1) teamPlacementIndex = activeGame.getTeamPlacements().size + 1
+
+            val teams = arrayListOf(
+                activeGame.getTeamPlacements().getOrNull(teamPlacementIndex + 1),
+                activeGame.getTeamPlacements()[teamPlacementIndex],
+                activeGame.getTeamPlacements().getOrNull(teamPlacementIndex - 1)
+            )
+
+            teams.reversed().forEach {
+                if(it == null) return@forEach
+
+                val (team, placement) = it
+                leaderboard.add(Format.mm(
+                    MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                    Placeholder.unparsed("placement", placement.toString()),
+                    Placeholder.component("team", team.formattedName),
+                    Placeholder.parsed("score", activeGame.teamScores[team]!!.toString())
+                ))
+            }
+        } else {
+            val top4 = activeGame.getTeamPlacements().take(4)
+            top4.forEach { (team, placement) ->
+                leaderboard.add(Format.mm(
+                    MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
+                    Placeholder.unparsed("placement", placement.toString()),
+                    Placeholder.component("team", team.formattedName),
+                    Placeholder.parsed("score", activeGame.teamScores[team]!!.toString())
+                ))
+            }
         }
 
         return leaderboard
