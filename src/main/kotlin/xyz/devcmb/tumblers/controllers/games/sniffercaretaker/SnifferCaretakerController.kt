@@ -111,7 +111,7 @@ class SnifferCaretakerController : GameBase(
                 "hungry_wheat",
                 "bored_moss_block",
                 "lonely_cow",
-                "hungry_pumpkin_pie",
+                "bored_glass",
                 "hungry_cake"
             )
 
@@ -355,7 +355,8 @@ class SnifferCaretakerController : GameBase(
         Material.RED_MUSHROOM,
         Material.LADDER, // because you can craft them, and im not stopping you!
         Material.GLASS,
-        Material.SUGAR_CANE
+        Material.SUGAR_CANE,
+        Material.SEAGRASS
     )
 
     val kit: List<ItemStack> = listOf(

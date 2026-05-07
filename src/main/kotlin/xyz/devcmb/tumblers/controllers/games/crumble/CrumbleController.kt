@@ -28,12 +28,15 @@ import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
+import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
@@ -1270,6 +1273,29 @@ class CrumbleController : GameBase(
     @EventHandler
     fun preRoundBlockBreakEvent(event: BlockBreakEvent) {
         if(!roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun preRoundProjectileEvent(event: ProjectileLaunchEvent) {
+        if(!roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEvent) {
+        if(roundActive) return
+
+        val player = event.player
+        val mainItem: ItemStack = player.inventory.itemInMainHand
+        val secondaryItem: ItemStack = player.inventory.itemInOffHand
+        val action = event.action
+
+        if (
+            (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) &&
+            ((mainItem.type == Material.BOW || mainItem.type == Material.CROSSBOW || mainItem.type == Material.TRIDENT)
+            || (secondaryItem.type == Material.BOW || secondaryItem.type == Material.CROSSBOW || secondaryItem.type == Material.TRIDENT))
+        ) {
+            event.isCancelled = true
+        }
     }
 
     enum class RoundResult {
