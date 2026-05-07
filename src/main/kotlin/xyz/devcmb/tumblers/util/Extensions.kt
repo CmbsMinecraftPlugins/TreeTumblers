@@ -70,6 +70,28 @@ fun Player.giveKit(kit: Kit.KitDefinition) {
     Kit.giveKit(this, kit)
 }
 
+fun Player.tp(location: Location) {
+    // isn't needed for same-dimension teleports
+    if(this.location.world == location.world) {
+        this.teleport(location)
+        return
+    }
+
+    playerController.removeNametag(this)
+    this.teleport(location)
+
+    playerController.reloadNametag(this)
+}
+
+// closest i can get to getting you NOT to use this method!
+@Deprecated(
+    "Player teleport does not work with our custom nametag system, use Player.tp instead",
+    level = DeprecationLevel.ERROR
+)
+@Suppress("UnusedReceiverParameter")
+fun Player.teleport() {
+}
+
 fun List<Location>.getPlayers(heightUp: Int, heightDown: Int, condition: ((player: Player) -> Boolean)? = null): List<Player> {
     return Bukkit.getOnlinePlayers().filter { condition?.invoke(it) ?: true }.filter { player ->
         val playerLocation = player.location

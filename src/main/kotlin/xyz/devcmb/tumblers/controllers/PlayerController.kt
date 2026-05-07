@@ -17,7 +17,9 @@ import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.block.BlockFace
 import org.bukkit.damage.DamageType
+import org.bukkit.entity.Display
 import org.bukkit.entity.Player
+import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.BlockBreakEvent
@@ -29,7 +31,11 @@ import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerStatisticIncrementEvent
+import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.util.Transformation
+import org.joml.AxisAngle4f
+import org.joml.Vector3f
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
@@ -47,6 +53,7 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
@@ -58,12 +65,24 @@ class PlayerController : IController {
     lateinit var players: ArrayList<TumblingPlayer>
     var isChatMuted = false
 
+    var currentNametagMode: NametagMode = NametagMode.ALL
+        set(value) {
+            field = value
+            updateNametagVisibility()
+        }
+
+    val nameTags: HashMap<Player, TextDisplay> = HashMap()
+
     private val databaseController: DatabaseController by lazy {
         ControllerDelegate.getController("databaseController") as DatabaseController
     }
 
     private val gameController: GameController by lazy {
         ControllerDelegate.getController<GameController>()
+    }
+
+    private val spectatorController: SpectatorController by lazy {
+        ControllerDelegate.getController<SpectatorController>()
     }
 
     companion object {
@@ -111,7 +130,7 @@ class PlayerController : IController {
     }
 
     fun spawnHub(player: Player) {
-        player.teleport(getLobbyPosition())
+        player.tp(getLobbyPosition())
     }
 
     fun getLobbyPosition(): Location {
@@ -149,7 +168,10 @@ class PlayerController : IController {
             it.remove()
         }
 
-        runTask { spawnHub(player) }
+        runTask {
+            spawnHub(player)
+            reloadNametag(player)
+        }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
@@ -197,6 +219,8 @@ class PlayerController : IController {
         playerUIControllers[player]?.cleanup()
         playerUIControllers.remove(player)
         playerUIControllers.forEach { it.value.playerLeave(player) }
+
+        nameTags[player]?.remove()
 
         event.quitMessage(
             Component.text("[").color(NamedTextColor.GRAY)
@@ -317,6 +341,93 @@ class PlayerController : IController {
         isChatMuted = false
         Bukkit.broadcast(Format.info("The chat has been unmuted!"))
     }
+
+    fun updateNametagVisibility(owner: Player? = null) {
+        val tags = if(owner == null) nameTags else hashMapOf(owner to nameTags[owner])
+
+        tags.forEach {
+            Bukkit.getOnlinePlayers().forEach { plr ->
+                if(
+                    currentNametagMode.canSee(plr, it.key)
+                    && !spectatorController.spectators.contains(it.key)
+                    && !hiddenPlayers.contains(it.key)
+                    && it.key != plr
+                ) {
+                    plr.showEntity(TreeTumblers.plugin, it.value)
+                } else {
+                    plr.hideEntity(TreeTumblers.plugin, it.value)
+                }
+            }
+        }
+    }
+
+    fun reloadNametags() {
+        Bukkit.getOnlinePlayers().forEach {
+            reloadNametag(it)
+        }
+    }
+
+    fun removeNametag(player: Player) {
+        val tag = nameTags[player] ?: return
+        tag.remove()
+        nameTags.remove(player)
+    }
+
+    fun reloadNametag(player: Player) {
+        if(nameTags.containsKey(player)) {
+            nameTags[player]!!.remove()
+            nameTags.remove(player)
+        }
+
+        player.world.spawn(player.location.clone().add(0.0, 2.0, 0.0), TextDisplay::class.java) {
+            nameTags.put(player, it)
+
+            it.text(player.formattedName)
+            it.isVisibleByDefault = false
+            it.billboard = Display.Billboard.CENTER
+
+            it.isSeeThrough = !player.isSneaking
+            it.textOpacity = (if(player.isSneaking) 0x55 else 0xFF).toByte()
+
+            it.transformation = Transformation(
+                Vector3f(0f, 0.3f, 0f),
+                AxisAngle4f(),
+                Vector3f(1f, 1f, 1f),
+                AxisAngle4f()
+            )
+
+            player.addPassenger(it)
+            updateNametagVisibility(player)
+        }
+    }
+
+    @EventHandler
+    fun playerCrouchEvent(event: PlayerToggleSneakEvent) {
+        val nameTag = nameTags[event.player] ?: return
+        nameTag.isSeeThrough = !event.isSneaking
+        nameTag.textOpacity = (if(event.isSneaking) 0x55 else 0xFF).toByte()
+    }
+
+    enum class NametagMode {
+        ALL {
+            override fun canSee(source: Player, viewer: Player): Boolean {
+                return true
+            }
+        },
+        TEAM {
+            override fun canSee(source: Player, viewer: Player): Boolean {
+                return (source.tumblingPlayer.team == viewer.tumblingPlayer.team) || !viewer.tumblingPlayer.team.playingTeam
+            }
+        },
+        NONE {
+            override fun canSee(source: Player, viewer: Player): Boolean {
+                return false
+            }
+        };
+
+        abstract fun canSee(source: Player, viewer: Player): Boolean
+    }
+
 
     enum class ChatChannel(val channelName: String, val color: TextColor) {
         LOCAL("Local", NamedTextColor.WHITE) {

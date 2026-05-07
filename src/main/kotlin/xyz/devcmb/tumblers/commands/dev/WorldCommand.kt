@@ -19,6 +19,7 @@ import xyz.devcmb.tumblers.controllers.WorldController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.tp
 import java.io.File
 import java.util.Optional
 import kotlin.io.path.Path
@@ -44,7 +45,7 @@ class WorldCommand {
                     return
                 }
 
-                executor.teleport(Location(world, 0.0, 64.0, 0.0))
+                executor.tp(Location(world, 0.0, 64.0, 0.0))
             }
         } catch(e: Exception) {
             executor.sendMessage(Format.error("An error occurred while trying to create a void world."))
@@ -134,7 +135,7 @@ class WorldCommand {
                 }
 
                 suspendSync {
-                    executor.teleport(Location(world, 0.0, 64.0, 0.0))
+                    executor.tp(Location(world, 0.0, 64.0, 0.0))
                 }
             } catch(e: Exception) {
                 executor.sendMessage(Format.error("An error occurred while trying to load the world."))
@@ -146,6 +147,7 @@ class WorldCommand {
     @Execute(name = "tp")
     fun teleport(@Context sender: Player, @Arg world: World, @Arg pos: Optional<Location>) {
         val position = pos.orElse(Location(world, 0.0, 128.0, 0.0))
-        sender.teleport(Location(world, position.x, position.y, position.z))
+        sender.tp(Location(world, position.x, position.y, position.z))
+        sender.sendMessage(Format.success("Teleported to ${world.name} successfully!"))
     }
 }

@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 class CutsceneContext(
@@ -46,7 +47,7 @@ class CutsceneContext(
             players.forEach {
                 if(!it.isOnline) return@forEach
 
-                it.teleport(location)
+                it.tp(location)
                 createPassengerPig(it, location)
             }
         }

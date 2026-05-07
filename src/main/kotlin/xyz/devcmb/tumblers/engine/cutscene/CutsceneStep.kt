@@ -14,6 +14,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.hideToAll
+import xyz.devcmb.tumblers.util.showToAll
 
 /**
  * A single step of a cutscene.
@@ -80,10 +81,7 @@ class CutsceneStep(
 
         suspendSync {
             observers.forEach {
-                observers.forEach { other ->
-                    if(other == it || !it.isOnline || !other.isOnline) return@forEach
-                    it.showPlayer(TreeTumblers.plugin, other)
-                }
+                it.showToAll()
             }
         }
 

@@ -60,6 +60,7 @@ import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -690,7 +691,7 @@ class EventController : IController {
                 val location = Voting.voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting arena does not have a center location")
 
-                it.teleport(location.toCenterLocation())
+                it.tp(location.toCenterLocation())
             }
         }
 

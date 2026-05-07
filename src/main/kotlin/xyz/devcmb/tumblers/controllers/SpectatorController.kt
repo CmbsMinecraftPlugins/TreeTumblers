@@ -7,6 +7,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
+import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.Format
@@ -19,6 +20,10 @@ import xyz.devcmb.tumblers.util.showToAll
 class SpectatorController : IController {
     val spectators: HashMap<Player, Boolean> = HashMap()
     private var spectatorTask: BukkitRunnable? = null
+
+    val playerController: PlayerController by lazy {
+        ControllerDelegate.getController<PlayerController>()
+    }
 
     override fun init() {
         spectatorTask = object : BukkitRunnable() {
@@ -43,6 +48,7 @@ class SpectatorController : IController {
         player.inventory.clear()
         player.allowFlight = true
         player.isFlying = true
+        playerController.updateNametagVisibility(player)
 
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
             name(Format.mm("<green>Spectate menu</green>"))
@@ -62,6 +68,7 @@ class SpectatorController : IController {
         player.inventory.remove(Material.COMPASS)
         player.isFlying = false
         player.allowFlight = false
+        playerController.updateNametagVisibility(player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

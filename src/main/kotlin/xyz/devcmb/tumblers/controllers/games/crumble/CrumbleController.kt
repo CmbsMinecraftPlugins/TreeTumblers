@@ -70,6 +70,7 @@ import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateLocation
@@ -409,7 +410,7 @@ class CrumbleController : GameBase(
                                     val playerSpawn = firstSpawnSet[firstOccupiedSpawns]
                                     val location = playerSpawn.unpackCoordinates(currentMap.world)
 
-                                    it.teleport(location)
+                                    it.tp(location)
                                     it.isFlying = false
                                     it.allowFlight = false
                                     DebugUtil.info("Spawned ${it.name} at $playerSpawn")
@@ -421,7 +422,7 @@ class CrumbleController : GameBase(
                                     val playerSpawn = secondSpawnSet[secondOccupiedSpawns]
                                     val location = playerSpawn.unpackCoordinates(currentMap.world)
 
-                                    it.teleport(location)
+                                    it.tp(location)
                                     DebugUtil.info("Spawned ${it.name} at $playerSpawn")
 
                                     secondOccupiedSpawns++
@@ -445,7 +446,7 @@ class CrumbleController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Spawn set not found")
 
-        player.teleport(arena1Center)
+        player.tp(arena1Center)
     }
 
     fun spawnPlayerPregame(player: Player) {
@@ -462,7 +463,7 @@ class CrumbleController : GameBase(
             it
         }
 
-        player.teleport(location.unpackCoordinates(currentMap.world))
+        player.tp(location.unpackCoordinates(currentMap.world))
         DebugUtil.info("Spawned player ${player.name} at $location")
     }
 
@@ -495,7 +496,7 @@ class CrumbleController : GameBase(
         val teamSpawns = if(team == playerMatchup.first) spawns[0] else spawns[1]
 
         // just use the first one
-        player.teleport(teamSpawns[0].unpackCoordinates(currentMap.world))
+        player.tp(teamSpawns[0].unpackCoordinates(currentMap.world))
     }
 
     fun pregamePlayer(player: Player) {
@@ -648,7 +649,7 @@ class CrumbleController : GameBase(
                 ?.validateLocation(currentMap.world)
                 ?: throw GameControllerException("Spawn set not found")
 
-            player.teleport(arena1Center)
+            player.tp(arena1Center)
 
             return
         }

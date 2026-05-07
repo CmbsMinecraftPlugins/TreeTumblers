@@ -225,6 +225,10 @@ abstract class GameBase(
             it.cleanup(gamePlayers)
             currentCutsceneStep = null
         }
+
+        suspendSync {
+            playerController.reloadNametags()
+        }
     }
 
     /**
@@ -253,16 +257,13 @@ abstract class GameBase(
         suspendSync {
             gamePlayers.forEach {
                 it.activateScoreboard(scoreboard)
-                if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
-                    it.uiController.otherTeams.forEach { tumblingTeam, team ->
-                        team.setOption(
-                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                            org.bukkit.scoreboard.Team.OptionStatus.NEVER
-                        )
-                    }
-                }
+            }
+
+            if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+                playerController.currentNametagMode = PlayerController.NametagMode.TEAM
             }
         }
+
 
         gamePregame()
     }
@@ -337,7 +338,9 @@ abstract class GameBase(
         eventController.lastGameTeamScores = teamScores
         eventController.lastGamePlayerScores = playerScores
 
+
         suspendSync {
+            playerController.currentNametagMode = PlayerController.NametagMode.ALL
             eventController.refreshLeaderboards()
             gameSpectators.toList().forEach(this::unSpectate)
 

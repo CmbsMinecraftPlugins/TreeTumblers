@@ -368,7 +368,7 @@ class DeathrunController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Main spawn set not found")
 
-        player.teleport(mainSpawn)
+        player.tp(mainSpawn)
     }
 
     fun spawnAttacker(player: Player) {
@@ -376,7 +376,7 @@ class DeathrunController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Spawn set not found")
 
-        player.teleport(attackerSpawn)
+        player.tp(attackerSpawn)
         player.enableBossBar("deathrunCooldownBossbar")
 
         placements[roundIndex].put(player, -2)
@@ -391,7 +391,7 @@ class DeathrunController : GameBase(
         if(checkpoint == null) {
             spawnMain(player)
         } else {
-            player.teleport(mapCheckpoints[checkpoint].third)
+            player.tp(mapCheckpoints[checkpoint].third)
         }
     }
 

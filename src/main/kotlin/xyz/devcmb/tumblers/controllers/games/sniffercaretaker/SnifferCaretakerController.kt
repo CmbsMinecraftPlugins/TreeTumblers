@@ -69,7 +69,6 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
-import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -78,6 +77,7 @@ import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import kotlin.collections.forEach
@@ -562,7 +562,7 @@ class SnifferCaretakerController : GameBase(
             ?: throw GameControllerException("Spawn not found")
 
         val playerLocation = offsetLocation(playerSpawn, if(playing) tumblingPlayer.team else Team.RED)
-        player.teleport(playerLocation)
+        player.tp(playerLocation)
 
         if(playing) {
             kit.forEach { item ->
@@ -1001,8 +1001,6 @@ class SnifferCaretakerController : GameBase(
 
         val item = chosenTask["item"]
         if (item !is String) return
-
-        DebugUtil.info("Creating Task $id : Stars $stars Item $item")
 
         val createdTask = when (chosenTask["type"]) {
             "HUNGRY" -> HungryTask(

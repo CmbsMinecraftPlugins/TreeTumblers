@@ -70,6 +70,7 @@ import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.sound
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -348,7 +349,7 @@ class BreachController: GameBase(
             val teams = listOf(playingTeams.first, playingTeams.second)
             teams.forEachIndexed { i, team ->
                 team.getOnlinePlayers().forEach {
-                    it.teleport(if (i == 0) team1spawn else team2spawn)
+                    it.tp(if (i == 0) team1spawn else team2spawn)
                     it.inventory.setItem(8, kitSelector.clone())
                     it.health = 1.0
                     it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 1.0
@@ -361,7 +362,7 @@ class BreachController: GameBase(
             gamePlayers.forEach {
                 if (it.tumblingPlayer.team != playingTeams.first && it.tumblingPlayer.team != playingTeams.second) {
                     makeSpectator(it, true, false)
-                    it.teleport(spectatorSpawn)
+                    it.tp(spectatorSpawn)
                 }
             }
         }
@@ -494,9 +495,9 @@ class BreachController: GameBase(
 
         if (team == playingTeams.first || team == playingTeams.second) {
             if (deathLocations[player] != null) {
-                player.teleport(deathLocations[player]!!)
+                player.tp(deathLocations[player]!!)
             } else {
-                player.teleport(if (team == playingTeams.first) team1spawn else team2spawn)
+                player.tp(if (team == playingTeams.first) team1spawn else team2spawn)
             }
 
 
@@ -525,7 +526,7 @@ class BreachController: GameBase(
                 player.health = 0.0
             }
         } else {
-            player.teleport(spectatorSpawn)
+            player.tp(spectatorSpawn)
             makeSpectator(player, true, false)
         }
     }

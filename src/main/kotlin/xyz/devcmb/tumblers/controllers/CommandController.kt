@@ -5,6 +5,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
 import dev.rollczi.litecommands.adventure.LiteAdventureExtension
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
+import dev.rollczi.litecommands.bukkit.LiteBukkitMessages
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
 import xyz.devcmb.tumblers.commands.arguments.*
@@ -37,7 +38,8 @@ class CommandController : IController {
                 EventCommand(),
                 PartyCommand(),
                 SpectateCommand(),
-                ChatCommand()
+                ChatCommand(),
+                NametagCommand(),
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
@@ -54,6 +56,12 @@ class CommandController : IController {
                 config.serializer(Format.miniMessage)
             }
             .invalidUsage(InvalidUsageHandler())
+            .message(LiteBukkitMessages.MISSING_PERMISSIONS, Format.error("You do not have permission to use this command!"))
+            .message(LiteBukkitMessages.PLAYER_ONLY, Format.error("Only players can execute this command!"))
+            .message(LiteBukkitMessages.CONSOLE_ONLY, Format.error("Only the console can execute this command!"))
+            .message(LiteBukkitMessages.WORLD_NOT_EXIST, Format.error("Specified world does not exist!"))
+            .message(LiteBukkitMessages.LOCATION_INVALID_FORMAT, Format.error("Location is not formatted correctly!"))
+            .message(LiteBukkitMessages.PLAYER_NOT_FOUND, Format.error("Player was not found!"))
             .build()
     }
 }

@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SpectateInventory(
@@ -64,7 +65,7 @@ class SpectateInventory(
                                 return@InventoryMappedItem
                             }
 
-                            player.teleport(plr.location)
+                            player.tp(plr.location)
                             page.ui.close()
                         }
                     ))

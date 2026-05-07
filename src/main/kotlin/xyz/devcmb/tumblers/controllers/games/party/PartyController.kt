@@ -58,6 +58,7 @@ import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.showToAll
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
@@ -315,7 +316,7 @@ class PartyController : GameBase(
             ?.validateLocation(map.world)
             ?: throw GameControllerException("Game world does does not contain a valid pregame spawn")
 
-        player.teleport(spawn)
+        player.tp(spawn)
         if(!preGame) {
             makeSpectator(player, false)
         }
@@ -732,9 +733,9 @@ class PartyController : GameBase(
             override val players: Set<Player> = listOfNotNull(player1, player2).toSet()
 
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
-                player1!!.teleport(spawns1.first())
+                player1!!.tp(spawns1.first())
                 player1.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
-                player2?.teleport(spawns2.first())
+                player2?.tp(spawns2.first())
                 player2?.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 255))
 
                 player1.heal(20.0)
@@ -834,14 +835,14 @@ class PartyController : GameBase(
 
             override fun spawn(spawns1: ArrayList<Location>, spawns2: ArrayList<Location>) {
                 team1.getOnlinePlayers().forEachIndexed { i, it ->
-                    it.teleport(spawns1[i % spawns1.size])
+                    it.tp(spawns1[i % spawns1.size])
                     it.heal(20.0)
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 1))
                     partyController!!.frozenPlayers.add(it)
                 }
 
                 team2.getOnlinePlayers().forEachIndexed { i, it ->
-                    it.teleport(spawns2[i % spawns2.size])
+                    it.tp(spawns2[i % spawns2.size])
                     it.heal(20.0)
                     it.addPotionEffect(PotionEffect(PotionEffectType.BLINDNESS, 5 * 20, 1))
                     partyController!!.frozenPlayers.add(it)

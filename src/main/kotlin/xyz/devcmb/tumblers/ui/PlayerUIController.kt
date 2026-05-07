@@ -60,19 +60,15 @@ class PlayerUIController(val player: Player) {
 
         val playerTumblingTeam = player.tumblingPlayer.team
         playerTeam = playerScoreboard.registerNewTeam("playerTeam")
-        playerTeam.prefix(Component.text(" ").append(playerTumblingTeam.formattedIcon).append(Component.text(" ")))
         playerTeam.color(playerTumblingTeam.namedColor)
-        playerTeam.suffix(Component.text(" "))
-        // just sent always because teams are local anyways
-        // i love not having to worry about 2 environments
-        // unlike SOME OTHER PLATFORM
-        playerTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.ALWAYS)
+        playerTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
 
         xyz.devcmb.tumblers.data.Team.entries.forEach {
+            if(it == player.tumblingPlayer.team) return@forEach
+
             val team = playerScoreboard.registerNewTeam(it.name.lowercase())
             team.color(it.namedColor)
-            team.prefix(Component.text(" ").append(it.formattedIcon).append(Component.text(" ")))
-            team.suffix(Component.text(" "))
+            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
             otherTeams.put(it, team)
         }
 

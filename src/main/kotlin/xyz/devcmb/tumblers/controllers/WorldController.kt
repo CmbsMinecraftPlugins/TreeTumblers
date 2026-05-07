@@ -19,6 +19,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.tp
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -137,7 +138,7 @@ class WorldController : IController {
                     playerController.getLobbyPosition()
                 }
 
-                it.teleport(location)
+                it.tp(location)
             }
             Bukkit.unloadWorld(world, true)
         }
