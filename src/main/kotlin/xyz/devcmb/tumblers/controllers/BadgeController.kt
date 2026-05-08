@@ -17,6 +17,7 @@ class BadgeController : IController {
             Format.mm("<!i>collected playing <green>Tree Tumblers!</green></!i>")
         ).map {
             it.color(NamedTextColor.WHITE)
+            // doing it.decoration(TextDecoration.ITALIC, false) didn't work for whatever reason
         })
         model(NamespacedKey("tumbling", "hub/collection"))
 
@@ -32,6 +33,4 @@ class BadgeController : IController {
     fun giveCollection(player: Player) {
         player.inventory.addItem(collectionItem.build())
     }
-
-    // TODO: Make sure this gets cleared
 }

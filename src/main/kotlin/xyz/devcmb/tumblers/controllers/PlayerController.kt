@@ -12,17 +12,14 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
-import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
-import org.bukkit.block.BlockFace
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Display
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
-import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -39,8 +36,6 @@ import org.joml.Vector3f
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingGenericException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -49,13 +44,10 @@ import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
-import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 
 @Controller("playerController", Controller.Priority.MEDIUM)
@@ -85,24 +77,8 @@ class PlayerController : IController {
         ControllerDelegate.getController<SpectatorController>()
     }
 
-    companion object {
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "world"
-
-        @field:Configurable("lobby.spawn.start")
-        var lobbySpawnStart: List<Int> = listOf(-56, 190, 13)
-
-        @field:Configurable("lobby.spawn.end")
-        var lobbySpawnEnd: List<Int> = listOf(-80,190,3)
-
-        @field:Configurable("lobby.spawn.yaw")
-        var lobbySpawnYaw: Double = -90.0
-
-        @field:Configurable("lobby.spawn.pitch")
-        var lobbySpawnPitch: Double = 0.0
-
-        @field:Configurable("lobby.spawn.floor")
-        var lobbySpawnFloor: Material = Material.STONE_BRICKS
+    private val hubController: HubController by lazy {
+        ControllerDelegate.getController<HubController>()
     }
 
     override fun init() {
@@ -129,31 +105,6 @@ class PlayerController : IController {
         players.find { it.uuid == uuid }!!.team = team
     }
 
-    fun spawnHub(player: Player) {
-        player.tp(getLobbyPosition())
-    }
-
-    fun getLobbyPosition(): Location {
-        val hub = Bukkit.getWorld(lobbyWorld)!!
-        val startLocation = lobbySpawnStart.validateLocation(hub)
-            ?: throw TumblingGenericException("Start location for hub spawning is not a valid location list")
-
-        val endLocation = lobbySpawnEnd.validateLocation(hub)
-            ?: throw TumblingGenericException("End location for hub spawning is not a valid location list")
-
-        val validSpawns: ArrayList<Location> = ArrayList()
-        startLocation.forEachRegion(endLocation) {
-            if(it.type == lobbySpawnFloor && it.getRelative(BlockFace.UP).isEmpty) {
-                validSpawns.add(it.location.clone().add(0.0,1.0,0.0))
-            }
-        }
-
-        val location = validSpawns.random().clone().toCenterLocation()
-        location.pitch = lobbySpawnPitch.toFloat()
-        location.yaw = lobbySpawnYaw.toFloat()
-        return location
-    }
-
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -169,7 +120,7 @@ class PlayerController : IController {
         }
 
         runTask {
-            spawnHub(player)
+            hubController.spawnHub(player)
             reloadNametag(player)
         }
 
@@ -303,12 +254,6 @@ class PlayerController : IController {
                 )
             }
         }
-    }
-
-    @EventHandler
-    fun blockBreakEvent(event: BlockBreakEvent) {
-        if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
-            event.isCancelled = true
     }
 
     val channels: HashMap<Player, ChatChannel> = HashMap()

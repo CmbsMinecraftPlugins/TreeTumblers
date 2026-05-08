@@ -39,8 +39,8 @@ class WorldController : IController {
         var lobbyWorld: String = "hub"
     }
 
-    val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+    val hubController: HubController by lazy {
+        ControllerDelegate.getController<HubController>()
     }
 
     override fun init() {
@@ -135,7 +135,7 @@ class WorldController : IController {
                 val location = if(world.name == lobbyWorld || hub == null) {
                     Location(Bukkit.getWorld("world")!!, 0.0, 127.0, 0.0)
                 } else {
-                    playerController.getLobbyPosition()
+                    hubController.getLobbyPosition()
                 }
 
                 it.tp(location)

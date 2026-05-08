@@ -27,6 +27,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.HubController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -119,6 +120,10 @@ abstract class GameBase(
         ControllerDelegate.getController<SpectatorController>()
     }
 
+    private val hubController by lazy {
+        ControllerDelegate.getController<HubController>()
+    }
+
     open val debugToolkit: DebugToolkit? = null
 
     val countdownTime: Int
@@ -161,6 +166,7 @@ abstract class GameBase(
             it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
             it.foodLevel = 20
             it.saturation = 0f
+            it.inventory.clear()
 
             if(flags.contains(Flag.ENABLE_HUNGER)) {
                 it.removePotionEffect(PotionEffectType.HUNGER)
@@ -346,7 +352,7 @@ abstract class GameBase(
 
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
-                playerController.spawnHub(it)
+                hubController.spawnHub(it)
                 it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                 it.foodLevel = 20
 
