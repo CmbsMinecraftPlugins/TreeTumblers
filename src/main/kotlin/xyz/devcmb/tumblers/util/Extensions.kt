@@ -109,6 +109,12 @@ fun Player.fadeTp(location: Location) {
 fun Player.teleport() {
 }
 
+fun Location.toCenterXZLocation(): Location {
+    val center = this.toCenterLocation()
+    center.y = this.y
+    return center
+}
+
 fun List<Location>.getPlayers(heightUp: Int, heightDown: Int, condition: ((player: Player) -> Boolean)? = null): List<Player> {
     return Bukkit.getOnlinePlayers().filter { condition?.invoke(it) ?: true }.filter { player ->
         val playerLocation = player.location

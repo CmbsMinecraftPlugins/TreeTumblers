@@ -8,6 +8,8 @@ import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Entity
 import org.bukkit.entity.Player
 import org.bukkit.event.HandlerList
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -65,6 +67,14 @@ class CutsceneStep(
         suspendSync {
             observers.forEach {
                 it.hideToAll()
+                it.addPotionEffect(PotionEffect(
+                    PotionEffectType.INVISIBILITY,
+                    PotionEffect.INFINITE_DURATION,
+                    1,
+                    true,
+                    false,
+                    false
+                ))
 
                 if(chatMessage != null) {
                     it.sendMessage(Format.mm(
@@ -82,6 +92,7 @@ class CutsceneStep(
         suspendSync {
             observers.forEach {
                 it.showToAll()
+                it.removePotionEffect(PotionEffectType.INVISIBILITY)
             }
         }
 

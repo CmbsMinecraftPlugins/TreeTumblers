@@ -23,6 +23,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
+import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Display
@@ -691,6 +692,7 @@ class EventController : IController {
                 val location = Voting.voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting arena does not have a center location")
 
+                it.inventory.clear()
                 it.tp(location.toCenterLocation())
             }
         }
@@ -751,6 +753,8 @@ class EventController : IController {
                         Vector3f(6.0f, 6.0f, 6.0f),
                         Quaternionf(0f, 0f, 0f, 1f)
                     )
+                    display.isDefaultBackground = false
+                    display.backgroundColor = Color.fromARGB(0)
                     display.brightness = Display.Brightness(15, 15)
                 }
 

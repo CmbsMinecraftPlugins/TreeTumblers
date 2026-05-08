@@ -23,6 +23,8 @@ object UserInterfaceUtility {
     // item model key
     val FLAT_SKULL = NamespacedKey("tumbling", "flat_skull")
 
+    val CLOCK = Component.text("\uEF04").font(HUD)
+
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",
         -5 to "\uF001",

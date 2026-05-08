@@ -63,6 +63,7 @@ class PlayerUIController(val player: Player) {
         playerTeam = playerScoreboard.registerNewTeam("playerTeam")
         playerTeam.color(playerTumblingTeam.namedColor)
         playerTeam.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
+        playerTeam.setCanSeeFriendlyInvisibles(true)
 
         xyz.devcmb.tumblers.data.Team.entries.forEach {
             if(it == player.tumblingPlayer.team) return@forEach

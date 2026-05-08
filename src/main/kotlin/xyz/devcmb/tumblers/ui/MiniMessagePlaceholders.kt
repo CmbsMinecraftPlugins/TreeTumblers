@@ -68,13 +68,15 @@ object MiniMessagePlaceholders {
     }
 
     object Event {
-        const val EVENT_SCOREBOARD_TITLE = "<green><b>Tree Tumblers</b></green>"
+        const val EVENT_COLOR = "#00ff78"
+
+        const val EVENT_SCOREBOARD_TITLE = "<color:$EVENT_COLOR><b>Tree Tumblers</b></color>"
 
         /**
          * current - Current game
          *
          * max - Total amount of games
          */
-        const val EVENT_SCOREBOARD_GAME = "<aqua>Game <white><current>/<max></white></aqua>"
+        const val EVENT_SCOREBOARD_GAME = "<color:$EVENT_COLOR>Game <white><current>/<max></white></color>"
     }
 }

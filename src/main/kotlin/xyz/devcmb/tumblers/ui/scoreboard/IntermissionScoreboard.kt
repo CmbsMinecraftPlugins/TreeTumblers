@@ -5,6 +5,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -27,21 +28,23 @@ class IntermissionScoreboard(
             )
         }
 
-        val timer: Component = when {
-            eventController.readyCheckTimer != null ->
-                Format.mm(
-                    "<aqua>Ready Check: <white><timer></white></aqua>",
-                    Placeholder.component("timer", eventController.readyCheckTimer!!.format())
-                )
-            eventController.eventTimer != null ->
-                Format.mm(
-                    "<aqua>${eventController.eventTimerTitle ?: "Timer"}: <white><timer></white></aqua>",
-                    Placeholder.component("timer", eventController.eventTimer!!.format())
-                )
-            eventController.state == EventController.State.EVENT_INACTIVE ->
-                Format.mm("<aqua>Event Inactive</aqua>")
-            else -> Component.empty()
-        }
+        val timer: Component = Component.empty()
+            .append(UserInterfaceUtility.CLOCK)
+            .append(when {
+                eventController.readyCheckTimer != null ->
+                    Format.mm(
+                        " <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Ready Check: <white><timer></white></color>",
+                        Placeholder.component("timer", eventController.readyCheckTimer!!.format())
+                    )
+                eventController.eventTimer != null ->
+                    Format.mm(
+                        " <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>${eventController.eventTimerTitle ?: "Timer"}: <white><timer></white></color>",
+                        Placeholder.component("timer", eventController.eventTimer!!.format())
+                    )
+                eventController.state == EventController.State.EVENT_INACTIVE ->
+                    Format.mm(" <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Event Inactive</color>")
+                else -> Component.empty()
+            })
 
         val gameComponent = Format.mm(
             MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_GAME,

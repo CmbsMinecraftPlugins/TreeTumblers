@@ -331,9 +331,12 @@ class DeathrunController : GameBase(
 
                     it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
                         Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                        Component.text(text),
-                        text,
-                        69.5
+                        Component.empty()
+                            .append(UserInterfaceUtility.CLOCK)
+                            .append(Component.text(" $text")),
+                        " $text",
+                        120.0,
+                        9.0
                     ))
                 }
             }
@@ -729,7 +732,7 @@ class DeathrunController : GameBase(
         val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
-                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white>${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
+                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white><font:tumbling:hud>\uEF04</font> ${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )

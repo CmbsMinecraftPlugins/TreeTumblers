@@ -13,6 +13,7 @@ import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.fadeTp
+import xyz.devcmb.tumblers.util.toCenterXZLocation
 import xyz.devcmb.tumblers.util.validateLocation
 
 class HubNavigationInventory(
@@ -51,7 +52,7 @@ class HubNavigationInventory(
                 val location = navigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingGenericException("Hub navigation position for lodge building is not a valid position!")
 
-                player.fadeTp(location)
+                player.fadeTp(location.toCenterXZLocation())
             }
         ))
     }
