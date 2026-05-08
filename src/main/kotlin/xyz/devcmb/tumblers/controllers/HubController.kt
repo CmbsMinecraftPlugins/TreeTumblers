@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
 
@@ -57,8 +58,9 @@ class HubController : IController {
 
     val compass = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<aqua>Navigator</aqua>"))
+        droppable(false)
         rightClick {
-            // TODO: Open inventory
+            it.openHandledInventory("hubNavigationInventory")
         }
     }
 

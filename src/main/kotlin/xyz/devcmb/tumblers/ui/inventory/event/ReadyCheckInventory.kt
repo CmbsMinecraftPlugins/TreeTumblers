@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.ui.inventory
+package xyz.devcmb.tumblers.ui.inventory.event
 
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
@@ -8,6 +8,7 @@ import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
 
@@ -24,7 +25,8 @@ class ReadyCheckInventory(
         val page = ChestInventoryPage()
         addPage("main", page, true)
 
-        page.addItem(InventoryItem(
+        page.addItem(
+            InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.LIME_CONCRETE).apply {
                     itemMeta = itemMeta.also {
@@ -40,7 +42,8 @@ class ReadyCheckInventory(
             }
         ))
 
-        page.addItem(InventoryItem(
+        page.addItem(
+            InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.RED_CONCRETE).apply {
                     itemMeta = itemMeta.also {

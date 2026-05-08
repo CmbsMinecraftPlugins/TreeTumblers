@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.ui.inventory
+package xyz.devcmb.tumblers.ui.inventory.global
 
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tp
@@ -34,8 +35,8 @@ class SpectateInventory(
 
         val itemMap = InventoryItemMap(
             getInventoryItems = { page, map ->
-                val players: Set<Player> = gameController.activeGame?.gameParticipants?.filter { it != player }?.toSet() ?:
-                    Team.entries
+                val players: Set<Player> =
+                    gameController.activeGame?.gameParticipants?.filter { it != player }?.toSet() ?: Team.entries
                         .filter { it.playingTeam }
                         .flatMap { it.getOnlinePlayers() }
                         .filter { it != player && it !in spectateController.spectators }
@@ -43,7 +44,8 @@ class SpectateInventory(
 
                 val items: ArrayList<InventoryMappedItem> = ArrayList()
                 players.forEach { plr ->
-                    items.add(InventoryMappedItem(
+                    items.add(
+                        InventoryMappedItem(
                         getItemStack = { page, item ->
                             ItemStack.of(Material.PLAYER_HEAD).apply {
                                 itemMeta = itemMeta.also {
@@ -51,16 +53,17 @@ class SpectateInventory(
                                     it.itemModel = UserInterfaceUtility.FLAT_SKULL
                                     (it as SkullMeta).owningPlayer = plr
 
-                                    it.lore(listOf(
-                                        plr.tumblingPlayer.team.formattedName
-                                    ).map { line -> line.decoration(TextDecoration.ITALIC, false) })
+                                    it.lore(
+                                        listOf(
+                                            plr.tumblingPlayer.team.formattedName
+                                        ).map { line -> line.decoration(TextDecoration.ITALIC, false) })
                                 }
                             }
                         },
                         onClick = { page, item ->
-                            if(!spectateController.spectators.contains(player)) return@InventoryMappedItem
+                            if (!spectateController.spectators.contains(player)) return@InventoryMappedItem
 
-                            if(spectateController.spectators.contains(plr)) {
+                            if (spectateController.spectators.contains(plr)) {
                                 player.sendMessage(Format.warning("This player can't be spectated right now."))
                                 return@InventoryMappedItem
                             }
@@ -79,24 +82,32 @@ class SpectateInventory(
         page.addItemMap(itemMap)
 
         (27..35).forEach {
-            page.addItem(InventoryItem(
-                getItemStack = { page, item ->
-                    ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
-                        itemMeta = itemMeta.also { meta ->
-                            meta.isHideTooltip = true
+            page.addItem(
+                InventoryItem(
+                    getItemStack = { page, item ->
+                        ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
+                            itemMeta = itemMeta.also { meta ->
+                                meta.isHideTooltip = true
+                            }
                         }
-                    }
-                },
-                it
-            ))
+                    },
+                    it
+                )
+            )
         }
 
-        page.addItem(InventoryItem(
+        page.addItem(
+            InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
-                        it.lore(listOf(Format.mm("<white>Page ${itemMap.itemPage}</white>").decoration(TextDecoration.ITALIC, false)))
+                        it.lore(
+                            listOf(
+                                Format.mm("<white>Page ${itemMap.itemPage}</white>")
+                                    .decoration(TextDecoration.ITALIC, false)
+                            )
+                        )
                     }
                 }
             },
@@ -108,12 +119,18 @@ class SpectateInventory(
             }
         ))
 
-        page.addItem(InventoryItem(
+        page.addItem(
+            InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.ARROW).apply {
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Next Page</yellow>"))
-                        it.lore(listOf(Format.mm("<white>Page ${itemMap.itemPage}</white>").decoration(TextDecoration.ITALIC, false)))
+                        it.lore(
+                            listOf(
+                                Format.mm("<white>Page ${itemMap.itemPage}</white>")
+                                    .decoration(TextDecoration.ITALIC, false)
+                            )
+                        )
                     }
                 }
             },

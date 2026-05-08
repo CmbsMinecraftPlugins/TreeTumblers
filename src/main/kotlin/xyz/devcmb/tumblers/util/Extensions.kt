@@ -1,10 +1,13 @@
 package xyz.devcmb.tumblers.util
 
 import com.sk89q.worldedit.math.BlockVector3
+import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.block.Block
@@ -81,6 +84,20 @@ fun Player.tp(location: Location) {
     this.teleport(location)
 
     playerController.reloadNametag(this)
+}
+
+fun Player.fadeTp(location: Location) {
+    val fade = 4
+    val title = Title.title(
+        Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+        Component.empty(),
+        Title.Times.times(Tick.of(fade.toLong()), Tick.of(3), Tick.of(fade.toLong()))
+    )
+
+    this.showTitle(title)
+    runTaskLater(fade.toLong()) {
+        this.tp(location)
+    }
 }
 
 // closest i can get to getting you NOT to use this method!
