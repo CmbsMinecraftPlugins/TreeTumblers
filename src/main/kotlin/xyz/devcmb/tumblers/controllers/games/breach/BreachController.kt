@@ -5,7 +5,9 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Color
@@ -193,7 +195,10 @@ class BreachController: GameBase(
         Flag.HIDE_ENEMY_NAMETAGS
     ),
     icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font),
+    logo = Component.text("\uEA01").font(font)
+        .shadowColor(ShadowColor.none()),
+    tabLogo = Component.text("\uEA02").font(font)
+        .shadowColor(ShadowColor.none()),
     scores = hashMapOf(),
     scoreboard = "breachScoreboard"
 ) {
@@ -957,8 +962,22 @@ class BreachController: GameBase(
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(message)
         }
+    }
 
+    override fun overrideTabList(): Component? {
+        var component = Component.empty()
 
+        playingTeams.toList().forEachIndexed { index, team ->
+            component = component
+                .append(Format.mm(
+                    "<br><white>#${index + 1}</white> <team><shift>${" ".repeat(60)}<gold>${eventController.teamScores[team]!!}</gold> <br><players><br>",
+                    Placeholder.component("team", team.formattedName),
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(team.teamName) + 11)),
+                    Placeholder.component("players", eventController.getTeamPlayersComponent(team))
+                ))
+        }
+
+        return component
     }
 
     @EventHandler

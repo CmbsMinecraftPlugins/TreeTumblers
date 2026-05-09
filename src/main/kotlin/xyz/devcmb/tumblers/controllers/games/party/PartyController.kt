@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -36,6 +37,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.MaceDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.SpearDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardAxeDuels
@@ -150,7 +152,10 @@ class PartyController : GameBase(
         Flag.DISABLE_NATURAL_REGENERATION,
         Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
-    icon = Component.text("\uEA00").font(font),
+    icon = Component.text("\uEA00").font(font)
+        .shadowColor(ShadowColor.none()),
+    tabLogo = Component.text("\uEA02").font(font)
+        .shadowColor(ShadowColor.none()),
     scoreboard = "partyScoreboard",
     logo = Component.text("\uEA01").font(font)
 ) {

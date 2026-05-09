@@ -41,6 +41,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -166,6 +167,8 @@ class DeathrunController : GameBase(
     ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font)
+        .shadowColor(ShadowColor.none()),
+    tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
     scoreboard = "deathrunScoreboard"
 ) {

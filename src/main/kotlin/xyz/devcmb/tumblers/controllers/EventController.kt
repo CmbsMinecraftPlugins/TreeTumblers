@@ -49,6 +49,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -87,6 +88,10 @@ class EventController : IController {
 
     private val musicController: MusicController by lazy {
         ControllerDelegate.getController<MusicController>()
+    }
+
+    private val spectatorController: SpectatorController by lazy {
+        ControllerDelegate.getController<SpectatorController>()
     }
 
     lateinit var topbarRunnable: BukkitRunnable
@@ -198,7 +203,13 @@ class EventController : IController {
         }
 
         topbarRunnable = object : BukkitRunnable() {
-            override fun run() = sendDefaultTopbar()
+            override fun run() {
+                if(gameController.activeGame != null) {
+                    sendGameTopbar()
+                } else {
+                    sendDefaultTopbar()
+                }
+            }
         }
         topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
@@ -951,23 +962,11 @@ class EventController : IController {
                     .appendNewline()
                     .appendNewline()
                     .appendNewline()
-                    .append(
-                        Component.text("EVENT MODE: ", NamedTextColor.AQUA)
-                            .append(Component.text(
-                                if(eventMode) "ENABLED" else "DISABLED",
-                                if(eventMode) NamedTextColor.GREEN else NamedTextColor.RED
-                            ))
-                    )
-                    .appendNewline()
-                    .append(
-                        Component.text("DATABASE MODE: ", NamedTextColor.YELLOW)
-                            .append(Component.text(
-                                if(DatabaseController.enabled) "ENABLED" else "DISABLED",
-                                if(DatabaseController.enabled) NamedTextColor.GREEN else NamedTextColor.RED
-                            ))
-                    )
+                    .append(Format.mm("<green><line:40></green>"))
                     .appendNewline()
                     .append(teamComponent)
+                    .appendNewline()
+                    .append(Format.mm("<green><line:40></green>"))
             )
 
             it.sendPlayerListFooter(Format.mm(
@@ -976,8 +975,38 @@ class EventController : IController {
         }
     }
 
-    fun getTopbarPlayersComponent(): Component {
+    fun sendGameTopbar() {
+        val game = gameController.activeGame ?: return
+        val component = game.overrideTabList() ?: getTopbarPlayersComponent(game)
+
+        Bukkit.getOnlinePlayers().forEach {
+            it.sendPlayerListHeader(
+                Component.empty()
+                    .appendNewline()
+                    .append(game.tabLogo)
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .appendNewline()
+                    .append(Format.mm("<green><line:40></green>"))
+                    .appendNewline()
+                    .append(component)
+                    .appendNewline()
+                    .append(Format.mm("<green><line:40></green>"))
+            )
+
+            it.sendPlayerListFooter(Format.mm(
+                "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
+            ))
+        }
+    }
+
+    fun getTopbarPlayersComponent(game: GameBase? = null): Component {
         var teamComponent = Component.empty()
+
+        val placements = game?.getTeamPlacements() ?: getEventTeamPlacements()
+        val scores = game?.teamScores ?: teamScores
 
         if(scoresHidden) {
             repeat(Team.entries.filter { it.playingTeam }.size) {
@@ -1006,28 +1035,13 @@ class EventController : IController {
                 )
             }
         } else {
-            getEventTeamPlacements().forEachIndexed { i, it ->
-                var playersComponent = Component.text(" ")
-                databaseController.whitelistedPlayersCache.toSortedMap().filter { entry -> entry.value == it.first }.toList().forEachIndexed { index, entry ->
-                    val uuid = databaseController.whitelistedPlayerUUIDs[entry.first]!!
-                    val onlinePlayer = Bukkit.getPlayer(uuid)
-                    var name = Component.empty()
-                    if(index != 0) {
-                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
-                    }
-
-                    name = name.append(Format.mm("<color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
-                        if(onlinePlayer != null) Component.text(onlinePlayer.name, it.first.color)
-                        else Component.text(entry.first, NamedTextColor.GRAY)
-                    )
-
-                    playersComponent = playersComponent.append(name)
-                }
+            placements.forEachIndexed { i, it ->
+                var playersComponent = getTeamPlayersComponent(it.first)
                 playersComponent = playersComponent.append(Component.text(" "))
 
                 teamComponent = teamComponent.append(
                     Format.mm(
-                        " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${teamScores[it.first]!!}</gold> <br><players><br>",
+                        " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${scores[it.first]!!}</gold> <br><players><br>",
                         Placeholder.component("team", it.first.formattedName),
                         // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
                         Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
@@ -1038,6 +1052,27 @@ class EventController : IController {
         }
 
         return teamComponent
+    }
+
+    fun getTeamPlayersComponent(team: Team): Component {
+        var playersComponent = Component.empty()
+        playerController.players.filter { entry -> entry.team == team }.forEachIndexed { index, player ->
+            val uuid = player.uuid
+            val onlinePlayer = Bukkit.getPlayer(uuid)
+            var name = Component.empty()
+            if(index != 0) {
+                name = name.append(Component.text(" •", NamedTextColor.WHITE))
+            }
+
+            name = name.append(Format.mm(" <color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
+                if(onlinePlayer != null) Component.text(onlinePlayer.name, team.color)
+                else Component.text(player.name, NamedTextColor.GRAY)
+            )
+
+            playersComponent = playersComponent.append(name)
+        }
+
+        return playersComponent
     }
 
     fun grantScore(player: TumblingPlayer, amount: Int) {

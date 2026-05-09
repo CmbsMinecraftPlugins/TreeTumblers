@@ -58,6 +58,7 @@ import xyz.devcmb.tumblers.util.uiController
  * @param scores A [HashMap] of [xyz.devcmb.tumblers.engine.score.CommonScoreSource]s to the amount of score they give
  * @param icon The component icon of the game
  * @param logo The component logo of the game
+ * @param tabLogo The larger version of the [logo] to be put into the lab list
  * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
  *
  * @property currentState The current [State] of the individual game
@@ -79,6 +80,7 @@ abstract class GameBase(
     val scores: HashMap<ScoreSource, Int>,
     val icon: Component,
     val logo: Component,
+    val tabLogo: Component,
     val scoreboard: String
 ): Listener {
     init {
@@ -641,6 +643,15 @@ abstract class GameBase(
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
     abstract fun playerLeave(player: Player)
+
+    /**
+     * The method for setting up a custom tab list (main section)
+     *
+     * By default, this is null and uses the default behavior
+     */
+    open fun overrideTabList(): Component? {
+        return null
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     fun playerJoinEvent(event: PlayerJoinEvent) {
