@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.util.item
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -87,6 +89,10 @@ class AdvancedItemStackContext(
 
         if(Enchantment.BINDING_CURSE.canEnchantItem(item) && !droppable) {
             item.addEnchantment(Enchantment.BINDING_CURSE, 1)
+        }
+
+        if(!droppable) {
+            item.setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
         }
 
         AdvancedItemRegistry.register(this)

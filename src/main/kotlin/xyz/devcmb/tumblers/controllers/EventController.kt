@@ -988,6 +988,7 @@ class EventController : IController {
                     .appendNewline()
                     .appendNewline()
                     .appendNewline()
+                    .append(Format.mm("<green>Game ${this.game}/$totalGames</green>"))
                     .appendNewline()
                     .append(Format.mm("<green><line:40></green>"))
                     .appendNewline()

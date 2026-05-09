@@ -66,7 +66,7 @@ fun Player.deactivateScoreboard(id: String) {
 
 
 fun Player.hunger() {
-    addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 1, true, false, false))
+    addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 0, true, false, false))
 }
 
 fun Player.giveKit(kit: Kit.KitDefinition) {

@@ -113,6 +113,26 @@ class ScoreCommand {
         sender.sendMessage(Format.success("Scores have been nuked successfully!"))
     }
 
+    @Execute(name = "randomize")
+    fun randomizeScores(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+        if(!confirm) {
+            sender.sendMessage(Format.warning("This action is destructive! Re-run with the --confirm flag to execute."))
+            return
+        }
+
+        playerController.players.forEach {
+            it.score = (500..8000).random()
+        }
+
+        eventController.teamScores.forEach { score ->
+            eventController.teamScores[score.key] = playerController.players
+                .filter { it.team == score.key }
+                .sumOf { it.score }
+        }
+
+        sender.sendMessage(Format.success("Scores have been randomized successfully!"))
+    }
+
     @Execute(name = "hide")
     fun hideScores(@Context sender: CommandSender) {
         eventController.scoresHidden = true

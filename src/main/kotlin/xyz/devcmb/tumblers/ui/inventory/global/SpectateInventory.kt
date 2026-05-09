@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui.inventory.global
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -29,7 +31,7 @@ class SpectateInventory(
     val spectateController by lazy {
         ControllerDelegate.getController<SpectatorController>()
     }
-    override val inventory: ChestInventoryUI = ChestInventoryUI(player, Format.mm("Spectate"), 5).apply {
+    override val inventory: ChestInventoryUI = ChestInventoryUI(player, Format.mm("<white>Spectate</white>"), 5).apply {
         val page = ChestInventoryPage()
         addPage("main", page, true)
 
@@ -48,6 +50,7 @@ class SpectateInventory(
                         InventoryMappedItem(
                         getItemStack = { page, item ->
                             ItemStack.of(Material.PLAYER_HEAD).apply {
+                                setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                                 itemMeta = itemMeta.also {
                                     it.itemName(Format.formatPlayerName(plr))
                                     it.itemModel = UserInterfaceUtility.FLAT_SKULL
@@ -86,6 +89,7 @@ class SpectateInventory(
                 InventoryItem(
                     getItemStack = { page, item ->
                         ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
+                            setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                             itemMeta = itemMeta.also { meta ->
                                 meta.isHideTooltip = true
                             }
@@ -100,6 +104,7 @@ class SpectateInventory(
             InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.ARROW).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
                         it.lore(
@@ -123,6 +128,7 @@ class SpectateInventory(
             InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.ARROW).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Next Page</yellow>"))
                         it.lore(

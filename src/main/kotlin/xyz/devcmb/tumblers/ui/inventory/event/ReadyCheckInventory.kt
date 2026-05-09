@@ -1,6 +1,9 @@
 package xyz.devcmb.tumblers.ui.inventory.event
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -19,7 +22,7 @@ class ReadyCheckInventory(
 ) : HandledInventory {
     override val inventory: ChestInventoryUI = ChestInventoryUI(
         player,
-        Component.text("Are you ready?"),
+        Component.text("Are you ready?", NamedTextColor.WHITE),
         3
     ).apply {
         val page = ChestInventoryPage()
@@ -29,6 +32,7 @@ class ReadyCheckInventory(
             InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.LIME_CONCRETE).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<green><b>Ready!</b></green>"))
                     }
@@ -46,6 +50,7 @@ class ReadyCheckInventory(
             InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.RED_CONCRETE).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<red><b>Not Ready!</b></red>"))
                     }

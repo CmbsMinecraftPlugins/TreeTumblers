@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui.inventory.breach
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -42,6 +44,7 @@ class BreachKitSelector(
             page.addItem(InventoryItem(
                 getItemStack = { page, item ->
                     val itemStack = ItemStack.of(kit.item).apply {
+                        setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                         itemMeta = itemMeta.also { meta ->
                             meta.itemName(kit.label)
                             meta.lore(kit.description.map { it.decoration(TextDecoration.ITALIC, false) })
@@ -86,6 +89,7 @@ class BreachKitSelector(
                 }
 
                 val itemStack = ItemStack.of(Material.NETHER_STAR).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also { meta ->
                         if (itemHolder == null) {
                             meta.itemName(Format.mm("<light_purple>Hold the Star"))

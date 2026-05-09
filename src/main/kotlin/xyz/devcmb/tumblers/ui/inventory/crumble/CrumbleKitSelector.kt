@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui.inventory.crumble
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -32,7 +34,7 @@ class CrumbleKitSelector(
         UserInterfaceUtility.negativeSpace(8)
             .append(Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font))
             .append(UserInterfaceUtility.negativeSpace(170))
-            .append(Component.text("Kit Selector", NamedTextColor.DARK_GRAY).font(NamespacedKey("minecraft", "default"))),
+            .append(Component.text("Kit Selector", NamedTextColor.WHITE).font(NamespacedKey("minecraft", "default"))),
         6
     ).apply {
         val page = ChestInventoryPage()
@@ -59,6 +61,7 @@ class CrumbleKitSelector(
                             getItemStack = { _,_ ->
                                 val currentPlayerKits = crumble.playerKits.filter { item -> item.value.id == template.id }
                                 var stack = ItemStack.of(Material.PAPER).apply {
+                                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                                     itemMeta = itemMeta.also { meta ->
                                         meta.itemName(Component.text(template.name))
                                         if(

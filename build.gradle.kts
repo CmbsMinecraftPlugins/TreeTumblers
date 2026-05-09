@@ -23,6 +23,8 @@ repositories {
     maven("https://maven.enginehub.org/repo/")
     maven("https://mvn.lib.co.nz/public")
     maven("https://repo.codemc.io/repository/maven-releases/")
+    maven("https://maven.noxcrew.com/public")
+    maven("https://repo.viaversion.com")
 }
 
 dependencies {
@@ -30,6 +32,12 @@ dependencies {
     compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.11.2")
     compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
     compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
+
+    // https://discord.com/channels/707193125478596668/1134515300742733985/1502698083354673186
+    // lucydotp (roughly): it has changed from `paper` to `paper-platform`
+    // thank you lucy
+    compileOnly("com.noxcrew.noxesium:paper-platform:3.0.0")
+
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
@@ -55,22 +63,24 @@ tasks {
             modrinth("fastasyncworldedit", "2.15.0")
             modrinth("axiom-paper-plugin", "5.0.4+1.21.11")
             github("libraryaddict", "LibsDisguises", "v11.0.16", "LibsDisguises-11.0.16-Github.jar")
+            github("noxcrew", "noxesium", "v3.0.0", "noxesium-paper-3.0.0+67135f29.jar")
         }
         minecraftVersion("1.21.11")
     }
 }
+
+val targetJavaVersion = 25
 
 // https://github.com/jpenilla/run-task/wiki/Debugging
 @Suppress("UnstableApiUsage")
 tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
     javaLauncher = javaToolchains.launcherFor {
         vendor = JvmVendorSpec.JETBRAINS
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(targetJavaVersion)
     }
     jvmArgs("-XX:+AllowEnhancedClassRedefinition")
 }
 
-val targetJavaVersion = 21
 kotlin {
     jvmToolchain(targetJavaVersion)
 }
@@ -92,7 +102,6 @@ fun padLeftZeros(inputString: String, length: Int): String {
     sb.append(inputString)
     return sb.toString()
 }
-
 
 tasks.register("updateVersion") {
     doLast {

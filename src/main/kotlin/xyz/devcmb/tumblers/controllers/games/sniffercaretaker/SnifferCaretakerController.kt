@@ -57,7 +57,6 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.BoredTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
 import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
@@ -534,11 +533,11 @@ class SnifferCaretakerController : GameBase(
         gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }
-        asyncCountdown(7)
+        asyncCountdown(15)
 
-        delay(2000)
+        delay(5000)
 
-        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 5)
+        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 10)
     }
 
     /**
@@ -935,7 +934,7 @@ class SnifferCaretakerController : GameBase(
             grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
 
             completedTasks.put(task.completer!!.tumblingPlayer, (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + 1)
-            starsCollected.put(task.completer!!.tumblingPlayer, (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + task.stars)
+            starsCollected.put(task.completer!!.tumblingPlayer, (starsCollected[task.completer!!.tumblingPlayer] ?: 0) + task.stars)
         } else {
             grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
         }

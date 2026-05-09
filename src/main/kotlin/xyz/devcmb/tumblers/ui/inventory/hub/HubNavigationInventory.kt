@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui.inventory.hub
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -30,7 +32,7 @@ class HubNavigationInventory(
 
     override val inventory: ChestInventoryUI = ChestInventoryUI(
         player,
-        Format.mm("Hub Navigator"),
+        Format.mm("<white>Hub Navigator</white>"),
         1
     ).apply {
         val page = ChestInventoryPage()
@@ -39,6 +41,7 @@ class HubNavigationInventory(
         page.addItem(InventoryItem(
             getItemStack = { page, item ->
                 ItemStack.of(Material.OAK_LOG).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Lodge</yellow>"))
                     }
