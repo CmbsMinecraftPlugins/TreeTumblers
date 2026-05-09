@@ -4,6 +4,7 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -100,6 +101,11 @@ enum class Team(
         Component.empty()
             .append(formattedIcon)
             .append(Component.text(" $teamName").color(color))
+
+    val boldedName: Component =
+        Component.empty()
+            .append(formattedIcon)
+            .append(Component.text(" $teamName").color(color).decorate(TextDecoration.BOLD))
 
     val audience: Audience
         get() {

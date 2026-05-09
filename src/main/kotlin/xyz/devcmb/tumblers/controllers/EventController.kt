@@ -1059,7 +1059,7 @@ class EventController : IController {
 
     fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
-        playerController.players.forEach {
+        playerController.players.filter { it.team.playingTeam }.forEach {
             playerScores.put(it, it.score)
         }
 
@@ -1134,11 +1134,8 @@ class EventController : IController {
         val pos = individualPosition.toCenterLocation()
         pos.y = individualPosition.y
 
-        placements.forEach {
-            val player = it.first.bukkitPlayer
-            if(player == null) return@forEach
-
-            spawnPlayerIndividualMannequin(player)
+        Bukkit.getOnlinePlayers().forEach {
+            spawnPlayerIndividualMannequin(it)
         }
     }
 
@@ -1225,8 +1222,7 @@ class EventController : IController {
 
     fun spawnPlayerIndividualMannequin(player: Player) {
         val placements = getEventPlayerPlacements()
-        val playerPlacement = placements.find { it.first == player.tumblingPlayer }
-        if(playerPlacement == null) return
+        val playerPlacement = placements.find { it.first == player.tumblingPlayer } ?: Pair(player.tumblingPlayer, 0)
 
         val hub = Bukkit.getWorld(lobbyWorld)!!
 
@@ -1238,10 +1234,10 @@ class EventController : IController {
 
         if(!pos.chunk.isLoaded) pos.chunk.load()
 
-        val (npc, _) = spawnScoreMannequin(pos, playerPlacement, player)
+        val (npc, _, offset) = spawnScoreMannequin(pos, playerPlacement, player)
         scoreMannequins.add(npc)
 
-        hub.spawn(pos.clone().add(0.0,2.9,0.0), TextDisplay::class.java) { display ->
+        hub.spawn(pos.clone().add(0.0,offset,0.0), TextDisplay::class.java) { display ->
             display.isVisibleByDefault = false
             player.showEntity(TreeTumblers.plugin, display)
 
@@ -1253,7 +1249,7 @@ class EventController : IController {
     }
 
     @Suppress("UnstableApiUsage")
-    fun spawnScoreMannequin(location: Location, placement: Pair<TumblingPlayer, Int>, player: Player? = null): Pair<Mannequin, ArrayList<TextDisplay>> {
+    fun spawnScoreMannequin(location: Location, placement: Pair<TumblingPlayer, Int>, player: Player? = null): Triple<Mannequin, ArrayList<TextDisplay>, Double> {
         val npc = location.world.spawn(location, Mannequin::class.java) { npc ->
             mannequins.add(npc)
             npc.isInvulnerable = true
@@ -1282,28 +1278,11 @@ class EventController : IController {
             }
         }
 
-        val displays = arrayListOf(
-            location.world.spawn(location.clone().add(0.0,2.6,0.0), TextDisplay::class.java) {
-                if(player != null) {
-                    it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.plugin, it)
-                    playerSpecificMannequinNameTags[player]!!.add(it)
-                }
+        val displays: ArrayList<TextDisplay> = arrayListOf()
+        var offset = 2.0
 
-                it.text(Format.mm("<bold>#${placement.second}</bold>"))
-            },
-
-            location.world.spawn(location.clone().add(0.0,2.3,0.0), TextDisplay::class.java) {
-                if(player != null) {
-                    it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.plugin, it)
-                    playerSpecificMannequinNameTags[player]!!.add(it)
-                }
-
-                it.text(placement.first.formattedName)
-            },
-
-            location.world.spawn(location.clone().add(0.0,2.0,0.0), TextDisplay::class.java) {
+        if(player == null || player.tumblingPlayer.team.playingTeam) {
+            displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
                     player.showEntity(TreeTumblers.plugin, it)
@@ -1311,12 +1290,38 @@ class EventController : IController {
                 }
 
                 it.text(Format.mm("<white><gold>${placement.first.score}</gold> score</white>"))
+            })
+
+            offset += 0.3
+        }
+
+        displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
+            if(player != null) {
+                it.isVisibleByDefault = false
+                player.showEntity(TreeTumblers.plugin, it)
+                playerSpecificMannequinNameTags[player]!!.add(it)
             }
-        )
+
+            it.text(placement.first.formattedName)
+        })
+        offset += 0.3
+
+        if(player == null || player.tumblingPlayer.team.playingTeam) {
+            displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
+                if(player != null) {
+                    it.isVisibleByDefault = false
+                    player.showEntity(TreeTumblers.plugin, it)
+                    playerSpecificMannequinNameTags[player]!!.add(it)
+                }
+
+                it.text(Format.mm("<bold>#${placement.second}</bold>"))
+            })
+            offset += 0.3
+        }
 
         textDisplays.addAll(displays)
 
-        return Pair(npc, displays)
+        return Triple(npc, displays, offset)
     }
 
     suspend fun getSkinData(player: TumblingPlayer): SkinDataResponse {

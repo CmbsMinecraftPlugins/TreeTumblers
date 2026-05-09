@@ -7,7 +7,6 @@ import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class IntermissionScoreboard(
@@ -17,17 +16,6 @@ class IntermissionScoreboard(
     override val displayName: Component = Format.mm(MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE)
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {
-        val playerPlacement = eventController.getEventPlayerPlacements()
-            .find { it.first.bukkitPlayer == player }
-
-        if(playerPlacement == null) {
-            return arrayListOf(
-                Component.empty(),
-                Format.mm("<aqua>Loading...</aqua>"),
-                Component.empty()
-            )
-        }
-
         val timer: Component = Component.empty()
             .append(UserInterfaceUtility.CLOCK)
             .append(when {
@@ -52,35 +40,50 @@ class IntermissionScoreboard(
             Placeholder.unparsed("max", eventController.totalGames.toString())
         )
 
-        val leaderboard: ArrayList<Component> = ArrayList()
-        val placements = eventController.getEventTeamPlacements()
-        placements.forEach {
-            leaderboard.add(Format.mm(
-                if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
-                else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
-                Placeholder.unparsed("placement", it.second.toString()),
-                Placeholder.component("team", it.first.formattedName),
-                Placeholder.unparsed("score", (eventController.teamScores[it.first] ?: 0).toString())
+        val teamComponent: ArrayList<Component> = ArrayList()
+        val eventPlacements = eventController.getEventTeamPlacements()
+        val team = player.tumblingPlayer.team
+        val teamPlacement = eventPlacements.find { it.first == team }
+
+        if(teamPlacement != null) {
+            teamComponent.add(
+                Format.mm(
+                    if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
+                    else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
+                    Placeholder.unparsed("placement", teamPlacement.second.toString()),
+                    Placeholder.component("team", player.tumblingPlayer.team.boldedName),
+                    Placeholder.unparsed("score", (eventController.teamScores[team] ?: 0).toString())
+                )
+            )
+
+            val playerPlacements = eventController.getEventPlayerPlacements()
+            val teamPlayers = playerPlacements.filter { it.first.team == team }
+
+            teamPlayers.forEach {
+                teamComponent.add(Format.mm(
+                    "  " + if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
+                    else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT,
+                    Placeholder.unparsed("placement", it.second.toString()),
+                    Placeholder.parsed("head", "<head:${it.first.uuid}>"),
+                    Placeholder.component("name", it.first.formattedName),
+                    Placeholder.parsed("score", it.first.score.toString())
+                ))
+            }
+        } else {
+            teamComponent.add(Format.mm("<gray>You are not participating"))
+            teamComponent.add(Format.mm(
+                "<icon> <head:${player.uniqueId}> <player>",
+                Placeholder.component("icon", team.formattedIcon),
+                Placeholder.component("player", Component.text(player.name, team.color))
             ))
         }
-
-        val playerPlacementComponent = Format.mm(
-            if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
-                else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT,
-            Placeholder.unparsed("placement", playerPlacement.second.toString()),
-            Placeholder.parsed("head", "<head:${player.uniqueId}>"),
-            Placeholder.component("name", player.formattedName),
-            Placeholder.parsed("score", player.tumblingPlayer.score.toString())
-        )
 
         return arrayListOf(
             Component.empty(),
             timer,
             gameComponent,
             Component.empty(),
-            *leaderboard.toTypedArray(),
-            Component.empty(),
-            playerPlacementComponent,
+            *teamComponent.toTypedArray(),
             Component.empty()
         )
     }
