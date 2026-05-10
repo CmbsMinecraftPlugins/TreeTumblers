@@ -40,6 +40,7 @@ class CommandController : IController {
                 SpectateCommand(),
                 ChatCommand(),
                 NametagCommand(),
+                QibCommand(),
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
@@ -52,6 +53,7 @@ class CommandController : IController {
             .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
             .argument(PlayerController.ChatChannel::class.java, ChatChannelArgument())
             .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
+            .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
             .extension(LiteAdventureExtension<CommandSender>()) { config ->
                 config.serializer(Format.miniMessage)
             }

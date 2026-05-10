@@ -97,7 +97,8 @@ class HubController : IController {
 
     @EventHandler
     fun playerInteractEvent(event: PlayerInteractEvent) {
-        if(!isHub) return
+        if(!isHub || event.player.gameMode == GameMode.CREATIVE) return
+
         event.isCancelled = true
     }
 
@@ -109,7 +110,8 @@ class HubController : IController {
 
     @EventHandler
     fun blockBreakEvent(event: BlockBreakEvent) {
-        if(event.block.location.world == Bukkit.getWorld(lobbyWorld)!! && event.player.gameMode != GameMode.CREATIVE)
+        if(isHub && event.player.gameMode != GameMode.CREATIVE) {
             event.isCancelled = true
+        }
     }
 }

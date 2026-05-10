@@ -29,6 +29,7 @@ object DebugUtil {
     fun success(message: String) = log(message, DebugLogLevel.SUCCESS)
     fun warning(message: String) = log(message, DebugLogLevel.WARNING)
     fun severe(message: String) = log(message, DebugLogLevel.ERROR)
+    fun benchmark(message: String) = log(message, DebugLogLevel.BENCHMARK)
 
     private fun log(message: String, level: DebugLogLevel) {
         assert(level != DebugLogLevel.NONE)
@@ -63,6 +64,7 @@ object DebugUtil {
         ERROR(1, NamedTextColor.RED, "\uE004"),
         WARNING(2, NamedTextColor.YELLOW, "\uE005"),
         SUCCESS(3, NamedTextColor.GREEN, "\uE001"),
-        INFO(4, NamedTextColor.AQUA, "\uE000"),
+        BENCHMARK(4, NamedTextColor.LIGHT_PURPLE, "\uE003"),
+        INFO(5, NamedTextColor.AQUA, "\uE000"),
     }
 }

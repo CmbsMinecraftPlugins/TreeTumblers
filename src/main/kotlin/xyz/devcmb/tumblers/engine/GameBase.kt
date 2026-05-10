@@ -355,7 +355,6 @@ abstract class GameBase(
         eventController.lastGameTeamScores = teamScores
         eventController.lastGamePlayerScores = playerScores
 
-
         suspendSync {
             playerController.currentNametagMode = PlayerController.NametagMode.ALL
             eventController.refreshLeaderboards()

@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers
 
 import com.destroystokyo.paper.profile.ProfileProperty
+import com.fastasyncworldedit.core.extent.processor.lighting.RelightMode
 import com.sk89q.worldedit.EditSession
 import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.bukkit.BukkitAdapter
@@ -13,8 +14,10 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.papermc.paper.datacomponent.item.ResolvableProfile
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
@@ -53,6 +56,7 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Benchmark
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
@@ -747,7 +751,7 @@ class EventController : IController {
 
             val game = games.random()
             quadrantGames.put(it, game)
-            suspendSync {
+            TreeTumblers.pluginScope.launch {
                 loadDiorama(game.id, it)
             }
 
@@ -866,52 +870,64 @@ class EventController : IController {
     }
 
     val currentDioramaSessions: ArrayList<EditSession> = ArrayList()
-    fun loadDiorama(id: String, index: Int) {
-        val schematic = File(Voting.dioramasFolder, "$id.schem")
-        if(!schematic.exists()) {
-            DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
-            return
-        }
+    suspend fun loadDiorama(id: String, index: Int) = withContext(Dispatchers.IO) {
+        Benchmark("diorama_loading") {
+            val schematic = File(Voting.dioramasFolder, "$id.schem")
+            if(!schematic.exists()) {
+                DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
+                return@Benchmark
+            }
 
-        val format = ClipboardFormats.findByFile(schematic)
-        if(format == null) {
-            DebugUtil.warning("${schematic.parentFile.name}/${schematic.name} is not a valid schematic, aborting")
-            return
-        }
+            val format = ClipboardFormats.findByFile(schematic)
+            if(format == null) {
+                DebugUtil.warning("${schematic.parentFile.name}/${schematic.name} is not a valid schematic, aborting")
+                return@Benchmark
+            }
 
-        val clipboard: Clipboard
-        format.getReader(schematic.inputStream()).use { reader ->
-            clipboard = reader.read()
-        }
+            val clipboard: Clipboard
+            format.getReader(schematic.inputStream()).use { reader ->
+                clipboard = reader.read()
+            }
 
-        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
-        clipboard.origin = BukkitAdapter.adapt(Voting.voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
+            completeStep("fs")
 
-        val editSession = WorldEdit.getInstance()
-            .newEditSessionBuilder()
-            .world(BukkitAdapter.adapt(lobbyWorld))
-            .build()
+            val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+            clipboard.origin = BukkitAdapter.adapt(Voting.voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
 
-        val holder = ClipboardHolder(clipboard)
-        holder.transform = holder.transform.combine(
-            AffineTransform().rotateY(index * -90.0)
-        )
+            val editSession = WorldEdit.getInstance()
+                .newEditSessionBuilder()
+                .world(BukkitAdapter.adapt(lobbyWorld))
+                .relightMode(RelightMode.NONE)
+                .build()
 
-        try {
+            val holder = ClipboardHolder(clipboard)
+            holder.transform = holder.transform.combine(
+                AffineTransform().rotateY(index * -90.0)
+            )
+
             val operation = holder
                 .createPaste(editSession)
                 .to(BukkitAdapter.adapt(Voting.voteCenter.validateLocation(lobbyWorld)).toBlockPoint())
                 .ignoreAirBlocks(true)
                 .build()
 
-            Operations.complete(operation)
-            editSession.flushQueue()
+            completeStep("operation")
 
-            currentDioramaSessions.add(editSession)
-        } catch(e: Exception) {
-            editSession.close()
-            DebugUtil.severe("Failed to load game diorama for $id: ${e.message}")
-        }
+            suspendSync {
+                try {
+                    Operations.complete(operation)
+                    editSession.flushQueue()
+
+                    currentDioramaSessions.add(editSession)
+                    completeStep("paste")
+                } catch(e: Exception) {
+                    editSession.close()
+                    DebugUtil.severe("Failed to load game diorama for $id: ${e.message}")
+                }
+            }
+
+            yieldCompletion(listOf("fs", "operation", "paste"))
+        }.run()
     }
 
     fun cleanupDioramas() {
