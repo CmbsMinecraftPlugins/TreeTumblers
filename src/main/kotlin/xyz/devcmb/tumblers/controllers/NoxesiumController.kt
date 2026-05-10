@@ -69,9 +69,9 @@ class NoxesiumController : IController {
                 }
             }
         },
-        BOOST_PAD(Key.key("tumbling", "boost_pad")) {
+        LAUNCH_PAD(Key.key("tumbling", "boost_pad")) {
             override fun register() {
-                val effectDefinition = TreeTumblers.plugin.getResource("qibs/boost_pad.json")!!
+                val effectDefinition = TreeTumblers.plugin.getResource("qibs/launch_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
                 val effect = QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
 
@@ -88,6 +88,33 @@ class NoxesiumController : IController {
 
             override fun spawn(location: Location) {
                 location.block.type = Material.RED_GLAZED_TERRACOTTA
+                location.world.spawn(location, Interaction::class.java) {
+                    it.interactionHeight = 2.5f
+                    it.interactionWidth = 2.5f
+                    it.isInvisible = true
+                    it.setNoxesiumComponent(CommonEntityComponentTypes.QIB_BEHAVIOR, key)
+                }
+            }
+        },
+        ULTRA_LAUNCH_PAD(Key.key("tumbling", "ultra_boost_pad")) {
+            override fun register() {
+                val effectDefinition = TreeTumblers.plugin.getResource("qibs/ultra_launch_pad.json")!!
+                val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
+                val effect = QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
+
+                NoxesiumRegistries.QIB_EFFECTS.register(key, QibDefinition(
+                    null,
+                    null,
+                    null,
+                    effect,
+                    null,
+                    null,
+                    false
+                ))
+            }
+
+            override fun spawn(location: Location) {
+                location.block.type = Material.ORANGE_GLAZED_TERRACOTTA
                 location.world.spawn(location, Interaction::class.java) {
                     it.interactionHeight = 2.5f
                     it.interactionWidth = 2.5f
