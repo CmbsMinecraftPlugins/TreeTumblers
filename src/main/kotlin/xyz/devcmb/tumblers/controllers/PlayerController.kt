@@ -123,6 +123,11 @@ class PlayerController : IController {
         runTask {
             hubController.spawnHub(player)
             reloadNametag(player)
+            nameTags.forEach { otherPlr, tag ->
+                if(currentNametagMode.canSee(player, otherPlr)) {
+                    player.showEntity(TreeTumblers.plugin, tag)
+                }
+            }
         }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
