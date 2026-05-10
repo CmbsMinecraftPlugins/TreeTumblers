@@ -1,0 +1,11 @@
+{
+  "type": "SetVelocityYawPitch",
+  "effect": {
+    "yaw": 0.0,
+    "yawRelative": true,
+    "pitch": -30.0,
+    "pitchRelative": false,
+    "strength": 2.5,
+    "limit": 15
+  }
+}

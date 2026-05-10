@@ -65,6 +65,8 @@ class BadgeCollectionInventory(
                             }
                         },
                         onClick = { page, item ->
+                            if(selectedGameIndex == index) return@InventoryMappedItem
+
                             selectedGameIndex = index
                             selectedGame = game
                             player.buttonClickSound()
@@ -157,7 +159,7 @@ class BadgeCollectionInventory(
                                         it.itemName(Format.mm("<gold>${badge.badgeName}</gold>"))
                                         it.lore(listOf(
                                             Component.empty(),
-                                            Format.mm("<green>Unlocked on ${SimpleDateFormat("EEE, MMM d, yyyy ").format(timestamp.time)}</green>"),
+                                            Format.mm("<green>Unlocked on ${SimpleDateFormat("EEE MMM d, yyyy ").format(timestamp.time)}</green>"),
                                             Component.empty(),
                                             *MiscUtils.wrapComponent(Component.text(badge.hint, NamedTextColor.WHITE), 30).toTypedArray()
                                         ).map { entry ->
