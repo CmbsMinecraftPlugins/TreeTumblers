@@ -10,6 +10,7 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.controllers.BadgeController
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
@@ -23,6 +24,7 @@ import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
 import xyz.devcmb.tumblers.ui.inventory.global.SpectateInventory
 import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
+import xyz.devcmb.tumblers.ui.inventory.hub.BadgeCollectionInventory
 import xyz.devcmb.tumblers.ui.inventory.hub.HubNavigationInventory
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.HealthIndicatorScoreboard
@@ -47,6 +49,7 @@ class PlayerUIController(val player: Player) {
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
     val gameController = ControllerDelegate.getController("gameController") as GameController
     val eventController = ControllerDelegate.getController("eventController") as EventController
+    val badgeController = ControllerDelegate.getController<BadgeController>()
 
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
     val updateTask: BukkitTask
@@ -118,6 +121,7 @@ class PlayerUIController(val player: Player) {
         registerInventory(ReadyCheckInventory(player, eventController))
         registerInventory(SpectateInventory(player, gameController))
         registerInventory(HubNavigationInventory(player))
+        registerInventory(BadgeCollectionInventory(player, badgeController, gameController))
     }
 
     fun registerBossBars() {

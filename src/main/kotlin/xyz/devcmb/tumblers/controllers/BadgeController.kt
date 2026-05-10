@@ -5,8 +5,12 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.openHandledInventory
+import java.sql.Timestamp
+import java.util.Date
 
 @Controller("badgeController", Controller.Priority.MEDIUM)
 class BadgeController : IController {
@@ -22,8 +26,10 @@ class BadgeController : IController {
         model(NamespacedKey("tumbling", "hub/collection"))
 
         droppable(false)
+        movable(false)
+
         rightClick {
-            // TODO: Open inventory
+            it.openHandledInventory("badgeCollectionInventory")
         }
     }
 
@@ -32,5 +38,17 @@ class BadgeController : IController {
 
     fun giveCollection(player: Player) {
         player.inventory.addItem(collectionItem.build())
+    }
+
+    fun grantBadge(player: TumblingPlayer, badge: Badge) {
+        if(player.badges.contains(badge)) return
+        player.badges.put(badge, Timestamp(Date().time))
+    }
+
+    interface Badge {
+        val name: String
+        val game: String
+        val badgeName: String
+        val hint: String
     }
 }

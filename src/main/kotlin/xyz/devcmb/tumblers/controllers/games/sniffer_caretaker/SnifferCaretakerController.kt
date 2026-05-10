@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
+package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker
 
 
 import com.destroystokyo.paper.event.player.PlayerPickupExperienceEvent
@@ -57,10 +57,10 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.BoredTask
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.HungryTask
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.LonelyTask
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks.ThirstyTask
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.BoredTask
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.HungryTask
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.LonelyTask
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -87,7 +87,7 @@ import kotlin.math.min
 
 @EventGame
 class SnifferCaretakerController : GameBase(
-    id = "snifferCaretaker",
+    id = "sniffer_caretaker",
     votable = true,
     maps = setOf(
         Map("facility")
@@ -256,26 +256,27 @@ class SnifferCaretakerController : GameBase(
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
     scoreboard = "snifferCaretakerScoreboard",
-    name = "Sniffer Caretaker"
+    name = "Sniffer Caretaker",
+    badges = SnifferCaretakerBadge.entries
 ) {
     companion object {
         val font = NamespacedKey("tumbling", "games/sniffer_caretaker")
 
         val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
 
-        @field:Configurable("games.snifferCaretaker.game_length")
+        @field:Configurable("games.sniffer_caretaker.game_length")
         var gameLength: Int = 600
 
-        @field:Configurable("games.snifferCaretaker.chest_refresh")
+        @field:Configurable("games.sniffer_caretaker.chest_refresh")
         var chestRefresh: Long = 20
 
-        @field:Configurable("games.snifferCaretaker.block_refresh")
+        @field:Configurable("games.sniffer_caretaker.block_refresh")
         var blockRefresh: Long = 15
 
-        @field:Configurable("games.snifferCaretaker.mob_refresh")
+        @field:Configurable("games.sniffer_caretaker.mob_refresh")
         var mobRefresh: Long = 30
 
-        @field:Configurable("games.snifferCaretaker.task_interval")
+        @field:Configurable("games.sniffer_caretaker.task_interval")
         var taskInterval: Long = 8
     }
 
@@ -456,7 +457,7 @@ class SnifferCaretakerController : GameBase(
             }
         }
 
-        val tasks: List<String> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
+        val tasks: List<String> = TreeTumblers.plugin.config.getList("games.sniffer_caretaker.tasks")?.map {
             if (
                 it !is HashMap<*, *>
                 || it["id"] == null
@@ -638,6 +639,10 @@ class SnifferCaretakerController : GameBase(
                     }
                 }
             }
+        }
+
+        Bukkit.getOnlinePlayers().forEach {
+            grantBadge(it.tumblingPlayer, SnifferCaretakerBadge.TEST)
         }
 
         suspendSync {
@@ -980,7 +985,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun createNewTask(team: Team, task: String, isCutsceneStep: Boolean = false) {
-        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.snifferCaretaker.tasks")?.map {
+        val tasks: List<HashMap<*, *>> = TreeTumblers.plugin.config.getList("games.sniffer_caretaker.tasks")?.map {
             if (
                 it !is HashMap<*, *>
                 || it["id"] == null

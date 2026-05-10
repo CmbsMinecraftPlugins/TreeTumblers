@@ -89,6 +89,8 @@ object UserInterfaceUtility {
         -300 to "\uF03C"
     )
 
+    const val FULL_INVENTORY_NEGATIVE_ADVANCE = 170
+
     fun negativeSpace(targetPixels: Int): Component {
         var remaining = targetPixels
         val result = StringBuilder()

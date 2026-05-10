@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
+package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks
 
 import org.bukkit.Material
 import org.bukkit.Particle
@@ -6,8 +6,8 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockPlaceEvent
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.maxOf

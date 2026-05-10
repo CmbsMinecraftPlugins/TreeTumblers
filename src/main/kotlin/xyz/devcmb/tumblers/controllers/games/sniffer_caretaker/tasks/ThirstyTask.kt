@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers.games.sniffercaretaker.tasks
+package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks
 
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -9,8 +9,8 @@ import org.bukkit.event.Event
 import org.bukkit.event.EventHandler
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.Task
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.Task
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.runTaskLater

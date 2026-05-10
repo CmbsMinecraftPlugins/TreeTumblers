@@ -59,6 +59,7 @@ class HubController : IController {
     val compass = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<aqua>Navigator</aqua>"))
         droppable(false)
+        movable(false)
         rightClick {
             it.openHandledInventory("hubNavigationInventory")
         }

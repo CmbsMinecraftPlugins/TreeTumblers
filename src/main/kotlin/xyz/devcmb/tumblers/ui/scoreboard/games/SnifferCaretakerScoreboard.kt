@@ -4,7 +4,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.GameController
-import xyz.devcmb.tumblers.controllers.games.sniffercaretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard

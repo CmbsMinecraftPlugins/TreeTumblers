@@ -369,10 +369,10 @@ games:
                   - [ 56.78,57.97,19.16 ]
                   - [ 62.36,58.03,10.16 ]
                   - [ 69.24,56.90,14.04 ]
-  snifferCaretaker:
+  sniffer_caretaker:
     # The path where all the maps are contained
     # This path is relative to the `world_root` config value
-    worlds_folder: "snifferCaretaker"
+    worlds_folder: "sniffer_caretaker"
 
     # The game length, in seconds
     game_length: 600

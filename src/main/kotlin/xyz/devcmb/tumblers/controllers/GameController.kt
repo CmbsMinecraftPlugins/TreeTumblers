@@ -22,7 +22,7 @@ import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.hunger
 
-@Controller("gameController", Controller.Priority.MEDIUM)
+@Controller("gameController", Controller.Priority.HIGH)
 class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
@@ -33,7 +33,8 @@ class GameController : IController {
         val name: String,
         val votable: Boolean,
         val game: Class<out GameBase>,
-        val logo: Component
+        val logo: Component,
+        val badges: List<BadgeController.Badge>?
     )
 
     @Suppress("UNCHECKED_CAST")
@@ -54,7 +55,8 @@ class GameController : IController {
                     templateInstance.name,
                     templateInstance.votable,
                     gameClass,
-                    templateInstance.logo
+                    templateInstance.logo,
+                    templateInstance.badges
                 ))
             }
     }

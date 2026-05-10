@@ -10,6 +10,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerJoinEvent
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.DatabaseException
+import xyz.devcmb.tumblers.TumblingDatabaseStateException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.data.Team
@@ -18,7 +19,9 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
+import java.sql.Timestamp
 import java.util.UUID
+import kotlin.toString
 
 /*
  * Database documentation time
@@ -64,6 +67,10 @@ class DatabaseController : IController {
 
     private val playerController: PlayerController by lazy {
         ControllerDelegate.getController("playerController") as PlayerController
+    }
+
+    private val gameController: GameController by lazy {
+        ControllerDelegate.getController<GameController>()
     }
 
     var offlineDatabase: OfflineDatabase? = null
@@ -113,10 +120,20 @@ class DatabaseController : IController {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         """.trimIndent()
 
+        val createBadges = """
+            CREATE TABLE IF NOT EXISTS `tumbling_badges` (
+                `badge` VARCHAR(255) NOT NULL,
+                `game` VARCHAR(255) NOT NULL,
+                `player` VARCHAR(255) NOT NULL COMMENT "The UUID of the player who completed the badge",
+                `achieved` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+        """.trimIndent()
+
         try {
             connection.createStatement().use {
                 it.executeUpdate(createPlayers)
                 it.executeUpdate(createTeams)
+                it.executeUpdate(createBadges)
             }
         } catch (e: SQLException) {
             DebugUtil.severe("Failed to create default tables in the MySQL database: ${e.message}")
@@ -219,6 +236,26 @@ class DatabaseController : IController {
         statement.setString(2, player.uuid.toString())
 
         statement.executeUpdate()
+
+        player.badges.forEach { badge, timestamp ->
+            val insertStatement = connection.prepareStatement("""
+                INSERT INTO tumbling_badges (badge, game, player, achieved)
+                SELECT ?, ?, ?, ?
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM tumbling_badges 
+                    WHERE badge = ? AND player = ?
+                )
+            """.trimIndent())
+
+            insertStatement.setString(1, badge.name.lowercase())
+            insertStatement.setString(2, badge.game)
+            insertStatement.setString(3, player.uuid.toString())
+            insertStatement.setTimestamp(4, timestamp)
+            insertStatement.setString(5, badge.name.lowercase())
+            insertStatement.setString(6, player.uuid.toString())
+
+            insertStatement.executeUpdate()
+        }
     }
 
     suspend fun isWhitelisted(uuid: String): Boolean = withContext(Dispatchers.IO) {
@@ -267,12 +304,35 @@ class DatabaseController : IController {
             }
 
             val uuid = UUID.fromString(uuidColumn)
-
             val tumblingPlayer = TumblingPlayer(uuid)
+
+            val badgesStatement = connection.prepareStatement("""
+                SELECT * FROM tumbling_badges WHERE player = ?
+            """.trimIndent())
+            badgesStatement.setString(1, uuidColumn)
+
+            val result = badgesStatement.executeQuery()
+            val badges = HashMap<BadgeController.Badge, Timestamp>()
+            while(result.next()) {
+                val id = result.getString("badge")
+                val game = result.getString("game")
+                val timestamp = result.getTimestamp("achieved")
+
+                val registeredGame = gameController.games.find { it.id == game }
+                    ?: throw TumblingDatabaseStateException("Could not find a game with id $game")
+
+                // don't need to throw here because badges could technically get removed (shouldn't, but can)
+                // if a game gets fully removed and had badges we have bigger fish to fry
+                val badge = registeredGame.badges?.find { it.name.lowercase() == id } ?: continue
+
+                badges.put(badge, timestamp)
+            }
+
             tumblingPlayer.bukkitPlayer = Bukkit.getPlayer(uuid)
             tumblingPlayer.score = score
             tumblingPlayer.name = username
             tumblingPlayer.team = team
+            tumblingPlayer.badges.putAll(badges)
 
             tumblingPlayers.add(tumblingPlayer)
         }

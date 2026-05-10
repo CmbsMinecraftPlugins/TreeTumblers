@@ -2,7 +2,9 @@ package xyz.devcmb.tumblers.data
 
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.controllers.BadgeController
 import xyz.devcmb.tumblers.util.Format
+import java.sql.Timestamp
 import java.util.UUID
 
 data class TumblingPlayer(
@@ -16,6 +18,7 @@ data class TumblingPlayer(
     var team: Team = Team.SPECTATORS
     var name: String = "Player"
     var score: Int = 0
+    val badges: HashMap<BadgeController.Badge, Timestamp> = HashMap()
 
     val isOnline: Boolean
         get() {

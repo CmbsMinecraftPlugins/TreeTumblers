@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers.games.sniffercaretaker
+package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker
 
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay

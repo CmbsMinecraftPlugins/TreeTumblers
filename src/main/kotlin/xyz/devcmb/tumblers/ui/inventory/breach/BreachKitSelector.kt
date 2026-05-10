@@ -28,7 +28,7 @@ class BreachKitSelector(
 
     override val inventory = ChestInventoryUI(
         player,
-        Format.mm("Pick your Weapon"),
+        Format.mm("<white>Pick your Weapon</white>"),
         3
     ).apply {
         val page = ChestInventoryPage()

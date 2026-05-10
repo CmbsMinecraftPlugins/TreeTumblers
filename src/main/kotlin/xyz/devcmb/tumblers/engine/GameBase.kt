@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -25,6 +26,7 @@ import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerDelegate
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
+import xyz.devcmb.tumblers.controllers.BadgeController
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.HubController
@@ -38,6 +40,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -60,6 +63,7 @@ import xyz.devcmb.tumblers.util.uiController
  * @param logo The component logo of the game
  * @param tabLogo The larger version of the [logo] to be put into the lab list
  * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
+ * @param badges The list of badges a game has that are displayed in the collection
  *
  * @property currentState The current [State] of the individual game
  * @property loadedMaps An [ArrayList] containing all the [LoadedMap] instances
@@ -81,7 +85,8 @@ abstract class GameBase(
     val icon: Component,
     val logo: Component,
     val tabLogo: Component,
-    val scoreboard: String
+    val scoreboard: String,
+    val badges: List<BadgeController.Badge>? = null
 ): Listener {
     init {
         maps.forEach {
@@ -124,6 +129,10 @@ abstract class GameBase(
 
     private val hubController by lazy {
         ControllerDelegate.getController<HubController>()
+    }
+
+    private val badgeController by lazy {
+        ControllerDelegate.getController<BadgeController>()
     }
 
     open val debugToolkit: DebugToolkit? = null
@@ -651,6 +660,27 @@ abstract class GameBase(
      */
     open fun overrideTabList(): Component? {
         return null
+    }
+
+    /**
+     * Grants a badge to a tumbling player
+     * @param player The player to award the badge to
+     * @param badge The badge to award
+     */
+    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) {
+        if(player.bukkitPlayer != null) {
+            player.bukkitPlayer!!.sendMessage(Format.mm(
+                "<green>(<white><icon></white>) You've unlocked a new badge: <gold><hover:show_text:'" +
+                        "<gold>${badge.badgeName}</gold><br><white><hint></white>" +
+                        "'>[${badge.badgeName}]</hover></gold></green>",
+                Placeholder.component("icon", Component.text("\uE00B").font(UserInterfaceUtility.ICONS)),
+                Placeholder.component("hint", MiscUtils.wrapComponent(Component.text(badge.hint), 30)
+                    .reduce { acc, component -> acc.append(Component.newline()).append(component) }
+                )
+            ))
+        }
+
+        badgeController.grantBadge(player, badge)
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)

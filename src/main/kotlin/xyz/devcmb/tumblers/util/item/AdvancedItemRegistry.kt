@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.util.item
 
 import org.bukkit.NamespacedKey
 import org.bukkit.event.block.Action
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
@@ -27,6 +28,26 @@ object AdvancedItemRegistry {
                 item.leftClick?.invoke(event.player)
 
             else -> {}
+        }
+    }
+
+    fun handleInventoryClickEvent(event: InventoryClickEvent) {
+        val itemsToCheck: ArrayList<ItemStack> = ArrayList()
+
+        if(event.hotbarButton != -1) {
+            val hotbarItem = event.whoClicked.inventory.getItem(event.hotbarButton)
+            if(hotbarItem != null) itemsToCheck.add(hotbarItem)
+        }
+
+        val stacks = listOfNotNull(event.currentItem, event.cursor)
+        itemsToCheck.addAll(stacks)
+
+        val items = itemsToCheck.mapNotNull { getItem(it) }
+
+        items.forEach {
+            if(!it.movable) {
+                event.isCancelled = true
+            }
         }
     }
 

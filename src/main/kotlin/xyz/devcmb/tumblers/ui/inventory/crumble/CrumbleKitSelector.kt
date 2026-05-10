@@ -33,7 +33,7 @@ class CrumbleKitSelector(
         player,
         UserInterfaceUtility.negativeSpace(8)
             .append(Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font))
-            .append(UserInterfaceUtility.negativeSpace(170))
+            .append(UserInterfaceUtility.negativeSpace(UserInterfaceUtility.FULL_INVENTORY_NEGATIVE_ADVANCE))
             .append(Component.text("Kit Selector", NamedTextColor.WHITE).font(NamespacedKey("minecraft", "default"))),
         6
     ).apply {
@@ -59,7 +59,11 @@ class CrumbleKitSelector(
                         val template = templates[spacesOccupied].second
                         items.add(InventoryMappedItem(
                             getItemStack = { _,_ ->
-                                val currentPlayerKits = crumble.playerKits.filter { item -> item.value.id == template.id }
+                                val currentPlayerKits = crumble.playerKits.filter { item ->
+                                    item.value.id == template.id
+                                    && item.key.team == player.tumblingPlayer.team
+                                }
+
                                 var stack = ItemStack.of(Material.PAPER).apply {
                                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                                     itemMeta = itemMeta.also { meta ->
@@ -88,12 +92,12 @@ class CrumbleKitSelector(
                                 )
 
                                 if(crumble.playerKits[player.tumblingPlayer]?.id == template.id) {
-                                    stack = stack.withType(Material.GREEN_STAINED_GLASS_PANE)
+                                    stack = stack.withType(Material.BLUE_STAINED_GLASS_PANE)
                                     lore.add(Component.text("Selected!", NamedTextColor.GREEN))
                                 }
 
                                 if(crumble.playerKits.filter { item -> template.id == item.value.id }.size >= CrumbleController.maxPlayersPerKit) {
-                                    if(stack.type != Material.GREEN_STAINED_GLASS_PANE) stack = stack.withType(Material.BARRIER)
+                                    if(stack.type != Material.BLUE_STAINED_GLASS_PANE) stack = stack.withType(Material.BARRIER)
                                     lore.add(Component.text("Max players!", NamedTextColor.RED))
                                 }
 
