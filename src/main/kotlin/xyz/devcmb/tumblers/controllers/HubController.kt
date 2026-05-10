@@ -10,7 +10,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
@@ -21,14 +21,14 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
 
-@Controller("hubController")
+@Controller(Controller.Priority.MEDIUM)
 class HubController : IController {
     val gameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     val badgeController by lazy {
-        ControllerDelegate.getController<BadgeController>()
+        ControllerRegistry.getController<BadgeController>()
     }
 
     val isHub: Boolean

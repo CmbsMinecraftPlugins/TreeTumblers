@@ -9,7 +9,7 @@ import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -22,7 +22,7 @@ import kotlin.jvm.optionals.getOrNull
 @Permission("tumbling.games")
 class GameCommand {
     val gameController: GameController by lazy {
-        ControllerDelegate.getController("gameController") as GameController
+        ControllerRegistry.getController<GameController>()
     }
 
     @Execute(name = "start")

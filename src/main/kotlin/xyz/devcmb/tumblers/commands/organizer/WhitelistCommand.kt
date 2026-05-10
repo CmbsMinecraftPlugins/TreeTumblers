@@ -10,7 +10,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.data.Team
@@ -21,7 +21,7 @@ import xyz.devcmb.tumblers.util.Format
 @Permission("tumbling.organizer")
 class WhitelistCommand {
     val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController("databaseController") as DatabaseController
+        ControllerRegistry.getController<DatabaseController>()
     }
 
     @Execute(name = "add")

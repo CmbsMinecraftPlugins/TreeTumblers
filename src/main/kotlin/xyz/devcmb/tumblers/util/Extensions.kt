@@ -14,7 +14,7 @@ import org.bukkit.block.Block
 import org.bukkit.entity.Player
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -24,7 +24,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 private val playerController: PlayerController by lazy {
-    ControllerDelegate.getController("playerController") as PlayerController
+    ControllerRegistry.getController<PlayerController>()
 }
 
 val Player.tumblingPlayer: TumblingPlayer

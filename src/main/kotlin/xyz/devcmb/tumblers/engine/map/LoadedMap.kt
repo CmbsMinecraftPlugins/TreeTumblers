@@ -2,7 +2,7 @@ package xyz.devcmb.tumblers.engine.map
 
 import org.bukkit.World
 import org.bukkit.configuration.ConfigurationSection
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.WorldController
 
 /**
@@ -17,7 +17,7 @@ class LoadedMap(
     val data: ConfigurationSection
 ) {
     val worldController: WorldController by lazy {
-        ControllerDelegate.getController("worldController") as WorldController
+        ControllerRegistry.getController<WorldController>()
     }
 
     suspend fun cleanup() {

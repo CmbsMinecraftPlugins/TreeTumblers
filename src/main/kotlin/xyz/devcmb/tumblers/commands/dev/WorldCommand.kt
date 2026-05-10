@@ -12,7 +12,7 @@ import org.bukkit.Location
 import org.bukkit.World
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.controllers.WorldController
@@ -30,7 +30,7 @@ import kotlin.jvm.optionals.getOrNull
 @Permission("tumbling.dev")
 class WorldCommand {
     val worldController: WorldController by lazy {
-        ControllerDelegate.getController("worldController") as WorldController
+        ControllerRegistry.getController<WorldController>()
     }
 
     @Execute(name = "create void")

@@ -43,14 +43,13 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -247,7 +246,7 @@ class CrumbleController : GameBase(
     }.build()
 
     val eventController: EventController by lazy {
-        ControllerDelegate.getController("eventController") as EventController
+        ControllerRegistry.getController<EventController>()
     }
     val killModel = NamespacedKey("tumbling", "crumble/kill")
 

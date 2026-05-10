@@ -35,7 +35,7 @@ import org.bukkit.util.Transformation
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import xyz.devcmb.tumblers.Constants
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
@@ -51,7 +51,7 @@ import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
-@Controller("playerController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class PlayerController : IController {
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
@@ -67,19 +67,19 @@ class PlayerController : IController {
     val nameTags: HashMap<Player, TextDisplay> = HashMap()
 
     private val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController("databaseController") as DatabaseController
+        ControllerRegistry.getController<DatabaseController>()
     }
 
     private val gameController: GameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     private val spectatorController: SpectatorController by lazy {
-        ControllerDelegate.getController<SpectatorController>()
+        ControllerRegistry.getController<SpectatorController>()
     }
 
     private val hubController: HubController by lazy {
-        ControllerDelegate.getController<HubController>()
+        ControllerRegistry.getController<HubController>()
     }
 
     override fun init() {

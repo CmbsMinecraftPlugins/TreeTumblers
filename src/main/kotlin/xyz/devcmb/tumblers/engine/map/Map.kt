@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.engine.map
 import org.bukkit.GameRules
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.WorldController
@@ -33,6 +33,10 @@ import kotlin.io.path.Path
 class Map(
     val id: String,
 ) {
+    val worldController by lazy {
+        ControllerRegistry.getController<WorldController>()
+    }
+
     lateinit var game: GameBase
 
     fun init(game: GameBase) {
@@ -40,8 +44,6 @@ class Map(
     }
 
     suspend fun load(index: Int): LoadedMap {
-        val worldController = ControllerDelegate.getController("worldController") as WorldController
-
         val config = TreeTumblers.plugin.config
         val gameWorlds = config.getString("${game.configRoot}.worlds_folder")
             ?.replace("&", TreeTumblers.plugin.dataFolder.path.toString())

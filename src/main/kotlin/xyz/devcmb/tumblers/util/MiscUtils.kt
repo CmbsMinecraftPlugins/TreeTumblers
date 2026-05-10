@@ -2,8 +2,7 @@ package xyz.devcmb.tumblers.util
 
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -11,7 +10,6 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.kyori.adventure.title.Title
-import org.bukkit.Bukkit
 import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.block.Biome
@@ -28,10 +26,7 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
-import xyz.devcmb.tumblers.TreeTumblers
 import java.time.Duration
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -279,20 +274,8 @@ object MiscUtils {
         ))
     }
 
-    // Source - https://stackoverflow.com/a/73494554
-    // Posted by SecretX, modified by community. See post 'Timeline' for change history
-    // Retrieved 2026-03-05, License - CC BY-SA 4.0
-    suspend fun <T> suspendSync(task: () -> T): T = withTimeout(100000L) {
-        // Context: The current coroutine context
-        suspendCancellableCoroutine { cont ->
-            // Context: The current coroutine context
-            Bukkit.getScheduler().runTask(TreeTumblers.plugin, Runnable {
-                // Context: Bukkit MAIN thread
-                // runCatching is used to forward any exception that may occur here back to
-                // our coroutine, keeping the exception transparency of Kotlin coroutines
-                runCatching(task).fold({ cont.resume(it) }, cont::resumeWithException)
-            })
-        }
+    suspend fun <T> suspendSync(task: () -> T): T = withContext(BukkitDispatcher) {
+        task.invoke()
     }
 }
 

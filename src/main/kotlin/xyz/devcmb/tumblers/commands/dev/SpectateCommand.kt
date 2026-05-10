@@ -6,7 +6,7 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.SpectatorController
 import xyz.devcmb.tumblers.util.Format
 import java.util.Optional
@@ -15,7 +15,7 @@ import java.util.Optional
 @Permission("tumbling.dev")
 class SpectateCommand {
     val spectatorController by lazy {
-        ControllerDelegate.getController<SpectatorController>()
+        ControllerRegistry.getController<SpectatorController>()
     }
 
     @Execute(name = "enable")

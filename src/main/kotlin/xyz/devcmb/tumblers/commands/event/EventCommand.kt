@@ -9,7 +9,7 @@ import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.data.Team
@@ -19,7 +19,7 @@ import xyz.devcmb.tumblers.util.Format
 @Permission("tumbling.event")
 class EventCommand {
     val eventController: EventController by lazy {
-        ControllerDelegate.getController<EventController>()
+        ControllerRegistry.getController<EventController>()
     }
 
     @Execute(name = "start")

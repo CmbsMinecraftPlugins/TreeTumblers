@@ -7,14 +7,14 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.TimerController
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.Format
 
 class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
     val timerController by lazy {
-        ControllerDelegate.getController("timerController") as TimerController
+        ControllerRegistry.getController<TimerController>()
     }
 
     override fun parse(

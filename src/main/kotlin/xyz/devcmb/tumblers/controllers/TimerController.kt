@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.controllers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.engine.Timer
 
-@Controller("timerController")
+@Controller(Controller.Priority.MEDIUM)
 class TimerController : IController {
     var timers: HashMap<String, Timer> = HashMap()
     override fun init() {

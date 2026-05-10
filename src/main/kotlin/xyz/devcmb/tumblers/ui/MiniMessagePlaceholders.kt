@@ -77,6 +77,6 @@ object MiniMessagePlaceholders {
          *
          * max - Total amount of games
          */
-        const val EVENT_SCOREBOARD_GAME = "<color:$EVENT_COLOR>Game <white><current>/<max></white></color>"
+        const val EVENT_SCOREBOARD_GAME = "<white>Game: <color:$EVENT_COLOR><current>/<max></color></white>"
     }
 }

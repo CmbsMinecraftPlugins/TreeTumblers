@@ -7,7 +7,7 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.util.Format
 
@@ -17,7 +17,7 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
         context: Argument<GameController.Game>,
         argument: String
     ): ParseResult<GameController.Game> {
-        val gameController = ControllerDelegate.getController("gameController") as GameController
+        val gameController = ControllerRegistry.getController<GameController>()
         val game = gameController.games.find { it.id == argument }
 
         if(game == null) {
@@ -32,7 +32,7 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
         argument: Argument<GameController.Game>,
         context: SuggestionContext
     ): SuggestionResult? {
-        val gameController = ControllerDelegate.getController("gameController") as GameController
+        val gameController = ControllerRegistry.getController<GameController>()
         return gameController.games
             .stream()
             .map { it.id }

@@ -9,7 +9,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -18,7 +18,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object Format {
     val gameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     val miniMessage: MiniMessage = MiniMessage.builder()

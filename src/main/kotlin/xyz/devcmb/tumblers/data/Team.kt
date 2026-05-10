@@ -8,7 +8,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -114,11 +114,11 @@ enum class Team(
 
 
     private val playerController: PlayerController by lazy {
-        ControllerDelegate.getController("playerController") as PlayerController
+        ControllerRegistry.getController<PlayerController>()
     }
 
     private val eventController: EventController by lazy {
-        ControllerDelegate.getController<EventController>()
+        ControllerRegistry.getController<EventController>()
     }
 
     var score: Int

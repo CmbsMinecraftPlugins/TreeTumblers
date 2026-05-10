@@ -12,7 +12,7 @@ import org.bukkit.WorldCreator
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.server.ServerLoadEvent
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -25,7 +25,7 @@ import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
-@Controller("worldController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class WorldController : IController {
     companion object {
         @field:Configurable("templates.world_root")
@@ -40,7 +40,7 @@ class WorldController : IController {
     }
 
     val hubController: HubController by lazy {
-        ControllerDelegate.getController<HubController>()
+        ControllerRegistry.getController<HubController>()
     }
 
     override fun init() {

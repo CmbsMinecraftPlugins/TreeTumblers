@@ -21,16 +21,16 @@ class IntermissionScoreboard(
             .append(when {
                 eventController.readyCheckTimer != null ->
                     Format.mm(
-                        " <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Ready Check: <white><timer></white></color>",
+                        " <white>Ready Check: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
                         Placeholder.component("timer", eventController.readyCheckTimer!!.format())
                     )
                 eventController.eventTimer != null ->
                     Format.mm(
-                        " <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>${eventController.eventTimerTitle ?: "Timer"}: <white><timer></white></color>",
+                        " <white>${eventController.eventTimerTitle ?: "Timer"}: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
                         Placeholder.component("timer", eventController.eventTimer!!.format())
                     )
                 eventController.state == EventController.State.EVENT_INACTIVE ->
-                    Format.mm(" <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Event Inactive</color>")
+                    Format.mm(" <white>Event: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Inactive</color></white>")
                 else -> Component.empty()
             })
 

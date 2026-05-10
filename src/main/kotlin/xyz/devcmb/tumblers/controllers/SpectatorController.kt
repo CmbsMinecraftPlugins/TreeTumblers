@@ -7,7 +7,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.Format
@@ -16,13 +16,13 @@ import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.showToAll
 
-@Controller("spectatorController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class SpectatorController : IController {
     val spectators: HashMap<Player, Boolean> = HashMap()
     private var spectatorTask: BukkitRunnable? = null
 
     val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     override fun init() {

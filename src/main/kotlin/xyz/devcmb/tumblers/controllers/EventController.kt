@@ -44,7 +44,7 @@ import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.TumblingGenericException
@@ -54,7 +54,6 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
-import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Benchmark
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -74,28 +73,28 @@ import java.io.File
 import java.util.UUID
 import kotlin.math.min
 
-@Controller("eventController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class EventController : IController {
     lateinit var teamScores: HashMap<Team, Int>
 
     private val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController<DatabaseController>()
+        ControllerRegistry.getController<DatabaseController>()
     }
 
     private val gameController: GameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     private val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     private val musicController: MusicController by lazy {
-        ControllerDelegate.getController<MusicController>()
+        ControllerRegistry.getController<MusicController>()
     }
 
     private val spectatorController: SpectatorController by lazy {
-        ControllerDelegate.getController<SpectatorController>()
+        ControllerRegistry.getController<SpectatorController>()
     }
 
     lateinit var topbarRunnable: BukkitRunnable
@@ -252,13 +251,14 @@ class EventController : IController {
             if(finale) game = totalGames
 
             state = State.PRE_EVENT
-            eventTimer = Timer(5) {
+            eventTimer = Timer(64) {
                 id = "pre_event_timer"
-                joined = true
             }
             eventTimerTitle = "Event Start"
             eventTimer!!.start()
-            runOpeningCutscene()
+
+            delay(3000)
+            eventStartSequence()
 
             repeat(totalGames) {
                 eventLoop()
@@ -267,6 +267,62 @@ class EventController : IController {
             finale()
             cleanupEvent()
         }
+    }
+
+    var actionBarTask: BukkitRunnable? = null
+    val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
+        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <color:#ff9100>Game Design</color></white>"),
+        Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><light_purple>Composer</light_purple> • <red>Programmer</red> • <aqua>Builder</aqua></white>"),
+        Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
+        Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
+    )
+    suspend fun eventStartSequence() {
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<green><b>Tree Tumblers</b></green>"),
+            Component.empty(),
+            Title.Times.times(Tick.of(0), Tick.of(99999), Tick.of(0))
+        ))
+
+        delay(1000)
+        // TODO: Play intro music
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Format.mm("<green><b>Tree Tumblers</b></green>"),
+            Format.mm("Is starting in <b><aqua>60 seconds</aqua></b>"),
+            Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
+        ))
+
+        actionBarTask = object : BukkitRunnable() {
+            override fun run() {
+                Audience.audience(Bukkit.getOnlinePlayers()).sendActionBar(
+                    Format.mm("<green><b>Tree Tumblers</b></green> is starting in <aqua>${eventTimer?.currentTime ?: 0}</aqua> seconds")
+                )
+            }
+        }
+        actionBarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
+
+        delay(4000)
+
+        attribution.forEachIndexed { index, (person, work) ->
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                person,
+                work,
+                Title.Times.times(
+                    Tick.of(if(index == 0) 10 else 0),
+                    Tick.of(if(index == attribution.size - 1) 60 else 9999),
+                    Tick.of(10)
+                )
+            ))
+
+            delay(3000)
+        }
+
+        while(eventTimer?.isRunning == true) {
+            delay(100)
+        }
+
+        actionBarTask!!.cancel()
+        actionBarTask = null
+
     }
 
     fun cleanupEvent() {
@@ -556,7 +612,7 @@ class EventController : IController {
             readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
         }
 
-        readyCheckTimer = Timer(10) {
+        readyCheckTimer = Timer(20) {
             id = "ready_check_expiry"
             onComplete { early ->
                 if(early) return@onComplete
@@ -616,43 +672,6 @@ class EventController : IController {
         )
         readyCheckAborted = true
         readyCheckWaiting.clear()
-    }
-
-    val cutsceneSteps: ArrayList<CutsceneStep> = arrayListOf(
-        CutsceneStep(null, "first") {
-            title(
-                Format.mm("<green><b>Tree Tumblers</b></green>"),
-                Format.mm("Welcome to the event!"),
-                Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(40))
-            )
-            delay(7000)
-        }
-    )
-
-    suspend fun runOpeningCutscene() {
-        // TODO: Add more steps and adjust the `time` to match
-        eventTimer = Timer(7) {
-            id = "event_opening_cutscene"
-        }
-        eventTimer!!.start()
-        eventTimerTitle = "Cutscene"
-
-        cutsceneSteps.forEach {
-            val observers = Bukkit.getOnlinePlayers().toSet()
-            it.run(
-                observers,
-                Bukkit.getWorld(lobbyWorld)!!,
-                TreeTumblers.plugin.config.getConfigurationSection("event.cutscene")!!
-            )
-
-            if(eventTimer?.paused == true) {
-                while(eventTimer?.paused == true) {
-                    delay(500)
-                }
-            }
-
-            it.cleanup(observers)
-        }
     }
 
     val votingTextColors: ArrayList<TextColor> = arrayListOf(

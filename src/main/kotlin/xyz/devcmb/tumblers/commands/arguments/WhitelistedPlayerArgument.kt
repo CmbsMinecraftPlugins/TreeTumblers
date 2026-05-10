@@ -7,13 +7,13 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.util.Format
 
 class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
     val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController("databaseController") as DatabaseController
+        ControllerRegistry.getController<DatabaseController>()
     }
 
     override fun parse(

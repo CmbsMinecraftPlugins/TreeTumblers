@@ -1,16 +1,13 @@
 package xyz.devcmb.tumblers.controllers
 
 import org.bukkit.Bukkit
-import org.bukkit.Sound
 import org.bukkit.SoundCategory
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.scheduler.BukkitTask
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.util.sound
 
-@Controller("musicController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class MusicController : IController {
     var currentMusic: Music? = null
     val loopingTasks: HashMap<Player, BukkitRunnable> = hashMapOf()

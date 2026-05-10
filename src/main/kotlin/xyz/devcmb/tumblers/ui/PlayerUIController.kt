@@ -9,7 +9,7 @@ import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.BadgeController
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.GameController
@@ -47,9 +47,9 @@ class PlayerUIController(val player: Player) {
 
     val activeBossBars: HashMap<String, BossBar> = HashMap()
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
-    val gameController = ControllerDelegate.getController("gameController") as GameController
-    val eventController = ControllerDelegate.getController("eventController") as EventController
-    val badgeController = ControllerDelegate.getController<BadgeController>()
+    val gameController = ControllerRegistry.getController<GameController>()
+    val eventController = ControllerRegistry.getController<EventController>()
+    val badgeController = ControllerRegistry.getController<BadgeController>()
 
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
     val updateTask: BukkitTask

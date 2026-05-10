@@ -9,7 +9,7 @@ import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.EventController
@@ -22,15 +22,15 @@ import xyz.devcmb.tumblers.util.Format
 @Permission("tumbling.organizer")
 class ScoreCommand {
     val eventController: EventController by lazy {
-        ControllerDelegate.getController<EventController>()
+        ControllerRegistry.getController<EventController>()
     }
 
     val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     val databaseController: DatabaseController by lazy {
-        ControllerDelegate.getController<DatabaseController>()
+        ControllerRegistry.getController<DatabaseController>()
     }
 
     @Execute(name = "player view")

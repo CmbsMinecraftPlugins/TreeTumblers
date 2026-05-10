@@ -13,7 +13,7 @@ import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
@@ -22,7 +22,7 @@ import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.hunger
 
-@Controller("gameController", Controller.Priority.HIGH)
+@Controller(Controller.Priority.HIGH)
 class GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
@@ -118,7 +118,7 @@ class GameController : IController {
 
     class Game(val id: String) {
         fun getTemplate(): GameBase {
-            val gameController = ControllerDelegate.getController("gameController") as GameController
+            val gameController = ControllerRegistry.getController<GameController>()
             val gameType = gameController.games.find { it.id == id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")
 

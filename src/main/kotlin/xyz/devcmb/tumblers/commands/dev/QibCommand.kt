@@ -9,6 +9,7 @@ import org.bukkit.Location
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.NoxesiumController
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.toCenterXZLocation
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
@@ -19,7 +20,7 @@ class QibCommand {
     @Execute(name = "spawn")
     fun spawnQib(@Context player: Player, @Arg type: NoxesiumController.QibType, @Arg location: Optional<Location>) {
         val location = location.getOrNull() ?: player.location.clone().add(0.0,-1.0,0.0)
-        type.spawn(location)
+        type.spawn(location.toCenterXZLocation())
         player.sendMessage(Format.success("Spawned a QIB of type ${type.name.lowercase()} successfully!"))
     }
 

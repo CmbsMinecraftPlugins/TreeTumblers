@@ -7,14 +7,14 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 
 class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() {
     val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     override fun parse(

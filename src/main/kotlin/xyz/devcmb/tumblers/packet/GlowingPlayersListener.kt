@@ -8,7 +8,7 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.GameController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -16,7 +16,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class GlowingPlayersListener : PacketListener {
     val gameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     // https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata#Entity_Metadata_Format

@@ -6,7 +6,7 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.util.Format
 import java.util.Optional
@@ -16,7 +16,7 @@ import kotlin.jvm.optionals.getOrNull
 @Permission("tumbling.dev")
 class NametagCommand {
     val playerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     @Execute(name = "reload")

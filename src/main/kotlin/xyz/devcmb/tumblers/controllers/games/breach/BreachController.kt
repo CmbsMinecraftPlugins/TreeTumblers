@@ -43,7 +43,7 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -225,7 +225,7 @@ class BreachController: GameBase(
 
     lateinit var playingTeams: Pair<Team, Team>
     val eventController by lazy {
-        ControllerDelegate.getController("eventController") as EventController
+        ControllerRegistry.getController<EventController>()
     }
 
     var team1score: Int = 0

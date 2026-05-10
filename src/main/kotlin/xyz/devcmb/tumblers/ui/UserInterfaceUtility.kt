@@ -5,7 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.EventController
 import xyz.devcmb.tumblers.controllers.PlayerController
 import xyz.devcmb.tumblers.engine.GameBase
@@ -91,6 +91,10 @@ object UserInterfaceUtility {
 
     const val FULL_INVENTORY_NEGATIVE_ADVANCE = 170
 
+    val playerController by lazy {
+        ControllerRegistry.getController<PlayerController>()
+    }
+
     fun negativeSpace(targetPixels: Int): Component {
         var remaining = targetPixels
         val result = StringBuilder()
@@ -138,7 +142,6 @@ object UserInterfaceUtility {
     }
 
     fun refreshAll(id: String) {
-        val playerController = ControllerDelegate.getController("playerController") as PlayerController
         playerController.playerUIControllers.forEach { player, controller ->
             val inv = controller.inventories.find { it.id == id }
             require(inv != null) { "Inventory with an id of $id was not found for ${player.name}" }
@@ -147,7 +150,7 @@ object UserInterfaceUtility {
     }
 
     val eventController by lazy {
-        ControllerDelegate.getController<EventController>()
+        ControllerRegistry.getController<EventController>()
     }
 
     fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {

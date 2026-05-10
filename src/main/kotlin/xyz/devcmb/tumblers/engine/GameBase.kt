@@ -23,7 +23,7 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffectType
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.BadgeController
@@ -116,23 +116,23 @@ abstract class GameBase(
     open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
     private val eventController: EventController by lazy {
-        ControllerDelegate.getController("eventController") as EventController
+        ControllerRegistry.getController<EventController>()
     }
 
     private val playerController: PlayerController by lazy {
-        ControllerDelegate.getController<PlayerController>()
+        ControllerRegistry.getController<PlayerController>()
     }
 
     private val spectatorController by lazy {
-        ControllerDelegate.getController<SpectatorController>()
+        ControllerRegistry.getController<SpectatorController>()
     }
 
     private val hubController by lazy {
-        ControllerDelegate.getController<HubController>()
+        ControllerRegistry.getController<HubController>()
     }
 
     private val badgeController by lazy {
-        ControllerDelegate.getController<BadgeController>()
+        ControllerRegistry.getController<BadgeController>()
     }
 
     open val debugToolkit: DebugToolkit? = null
@@ -667,6 +667,8 @@ abstract class GameBase(
      * @param badge The badge to award
      */
     fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) {
+        if(player.badges.containsKey(badge)) return
+        
         if(player.bukkitPlayer != null) {
             player.bukkitPlayer!!.sendMessage(Format.mm(
                 "<green>(<white><icon></white>) You've unlocked a new badge: <gold><hover:show_text:'" +

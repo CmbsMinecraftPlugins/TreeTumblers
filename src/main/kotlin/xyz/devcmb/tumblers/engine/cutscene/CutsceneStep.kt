@@ -75,6 +75,7 @@ class CutsceneStep(
                     false,
                     false
                 ))
+                it.inventory.clear()
 
                 if(chatMessage != null) {
                     it.sendMessage(Format.mm(

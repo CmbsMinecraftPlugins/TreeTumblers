@@ -12,7 +12,7 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import java.sql.Timestamp
 import java.util.Date
 
-@Controller("badgeController", Controller.Priority.MEDIUM)
+@Controller(Controller.Priority.MEDIUM)
 class BadgeController : IController {
     val collectionItem = AdvancedItemStack(Material.ECHO_SHARD) {
         name(Format.mm("<yellow>Badge Collection</yellow>"))

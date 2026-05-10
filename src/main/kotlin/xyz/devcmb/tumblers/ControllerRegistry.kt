@@ -8,8 +8,8 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.util.DebugUtil
 
-object ControllerDelegate {
-    val controllers: HashMap<String, IController> = HashMap()
+object ControllerRegistry {
+    val controllers: MutableSet<IController> = HashSet()
 
     @Suppress("UNCHECKED_CAST")
     fun registerAllControllers() {
@@ -22,46 +22,35 @@ object ControllerDelegate {
             .filter { IController::class.java.isAssignableFrom(it) }
             .sortedByDescending { it.getAnnotation(Controller::class.java).priority.value }
             .forEach { clazz ->
-                val annotation = clazz.getAnnotation(Controller::class.java)
                 val controllerClass = clazz as Class<out IController>
 
                 val instance: IController =
                     controllerClass.getDeclaredConstructor().newInstance()
 
-                registerController(annotation.id, instance)
+                registerController(instance)
             }
     }
 
 
-    fun registerController(id: String, controller: IController) {
+    fun registerController(controller: IController) {
         val manager: PluginManager = Bukkit.getServer().pluginManager
         manager.registerEvents(controller, TreeTumblers.plugin)
 
-        controllers[id] = controller
+        controllers.add(controller)
         controller.init() // guess who forgot this :eyes:
-        DebugUtil.success("Controller $id registered successfully")
-    }
-
-    fun getController(id: String): IController? {
-        val controller: IController? = controllers[id]
-        if(controller == null) {
-            DebugUtil.severe("Controller with id $id not found")
-            return null
-        }
-
-        return controller
+        DebugUtil.success("Registered controller ${controller::class.java.simpleName} successfully")
     }
 
     inline fun <reified T> getController(): T {
-        val controller: T? = controllers.values.find { it is T } as T?
-        if(controller == null) throw IllegalArgumentException("Controller with the class ${T::class.java.name} was not found")
+        val controller: T? = controllers.find { it is T } as T?
+        if(controller == null) throw IllegalArgumentException("Controller with the class ${T::class.java.simpleName} was not found")
 
         return controller
     }
 
     fun cleanupControllers() {
         controllers.forEach {
-            it.value.cleanup()
+            it.cleanup()
         }
     }
 }

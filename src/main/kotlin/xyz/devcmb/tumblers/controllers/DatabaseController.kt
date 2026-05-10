@@ -8,7 +8,7 @@ import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerJoinEvent
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.DatabaseException
 import xyz.devcmb.tumblers.TumblingDatabaseStateException
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -38,7 +38,7 @@ import kotlin.toString
  * whitelisted - If the player is currently whitelisted
  */
 
-@Controller("databaseController", Controller.Priority.HIGH)
+@Controller(Controller.Priority.HIGH)
 class DatabaseController : IController {
     companion object {
         @field:Configurable("database.enabled")
@@ -62,15 +62,15 @@ class DatabaseController : IController {
 
     private lateinit var connection: Connection
     private val eventController: EventController by lazy {
-        ControllerDelegate.getController("eventController") as EventController
+        ControllerRegistry.getController<EventController>()
     }
 
     private val playerController: PlayerController by lazy {
-        ControllerDelegate.getController("playerController") as PlayerController
+        ControllerRegistry.getController<PlayerController>()
     }
 
     private val gameController: GameController by lazy {
-        ControllerDelegate.getController<GameController>()
+        ControllerRegistry.getController<GameController>()
     }
 
     var offlineDatabase: OfflineDatabase? = null
@@ -450,7 +450,7 @@ class DatabaseController : IController {
     class OfflineDatabase(val databaseController: DatabaseController) {
         val playerTeams: HashMap<UUID, Team> = HashMap()
         val playerController: PlayerController by lazy {
-            ControllerDelegate.getController<PlayerController>()
+            ControllerRegistry.getController<PlayerController>()
         }
 
         // no whitelist

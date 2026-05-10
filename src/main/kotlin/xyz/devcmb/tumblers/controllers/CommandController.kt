@@ -22,7 +22,7 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
-@Controller("commandController", Controller.Priority.LOWEST)
+@Controller(Controller.Priority.LOWEST)
 class CommandController : IController {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {

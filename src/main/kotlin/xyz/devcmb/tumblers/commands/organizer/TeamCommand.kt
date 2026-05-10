@@ -11,7 +11,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerDelegate
+import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.data.Team
@@ -21,6 +21,9 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 @Command(name = "team")
 @Permission("tumbling.organizer")
 class TeamCommand {
+    val databaseController by lazy {
+        ControllerRegistry.getController<DatabaseController>()
+    }
 
     @Execute(name = "set")
     fun executeTeamSet(
@@ -43,7 +46,6 @@ class TeamCommand {
             profile.complete()
 
             if (profile.isComplete) {
-                val databaseController = ControllerDelegate.getController("databaseController") as DatabaseController
                 databaseController.setPlayerTeam(profile, team)
 
                 executor.sendMessage(
