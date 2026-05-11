@@ -9,8 +9,8 @@ import org.bukkit.Bukkit
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 enum class Team(
@@ -113,13 +113,8 @@ enum class Team(
         }
 
 
-    private val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
-
-    private val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
+    private val playerController: PlayerController by ControllerRegistry.controller()
+    private val eventController: EventController by ControllerRegistry.controller()
 
     var score: Int
         get() {

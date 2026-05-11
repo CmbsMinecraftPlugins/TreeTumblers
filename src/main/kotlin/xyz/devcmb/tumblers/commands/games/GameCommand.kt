@@ -11,7 +11,7 @@ import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -21,9 +21,7 @@ import kotlin.jvm.optionals.getOrNull
 @Command(name = "game")
 @Permission("tumbling.games")
 class GameCommand {
-    val gameController: GameController by lazy {
-        ControllerRegistry.getController<GameController>()
-    }
+    val gameController: GameController by ControllerRegistry.controller()
 
     @Execute(name = "start")
     fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.Game) {

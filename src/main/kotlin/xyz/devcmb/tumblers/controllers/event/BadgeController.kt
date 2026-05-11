@@ -1,10 +1,12 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.event
 
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -13,16 +15,16 @@ import java.sql.Timestamp
 import java.util.Date
 
 @Controller(Controller.Priority.MEDIUM)
-class BadgeController : IController {
+class BadgeController : ControllerBase() {
     val collectionItem = AdvancedItemStack(Material.ECHO_SHARD) {
         name(Format.mm("<yellow>Badge Collection</yellow>"))
-        lore(listOf(
-            Format.mm("<!i>A collection of all the badges you've</!i>"),
-            Format.mm("<!i>collected playing <green>Tree Tumblers!</green></!i>")
-        ).map {
-            it.color(NamedTextColor.WHITE)
-            // doing it.decoration(TextDecoration.ITALIC, false) didn't work for whatever reason
-        })
+        lore(
+            listOf(
+                Format.mm("A collection of all the badges you've"),
+                Format.mm("collected playing <green>Tree Tumblers!</green>")
+            ).map {
+                it.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+            })
         model(NamespacedKey("tumbling", "hub/collection"))
 
         droppable(false)

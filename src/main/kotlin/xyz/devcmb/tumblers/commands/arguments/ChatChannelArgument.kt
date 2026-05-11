@@ -8,7 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.util.Format
 
 class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.ChatChannel>() {

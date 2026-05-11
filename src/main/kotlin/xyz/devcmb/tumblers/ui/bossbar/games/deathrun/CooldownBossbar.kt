@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.ui.bossbar.games.deathrun
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar

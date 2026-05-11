@@ -13,6 +13,10 @@ import xyz.devcmb.tumblers.DatabaseException
 import xyz.devcmb.tumblers.TumblingDatabaseStateException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.event.BadgeController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -39,7 +43,7 @@ import kotlin.toString
  */
 
 @Controller(Controller.Priority.HIGH)
-class DatabaseController : IController {
+class DatabaseController : ControllerBase() {
     companion object {
         @field:Configurable("database.enabled")
         var enabled: Boolean = true
@@ -61,17 +65,10 @@ class DatabaseController : IController {
     }
 
     private lateinit var connection: Connection
-    private val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
 
-    private val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
-
-    private val gameController: GameController by lazy {
-        ControllerRegistry.getController<GameController>()
-    }
+    private val eventController: EventController by controller()
+    private val playerController: PlayerController by controller()
+    private val gameController: GameController by controller()
 
     var offlineDatabase: OfflineDatabase? = null
     override fun init() {
@@ -449,9 +446,7 @@ class DatabaseController : IController {
 
     class OfflineDatabase(val databaseController: DatabaseController) {
         val playerTeams: HashMap<UUID, Team> = HashMap()
-        val playerController: PlayerController by lazy {
-            ControllerRegistry.getController<PlayerController>()
-        }
+        val playerController: PlayerController by ControllerRegistry.controller()
 
         // no whitelist
         fun whitelistPlayer(profile: PlayerProfile, team: Team) {}

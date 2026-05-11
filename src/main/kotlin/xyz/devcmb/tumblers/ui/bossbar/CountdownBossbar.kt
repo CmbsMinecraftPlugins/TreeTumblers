@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.ui.bossbar
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.NamespacedKey
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils

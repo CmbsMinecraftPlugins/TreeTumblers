@@ -12,8 +12,8 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
-import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
@@ -21,17 +21,9 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "score")
 @Permission("tumbling.organizer")
 class ScoreCommand {
-    val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
-
-    val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
-
-    val databaseController: DatabaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
+    private val eventController: EventController by ControllerRegistry.controller()
+    private val playerController: PlayerController by ControllerRegistry.controller()
+    private val databaseController: DatabaseController by ControllerRegistry.controller()
 
     @Execute(name = "player view")
     fun playerView(@Context sender: CommandSender, @Arg("player") player: TumblingPlayer) {

@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.ui.scoreboard
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format

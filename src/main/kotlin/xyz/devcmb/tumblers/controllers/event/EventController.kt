@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.event
 
 import com.destroystokyo.paper.profile.ProfileProperty
 import com.fastasyncworldedit.core.extent.processor.lighting.RelightMode
@@ -39,17 +39,21 @@ import org.bukkit.event.player.PlayerInteractEntityEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
-import org.bukkit.event.server.ServerLoadEvent
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.Quaternionf
 import org.joml.Vector3f
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.player.SpectatorController
+import xyz.devcmb.tumblers.controllers.player.MusicController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.GameBase
@@ -59,7 +63,6 @@ import xyz.devcmb.tumblers.util.Benchmark
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getPlayers
@@ -74,28 +77,14 @@ import java.util.UUID
 import kotlin.math.min
 
 @Controller(Controller.Priority.MEDIUM)
-class EventController : IController {
+class EventController : ControllerBase() {
     lateinit var teamScores: HashMap<Team, Int>
 
-    private val databaseController: DatabaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
-
-    private val gameController: GameController by lazy {
-        ControllerRegistry.getController<GameController>()
-    }
-
-    private val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
-
-    private val musicController: MusicController by lazy {
-        ControllerRegistry.getController<MusicController>()
-    }
-
-    private val spectatorController: SpectatorController by lazy {
-        ControllerRegistry.getController<SpectatorController>()
-    }
+    private val databaseController: DatabaseController by controller()
+    private val gameController: GameController by controller()
+    private val playerController: PlayerController by controller()
+    private val musicController: MusicController by controller()
+    private val spectatorController: SpectatorController by controller()
 
     lateinit var topbarRunnable: BukkitRunnable
     var state: State = State.EVENT_INACTIVE
@@ -158,7 +147,7 @@ class EventController : IController {
             @field:Configurable("templates.dioramas")
             var dioramasFolder: String = "&/templates/dioramas"
                 get() {
-                    return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
+                    return field.replace("&", TreeTumblers.Companion.plugin.dataFolder.toString())
                 }
         }
 
@@ -201,7 +190,7 @@ class EventController : IController {
     }
 
     override fun init() {
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             teamScores = databaseController.getTeamScores()
         }
 
@@ -214,13 +203,12 @@ class EventController : IController {
                 }
             }
         }
-        topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
+        topbarRunnable.runTaskTimer(TreeTumblers.Companion.plugin, 0, 20)
     }
 
-    @EventHandler
-    fun serverLoadEvent(event: ServerLoadEvent) {
+    override fun serverLoad() {
         val lobby = Bukkit.getWorld(lobbyWorld)!!
-        val votingQuadrantPositions = TreeTumblers.plugin.config.getList("event.voting.quadrants")?.map {
+        val votingQuadrantPositions = TreeTumblers.Companion.plugin.config.getList("event.voting.quadrants")?.map {
             if(it !is List<*>) throw TumblingEventException("Voting quadrant is not a 2d list")
             it.validateList<Int>() ?: throw TumblingEventException("Voting quadrant does not contain exclusively Integers")
         } ?: throw TumblingEventException("Voting quadrant positions not provided")
@@ -244,7 +232,7 @@ class EventController : IController {
     }
 
     fun startEvent(finale: Boolean) {
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             val ready = readyCheck()
             if(!ready) return@launch
 
@@ -277,7 +265,8 @@ class EventController : IController {
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
     )
     suspend fun eventStartSequence() {
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<green><b>Tree Tumblers</b></green>"),
             Component.empty(),
             Title.Times.times(Tick.of(0), Tick.of(99999), Tick.of(0))
@@ -285,7 +274,8 @@ class EventController : IController {
 
         delay(1000)
         // TODO: Play intro music
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<green><b>Tree Tumblers</b></green>"),
             Format.mm("Is starting in <b><aqua>60 seconds</aqua></b>"),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
@@ -298,12 +288,13 @@ class EventController : IController {
                 )
             }
         }
-        actionBarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
+        actionBarTask!!.runTaskTimer(TreeTumblers.Companion.plugin, 0, 10)
 
         delay(4000)
 
         attribution.forEachIndexed { index, (person, work) ->
-            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                Title.title(
                 person,
                 work,
                 Title.Times.times(
@@ -370,7 +361,8 @@ class EventController : IController {
         eventTimer!!.start()
 
         playerController.muteChat()
-        Bukkit.broadcast(Format.mm("<aqua><line:30></aqua><br>" +
+        Bukkit.broadcast(
+            Format.mm("<aqua><line:30></aqua><br>" +
                 "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
                 "Now it's time to see who moves on to the finale!</white><br>" +
                 "<aqua><line:30></aqua>"
@@ -381,7 +373,8 @@ class EventController : IController {
         announceNonFinaleParticipants()
 
         delay(1000)
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<br>".repeat(15) +
             "And now...let's reveal our <gold>finalists!</gold>" +
             "<br>".repeat(5)
@@ -393,14 +386,16 @@ class EventController : IController {
         val first = placements[0].first
         val second = placements[1].first
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<gold><b>FINALISTS</b></gold>"),
             Component.empty(),
             Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
         ))
 
         delay(3000)
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<br>".repeat(15) +
             "First, with <gold>${teamScores[first]}</gold> score..." +
             "<br>".repeat(5)
@@ -408,13 +403,15 @@ class EventController : IController {
 
         delay(3000)
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<gold><b>FINALISTS</b></gold>"),
             Format.mm("<team1>", Placeholder.component("team1", first.formattedName)),
             Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
         ))
 
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<br>".repeat(15) +
             "First, with <gold>${teamScores[first]}</gold> score...<br>" +
             "<team1>" +
@@ -424,13 +421,15 @@ class EventController : IController {
 
         delay(4000)
 
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<br>".repeat(15) +
                     "Secondly, with <gold>${teamScores[second]}</gold> score..." +
                     "<br>".repeat(5)
         ))
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<gold><b>FINALISTS</b></gold>"),
             Format.mm("<team1> <white>vs.</white>", Placeholder.component("team1", first.formattedName)),
             Title.Times.times(Tick.of(0), Tick.of(999999), Tick.of(0))
@@ -438,7 +437,8 @@ class EventController : IController {
 
         delay(3000)
 
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<br>".repeat(15) +
                     "Secondly, with <gold>${teamScores[second]}</gold> score...<br>" +
                     "<team2>" +
@@ -446,7 +446,8 @@ class EventController : IController {
             Placeholder.component("team2", second.formattedName)
         ))
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<gold><b>FINALISTS</b></gold>"),
             Format.mm(
                 "<team1> <white>vs.</white> <team2>",
@@ -460,7 +461,8 @@ class EventController : IController {
 
         delay(5000)
         // TODO: Unhardcode?
-        Bukkit.broadcast(Format.mm(
+        Bukkit.broadcast(
+            Format.mm(
             "<aqua><line:30></aqua><br>" +
                 "Thank you all so much for attending <red>❤</red><br>" +
                 "Now, onto our finale, <gold><b>Breach!</b></gold><br>" +
@@ -490,12 +492,14 @@ class EventController : IController {
             if(placement in placementsDone) return@forEach
             placementsDone.add(placement)
 
-            Bukkit.broadcast(Format.mm(
+            Bukkit.broadcast(
+                Format.mm(
                 "<br>".repeat(15) +
                         "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place..." +
                         "<br>".repeat(5)
             ))
-            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                Title.title(
                 Component.empty(),
                 Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
                 Title.Times.times(Tick.of(0), Tick.of(9999), Tick.of(0))
@@ -507,7 +511,8 @@ class EventController : IController {
             if(ties.isNotEmpty()) {
                 val teams = ties.joinToString(" & ") { "<${it.first.name.lowercase()}>" }
                     .let { if(it.isEmpty()) "<${team.name.lowercase()}>" else "<${team.name.lowercase()}> & $it" }
-                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                    Title.title(
                     Format.mm(
                         teams,
                         *Team.entries
@@ -522,7 +527,8 @@ class EventController : IController {
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
 
-                Bukkit.broadcast(Format.mm(
+                Bukkit.broadcast(
+                    Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
                             teams +
@@ -537,7 +543,8 @@ class EventController : IController {
                 ))
 
                 delay(1000)
-                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                    Title.title(
                     Format.mm(
                         teams,
                         *Team.entries
@@ -551,7 +558,8 @@ class EventController : IController {
                     Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
-                Bukkit.broadcast(Format.mm(
+                Bukkit.broadcast(
+                    Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
                             "$teams<br>" +
@@ -566,12 +574,14 @@ class EventController : IController {
                         .toTypedArray()
                 ))
             } else {
-                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                    Title.title(
                     team.formattedName,
                     Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
-                Bukkit.broadcast(Format.mm(
+                Bukkit.broadcast(
+                    Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
                             "<team>" +
@@ -581,12 +591,14 @@ class EventController : IController {
 
                 delay(1000)
 
-                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+                Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                    Title.title(
                     team.formattedName,
                     Format.mm("With <gold>${teamScores[team] ?: 0}</gold> score!"),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
-                Bukkit.broadcast(Format.mm(
+                Bukkit.broadcast(
+                    Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
                             "<team><br>" +
@@ -608,22 +620,24 @@ class EventController : IController {
                 readyCheckWaiting.addAll(it.getOnlinePlayers())
             }
 
-        suspendSync {
+        MiscUtils.suspendSync {
             readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
         }
 
         readyCheckTimer = Timer(20) {
             id = "ready_check_expiry"
             onComplete { early ->
-                if(early) return@onComplete
+                if (early) return@onComplete
 
                 readyCheckWaiting.forEach {
-                    Bukkit.broadcast(Format.error(
-                        Format.mm(
-                            "<player> is not ready!",
-                            Placeholder.component("player", it.formattedName)
+                    Bukkit.broadcast(
+                        Format.error(
+                            Format.mm(
+                                "<player> is not ready!",
+                                Placeholder.component("player", it.formattedName)
+                            )
                         )
-                    ))
+                    )
                 }
                 readyCheckWaiting.clear()
                 readyCheckAborted = true
@@ -642,7 +656,7 @@ class EventController : IController {
         readyCheckTimer = null
 
         if(aborted) {
-            suspendSync {
+            MiscUtils.suspendSync {
                 Bukkit.getOnlinePlayers().forEach { it.closeInventory() }
             }
             Bukkit.broadcast(Format.warning("Not all players ready! Ready check failed!"))
@@ -696,13 +710,13 @@ class EventController : IController {
         val lobby = Bukkit.getWorld(lobbyWorld)!!
         val logoLocations: ArrayList<Location> = ArrayList()
 
-        val logoPositions = TreeTumblers.plugin.config.getList("event.voting.logos")
+        val logoPositions = TreeTumblers.Companion.plugin.config.getList("event.voting.logos")
             ?.map {
                 if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
                 it.take(3).validateList<Int>() ?: throw TumblingEventException("Voting logo positions do not contain exclusively Integers")
             } ?: throw TumblingEventException("Voting logo positions not provided")
 
-        val logoQuaternions = TreeTumblers.plugin.config.getList("event.voting.logos")
+        val logoQuaternions = TreeTumblers.Companion.plugin.config.getList("event.voting.logos")
             ?.map {
                 if(it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
                 val list: List<Float> = it.takeLast(4)
@@ -721,7 +735,7 @@ class EventController : IController {
         musicController.playMusic(MusicController.Music.VOTING)
         state = State.VOTING
 
-        suspendSync {
+        MiscUtils.suspendSync {
             Bukkit.getOnlinePlayers().forEach {
                 val location = Voting.voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting arena does not have a center location")
@@ -744,12 +758,12 @@ class EventController : IController {
 
                 val blocks: ArrayList<Location> = ArrayList()
                 domeFrom.forEachRegion(domeTo) {
-                    if(it.type != Voting.quadrantSeparator) return@forEachRegion
+                    if (it.type != Voting.quadrantSeparator) return@forEachRegion
                     blocks.add(it.location.clone())
                 }
 
                 repeat(3) { i ->
-                    suspendSync {
+                    MiscUtils.suspendSync {
                         blocks.forEach { base ->
                             val location = Location(base.world, base.x, base.y + i, base.z)
                             originalBlocks.put(location, location.block.type)
@@ -770,11 +784,11 @@ class EventController : IController {
 
             val game = games.random()
             quadrantGames.put(it, game)
-            TreeTumblers.pluginScope.launch {
+            TreeTumblers.Companion.pluginScope.launch {
                 loadDiorama(game.id, it)
             }
 
-            suspendSync {
+            MiscUtils.suspendSync {
                 quadrant.forEach { loc ->
                     loc.block.type = votingConcretes[it]
                 }
@@ -795,7 +809,8 @@ class EventController : IController {
                 quadrantLogoDisplays[it] = logoDisplay
             }
 
-            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                Title.title(
                 Component.text(game.name, votingTextColors[it]),
                 Component.empty(),
                 Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
@@ -806,7 +821,8 @@ class EventController : IController {
 
         delay(2000)
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<green>Vote!</green>"),
             Component.empty(),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
@@ -814,13 +830,14 @@ class EventController : IController {
 
         eventTimer!!.start()
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Format.mm("<yellow>Voting Closed!</yellow>"),
             Component.empty(),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
 
-        suspendSync {
+        MiscUtils.suspendSync {
             votingQuadrants.forEach { quadrant ->
                 quadrant.forEach { loc ->
                     loc.block.type = Voting.inactiveQuadrantMaterial
@@ -832,7 +849,8 @@ class EventController : IController {
 
         delay(2000)
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             Component.empty(),
             Component.text("And the game is..."),
             Title.Times.times(Tick.of(0), Tick.of(99999), Tick.of(5))
@@ -840,13 +858,14 @@ class EventController : IController {
 
         delay(2000)
 
-        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
+        Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+            Title.title(
             winningGame.first.logo,
             Component.text("And the game is..."),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
 
-        suspendSync {
+        MiscUtils.suspendSync {
             originalBlocks.forEach {
                 it.key.block.type = it.value
             }
@@ -855,8 +874,9 @@ class EventController : IController {
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
 
-        suspendSync {
-            quadrantGames.forEach { it
+        MiscUtils.suspendSync {
+            quadrantGames.forEach {
+                it
                 if (winningGame.first.id != it.value.id) {
                     quadrantLogoDisplays[it.key]!!.remove()
                 }
@@ -879,7 +899,7 @@ class EventController : IController {
         nextGame = winningGame.first.id
         delay(7000)
 
-        suspendSync {
+        MiscUtils.suspendSync {
             quadrantLogoDisplays.forEach {
                 it.value.remove()
             }
@@ -892,13 +912,13 @@ class EventController : IController {
     suspend fun loadDiorama(id: String, index: Int) = withContext(Dispatchers.IO) {
         Benchmark("diorama_loading") {
             val schematic = File(Voting.dioramasFolder, "$id.schem")
-            if(!schematic.exists()) {
+            if (!schematic.exists()) {
                 DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
                 return@Benchmark
             }
 
             val format = ClipboardFormats.findByFile(schematic)
-            if(format == null) {
+            if (format == null) {
                 DebugUtil.warning("${schematic.parentFile.name}/${schematic.name} is not a valid schematic, aborting")
                 return@Benchmark
             }
@@ -932,14 +952,14 @@ class EventController : IController {
 
             completeStep("operation")
 
-            suspendSync {
+            MiscUtils.suspendSync {
                 try {
                     Operations.complete(operation)
                     editSession.flushQueue()
 
                     currentDioramaSessions.add(editSession)
                     completeStep("paste")
-                } catch(e: Exception) {
+                } catch (e: Exception) {
                     editSession.close()
                     DebugUtil.severe("Failed to load game diorama for $id: ${e.message}")
                 }
@@ -1004,7 +1024,8 @@ class EventController : IController {
                     .append(Format.mm("<green><line:40></green>"))
             )
 
-            it.sendPlayerListFooter(Format.mm(
+            it.sendPlayerListFooter(
+                Format.mm(
                 "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
             ))
         }
@@ -1032,7 +1053,8 @@ class EventController : IController {
                     .append(Format.mm("<green><line:40></green>"))
             )
 
-            it.sendPlayerListFooter(Format.mm(
+            it.sendPlayerListFooter(
+                Format.mm(
                 "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
             ))
         }
@@ -1143,7 +1165,7 @@ class EventController : IController {
     fun replicateScores() {
         if(!eventMode) return
 
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             DebugUtil.info("Replicating event data...")
             databaseController.replicateTeamData(teamScores)
             playerController.players.forEach {
@@ -1222,7 +1244,8 @@ class EventController : IController {
         lastGameTeamPlacements!!.reversed().forEachIndexed { i, placement ->
             hub.spawn(startPos.clone().add(0.0, 0.3 * i, 0.0), TextDisplay::class.java) {
                 textDisplays.add(it)
-                it.text(Format.mm(
+                it.text(
+                    Format.mm(
                     "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGameTeamScores!![placement.first] ?: 0}</gold>",
                     Placeholder.component("team", placement.first.formattedName)
                 ))
@@ -1252,7 +1275,8 @@ class EventController : IController {
                 val pos = startPos.clone().add(0.0, 0.3 * (playingTeams - (i + 1)), 0.0)
                 hub.spawn(pos, TextDisplay::class.java) {
                     textDisplays.add(it)
-                    it.text(Format.mm(
+                    it.text(
+                        Format.mm(
                         "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGamePlayerScores!![placement.first] ?: 0}</gold>",
                         Placeholder.component("team", placement.first.formattedName)
                     ))
@@ -1278,7 +1302,8 @@ class EventController : IController {
         placements.reversed().forEachIndexed { i, placement ->
             hub.spawn(startPos.clone().add(0.0, 0.3 * i, 0.0), TextDisplay::class.java) {
                 textDisplays.add(it)
-                it.text(Format.mm(
+                it.text(
+                    Format.mm(
                     "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${teamScores[placement.first] ?: 0}</gold>",
                     Placeholder.component("team", placement.first.formattedName)
                 ))
@@ -1310,7 +1335,7 @@ class EventController : IController {
 
         hub.spawn(pos.clone().add(0.0,offset,0.0), TextDisplay::class.java) { display ->
             display.isVisibleByDefault = false
-            player.showEntity(TreeTumblers.plugin, display)
+            player.showEntity(TreeTumblers.Companion.plugin, display)
 
             textDisplays.add(display)
             playerSpecificMannequinNameTags[player]!!.add(display)
@@ -1328,12 +1353,12 @@ class EventController : IController {
 
             if(player != null) {
                 npc.isVisibleByDefault = false
-                player.showEntity(TreeTumblers.plugin, npc)
+                player.showEntity(TreeTumblers.Companion.plugin, npc)
                 playerSpecificMannequins[player]!!.add(npc)
             }
 
             val player = placement.first
-            TreeTumblers.pluginScope.launch {
+            TreeTumblers.Companion.pluginScope.launch {
                 val data = getSkinData(player)
                 val skin = data.properties.first()
 
@@ -1343,7 +1368,7 @@ class EventController : IController {
                     ProfileProperty("textures", skin.value, skin.signature)
                 )
 
-                suspendSync {
+                MiscUtils.suspendSync {
                     npc.profile = ResolvableProfile.resolvableProfile(profile)
                 }
             }
@@ -1356,7 +1381,7 @@ class EventController : IController {
             displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.plugin, it)
+                    player.showEntity(TreeTumblers.Companion.plugin, it)
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
@@ -1369,7 +1394,7 @@ class EventController : IController {
         displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
             if(player != null) {
                 it.isVisibleByDefault = false
-                player.showEntity(TreeTumblers.plugin, it)
+                player.showEntity(TreeTumblers.Companion.plugin, it)
                 playerSpecificMannequinNameTags[player]!!.add(it)
             }
 
@@ -1381,7 +1406,7 @@ class EventController : IController {
             displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.plugin, it)
+                    player.showEntity(TreeTumblers.Companion.plugin, it)
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
@@ -1398,7 +1423,7 @@ class EventController : IController {
     suspend fun getSkinData(player: TumblingPlayer): SkinDataResponse {
         if(skinResponseCache.containsKey(player)) return skinResponseCache[player]!!
 
-        return TreeTumblers.httpClient.get(
+        return TreeTumblers.Companion.httpClient.get(
             "https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}?unsigned=false"
         ).body<SkinDataResponse>()
     }
@@ -1428,7 +1453,8 @@ class EventController : IController {
         val firstGames = gameController.games.filter { it.votable }.take(4)
         val colors = arrayListOf("red", "blue", "green", "yellow")
         val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
-        event.motd(Format.mm(
+        event.motd(
+            Format.mm(
             "<color:#64ffb8>■■■■■■</color> <b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</b> <color:#64ffb8>■■■■■■</color><br>" +
                     "<color:#64ffb8>■ <footer> ■</color>",
             Placeholder.parsed("footer", footer)
@@ -1473,7 +1499,8 @@ class EventController : IController {
             val placements = getEventPlayerPlacements()
             placements.forEach {
                 val plr = it.first
-                message = message.append(Format.mm(
+                message = message.append(
+                    Format.mm(
                     "<br><white><b>${it.second}.</b></white> <player> <white>-</white> <gold>${plr.score}</gold>",
                     Placeholder.component("player", plr.formattedName)
                 ))
@@ -1482,7 +1509,8 @@ class EventController : IController {
 
             val playerPlacement = placements.find { it.first == player.tumblingPlayer }
             if(playerPlacement != null) {
-                message = message.append(Format.mm(
+                message = message.append(
+                    Format.mm(
                     "<br><white><b>${playerPlacement.second}.</b></white> <player> <white>-</white> <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
                     Placeholder.component("player", player.formattedName)
                 ))

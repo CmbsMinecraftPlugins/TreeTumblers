@@ -6,7 +6,7 @@ import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -33,9 +33,7 @@ import kotlin.io.path.Path
 class Map(
     val id: String,
 ) {
-    val worldController by lazy {
-        ControllerRegistry.getController<WorldController>()
-    }
+    val worldController: WorldController by ControllerRegistry.controller()
 
     lateinit var game: GameBase
 

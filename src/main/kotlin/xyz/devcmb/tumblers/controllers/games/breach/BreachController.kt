@@ -48,7 +48,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
@@ -224,9 +224,7 @@ class BreachController: GameBase(
         }
 
     lateinit var playingTeams: Pair<Team, Team>
-    val eventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
+    val eventController: EventController by ControllerRegistry.controller()
 
     var team1score: Int = 0
     var team2score: Int = 0

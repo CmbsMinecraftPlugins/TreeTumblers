@@ -2,7 +2,7 @@ package xyz.devcmb.tumblers.data
 
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.BadgeController
+import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.util.Format
 import java.sql.Timestamp
 import java.util.UUID

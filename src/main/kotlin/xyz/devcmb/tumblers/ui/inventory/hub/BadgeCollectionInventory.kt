@@ -15,8 +15,8 @@ import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
 import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
-import xyz.devcmb.tumblers.controllers.BadgeController
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.event.BadgeController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format

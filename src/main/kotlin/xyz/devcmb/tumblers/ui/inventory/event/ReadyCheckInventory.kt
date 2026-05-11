@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
-import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound

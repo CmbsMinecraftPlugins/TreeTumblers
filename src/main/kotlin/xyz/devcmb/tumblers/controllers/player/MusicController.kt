@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.player
 
 import org.bukkit.Bukkit
 import org.bukkit.SoundCategory
@@ -6,9 +6,10 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 
 @Controller(Controller.Priority.MEDIUM)
-class MusicController : IController {
+class MusicController : ControllerBase() {
     var currentMusic: Music? = null
     val loopingTasks: HashMap<Player, BukkitRunnable> = hashMapOf()
 
@@ -27,7 +28,7 @@ class MusicController : IController {
             }
 
             loopingTasks[it] = loopTask
-            loopTask.runTaskTimer(TreeTumblers.plugin, 0L, music.duration)
+            loopTask.runTaskTimer(TreeTumblers.Companion.plugin, 0L, music.duration)
         }
     }
 

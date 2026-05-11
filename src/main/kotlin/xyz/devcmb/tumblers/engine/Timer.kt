@@ -8,7 +8,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.TimerController
+import xyz.devcmb.tumblers.controllers.misc.TimerController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 import java.util.UUID
@@ -27,9 +27,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var isRunning: Boolean = false
     var game: GameBase? = null
 
-    val timerController by lazy {
-        ControllerRegistry.getController<TimerController>()
-    }
+    private val timerController: TimerController by ControllerRegistry.controller()
 
     // DSL Fields
     var id: String = "timer_${UUID.randomUUID().toString().take(8)}"

@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.games
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -18,12 +18,14 @@ import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
-class GameController : IController {
+class GameController : ControllerBase() {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
     var activeGameJob: Job? = null
@@ -62,7 +64,7 @@ class GameController : IController {
     }
 
     fun startGameAsync(id: String) {
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             startGame(id)
         }
     }
@@ -76,19 +78,19 @@ class GameController : IController {
         val game = gameClass.getDeclaredConstructor().newInstance()
 
         activeGame = game
-        Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
+        Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.Companion.plugin)
 
         game.load()
         game.finishLoading()
         game.runCutscene()
         game.pregame()
-        activeGameJob = TreeTumblers.pluginScope.launch {
+        activeGameJob = TreeTumblers.Companion.pluginScope.launch {
             game.gameMain()
         }
         activeGameJob!!.join()
         activeGameJob = null
         game.basePostGame()
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             game.cleanup()
         }
         HandlerList.unregisterAll(game)

@@ -1,20 +1,19 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.player
 
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.event.PacketListener
 import com.github.retrooper.packetevents.event.PacketListenerPriority
 import io.github.retrooper.packetevents.factory.spigot.SpigotPacketEventsBuilder
-import org.bukkit.event.EventHandler
-import org.bukkit.event.server.ServerLoadEvent
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.packet.GlowingPlayersListener
 import xyz.devcmb.tumblers.packet.ScoreboardNumbersListener
 
 @Controller(Controller.Priority.HIGH)
-class PacketController : IController {
+class PacketController : ControllerBase() {
     override fun init() {
-        val api = SpigotPacketEventsBuilder.build(TreeTumblers.plugin)
+        val api = SpigotPacketEventsBuilder.build(TreeTumblers.Companion.plugin)
         PacketEvents.setAPI(api)
         PacketEvents.getAPI().load()
 
@@ -30,8 +29,7 @@ class PacketController : IController {
         PacketEvents.getAPI().terminate()
     }
 
-    @EventHandler
-    fun serverLoad(event: ServerLoadEvent) {
+    override fun serverLoad() {
         PacketEvents.getAPI().init()
     }
 }

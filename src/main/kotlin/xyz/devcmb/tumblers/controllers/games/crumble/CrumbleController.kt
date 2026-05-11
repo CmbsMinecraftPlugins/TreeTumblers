@@ -49,7 +49,7 @@ import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -245,9 +245,7 @@ class CrumbleController : GameBase(
         }
     }.build()
 
-    val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
+    val eventController: EventController by ControllerRegistry.controller()
     val killModel = NamespacedKey("tumbling", "crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {

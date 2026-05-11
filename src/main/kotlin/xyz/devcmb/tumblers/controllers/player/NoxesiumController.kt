@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.player
 
 import com.noxcrew.noxesium.api.component.NoxesiumComponentType
 import com.noxcrew.noxesium.api.feature.qib.QibDefinition
@@ -17,9 +17,10 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 
 @Controller(Controller.Priority.MEDIUM)
-class NoxesiumController : IController {
+class NoxesiumController : ControllerBase() {
     override fun init() {
         QibType.entries.forEach {
             it.register()
@@ -44,7 +45,7 @@ class NoxesiumController : IController {
     enum class QibType(val key: Key) {
         JUMP_PAD(Key.key("tumbling", "jump_pad")) {
             override fun register() {
-                val effectDefinition = TreeTumblers.plugin.getResource("qibs/jump_pad.json")!!
+                val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/jump_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
                 val effect = QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
 
@@ -56,7 +57,8 @@ class NoxesiumController : IController {
                     null,
                     null,
                     false
-                ))
+                )
+                )
             }
 
             override fun spawn(location: Location) {
@@ -71,7 +73,7 @@ class NoxesiumController : IController {
         },
         LAUNCH_PAD(Key.key("tumbling", "boost_pad")) {
             override fun register() {
-                val effectDefinition = TreeTumblers.plugin.getResource("qibs/launch_pad.json")!!
+                val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/launch_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
                 val effect = QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
 
@@ -83,7 +85,8 @@ class NoxesiumController : IController {
                     null,
                     null,
                     false
-                ))
+                )
+                )
             }
 
             override fun spawn(location: Location) {
@@ -98,7 +101,7 @@ class NoxesiumController : IController {
         },
         ULTRA_LAUNCH_PAD(Key.key("tumbling", "ultra_boost_pad")) {
             override fun register() {
-                val effectDefinition = TreeTumblers.plugin.getResource("qibs/ultra_launch_pad.json")!!
+                val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/ultra_launch_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
                 val effect = QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
 
@@ -110,7 +113,8 @@ class NoxesiumController : IController {
                     null,
                     null,
                     false
-                ))
+                )
+                )
             }
 
             override fun spawn(location: Location) {

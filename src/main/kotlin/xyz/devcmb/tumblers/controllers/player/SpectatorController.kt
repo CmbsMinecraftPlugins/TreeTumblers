@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.player
 
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -7,9 +7,9 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -17,13 +17,11 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.showToAll
 
 @Controller(Controller.Priority.MEDIUM)
-class SpectatorController : IController {
+class SpectatorController : ControllerBase() {
     val spectators: HashMap<Player, Boolean> = HashMap()
     private var spectatorTask: BukkitRunnable? = null
 
-    val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
+    val playerController: PlayerController by controller()
 
     override fun init() {
         spectatorTask = object : BukkitRunnable() {
@@ -33,7 +31,7 @@ class SpectatorController : IController {
                 }
             }
         }
-        spectatorTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
+        spectatorTask!!.runTaskTimer(TreeTumblers.Companion.plugin, 0, 10)
     }
 
     override fun cleanup() {

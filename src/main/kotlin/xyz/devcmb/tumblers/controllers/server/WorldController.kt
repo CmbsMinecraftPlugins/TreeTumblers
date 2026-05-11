@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.server
 
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -9,39 +9,35 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.World
 import org.bukkit.WorldCreator
-import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority
-import org.bukkit.event.server.ServerLoadEvent
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
 
-@Controller(Controller.Priority.MEDIUM)
-class WorldController : IController {
+@Controller(Controller.Priority.HIGH)
+class WorldController : ControllerBase() {
     companion object {
         @field:Configurable("templates.world_root")
         var worldRoot: String = "&/templates/worlds"
             get() {
                 return field
-                    .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
+                    .replace("&", TreeTumblers.Companion.plugin.dataFolder.path.toString())
             }
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
     }
 
-    val hubController: HubController by lazy {
-        ControllerRegistry.getController<HubController>()
-    }
+    val hubController: HubController by controller()
 
     override fun init() {
         // do it both on cleanup and start so it cleans up regardless of if the server gracefully shut down
@@ -75,7 +71,8 @@ class WorldController : IController {
     }
 
     fun createVoidWorld(worldName: String): World {
-        val world = Bukkit.createWorld(WorldCreator(worldName)
+        val world = Bukkit.createWorld(
+            WorldCreator(worldName)
             .generator(MiscUtils.VoidGenerator))!!
 
         world.getBlockAt(0, 64, 0).type = Material.STONE
@@ -104,9 +101,9 @@ class WorldController : IController {
             )
         }
 
-        return suspendSync {
+        return MiscUtils.suspendSync {
             var worldCreator = WorldCreator(name)
-            if(File(path.toString(), "void.txt").exists()) {
+            if (File(path.toString(), "void.txt").exists()) {
                 worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
             }
 
@@ -120,7 +117,7 @@ class WorldController : IController {
 
         val worldsFolder = Path.of(
             worldRoot,
-            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
+            TreeTumblers.Companion.plugin.config.getString("${game.configRoot}.worlds_folder")
         )
 
         saveWorld(world, File(worldsFolder.toString(), name))
@@ -129,10 +126,10 @@ class WorldController : IController {
     suspend fun saveWorld(world: World, path: File, reload: Boolean = false) {
         val worldFolder = world.worldFolder
 
-        suspendSync {
+        MiscUtils.suspendSync {
             world.players.forEach {
                 val hub = Bukkit.getWorld(lobbyWorld)
-                val location = if(world.name == lobbyWorld || hub == null) {
+                val location = if (world.name == lobbyWorld || hub == null) {
                     Location(Bukkit.getWorld("world")!!, 0.0, 127.0, 0.0)
                 } else {
                     hubController.getLobbyPosition()
@@ -151,15 +148,15 @@ class WorldController : IController {
             FileUtils.copyDirectory(worldFolder, destination)
 
             val idFile = File(destination, "uid.dat")
-            if(idFile.exists()) {
+            if (idFile.exists()) {
                 idFile.delete()
             }
 
-            if(reload) {
-                suspendSync {
+            if (reload) {
+                MiscUtils.suspendSync {
                     Bukkit.createWorld(
                         WorldCreator(world.name)
-                        .generator(world.generator)
+                            .generator(world.generator)
                     )
                 }
             }
@@ -170,7 +167,7 @@ class WorldController : IController {
         val game = game.getTemplate()
         val worldsFolder = File(
             worldRoot,
-            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
+            TreeTumblers.Companion.plugin.config.getString("${game.configRoot}.worlds_folder")!!
         )
 
         return File(worldsFolder, name).exists()
@@ -178,7 +175,7 @@ class WorldController : IController {
 
     suspend fun cleanupWorld(world: World) = withContext(Dispatchers.IO) {
         val file = File(Bukkit.getWorldContainer(), world.name)
-        suspendSync {
+        MiscUtils.suspendSync {
             Bukkit.unloadWorld(world, false)
         }
 
@@ -200,8 +197,7 @@ class WorldController : IController {
         file2.delete()
     }
 
-    @EventHandler(priority = EventPriority.LOWEST)
-    fun onServerLoad(event: ServerLoadEvent) {
+    override fun serverLoad() {
         val source = File(worldRoot, lobbyWorld)
         val name = lobbyWorld
         val destination = File(Bukkit.getWorldContainer(), name)

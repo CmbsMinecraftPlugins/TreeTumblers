@@ -1,6 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker
 
-import xyz.devcmb.tumblers.controllers.BadgeController
+import xyz.devcmb.tumblers.controllers.event.BadgeController
 
 enum class SnifferCaretakerBadge(
     override val badgeName: String,

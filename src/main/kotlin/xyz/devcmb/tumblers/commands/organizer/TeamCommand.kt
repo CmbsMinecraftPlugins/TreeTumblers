@@ -21,9 +21,7 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 @Command(name = "team")
 @Permission("tumbling.organizer")
 class TeamCommand {
-    val databaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
+    val databaseController: DatabaseController by ControllerRegistry.controller()
 
     @Execute(name = "set")
     fun executeTeamSet(

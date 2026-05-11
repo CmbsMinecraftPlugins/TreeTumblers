@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.player
 
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
@@ -35,11 +35,14 @@ import org.bukkit.util.Transformation
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import xyz.devcmb.tumblers.Constants
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -52,7 +55,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 @Controller(Controller.Priority.MEDIUM)
-class PlayerController : IController {
+class PlayerController : ControllerBase() {
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
@@ -66,24 +69,13 @@ class PlayerController : IController {
 
     val nameTags: HashMap<Player, TextDisplay> = HashMap()
 
-    private val databaseController: DatabaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
-
-    private val gameController: GameController by lazy {
-        ControllerRegistry.getController<GameController>()
-    }
-
-    private val spectatorController: SpectatorController by lazy {
-        ControllerRegistry.getController<SpectatorController>()
-    }
-
-    private val hubController: HubController by lazy {
-        ControllerRegistry.getController<HubController>()
-    }
+    private val databaseController: DatabaseController by controller()
+    private val gameController: GameController by controller()
+    private val spectatorController: SpectatorController by controller()
+    private val hubController: HubController by controller()
 
     override fun init() {
-        TreeTumblers.pluginScope.launch {
+        TreeTumblers.Companion.pluginScope.launch {
             players = databaseController.getAllPlayerData()
         }
     }
@@ -123,6 +115,11 @@ class PlayerController : IController {
         runTask {
             hubController.spawnHub(player)
             reloadNametag(player)
+            nameTags.forEach { otherPlr, tag ->
+                if (currentNametagMode.canSee(player, otherPlr)) {
+                    player.showEntity(TreeTumblers.Companion.plugin, tag)
+                }
+            }
         }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
@@ -134,7 +131,7 @@ class PlayerController : IController {
         }
 
         hiddenPlayers.forEach {
-            player.hidePlayer(TreeTumblers.plugin, it)
+            player.hidePlayer(TreeTumblers.Companion.plugin, it)
         }
 
         event.joinMessage(Component.empty())
@@ -250,7 +247,7 @@ class PlayerController : IController {
         val uuid = connection.authenticatedProfile?.id
 
         runBlocking {
-            if(!databaseController.isWhitelisted(uuid.toString())) {
+            if (!databaseController.isWhitelisted(uuid.toString())) {
                 event.kickMessage(
                     Component.text("———————————————————————————————", NamedTextColor.RED)
                         .append(Component.newline())
@@ -304,9 +301,9 @@ class PlayerController : IController {
                     && !hiddenPlayers.contains(it.key)
                     && it.key != plr
                 ) {
-                    plr.showEntity(TreeTumblers.plugin, it.value)
+                    plr.showEntity(TreeTumblers.Companion.plugin, it.value)
                 } else {
-                    plr.hideEntity(TreeTumblers.plugin, it.value)
+                    plr.hideEntity(TreeTumblers.Companion.plugin, it.value)
                 }
             }
         }

@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.engine.map
 import org.bukkit.World
 import org.bukkit.configuration.ConfigurationSection
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 
 /**
  * A map which has been loaded into multiple bukkit worlds
@@ -16,9 +16,7 @@ class LoadedMap(
     val world: World,
     val data: ConfigurationSection
 ) {
-    val worldController: WorldController by lazy {
-        ControllerRegistry.getController<WorldController>()
-    }
+    val worldController: WorldController by ControllerRegistry.controller()
 
     suspend fun cleanup() {
         worldController.cleanupWorld(world)

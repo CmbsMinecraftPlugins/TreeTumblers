@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.event
 
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -10,10 +10,11 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -22,14 +23,9 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
 
 @Controller(Controller.Priority.MEDIUM)
-class HubController : IController {
-    val gameController by lazy {
-        ControllerRegistry.getController<GameController>()
-    }
-
-    val badgeController by lazy {
-        ControllerRegistry.getController<BadgeController>()
-    }
+class HubController : ControllerBase() {
+    val gameController: GameController by controller()
+    val badgeController: BadgeController by controller()
 
     val isHub: Boolean
         get() {
