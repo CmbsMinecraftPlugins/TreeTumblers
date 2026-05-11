@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.breach.BreachKit
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility

@@ -10,7 +10,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.util.DebugUtil
 
 @Controller(priority = Controller.Priority.HIGHEST)
-class ConfigController : IController {
+class ConfigController : ControllerBase() {
     override fun init() {
         TreeTumblers.plugin.saveDefaultConfig()
 

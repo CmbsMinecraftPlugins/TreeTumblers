@@ -8,7 +8,7 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 
 class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {

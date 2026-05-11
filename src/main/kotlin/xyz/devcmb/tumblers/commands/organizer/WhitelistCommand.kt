@@ -20,9 +20,7 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "whitelist")
 @Permission("tumbling.organizer")
 class WhitelistCommand {
-    val databaseController: DatabaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
+    val databaseController: DatabaseController by ControllerRegistry.controller()
 
     @Execute(name = "add")
     fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {

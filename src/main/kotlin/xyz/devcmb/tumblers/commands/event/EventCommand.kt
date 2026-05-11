@@ -11,16 +11,14 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.EventController
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.Format
 
 @Command(name = "event")
 @Permission("tumbling.event")
 class EventCommand {
-    val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
+    val eventController: EventController by ControllerRegistry.controller()
 
     @Execute(name = "start")
     fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean) {

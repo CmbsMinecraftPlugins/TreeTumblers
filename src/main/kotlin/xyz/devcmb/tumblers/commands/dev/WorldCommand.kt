@@ -14,8 +14,8 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.GameController
-import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
@@ -29,9 +29,7 @@ import kotlin.jvm.optionals.getOrNull
 @Command(name = "world")
 @Permission("tumbling.dev")
 class WorldCommand {
-    val worldController: WorldController by lazy {
-        ControllerRegistry.getController<WorldController>()
-    }
+    val worldController: WorldController by ControllerRegistry.controller()
 
     @Execute(name = "create void")
     fun executeWorld(@Context executor: CommandSender, @Arg("world name") worldName: String, @Flag("--teleport","-t") teleport: Boolean) {

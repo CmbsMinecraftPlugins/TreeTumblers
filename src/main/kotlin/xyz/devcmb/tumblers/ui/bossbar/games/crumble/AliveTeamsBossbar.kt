@@ -2,7 +2,7 @@ package xyz.devcmb.tumblers.ui.bossbar.games.crumble
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.ShadowColor
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility

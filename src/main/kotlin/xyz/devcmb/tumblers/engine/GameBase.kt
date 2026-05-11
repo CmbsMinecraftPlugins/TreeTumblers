@@ -26,12 +26,12 @@ import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
-import xyz.devcmb.tumblers.controllers.BadgeController
-import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.GameController
-import xyz.devcmb.tumblers.controllers.HubController
-import xyz.devcmb.tumblers.controllers.PlayerController
-import xyz.devcmb.tumblers.controllers.SpectatorController
+import xyz.devcmb.tumblers.controllers.event.BadgeController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
+import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
@@ -115,25 +115,11 @@ abstract class GameBase(
 
     open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
-    private val eventController: EventController by lazy {
-        ControllerRegistry.getController<EventController>()
-    }
-
-    private val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
-
-    private val spectatorController by lazy {
-        ControllerRegistry.getController<SpectatorController>()
-    }
-
-    private val hubController by lazy {
-        ControllerRegistry.getController<HubController>()
-    }
-
-    private val badgeController by lazy {
-        ControllerRegistry.getController<BadgeController>()
-    }
+    private val eventController: EventController by ControllerRegistry.controller()
+    private val playerController: PlayerController by ControllerRegistry.controller()
+    private val spectatorController: SpectatorController by ControllerRegistry.controller()
+    private val hubController: HubController by ControllerRegistry.controller()
+    private val badgeController: BadgeController by ControllerRegistry.controller()
 
     open val debugToolkit: DebugToolkit? = null
 

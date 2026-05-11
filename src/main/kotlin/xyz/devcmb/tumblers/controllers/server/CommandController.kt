@@ -1,20 +1,44 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.server
 
-import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.annotations.Controller
 import dev.rollczi.litecommands.LiteCommands
 import dev.rollczi.litecommands.adventure.LiteAdventureExtension
 import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
 import dev.rollczi.litecommands.bukkit.LiteBukkitMessages
+import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
-import xyz.devcmb.tumblers.commands.arguments.*
-import xyz.devcmb.tumblers.commands.dev.*
+import xyz.devcmb.tumblers.commands.arguments.ChatChannelArgument
+import xyz.devcmb.tumblers.commands.arguments.DebugLogLevelArgument
+import xyz.devcmb.tumblers.commands.arguments.DebuggingEventArgument
+import xyz.devcmb.tumblers.commands.arguments.GameArgument
+import xyz.devcmb.tumblers.commands.arguments.PartyGameArgument
+import xyz.devcmb.tumblers.commands.arguments.PartyGameSchematicArgument
+import xyz.devcmb.tumblers.commands.arguments.QibTypeArgument
+import xyz.devcmb.tumblers.commands.arguments.TeamArgument
+import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
+import xyz.devcmb.tumblers.commands.arguments.TimerArgument
+import xyz.devcmb.tumblers.commands.arguments.TumblingPlayerArgument
+import xyz.devcmb.tumblers.commands.arguments.WhitelistedPlayerArgument
+import xyz.devcmb.tumblers.commands.dev.DebugCommand
+import xyz.devcmb.tumblers.commands.dev.NametagCommand
+import xyz.devcmb.tumblers.commands.dev.PartyCommand
+import xyz.devcmb.tumblers.commands.dev.QibCommand
+import xyz.devcmb.tumblers.commands.dev.SpectateCommand
+import xyz.devcmb.tumblers.commands.dev.TimerCommand
+import xyz.devcmb.tumblers.commands.dev.WorldCommand
 import xyz.devcmb.tumblers.commands.event.EventCommand
-import xyz.devcmb.tumblers.commands.games.*
+import xyz.devcmb.tumblers.commands.games.GameCommand
 import xyz.devcmb.tumblers.commands.misc.ChatCommand
-import xyz.devcmb.tumblers.commands.organizer.*
+import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
+import xyz.devcmb.tumblers.commands.organizer.TeamCommand
+import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
+import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.controllers.player.NoxesiumController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -23,10 +47,10 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
 @Controller(Controller.Priority.LOWEST)
-class CommandController : IController {
+class CommandController : ControllerBase() {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {
-        liteCommands = LiteBukkitFactory.builder("tumblers", TreeTumblers.plugin)
+        liteCommands = LiteBukkitFactory.builder("tumblers", TreeTumblers.Companion.plugin)
             .commands(
                 DebugCommand(),
                 WhitelistCommand(),

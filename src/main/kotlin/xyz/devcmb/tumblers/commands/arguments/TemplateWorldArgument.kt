@@ -7,7 +7,7 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.controllers.WorldController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.Format
 import java.io.File
 

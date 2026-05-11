@@ -1,10 +1,11 @@
-package xyz.devcmb.tumblers.controllers
+package xyz.devcmb.tumblers.controllers.misc
 
 import xyz.devcmb.tumblers.annotations.Controller
+import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.engine.Timer
 
 @Controller(Controller.Priority.MEDIUM)
-class TimerController : IController {
+class TimerController : ControllerBase() {
     var timers: HashMap<String, Timer> = HashMap()
     override fun init() {
     }

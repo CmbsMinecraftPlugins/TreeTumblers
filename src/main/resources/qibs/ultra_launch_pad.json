@@ -3,7 +3,7 @@
   "effect": {
     "yaw": 0.0,
     "yawRelative": true,
-    "pitch": -20.0,
+    "pitch": -15.0,
     "pitchRelative": false,
     "strength": 7,
     "limit": 30

@@ -7,15 +7,12 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.util.Format
 
 @Command(name = "chat")
 class ChatCommand {
-
-    val playerController: PlayerController by lazy {
-        ControllerRegistry.getController<PlayerController>()
-    }
+    val playerController: PlayerController by ControllerRegistry.controller()
 
     @Execute
     fun executeChat(@Context executor: Player, @Arg channel: PlayerController.ChatChannel) {

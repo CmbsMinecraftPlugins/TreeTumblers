@@ -16,16 +16,14 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.PlayerController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-private val playerController: PlayerController by lazy {
-    ControllerRegistry.getController<PlayerController>()
-}
+private val playerController: PlayerController by ControllerRegistry.controller()
 
 val Player.tumblingPlayer: TumblingPlayer
     get() {

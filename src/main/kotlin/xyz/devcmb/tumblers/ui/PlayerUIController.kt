@@ -10,9 +10,9 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.BadgeController
-import xyz.devcmb.tumblers.controllers.EventController
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.event.BadgeController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
 import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar

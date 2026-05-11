@@ -32,11 +32,11 @@ class TreeTumblers : JavaPlugin() {
         pluginLogger = logger
 
         InvControlManager.setPlugin(this)
-        ControllerRegistry.registerAllControllers()
+        ControllerRegistry.init()
     }
 
     override fun onDisable() {
-        ControllerRegistry.cleanupControllers()
+        ControllerRegistry.cleanup()
         pluginScope.cancel()
     }
 }

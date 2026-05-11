@@ -7,7 +7,7 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import org.bukkit.Location
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.NoxesiumController
+import xyz.devcmb.tumblers.controllers.player.NoxesiumController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.toCenterXZLocation
 import java.util.Optional

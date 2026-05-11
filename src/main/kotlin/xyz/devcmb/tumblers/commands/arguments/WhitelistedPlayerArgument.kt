@@ -12,9 +12,7 @@ import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.util.Format
 
 class WhitelistedPlayerArgument: ArgumentResolver<CommandSender, DatabaseController.WhitelistedPlayer>() {
-    val databaseController: DatabaseController by lazy {
-        ControllerRegistry.getController<DatabaseController>()
-    }
+    val databaseController: DatabaseController by ControllerRegistry.controller()
 
     override fun parse(
         invocation: Invocation<CommandSender>,

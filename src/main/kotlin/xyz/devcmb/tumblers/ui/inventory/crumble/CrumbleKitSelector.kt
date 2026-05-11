@@ -13,7 +13,7 @@ import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
 import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
-import xyz.devcmb.tumblers.controllers.GameController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory

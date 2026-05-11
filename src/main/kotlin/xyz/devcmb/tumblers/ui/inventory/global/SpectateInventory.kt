@@ -13,8 +13,8 @@ import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
 import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
 import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.GameController
-import xyz.devcmb.tumblers.controllers.SpectatorController
+import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
@@ -28,9 +28,8 @@ class SpectateInventory(
     val gameController: GameController,
     override val id: String = "spectateInventory",
 ) : HandledInventory {
-    val spectateController by lazy {
-        ControllerRegistry.getController<SpectatorController>()
-    }
+    private val spectateController: SpectatorController by ControllerRegistry.controller()
+
     override val inventory: ChestInventoryUI = ChestInventoryUI(player, Format.mm("<white>Spectate</white>"), 5).apply {
         val page = ChestInventoryPage()
         addPage("main", page, true)
