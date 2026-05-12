@@ -24,7 +24,8 @@ class BadgeController : ControllerBase() {
                 Format.mm("collected playing <green>Tree Tumblers!</green>")
             ).map {
                 it.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
-            })
+            }
+        )
         model(NamespacedKey("tumbling", "hub/collection"))
 
         droppable(false)

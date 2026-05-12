@@ -4,11 +4,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
-import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
-import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.reflections.Reflections
@@ -100,12 +98,6 @@ class GameController : ControllerBase() {
     @EventHandler
     fun playerFoodEvent(event: FoodLevelChangeEvent) {
         if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) event.isCancelled = true
-    }
-
-    @EventHandler
-    fun playerDamageEvent(event: EntityDamageEvent) {
-        if(event.entity !is Player || activeGame != null) return
-        event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.HIGH)

@@ -25,11 +25,17 @@ import xyz.devcmb.tumblers.util.validateLocation
 @Controller(Controller.Priority.MEDIUM)
 class HubController : ControllerBase() {
     val gameController: GameController by controller()
+    val eventController: EventController by controller()
     val badgeController: BadgeController by controller()
 
     val isHub: Boolean
         get() {
             return gameController.activeGame == null
+        }
+
+    val isVoting: Boolean
+        get() {
+            return eventController.state == EventController.State.VOTING
         }
 
     companion object {
@@ -100,7 +106,7 @@ class HubController : ControllerBase() {
 
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
-        if(!isHub || event.entity !is Player) return
+        if(!isHub || isVoting || event.entity !is Player) return
         event.isCancelled = true
     }
 

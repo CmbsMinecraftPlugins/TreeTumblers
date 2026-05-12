@@ -7,8 +7,11 @@ import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.World
 import org.bukkit.WorldCreator
+import org.bukkit.entity.Entity
+import org.bukkit.persistence.PersistentDataHolder
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Configurable
@@ -35,6 +38,8 @@ class WorldController : ControllerBase() {
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
+
+        val temporaryEntityKey: NamespacedKey = NamespacedKey("tumbling", "temp_entity")
     }
 
     val hubController: HubController by controller()
@@ -210,7 +215,10 @@ class WorldController : ControllerBase() {
         var worldCreator = WorldCreator(name)
         worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
 
-        Bukkit.createWorld(worldCreator)!!
+        val world = Bukkit.createWorld(worldCreator)!!
+        world.entities
+            .filter { it is PersistentDataHolder && it.persistentDataContainer.has(temporaryEntityKey) }
+            .forEach(Entity::remove)
     }
 
     data class LoadableTemplate(val file: File)
