@@ -1,3 +1,4 @@
+import org.gradle.kotlin.dsl.support.serviceOf
 import java.io.ByteArrayOutputStream
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -6,7 +7,7 @@ import java.nio.file.StandardOpenOption
 plugins {
     kotlin("jvm") version "2.3.20-RC"
     id("com.gradleup.shadow") version "8.3.0"
-    id("xyz.jpenilla.run-paper") version "2.3.1"
+    id("xyz.jpenilla.run-paper") version "3.0.2"
     kotlin("plugin.serialization").version("2.2.20")
 }
 
@@ -70,17 +71,6 @@ tasks {
 }
 
 val targetJavaVersion = 25
-
-// https://github.com/jpenilla/run-task/wiki/Debugging
-@Suppress("UnstableApiUsage")
-tasks.withType(xyz.jpenilla.runtask.task.AbstractRun::class) {
-    javaLauncher = javaToolchains.launcherFor {
-        vendor = JvmVendorSpec.JETBRAINS
-        languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-    jvmArgs("-XX:+AllowEnhancedClassRedefinition")
-}
-
 kotlin {
     jvmToolchain(targetJavaVersion)
 }
@@ -104,6 +94,8 @@ fun padLeftZeros(inputString: String, length: Int): String {
 }
 
 tasks.register("updateVersion") {
+    description = "Update the version file"
+    val execOps = project.serviceOf<ExecOperations>()
     doLast {
         val versionFile = file("src/main/kotlin/xyz/devcmb/tumblers/Constants.kt")
         val versionCounterFile = file("version.txt")
@@ -121,14 +113,12 @@ tasks.register("updateVersion") {
         fun gitBranch(): String {
             return try {
                 val byteOut = ByteArrayOutputStream()
-                project.exec {
+                execOps.exec {
                     commandLine = "git rev-parse --abbrev-ref HEAD".split(" ")
                     standardOutput = byteOut
                 }
-                String(byteOut.toByteArray()).trim().also {
-                    if (it == "HEAD") {
-                        "detached"
-                    }
+                String(byteOut.toByteArray()).trim().let {
+                    if (it == "HEAD") "detached" else it
                 }
             } catch (e: Exception) {
                 logger.warn("Unable to determine current branch: ${e.message}")
@@ -143,7 +133,6 @@ tasks.register("updateVersion") {
             Regex("""(const val BRANCH: String = ")([^"]+)(")"""),
             "$1${gitBranch()}$3"
         )
-
 
         Files.write(
             Paths.get(versionFile.toURI()),

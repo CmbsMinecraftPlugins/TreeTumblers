@@ -77,7 +77,7 @@ class PlayerController : ControllerBase() {
     private val hubController: HubController by controller()
 
     override fun init() {
-        TreeTumblers.Companion.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
             players = databaseController.getAllPlayerData()
         }
     }
@@ -117,7 +117,7 @@ class PlayerController : ControllerBase() {
         runTask {
             hubController.spawnHub(player)
             reloadNametag(player)
-            nameTags.forEach { otherPlr, tag ->
+            nameTags.forEach { (otherPlr, tag) ->
                 if (canSeeNametag(player, otherPlr)) {
                     player.showEntity(TreeTumblers.plugin, tag)
                 }
@@ -133,12 +133,12 @@ class PlayerController : ControllerBase() {
         }
 
         hiddenPlayers.forEach {
-            player.hidePlayer(TreeTumblers.Companion.plugin, it)
+            player.hidePlayer(TreeTumblers.plugin, it)
         }
 
         event.joinMessage(Component.empty())
         playerUIControllers.forEach { it.value.playerJoin(player) }
-        playerUIControllers.put(player, PlayerUIController(player))
+        playerUIControllers[player] = PlayerUIController(player)
 
         if(Constants.IS_DEVELOPMENT) {
             DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
@@ -201,9 +201,7 @@ class PlayerController : ControllerBase() {
     @EventHandler
     fun playerKillEvent(event: PlayerDeathEvent) {
         val killed = event.player
-        val killer = killed.killer
-
-        if(killer == null) return
+        val killer = killed.killer ?: return
 
         val currentGame = gameController.activeGame
         val score = currentGame?.getScoreSource(CommonScoreSource.KILL)
@@ -333,7 +331,7 @@ class PlayerController : ControllerBase() {
         }
 
         player.world.spawn(player.location.clone().add(0.0, 2.0, 0.0), TextDisplay::class.java) {
-            nameTags.put(player, it)
+            nameTags[player] = it
 
             it.text(player.formattedName)
             it.isVisibleByDefault = false
