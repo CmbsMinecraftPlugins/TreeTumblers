@@ -39,9 +39,7 @@ event:
     time: 90
 
   cutscene:
-    # The position of the first cutscene step
-    # This is where it shows the text "Tree Tumblers" "Welcome to the event!"
-    first: [1.13,198.19,14.26,-125.2,40.2]
+    teamIntroduction: [9.5, 196.0, 8.5, -135.0, 24.5]
 
   voting:
     # This is the position where the dome starts, at the very lowest and furthest point
@@ -63,6 +61,12 @@ event:
       - [10,192,9,23,188,22]
       - [8,192,23,-5,188,9]
       - [8,192,7,-5,188,-6]
+
+    quadrant_spawns:
+      - [16.5, 192.5, 1.5, 45.0, -7.0]
+      - [16.5, 192.5, 15.5, 135.0, -7.0]
+      - [2.5, 192.5, 15.5, -135.0, -7.0]
+      - [2.5, 192.5, 1.5, -45.0, -7.0]
 
     # This is the positioning of the game logos
     # Anything prefixed with a Q is part of a Quaternion that defines the rotation of the sign

@@ -21,6 +21,7 @@ import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityPotionEffectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -31,6 +32,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerStatisticIncrementEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
 import org.joml.AxisAngle4f
 import org.joml.Vector3f
@@ -116,8 +118,8 @@ class PlayerController : ControllerBase() {
             hubController.spawnHub(player)
             reloadNametag(player)
             nameTags.forEach { otherPlr, tag ->
-                if (currentNametagMode.canSee(player, otherPlr)) {
-                    player.showEntity(TreeTumblers.Companion.plugin, tag)
+                if (canSeeNametag(player, otherPlr)) {
+                    player.showEntity(TreeTumblers.plugin, tag)
                 }
             }
         }
@@ -295,18 +297,21 @@ class PlayerController : ControllerBase() {
 
         tags.forEach {
             Bukkit.getOnlinePlayers().forEach { plr ->
-                if(
-                    currentNametagMode.canSee(plr, it.key)
-                    && !spectatorController.spectators.contains(it.key)
-                    && !hiddenPlayers.contains(it.key)
-                    && it.key != plr
-                ) {
-                    plr.showEntity(TreeTumblers.Companion.plugin, it.value)
+                if(canSeeNametag(plr, it.key)) {
+                    plr.showEntity(TreeTumblers.plugin, it.value)
                 } else {
-                    plr.hideEntity(TreeTumblers.Companion.plugin, it.value)
+                    plr.hideEntity(TreeTumblers.plugin, it.value)
                 }
             }
         }
+    }
+
+    fun canSeeNametag(viewer: Player, taggedPlayer: Player): Boolean {
+        return currentNametagMode.canSee(viewer, taggedPlayer)
+                && !spectatorController.spectators.contains(taggedPlayer)
+                && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
+                && !hiddenPlayers.contains(taggedPlayer)
+                && taggedPlayer != viewer
     }
 
     fun reloadNametags() {
@@ -354,6 +359,13 @@ class PlayerController : ControllerBase() {
         val nameTag = nameTags[event.player] ?: return
         nameTag.isSeeThrough = !event.isSneaking
         nameTag.textOpacity = (if(event.isSneaking) 0x55 else 0xFF).toByte()
+    }
+
+    @EventHandler
+    fun playerEffectEvent(event: EntityPotionEffectEvent) {
+        val player = event.entity as? Player ?: return
+        if(nameTags.containsKey(player) && (event.newEffect?.type == PotionEffectType.INVISIBILITY || event.oldEffect?.type == PotionEffectType.INVISIBILITY))
+            updateNametagVisibility(event.entity as Player)
     }
 
     enum class NametagMode {

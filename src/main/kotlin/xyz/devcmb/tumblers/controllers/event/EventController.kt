@@ -26,11 +26,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
-import org.bukkit.util.Transformation
-import org.joml.Quaternionf
-import org.joml.Vector3f
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
@@ -46,20 +42,14 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
-import xyz.devcmb.tumblers.util.Benchmark
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.formattedName
-import xyz.devcmb.tumblers.util.getPlayers
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskLater
-import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
-import java.io.File
 import java.util.UUID
 import kotlin.math.min
 
@@ -250,6 +240,22 @@ class EventController : ControllerBase() {
         actionBarTask!!.cancel()
         actionBarTask = null
 
+        // TODO: Tutorial section
+        Bukkit.broadcast(Format.mm("<white><green><line:30></green><br><br>" +
+                "Welcome to <green><b>Tree Tumblers</b></green><br>" +
+                "Let's meet our <aqua>teams!</aqua><br><br>" +
+                "<green><line:30></green></white>"
+        ))
+        playerController.muteChat()
+        delay(2500)
+        votingController.announceTeamPlayers()
+        delay(1000)
+        Bukkit.broadcast(Format.mm("<white><green><line:30></green><br><br>" +
+                "And now that everyone has been introduced, let's get this show on the road!<br><br>" +
+                "<green><line:30></green></white>"
+        ))
+        delay(1000)
+        playerController.unmuteChat()
     }
 
     fun cleanupEvent() {

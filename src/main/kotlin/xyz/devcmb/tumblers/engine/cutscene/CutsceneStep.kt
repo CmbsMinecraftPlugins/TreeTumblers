@@ -57,10 +57,32 @@ class CutsceneStep(
 
     suspend fun playerJoin(player: Player) {
         if(context == null) return
+
+        suspendSync {
+            player.addPotionEffect(PotionEffect(
+                PotionEffectType.INVISIBILITY,
+                PotionEffect.INFINITE_DURATION,
+                1,
+                true,
+                false,
+                false
+            ))
+        }
+
         startingTeleport?.let {
             context!!.teleportConfig(it, player)
             player.hideToAll()
         }
+    }
+
+    fun playerLeave(player: Player) {
+        if(context == null) return
+        if(pigs.containsKey(player)) {
+            pigs[player]!!.remove()
+            pigs.remove(player)
+        }
+
+        player.removePotionEffect(PotionEffectType.INVISIBILITY)
     }
 
     suspend fun extraCutsceneWork(observers: Set<Player>) {

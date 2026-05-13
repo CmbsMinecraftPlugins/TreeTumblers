@@ -6,6 +6,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
@@ -18,6 +19,7 @@ enum class Team(
     val color: TextColor,
     val namedColor: NamedTextColor,
     val icon: String,
+    val concrete: Material,
     val priority: Int,
     val playingTeam: Boolean = true
 ) {
@@ -26,6 +28,7 @@ enum class Team(
         NamedTextColor.RED,
         NamedTextColor.RED,
         "\uE000",
+        Material.RED_CONCRETE,
         1
     ),
     ORANGE(
@@ -33,6 +36,7 @@ enum class Team(
         TextColor.fromHexString("#ff9100")!!,
         NamedTextColor.GOLD,
         "\uE001",
+        Material.ORANGE_CONCRETE,
         2
     ),
     YELLOW(
@@ -40,6 +44,7 @@ enum class Team(
         NamedTextColor.YELLOW,
         NamedTextColor.YELLOW,
         "\uE002",
+        Material.YELLOW_CONCRETE,
         3
     ),
     GREEN(
@@ -47,18 +52,21 @@ enum class Team(
         NamedTextColor.GREEN,
         NamedTextColor.GREEN,
         "\uE003",
+        Material.LIME_CONCRETE,
         4
     ),
     AQUA("Aqua Alpacas",
         NamedTextColor.AQUA,
         NamedTextColor.AQUA,
         "\uE009",
+        Material.LIGHT_BLUE_CONCRETE,
         5
     ),
     BLUE("Blue Boars",
         NamedTextColor.BLUE,
         NamedTextColor.BLUE,
         "\uE004",
+        Material.BLUE_CONCRETE,
         6
     ),
     PURPLE(
@@ -66,6 +74,7 @@ enum class Team(
         TextColor.fromHexString("#bb00ff")!!,
         NamedTextColor.DARK_PURPLE,
         "\uE005",
+        Material.PURPLE_CONCRETE,
         7
     ),
     PINK(
@@ -73,6 +82,7 @@ enum class Team(
         TextColor.fromHexString("#ff5cd9")!!,
         NamedTextColor.LIGHT_PURPLE,
         "\uE00A",
+        Material.PINK_CONCRETE,
         8
     ),
 
@@ -82,6 +92,7 @@ enum class Team(
         NamedTextColor.GRAY,
         NamedTextColor.GRAY,
         "\uE007",
+        Material.GRAY_CONCRETE,
         9,
         false
     ),
@@ -90,6 +101,7 @@ enum class Team(
         TextColor.fromHexString("#00c8ff")!!,
         NamedTextColor.AQUA,
         "\uE008",
+        Material.CYAN_CONCRETE,
         10,
         false
     );
