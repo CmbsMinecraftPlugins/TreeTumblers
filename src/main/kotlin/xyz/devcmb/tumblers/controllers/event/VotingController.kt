@@ -168,8 +168,7 @@ class VotingController : ControllerBase() {
 
         Team.entries.filter { it.playingTeam }.forEach { team ->
             Bukkit.broadcast(Format.mm(
-                "<br>".repeat(10) + "On the <team>, we have...",
-                Placeholder.component("team", team.formattedName)
+                "<br>".repeat(10) + "On the <team:${team.name.lowercase()}:name>, we have...",
             ))
 
             delay(1000)

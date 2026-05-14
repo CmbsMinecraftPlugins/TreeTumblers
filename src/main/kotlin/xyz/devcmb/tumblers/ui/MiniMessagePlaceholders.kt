@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui
 
+import xyz.devcmb.tumblers.TreeTumblers
+
 object MiniMessagePlaceholders {
     object Game {
         /**
@@ -11,7 +13,7 @@ object MiniMessagePlaceholders {
          */
         const val TEAM_SCOREBOARD_PLACEMENT = "<placement>. <team> - <gold><score></gold>"
 
-        const val HIDDEN_TEAM_SCOREBOARD_PLACEMENT = "<white>?. <font:tumbling:icons>\uE007</font></white> <dark_gray>????????</dark_gray> - <gray>?????</gray>"
+        const val HIDDEN_TEAM_SCOREBOARD_PLACEMENT = "<white>?. <font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray> - <gray>?????</gray>"
 
         /**
          * placement - The player's placement

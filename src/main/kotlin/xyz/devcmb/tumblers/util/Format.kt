@@ -10,14 +10,18 @@ import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import java.util.UUID
 
 object Format {
     val gameController: GameController by ControllerRegistry.controller()
+    val playerController: PlayerController by ControllerRegistry.controller()
 
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
@@ -44,6 +48,29 @@ object Format {
 
                 Tag.inserting(component)
             })
+            .resolver(TagResolver.resolver("team") { args, context ->
+                val team = args.popOr { "Team argument must be a specified team color!" }.value()
+                val tumblingTeam = Team.entries.find { it.name.lowercase() == team.lowercase() }
+                if(tumblingTeam == null) {
+                    throw IllegalStateException("Team argument must be a valid team color!")
+                }
+
+                var type = args.popOr { "Type argument must be a specified string of either \"name\" or \"icon\"" }.value()
+                Tag.inserting(when(type) {
+                    "name" -> tumblingTeam.formattedName
+                    "icon" -> tumblingTeam.formattedIcon
+                    else -> throw IllegalStateException("Type argument must be a specified string of either \"name\" or \"icon\"")
+                })
+            })
+            .resolver(TagResolver.resolver("player") { args, context ->
+                val player = args.popOr { "Player argument must be a valid specified player UUID!" }.value()
+                val tumblingPlayer = playerController.players.find { it.uuid == UUID.fromString(player) }
+                if(tumblingPlayer == null) {
+                    throw IllegalStateException("Player argument must be a valid specified player UUID!")
+                }
+
+                Tag.inserting(tumblingPlayer.formattedName)
+            })
             .build())
         .build()
 
@@ -67,7 +94,7 @@ object Format {
             return Component.empty()
                 .append(
                     Component.text(team.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey("tumbling", "icons"))
+                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", team.color))
@@ -77,7 +104,7 @@ object Format {
         return Component.empty()
             .append(
                 Component.text(team.icon, NamedTextColor.WHITE)
-                    .font(NamespacedKey("tumbling", "icons"))
+                    .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
             )
             .append(Component.text(" "))
             .append(Component.text(player.name, team.color))
@@ -93,7 +120,7 @@ object Format {
             if(killer == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey("tumbling", "icons"))
+                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
@@ -103,7 +130,7 @@ object Format {
             if(killed == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey("tumbling", "icons"))
+                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
@@ -130,7 +157,7 @@ object Format {
             if(killed == null) Component.empty()
                 .append(
                     Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey("tumbling", "icons"))
+                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))

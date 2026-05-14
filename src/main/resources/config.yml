@@ -1,9 +1,4 @@
 database:
-  # Playing without a database should only be used if one isn't available, and you have a vanilla whitelist
-  # This makes it so teams, scores, and any other persisting data will reset when the server restarts
-  enabled: true
-
-  # If enabled is false, these fields are not required
   host:
   port:
   username:

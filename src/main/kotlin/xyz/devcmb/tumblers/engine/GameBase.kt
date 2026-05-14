@@ -155,7 +155,7 @@ abstract class GameBase(
 
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
-                Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                 Component.text("Loading...", NamedTextColor.AQUA),
                 Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
             )
@@ -192,7 +192,7 @@ abstract class GameBase(
     open suspend fun finishLoading() {
         Bukkit.getOnlinePlayers().forEach {
             val title = Title.title(
-                Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                 Component.text("Loading...", NamedTextColor.AQUA),
                 Title.Times.times(Tick.of(0), Tick.of(10), Tick.of(40))
             )

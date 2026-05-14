@@ -10,6 +10,7 @@ import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -107,7 +108,7 @@ enum class Team(
     );
 
     val formattedIcon: Component =
-        Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey("tumbling", "icons"))
+        Component.text(icon, NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
 
     val formattedName: Component =
         Component.empty()

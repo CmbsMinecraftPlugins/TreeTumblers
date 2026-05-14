@@ -7,7 +7,6 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
@@ -31,7 +30,7 @@ class EventCommand {
             var ready = true
             Team.entries.forEach {
                 if(it.getOnlinePlayers().size != it.getAllPlayers().size) {
-                    sender.sendMessage(Format.mm("<yellow><team> have offline players!</yellow>", Placeholder.component("team", it.formattedName)))
+                    sender.sendMessage(Format.mm("<yellow><team:${it.name}:name> have offline players!</yellow>"))
                     ready = false
                 }
             }

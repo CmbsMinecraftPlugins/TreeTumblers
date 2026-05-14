@@ -45,8 +45,7 @@ class ScoreCommand {
     @Execute(name = "team view")
     fun teamView(@Context sender: CommandSender, @Arg("team") team: Team) {
         sender.sendMessage(Format.info(Format.mm(
-            "The <team> have <gold>${team.score}</gold> score.",
-            Placeholder.component("team", team.formattedName)
+            "The <team:${team.name}:name> have <gold>${team.score}</gold> score.",
         )))
     }
 
@@ -56,8 +55,7 @@ class ScoreCommand {
         team.score = score
 
         sender.sendMessage(Format.success(Format.mm(
-            "The <team> now have <gold>${score}</gold> score!",
-            Placeholder.component("team", team.formattedName)
+            "The <team:${team.name}:name> now have <gold>${score}</gold> score!"
         )))
 
         if(distribute && score >= currentScore) {

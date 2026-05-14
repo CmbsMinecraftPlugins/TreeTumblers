@@ -11,6 +11,7 @@ import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -23,7 +24,7 @@ class WorkerKit(
 ) : Kit {
     override val id: String = "worker"
     override val name: String = "Worker"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/worker")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/worker")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.WOODEN_AXE),

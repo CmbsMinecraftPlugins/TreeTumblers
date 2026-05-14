@@ -15,6 +15,7 @@ import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
 import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -36,7 +37,7 @@ class BadgeCollectionInventory(
         player,
         rows = 6,
         title = UserInterfaceUtility.negativeSpace(8)
-            .append(Component.text("\uEF00", NamedTextColor.WHITE).font(NamespacedKey("tumbling", "collection")))
+            .append(Component.text("\uEF00", NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "collection")))
             .append(UserInterfaceUtility.negativeSpace(UserInterfaceUtility.FULL_INVENTORY_NEGATIVE_ADVANCE))
             .append(Component.text("Badge Collection", NamedTextColor.WHITE).font(NamespacedKey("minecraft", "default"))),
     ).apply {
@@ -60,7 +61,7 @@ class BadgeCollectionInventory(
                                         Component.empty(),
                                         game.logo.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
                                     ))
-                                    it.itemModel = NamespacedKey("tumbling", "games/${game.id}")
+                                    it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "games/${game.id}")
                                 }
                             }
                         },
@@ -94,7 +95,7 @@ class BadgeCollectionInventory(
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.isHideTooltip = true
-                        it.itemModel = NamespacedKey("tumbling", "selection_outline")
+                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "selection_outline")
 
                         val component = it.customModelDataComponent
                         component.strings = listOf((4 - (selectedGameIndex / 2)).toString())
@@ -115,7 +116,7 @@ class BadgeCollectionInventory(
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.isHideTooltip = true
-                        it.itemModel = NamespacedKey("tumbling", "selection_outline")
+                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "selection_outline")
 
                         val component = it.customModelDataComponent
                         component.strings = listOf((4 - (selectedGameIndex / 2)).toString())
@@ -140,7 +141,7 @@ class BadgeCollectionInventory(
                                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                                     itemMeta = itemMeta.also {
                                         it.itemName(Format.mm("<gold>${badge.badgeName}</gold>"))
-                                        it.itemModel = NamespacedKey("tumbling", "lock")
+                                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "lock")
                                         it.lore(listOf(
                                             Component.empty(),
                                             Format.mm("<red>Locked!</red>"),

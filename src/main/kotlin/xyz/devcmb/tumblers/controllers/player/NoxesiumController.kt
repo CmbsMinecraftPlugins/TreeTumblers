@@ -43,7 +43,7 @@ class NoxesiumController : ControllerBase() {
     }
 
     enum class QibType(val key: Key) {
-        JUMP_PAD(Key.key("tumbling", "jump_pad")) {
+        JUMP_PAD(Key.key(TreeTumblers.NAMESPACE, "jump_pad")) {
             override fun register() {
                 val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/jump_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
@@ -71,7 +71,7 @@ class NoxesiumController : ControllerBase() {
                 }
             }
         },
-        LAUNCH_PAD(Key.key("tumbling", "boost_pad")) {
+        LAUNCH_PAD(Key.key(TreeTumblers.NAMESPACE, "boost_pad")) {
             override fun register() {
                 val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/launch_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
@@ -99,7 +99,7 @@ class NoxesiumController : ControllerBase() {
                 }
             }
         },
-        ULTRA_LAUNCH_PAD(Key.key("tumbling", "ultra_boost_pad")) {
+        ULTRA_LAUNCH_PAD(Key.key(TreeTumblers.NAMESPACE, "ultra_boost_pad")) {
             override fun register() {
                 val effectDefinition = TreeTumblers.Companion.plugin.getResource("qibs/ultra_launch_pad.json")!!
                 val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }

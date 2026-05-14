@@ -37,7 +37,6 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.MaceDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.SpearDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardAxeDuels
@@ -163,7 +162,7 @@ class PartyController : GameBase(
     data class PartyGameSchematic(val file: File)
 
     companion object {
-        val font = NamespacedKey("tumbling", "games/party")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/party")
 
         val games: ArrayList<Class<out PartyGame>> = arrayListOf(
             StandardSwordDuels::class.java,
@@ -757,7 +756,7 @@ class PartyController : GameBase(
 
             override fun announceLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
@@ -768,7 +767,7 @@ class PartyController : GameBase(
 
             override suspend fun concludeLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
                 )
@@ -860,7 +859,7 @@ class PartyController : GameBase(
 
             override fun announceLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
@@ -871,7 +870,7 @@ class PartyController : GameBase(
 
             override suspend fun concludeLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
                 )

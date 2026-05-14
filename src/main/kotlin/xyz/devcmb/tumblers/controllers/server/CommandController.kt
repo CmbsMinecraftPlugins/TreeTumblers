@@ -19,7 +19,6 @@ import xyz.devcmb.tumblers.commands.arguments.TeamArgument
 import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
 import xyz.devcmb.tumblers.commands.arguments.TimerArgument
 import xyz.devcmb.tumblers.commands.arguments.TumblingPlayerArgument
-import xyz.devcmb.tumblers.commands.arguments.WhitelistedPlayerArgument
 import xyz.devcmb.tumblers.commands.dev.DebugCommand
 import xyz.devcmb.tumblers.commands.dev.NametagCommand
 import xyz.devcmb.tumblers.commands.dev.PartyCommand
@@ -33,7 +32,6 @@ import xyz.devcmb.tumblers.commands.misc.ChatCommand
 import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
 import xyz.devcmb.tumblers.commands.organizer.TeamCommand
 import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
-import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
@@ -68,7 +66,6 @@ class CommandController : ControllerBase() {
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
-            .argument(DatabaseController.WhitelistedPlayer::class.java, WhitelistedPlayerArgument())
             .argument(GameController.Game::class.java, GameArgument())
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())

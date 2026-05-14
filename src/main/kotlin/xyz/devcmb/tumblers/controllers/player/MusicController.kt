@@ -44,6 +44,6 @@ class MusicController : ControllerBase() {
     }
 
     enum class Music(val key: String, val duration: Long) {
-        VOTING("tumbling:music.voting", 738L)
+        VOTING("${TreeTumblers.NAMESPACE}:music.voting", 738L)
     }
 }

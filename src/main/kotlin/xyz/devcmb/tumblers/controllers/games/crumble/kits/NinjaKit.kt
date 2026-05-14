@@ -22,6 +22,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -36,7 +37,7 @@ class NinjaKit(
 ) : Kit {
     override val id: String = "ninja"
     override val name: String = "Ninja"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/ninja")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/ninja")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),
@@ -52,8 +53,8 @@ class NinjaKit(
     override val kitDisplayTextLength: Double = 38.5
 
     companion object {
-        val ninjaOwnerKey = NamespacedKey("tumbling", "ninja_owner")
-        val ninjaSmokeBombKey = NamespacedKey("tumbling", "ninja_smoke_bomb")
+        val ninjaOwnerKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_owner")
+        val ninjaSmokeBombKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_smoke_bomb")
 
         @field:Configurable("games.crumble.kits.ninja.invisibility_duration")
         var invisibilityDuration: Int = 80

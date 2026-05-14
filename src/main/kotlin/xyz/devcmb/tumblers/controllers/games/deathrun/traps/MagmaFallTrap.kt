@@ -6,6 +6,7 @@ import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.configuration.ConfigurationSection
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.controllers.games.deathrun.Trap
 import xyz.devcmb.tumblers.util.Format
@@ -21,7 +22,7 @@ class MagmaFallTrap(
 ) : Trap {
     override val name: Component = Format.mm("<bold><yellow>Magma Fall Trap</yellow></bold>")
     override val id: String = "magma_fall"
-    override val itemKey: NamespacedKey = NamespacedKey("tumbling", "deathrun/magma_fall_trap")
+    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "deathrun/magma_fall_trap")
     override val cooldown: Int = 10
 
     override suspend fun activate() {

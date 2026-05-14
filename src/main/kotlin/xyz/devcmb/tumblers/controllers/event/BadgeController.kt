@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -26,7 +27,7 @@ class BadgeController : ControllerBase() {
                 it.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
             }
         )
-        model(NamespacedKey("tumbling", "hub/collection"))
+        model(NamespacedKey(TreeTumblers.NAMESPACE, "hub/collection"))
 
         droppable(false)
         movable(false)

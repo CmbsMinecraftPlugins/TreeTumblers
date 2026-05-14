@@ -92,7 +92,7 @@ class BreachController: GameBase(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/breach")))
+                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/breach")))
                 .append(Component.text(" Breach")),
             "cutscene.start"
         ) { map ->
@@ -203,10 +203,10 @@ class BreachController: GameBase(
     scoreboard = "breachScoreboard"
 ) {
     companion object {
-        val font = NamespacedKey("tumbling", "games/breach")
-        val kitItemsKey = NamespacedKey("tumbling", "kit_item")
-        val team1starKey = NamespacedKey("tumbling", "breach_star_1")
-        val team2starKey = NamespacedKey("tumbling", "breach_star_2")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/breach")
+        val kitItemsKey = NamespacedKey(TreeTumblers.NAMESPACE, "kit_item")
+        val team1starKey = NamespacedKey(TreeTumblers.NAMESPACE, "breach_star_1")
+        val team2starKey = NamespacedKey(TreeTumblers.NAMESPACE, "breach_star_2")
 
         @field:Configurable("games.breach.best_of")
         var bestOf: Int = 3
@@ -968,8 +968,7 @@ class BreachController: GameBase(
         playingTeams.toList().forEachIndexed { index, team ->
             component = component
                 .append(Format.mm(
-                    "<br><white>#${index + 1}</white> <team><shift>${" ".repeat(60)}<gold>${eventController.teamScores[team]!!}</gold> <br><players><br>",
-                    Placeholder.component("team", team.formattedName),
+                    "<br><white>#${index + 1}</white> <team:${team.name}:name><shift>${" ".repeat(60)}<gold>${eventController.teamScores[team]!!}</gold> <br><players><br>",
                     Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(team.teamName) + 11)),
                     Placeholder.component("players", eventController.getTeamPlayersComponent(team))
                 ))

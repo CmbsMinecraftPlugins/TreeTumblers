@@ -24,7 +24,7 @@ class SorcererKit(
 ) : Kit {
     override val id: String = "sorcerer"
     override val name: String = "Sorcerer"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/sorcerer")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/sorcerer")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),

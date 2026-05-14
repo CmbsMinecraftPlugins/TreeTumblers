@@ -91,7 +91,7 @@ class CrumbleController : GameBase(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/crumble")))
+                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")))
                 .append(Component.text(" Crumble")),
             "cutscene.start"
         ) { map ->
@@ -168,8 +168,8 @@ class CrumbleController : GameBase(
     scoreboard = "crumbleScoreboard"
 ) {
     companion object {
-        val font = NamespacedKey("tumbling", "games/crumble")
-        val kitItemsKey = NamespacedKey("tumbling", "kit_item")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")
+        val kitItemsKey = NamespacedKey(TreeTumblers.NAMESPACE, "kit_item")
 
         @field:Configurable("games.crumble.max_kit_players")
         var maxPlayersPerKit: Int = 2
@@ -246,7 +246,7 @@ class CrumbleController : GameBase(
     }.build()
 
     val eventController: EventController by ControllerRegistry.controller()
-    val killModel = NamespacedKey("tumbling", "crumble/kill")
+    val killModel = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
@@ -1126,16 +1126,10 @@ class CrumbleController : GameBase(
 
         if(alivePlayers[killedTeam]!!.isEmpty()) {
             Bukkit.broadcast(gameMessage(
-                Format.mm(
-                    "<team> have finished their game!",
-                    Placeholder.component("team", killedTeam.formattedName)
-                )
+                Format.mm("<team:${killedTeam.name}:name> have finished their game!")
             ))
             Bukkit.broadcast(gameMessage(
-                Format.mm(
-                    "<team> have finished their game!",
-                    Placeholder.component("team", killerTeam.formattedName)
-                )
+                Format.mm("<team:${killerTeam.name}:name> have finished their game!")
             ))
 
             // this game is becoming spaghetti very quickly
@@ -1211,7 +1205,7 @@ class CrumbleController : GameBase(
 
         val tnt = location.world.spawnEntity(location, EntityType.TNT) as TNTPrimed
         tnt.persistentDataContainer.set(
-            NamespacedKey("tumbling", "tnt_owner"),
+            NamespacedKey(TreeTumblers.NAMESPACE, "tnt_owner"),
             PersistentDataType.STRING,
             player.uniqueId.toString()
         )
@@ -1244,7 +1238,7 @@ class CrumbleController : GameBase(
         if(causingEntity == null || causingEntity !is TNTPrimed) return
 
         val dataContainer = causingEntity.persistentDataContainer
-        val causingPlayerUUID = dataContainer.get(NamespacedKey("tumbling", "tnt_owner"), PersistentDataType.STRING)
+        val causingPlayerUUID = dataContainer.get(NamespacedKey(TreeTumblers.NAMESPACE, "tnt_owner"), PersistentDataType.STRING)
         val causingPlayer = Bukkit.getPlayer(UUID.fromString(causingPlayerUUID))
 
         if(causingPlayerUUID == null || causingPlayer == null) {

@@ -17,6 +17,7 @@ class TreeTumblers : JavaPlugin() {
     companion object {
         lateinit var plugin: JavaPlugin
         lateinit var pluginLogger: Logger
+
         val pluginScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
         val httpClient = HttpClient(CIO) {
             install(ContentNegotiation) {
@@ -25,6 +26,8 @@ class TreeTumblers : JavaPlugin() {
                 })
             }
         }
+
+        const val NAMESPACE = "tumbling"
     }
 
     override fun onEnable() {

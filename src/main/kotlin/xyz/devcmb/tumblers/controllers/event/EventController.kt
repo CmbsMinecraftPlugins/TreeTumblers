@@ -526,9 +526,8 @@ class EventController : ControllerBase() {
                     Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
-                            "<team>" +
-                            "<br>".repeat(4),
-                    Placeholder.component("team", team.formattedName)
+                            "<team:${team.name}:name>" +
+                            "<br>".repeat(4)
                 ))
 
                 delay(1000)
@@ -543,10 +542,9 @@ class EventController : ControllerBase() {
                     Format.mm(
                     "<br>".repeat(15) +
                             "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
-                            "<team><br>" +
+                            "<team:${team.name}:name><br>" +
                             "With <gold>${teamScores[team] ?: 0}</gold> score!"+
-                            "<br>".repeat(3),
-                    Placeholder.component("team", team.formattedName)
+                            "<br>".repeat(3)
                 ))
             }
 
@@ -711,7 +709,7 @@ class EventController : ControllerBase() {
                 teamComponent = teamComponent.append(
                     Format.mm(
                         " <br><white>#?</white> <team><shift>${" ".repeat(60)}<gray>?????</gray> <br><players><br>",
-                        Placeholder.parsed("team", "<white><font:tumbling:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
+                        Placeholder.parsed("team", "<white><font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
                         // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
                         Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("????????") + 11)),
                         Placeholder.component("players", playersComponent)

@@ -96,7 +96,7 @@ class SnifferCaretakerController : GameBase(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
+                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")))
                 .append(Component.text(" Sniffer Caretaker")),
             "cutscene.start"
         ) { map ->
@@ -260,9 +260,8 @@ class SnifferCaretakerController : GameBase(
     badges = SnifferCaretakerBadge.entries
 ) {
     companion object {
-        val font = NamespacedKey("tumbling", "games/sniffer_caretaker")
-
-        val snifferTeamKey = NamespacedKey("tumbling", "sniffer_team")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")
+        val snifferTeamKey = NamespacedKey(TreeTumblers.NAMESPACE, "sniffer_team")
 
         @field:Configurable("games.sniffer_caretaker.game_length")
         var gameLength: Int = 600
@@ -974,7 +973,7 @@ class SnifferCaretakerController : GameBase(
         text = text.append(Component.text(" "))
 
         for (i in (1..task.stars)) {
-            text = text.append(Component.text(starSprite).font(NamespacedKey("tumbling", "games/sniffer_caretaker")))
+            text = text.append(Component.text(starSprite).font(NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")))
         }
 
         val score = scores.get(SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))

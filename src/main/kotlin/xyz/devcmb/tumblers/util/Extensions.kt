@@ -87,7 +87,7 @@ fun Player.tp(location: Location) {
 fun Player.fadeTp(location: Location) {
     val fade = 4
     val title = Title.title(
-        Component.text("\uE000").font(NamespacedKey("tumbling", "hud")),
+        Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
         Component.empty(),
         Title.Times.times(Tick.of(fade.toLong()), Tick.of(3), Tick.of(fade.toLong()))
     )

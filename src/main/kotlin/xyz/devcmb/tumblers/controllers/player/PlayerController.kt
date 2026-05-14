@@ -4,7 +4,6 @@ import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
 import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -136,7 +135,7 @@ class PlayerController : ControllerBase() {
             player.hidePlayer(TreeTumblers.plugin, it)
         }
 
-        event.joinMessage(Component.empty())
+        event.joinMessage(null)
         playerUIControllers.forEach { it.value.playerJoin(player) }
         playerUIControllers[player] = PlayerUIController(player)
 
@@ -152,12 +151,7 @@ class PlayerController : ControllerBase() {
         tumblingPlayer.bukkitPlayer = player
 
         player.displayName(Format.formatPlayerName(tumblingPlayer))
-        Bukkit.broadcast(
-            Component.text("[").color(NamedTextColor.GRAY)
-                .append(Component.text("+").color(NamedTextColor.GREEN))
-                .append(Component.text("] ").color(NamedTextColor.GRAY))
-                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
-        )
+        Bukkit.broadcast(Format.mm("<white>(<green>+</green>)</white> <player:${tumblingPlayer.uuid}>"))
     }
 
     @EventHandler
@@ -173,12 +167,8 @@ class PlayerController : ControllerBase() {
 
         nameTags[player]?.remove()
 
-        event.quitMessage(
-            Component.text("[").color(NamedTextColor.GRAY)
-                .append(Component.text("-").color(NamedTextColor.RED))
-                .append(Component.text("] ").color(NamedTextColor.GRAY))
-                .append(Format.formatPlayerName(tumblingPlayer).color(NamedTextColor.WHITE))
-        )
+        event.quitMessage(null)
+        Bukkit.broadcast(Format.mm("<white>(<red>-</red>)</white> <player:${tumblingPlayer.uuid}>"))
 
         tumblingPlayer.bukkitPlayer = null
     }
@@ -245,17 +235,23 @@ class PlayerController : ControllerBase() {
         if(connection !is PlayerLoginConnection) return
 
         val uuid = connection.authenticatedProfile?.id
+        if(!databaseController.isConnected()) {
+            val message = if(uuid == UUID.fromString("23b0c30a-501c-4e58-8f7f-934c86888f57"))
+                Format.mm("<aqua><st>${" ".repeat(60)}</st><br><br>" +
+                        "Laragon.<br><br>" +
+                        "<st>${" ".repeat(60)}</st></aqua>")
+            else Format.mm("<red><st>${" ".repeat(60)}</st><br><br>" +
+                    "Database initialization failed<br><br>" +
+                    "<st>${" ".repeat(60)}</st></red>")
 
-        runBlocking {
-            if (!databaseController.isWhitelisted(uuid.toString())) {
-                event.kickMessage(
-                    Component.text("———————————————————————————————", NamedTextColor.RED)
-                        .append(Component.newline())
-                        .append(Component.text("You are not whitelisted!", NamedTextColor.RED))
-                        .append(Component.newline())
-                        .append(Component.text("———————————————————————————————", NamedTextColor.RED))
-                )
-            }
+            event.kickMessage(message)
+            return
+        }
+
+        if (!players.any { it.uuid == uuid }) {
+            event.kickMessage(Format.mm("<green><st>${" ".repeat(60)}</st><br><br>" +
+                    "You aren't whitelisted!<br><br>" +
+                    "<st>${" ".repeat(60)}</st></green>"))
         }
     }
 

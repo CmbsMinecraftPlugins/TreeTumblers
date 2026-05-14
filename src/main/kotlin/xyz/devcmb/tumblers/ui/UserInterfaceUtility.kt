@@ -6,6 +6,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.engine.GameBase
@@ -15,13 +16,13 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.math.roundToInt
 
 object UserInterfaceUtility {
-    val SPACES = NamespacedKey("tumbling", "spaces")
-    val WARNINGS = NamespacedKey("tumbling", "warnings")
-    val HUD = NamespacedKey("tumbling", "hud")
-    val ICONS = NamespacedKey("tumbling", "icons")
+    val SPACES = NamespacedKey(TreeTumblers.NAMESPACE, "spaces")
+    val WARNINGS = NamespacedKey(TreeTumblers.NAMESPACE, "warnings")
+    val HUD = NamespacedKey(TreeTumblers.NAMESPACE, "hud")
+    val ICONS = NamespacedKey(TreeTumblers.NAMESPACE, "icons")
 
     // item model key
-    val FLAT_SKULL = NamespacedKey("tumbling", "flat_skull")
+    val FLAT_SKULL = NamespacedKey(TreeTumblers.NAMESPACE, "flat_skull")
 
     val CLOCK = Component.text("\uEF04").font(HUD)
 

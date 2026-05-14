@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.Fireball
 import org.bukkit.util.Vector
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.controllers.games.deathrun.Trap
 import xyz.devcmb.tumblers.util.Format
@@ -20,7 +21,7 @@ class HappyGhastTrap(
 ) : Trap {
     override val name: Component = Format.mm("<bold><yellow>Happy Ghast Trap</yellow></bold>")
     override val id: String = "happy_ghast"
-    override val itemKey: NamespacedKey = NamespacedKey("tumbling", "deathrun/happy_ghast_trap")
+    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "deathrun/happy_ghast_trap")
     override val cooldown: Int = 15
 
     override suspend fun activate() {

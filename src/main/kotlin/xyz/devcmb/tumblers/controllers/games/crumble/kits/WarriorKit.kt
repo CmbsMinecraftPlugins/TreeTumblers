@@ -12,6 +12,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -23,7 +24,7 @@ class WarriorKit(
 ) : Kit {
     override val id: String = "warrior"
     override val name: String = "Warrior"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/warrior")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/warrior")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),

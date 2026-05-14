@@ -10,6 +10,7 @@ import org.bukkit.event.entity.EntityShootBowEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -22,7 +23,7 @@ class ArcherKit(
 ) : Kit {
     override val id: String = "archer"
     override val name: String = "Archer"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/archer")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/archer")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)

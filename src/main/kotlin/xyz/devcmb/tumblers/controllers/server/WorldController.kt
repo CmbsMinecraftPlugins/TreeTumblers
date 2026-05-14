@@ -39,7 +39,7 @@ class WorldController : ControllerBase() {
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
 
-        val temporaryEntityKey: NamespacedKey = NamespacedKey("tumbling", "temp_entity")
+        val temporaryEntityKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "temp_entity")
     }
 
     val hubController: HubController by controller()

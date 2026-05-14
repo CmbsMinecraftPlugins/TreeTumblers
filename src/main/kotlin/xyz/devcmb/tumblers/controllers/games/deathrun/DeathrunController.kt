@@ -41,7 +41,6 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -69,7 +68,7 @@ class DeathrunController : GameBase(
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey("tumbling", "games/deathrun")))
+            .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")))
             .append(Component.text(" Deathrun"))
         ) {
             teleportConfig("cutscene.start")
@@ -173,7 +172,7 @@ class DeathrunController : GameBase(
     scoreboard = "deathrunScoreboard"
 ) {
     companion object {
-        val font = NamespacedKey("tumbling", "games/deathrun")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")
 
         @field:Configurable("games.deathrun.lives")
         var lives: Int = 3
@@ -480,12 +479,12 @@ class DeathrunController : GameBase(
         delay(1000)
         val audience = Audience.audience(gamePlayers)
         audience.sendMessage(gameMessage(
-            Format.mm("Round $currentRound: <team> are up!", Placeholder.component("team", currentTeam.formattedName))
+            Format.mm("Round $currentRound: <team:${currentTeam.name}:name> are up!")
         ))
 
         val title = Title.title(
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
-            Format.mm("<team> are up!", Placeholder.component("team", currentTeam.formattedName)),
+            Format.mm("<team:${currentTeam.name}:name> are up!"),
             Title.Times.times(Tick.of(5), Tick.of(80), Tick.of(5))
         )
         audience.showTitle(title)
@@ -735,7 +734,7 @@ class DeathrunController : GameBase(
         val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
-                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white><font:tumbling:hud>\uEF04</font> ${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
+                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white><font:${TreeTumblers.NAMESPACE}:hud>\uEF04</font> ${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )

@@ -5,6 +5,7 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.Constants
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 class DebugBossbar(override val id: String = "debugBossbar", override val padding: Int = 0) : HandledBossbar {
@@ -21,7 +22,7 @@ class DebugBossbar(override val id: String = "debugBossbar", override val paddin
                 .append(Component.text(Constants.BRANCH, NamedTextColor.GOLD))
                 .append(Component.text(" ").font(NamespacedKey("minecraft", "default")))
                 .append(Component.text("(${Constants.VERSION})", NamedTextColor.GRAY))
-                .font(NamespacedKey("tumbling", "default_shift/ascent_5")),
+                .font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_5")),
             text,
             250.0
         )

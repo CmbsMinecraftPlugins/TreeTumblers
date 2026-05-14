@@ -13,6 +13,7 @@ import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.EquipmentSlotGroup
 import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -27,7 +28,7 @@ class FisherKit(
 ) : Kit {
     override val id: String = "fisher"
     override val name: String = "Fisher"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/fisher")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/fisher")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack.of(Material.TRIDENT).apply {
             addEnchantment(Enchantment.LOYALTY, tridentLoyaltyLevel)

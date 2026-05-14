@@ -13,6 +13,7 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.ExplosionPrimeEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
@@ -25,7 +26,7 @@ class BomberKit(
 ) : Kit {
     override val id: String = "bomber"
     override val name: String = "Bomber"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/bomber")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/bomber")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),
@@ -53,8 +54,8 @@ class BomberKit(
     override val kitDisplayTextLength: Double = 48.5
 
     companion object {
-        val nukeKey = NamespacedKey("tumbling", "nuke")
-        val nukeIdKey = NamespacedKey("tumbling", "nuke_id")
+        val nukeKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke")
+        val nukeIdKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke_id")
 
         @field:Configurable("games.crumble.kits.bomber.nuke_explosion_ticks")
         var nukeExplosionTicks = 5

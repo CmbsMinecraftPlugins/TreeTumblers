@@ -7,10 +7,11 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
+import xyz.devcmb.tumblers.TreeTumblers
 
 object AdvancedItemRegistry {
     val items: HashMap<String, AdvancedItemStackContext> = HashMap()
-    val key = NamespacedKey("tumbling", "advanced_item")
+    val key = NamespacedKey(TreeTumblers.NAMESPACE, "advanced_item")
 
     fun register(stack: AdvancedItemStackContext) {
         items.put(stack.id, stack)

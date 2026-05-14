@@ -12,6 +12,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.inventory.meta.FireworkMeta
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 
@@ -21,7 +22,7 @@ class HunterKit(
 ) : Kit {
     override val id: String = "hunter"
     override val name: String = "Hunter"
-    override val inventoryModel: NamespacedKey = NamespacedKey("tumbling", "crumble/hunter")
+    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/hunter")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)
