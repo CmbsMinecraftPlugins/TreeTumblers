@@ -126,7 +126,7 @@ class EventCommand {
     @Execute(name = "recovery restore")
     fun executeRecoveryRestore(@Context sender: CommandSender, @Arg state: DatabaseController.EventRecoveryState, @Flag("--confirm", "-c") confirm: Boolean) {
         if(!confirm) {
-            sender.sendMessage(Format.mm("This action is destructive! Re-run with the --confirm flag to execute."))
+            sender.sendMessage(Format.warning("This action is destructive! Re-run with the --confirm flag to execute."))
             return
         }
 
