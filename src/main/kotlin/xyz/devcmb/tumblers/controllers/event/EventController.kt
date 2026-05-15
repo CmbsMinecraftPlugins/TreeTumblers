@@ -1226,11 +1226,12 @@ class EventController : ControllerBase() {
 
             Bukkit.broadcast(Format.success("Game state has been rolled back successfully!"))
 
-            eventTimer = Timer(60) {
+            eventTimer = Timer(10) {
                 id = "recovery_timer"
                 paused = true
                 joined = true
             }
+            eventTimerTitle = "Recovery"
             eventTimer!!.start()
 
             startEventLoop()

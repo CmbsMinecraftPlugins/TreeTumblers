@@ -93,7 +93,7 @@ class VotingController : ControllerBase() {
     val votingQuadrants: ArrayList<ArrayList<Location>> = ArrayList()
     val quadrantGames: HashMap<Int, GameController.RegisteredGame> = HashMap()
     val quadrantLogoDisplays: HashMap<Int, TextDisplay> = HashMap()
-    val votes: ArrayList<Int> = ArrayList()
+    val votes: HashMap<Int, Int> = HashMap()
     val quadrantDioramaEditSessions: HashMap<Int, EditSession?> = HashMap()
 
     val logoPositions by lazy {
@@ -364,7 +364,7 @@ class VotingController : ControllerBase() {
         quadrantGames.forEach { i, it ->
             votesComponent = votesComponent.append(
                 Format.mm(
-                    "<white><br><game> - ${it}</white>",
+                    "<white><br><game> - ${votes[i]}</white>",
                     Placeholder.component("game", Component.text(it.name, votingTextColors[i]))
                 )
             )
@@ -467,13 +467,14 @@ class VotingController : ControllerBase() {
     private fun countVotes(): Pair<GameController.RegisteredGame, Int> {
         var highest: Pair<Int, Int>? = null
 
-        votingQuadrants.forEachIndexed { i, it ->
-            if(quadrantGames[i] == null) return@forEachIndexed
+        quadrantGames.forEach { i, it ->
+            val quadrant = votingQuadrants[i]
+            if(quadrantGames[i] == null) return@forEach
 
-            val players = it.getPlayers(3, 0) { it.tumblingPlayer.team.playingTeam }
-            votes.add(players.size)
+            val players = quadrant.getPlayers(3, 0) { it.tumblingPlayer.team.playingTeam }
+            votes.put(i, players.size)
 
-            if(highest == null || players.size > highest.second) {
+            if(highest == null || players.size > highest!!.second) {
                 highest = Pair(i, players.size)
             }
         }
