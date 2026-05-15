@@ -157,30 +157,36 @@ class EventController : ControllerBase() {
         topbarRunnable.runTaskTimer(TreeTumblers.Companion.plugin, 0, 20)
     }
 
-    fun startEvent(finale: Boolean) {
-        TreeTumblers.Companion.pluginScope.launch {
+    fun startEvent(finale: Boolean, skipIntro: Boolean) {
+        TreeTumblers.pluginScope.launch {
             val ready = readyCheck()
             if(!ready) return@launch
 
             if(finale) game = totalGames
 
-            state = State.PRE_EVENT
-            eventTimer = Timer(64) {
-                id = "pre_event_timer"
-            }
-            eventTimerTitle = "Event Start"
-            eventTimer!!.start()
+            if(!skipIntro) {
+                state = State.PRE_EVENT
+                eventTimer = Timer(64) {
+                    id = "pre_event_timer"
+                }
+                eventTimerTitle = "Event Start"
+                eventTimer!!.start()
 
-            delay(3000)
-            eventStartSequence()
-
-            repeat(totalGames) {
-                eventLoop()
+                delay(3000)
+                eventStartSequence()
             }
 
-            finale()
-            cleanupEvent()
+            startEventLoop()
         }
+    }
+
+    suspend fun startEventLoop() {
+        repeat(totalGames) {
+            eventLoop()
+        }
+
+        finale()
+        cleanupEvent()
     }
 
     var actionBarTask: BukkitRunnable? = null
@@ -268,6 +274,8 @@ class EventController : ControllerBase() {
 
     suspend fun eventLoop() {
         if(game >= totalGames) return
+        // TODO: Something else for handling finale recovery
+        databaseController.saveEventState()
         game++
 
         if(game != 1 && !skipIntermission) {
@@ -420,6 +428,7 @@ class EventController : ControllerBase() {
         eventTimerTitle = "Finale"
         eventTimer!!.start()
 
+        state = State.FINAL_GAME
         gameController.startGame("breach")
     }
 
@@ -1185,6 +1194,81 @@ class EventController : ControllerBase() {
             }
         }
     }
+    fun recover(state: DatabaseController.EventRecoveryState) {
+        val eventState = state.eventState
+        Bukkit.broadcast(Format.warning("The current state of the event is being rolled back, please bear with us, things may lag!"))
+
+        game = eventState.currentGame
+        playedGames.clear()
+        playedGames.addAll(eventState.playedGames)
+        teamScores.clear()
+        teamScores.putAll(eventState.teamScores)
+        playerController.players.forEach { plr -> eventState.playerScores[plr.uuid.toString()]?.let { plr.score = it } }
+        lastGameTeamScores = eventState.lastGameTeamScores
+        lastGameTeamPlacements = eventState.lastGameTeamPlacements?.let { ArrayList(it) }
+
+        lastGamePlayerScores = eventState.lastGamePlayerScores?.let { HashMap(it.mapNotNull { entry ->
+            val player = playerController.players.find { plr -> plr.uuid == UUID.fromString(entry.key) }
+            player?.let { player to entry.value }
+        }.toMap()) }
+
+        lastGamePlayerPlacements = eventState.lastGamePlayerPlacements?.let { ArrayList(it.mapNotNull { entry ->
+            val player = playerController.players.find { plr -> plr.uuid == UUID.fromString(entry.first) }
+            player?.let { player to entry.second }
+        }) }
+
+        refreshLeaderboards()
+
+        TreeTumblers.pluginScope.launch {
+            eventState.votingQuadrantGames.forEach {
+                votingController.placeGame(it.key, gameController.games.find { game -> game.id == it.value }!!, null)
+            }
+
+            Bukkit.broadcast(Format.success("Game state has been rolled back successfully!"))
+
+            eventTimer = Timer(60) {
+                id = "recovery_timer"
+                paused = true
+                joined = true
+            }
+            eventTimer!!.start()
+
+            startEventLoop()
+        }
+    }
+
+    @Serializable
+    data class EventState(
+        /** Whether or not the event is currently active **/
+        val eventActive: Boolean,
+
+        /** The current value of the [currentGame] varaible **/
+        val currentGame: Int,
+
+        /** Where the current voting arena has dioramas placed. Will not contain a value for empty quadrant indices **/
+        val votingQuadrantGames: HashMap<Int, String>,
+
+        /** A list of all the game ids that have already been played this event **/
+        val playedGames: List<String>,
+
+        /** A list of pairs of a [Team] enum to their placement in the last played game **/
+        var lastGameTeamPlacements: List<Pair<Team, Int>>?,
+
+        /** A list of pairs of a [TumblingPlayer]'s UUID in string form to their placement in the last played game **/
+        var lastGamePlayerPlacements: List<Pair<String, Int>>?,
+
+        /** A hashmap of a [Team] enum to their score in the last played game **/
+        var lastGameTeamScores: HashMap<Team, Int>?,
+
+        /** A hashmap of a [TumblingPlayer]'s UUID in string form to their score in the last played game **/
+        var lastGamePlayerScores: HashMap<String, Int>?,
+
+        /** A hashmap of each [Team] to their score **/
+        val teamScores: HashMap<Team, Int>,
+
+        /** A hashmap of a [TumblingPlayer]'s UUID in string form to their overall score **/
+        val playerScores: HashMap<String, Int>
+    )
 
     enum class State {
         EVENT_INACTIVE,

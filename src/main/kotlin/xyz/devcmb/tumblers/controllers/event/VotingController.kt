@@ -357,11 +357,25 @@ class VotingController : ControllerBase() {
                 winningGame.first.logo,
                 Component.text("And the game is..."),
                 Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
-            ))
+            )
+        )
+
+        var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
+        quadrantGames.forEach { i, it ->
+            votesComponent = votesComponent.append(
+                Format.mm(
+                    "<white><br><game> - ${it}</white>",
+                    Placeholder.component("game", Component.text(it.name, votingTextColors[i]))
+                )
+            )
+        }
+
+        Bukkit.broadcast(votesComponent)
 
         suspendSync {
             cleanupDiorama(winningGame.second)
             quadrantLogoDisplays[winningIndex]!!.remove()
+            quadrantGames.remove(winningIndex)
             quadrantLogoDisplays.remove(winningIndex)
             votingQuadrants[winningIndex].forEach {
                 it.block.type = inactiveQuadrantMaterial
@@ -370,18 +384,6 @@ class VotingController : ControllerBase() {
                 it.key.block.type = it.value
             }
         }
-
-        var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
-        votes.forEachIndexed { i, it ->
-            votesComponent = votesComponent.append(
-                Format.mm(
-                    "<white><br><game> - ${it}</white>",
-                    Placeholder.component("game", Component.text(quadrantGames[i]!!.name, votingTextColors[i]))
-                )
-            )
-        }
-
-        Bukkit.broadcast(votesComponent)
 
         votes.clear()
         val nextGame = winningGame.first.id
@@ -393,7 +395,6 @@ class VotingController : ControllerBase() {
     private suspend fun summonGames() {
         if(quadrantGames.size > 2) return
 
-        val lobby = Bukkit.getWorld(lobbyWorld)!!
         repeat(4 - quadrantGames.size) {
             val games = gameController.games.filter { game -> !eventController.playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
             if(games.isEmpty()) return@repeat
@@ -405,40 +406,7 @@ class VotingController : ControllerBase() {
             val diorama = loadDiorama(game.id, index)
             blinkQuadrant(it, votingConcretes[index], 3, 200, true)
 
-            if(diorama != null) {
-                runTask {
-                    val (session, operation) = diorama
-
-                    try {
-                        Operations.complete(operation)
-                        session.flushQueue()
-
-                        quadrantDioramaEditSessions.put(index, session)
-                    } catch(e: Exception) {
-                        session.close()
-                        DebugUtil.severe("Failed to load game diorama for ${game.id}: ${e.message}")
-                    }
-                }
-            } else {
-                quadrantDioramaEditSessions.put(index, null)
-            }
-
-            suspendSync {
-                val logoDisplay = lobby.spawn(logoLocations[it], TextDisplay::class.java) { display ->
-                    display.text(game.logo)
-                    display.transformation = Transformation(
-                        Vector3f(),
-                        logoQuaternions[index],
-                        Vector3f(6.0f, 6.0f, 6.0f),
-                        Quaternionf(0f, 0f, 0f, 1f)
-                    )
-                    display.isDefaultBackground = false
-                    display.backgroundColor = Color.fromARGB(0)
-                    display.brightness = Display.Brightness(15, 15)
-                }
-
-                quadrantLogoDisplays[index] = logoDisplay
-            }
+            placeGame(it, game, diorama)
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                 Title.title(
@@ -448,6 +416,51 @@ class VotingController : ControllerBase() {
                 ))
 
             delay(2500)
+        }
+    }
+
+    suspend fun placeGame(quadrantIndex: Int, game: GameController.RegisteredGame, dioramaSession: Pair<EditSession, Operation>?) {
+        // this just makes it turn on regardless of state, good for the recovery system because with the animation that takes time, this doesn't
+        blinkQuadrant(quadrantIndex, votingConcretes[quadrantIndex], 0, 0, true)
+
+        val diorama = dioramaSession ?: loadDiorama(game.id, quadrantIndex)
+
+        val lobby = Bukkit.getWorld(lobbyWorld)!!
+        quadrantGames.put(quadrantIndex, game)
+
+        if(diorama != null) {
+            runTask {
+                val (session, operation) = diorama
+
+                try {
+                    Operations.complete(operation)
+                    session.flushQueue()
+
+                    quadrantDioramaEditSessions.put(quadrantIndex, session)
+                } catch(e: Exception) {
+                    session.close()
+                    DebugUtil.severe("Failed to load game diorama for ${game.id}: ${e.message}")
+                }
+            }
+        } else {
+            quadrantDioramaEditSessions.put(quadrantIndex, null)
+        }
+
+        suspendSync {
+            val logoDisplay = lobby.spawn(logoLocations[quadrantIndex], TextDisplay::class.java) { display ->
+                display.text(game.logo)
+                display.transformation = Transformation(
+                    Vector3f(),
+                    logoQuaternions[quadrantIndex],
+                    Vector3f(6.0f, 6.0f, 6.0f),
+                    Quaternionf(0f, 0f, 0f, 1f)
+                )
+                display.isDefaultBackground = false
+                display.backgroundColor = Color.fromARGB(0)
+                display.brightness = Display.Brightness(15, 15)
+            }
+
+            quadrantLogoDisplays[quadrantIndex] = logoDisplay
         }
     }
 

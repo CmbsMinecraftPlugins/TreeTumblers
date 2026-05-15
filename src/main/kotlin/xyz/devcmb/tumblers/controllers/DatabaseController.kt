@@ -4,6 +4,7 @@ import com.destroystokyo.paper.profile.PlayerProfile
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -14,6 +15,7 @@ import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.event.VotingController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
@@ -23,6 +25,7 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
 import java.sql.Timestamp
+import java.util.Date
 import java.util.UUID
 import kotlin.toString
 
@@ -66,6 +69,7 @@ class DatabaseController : ControllerBase() {
     private val eventController: EventController by controller()
     private val playerController: PlayerController by controller()
     private val gameController: GameController by controller()
+    private val votingController: VotingController by controller()
 
     override fun init() {
         val url = "jdbc:mysql://$host:$port/$database?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
@@ -81,6 +85,7 @@ class DatabaseController : ControllerBase() {
 
                 createTables()
                 setupTeams()
+                loadRecoveryStates()
             } catch (e: SQLException) {
                 DebugUtil.severe("Failed to connect to the MySQL database: ${e.message}")
             }
@@ -118,11 +123,20 @@ class DatabaseController : ControllerBase() {
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
         """.trimIndent()
 
+        val createState = """
+            CREATE TABLE IF NOT EXISTS `tumbling_state` (
+                id VARCHAR(12) PRIMARY KEY,
+                state JSON NOT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """.trimIndent()
+
         try {
             connection.createStatement().use {
                 it.executeUpdate(createPlayers)
                 it.executeUpdate(createTeams)
                 it.executeUpdate(createBadges)
+                it.executeUpdate(createState)
             }
         } catch (e: SQLException) {
             DebugUtil.severe("Failed to create default tables in the MySQL database: ${e.message}")
@@ -312,6 +326,53 @@ class DatabaseController : ControllerBase() {
 
         statement.executeBatch()
     }
+
+    val recoveryStates: ArrayList<EventRecoveryState> = ArrayList()
+    suspend fun saveEventState() = withContext(Dispatchers.IO) {
+        val state = EventController.EventState(
+            eventController.state != EventController.State.EVENT_INACTIVE,
+            eventController.game,
+            HashMap(votingController.quadrantGames.map { it.key to it.value.id }.toMap()),
+            eventController.playedGames,
+            eventController.lastGameTeamPlacements,
+            eventController.lastGamePlayerPlacements?.map { it.first.uuid.toString() to it.second },
+            eventController.lastGameTeamScores,
+            eventController.lastGamePlayerScores?.let { HashMap(it.map { entry -> entry.key.uuid.toString() to entry.value }.toMap()) },
+            eventController.teamScores,
+            HashMap(playerController.players.associate { it.uuid.toString() to it.score })
+        )
+
+        val id = UUID.randomUUID().toString().replace("-", "").take(12)
+        recoveryStates.add(EventRecoveryState(id, state, Timestamp(Date().time)))
+
+        val statement = connection.prepareStatement("""
+            INSERT INTO tumbling_state (id, state) VALUES (?, ?)
+        """.trimIndent())
+
+        statement.setString(1, id)
+        statement.setString(2, Json.encodeToString(state))
+        statement.executeUpdate()
+    }
+
+    suspend fun loadRecoveryStates() = withContext(Dispatchers.IO) {
+        recoveryStates.clear()
+
+        val statement = connection.prepareStatement("""
+            SELECT * FROM tumbling_state
+        """.trimIndent())
+
+        val resultSet = statement.executeQuery()
+        while(resultSet.next()) {
+            val id: String = resultSet.getString("id")
+            val stateJson: String = resultSet.getString("state")
+            val timestamp: Timestamp = resultSet.getTimestamp("created_at")
+
+            val eventState: EventController.EventState = Json.decodeFromString(stateJson)
+            recoveryStates.add(EventRecoveryState(id, eventState, timestamp))
+        }
+    }
+
+    data class EventRecoveryState(val id: String, val eventState: EventController.EventState, val timestamp: Timestamp)
 
     @EventHandler(priority = EventPriority.LOWEST)
     fun playerJoin(event: PlayerJoinEvent) {

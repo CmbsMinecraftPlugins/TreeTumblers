@@ -10,17 +10,20 @@ import kotlinx.coroutines.launch
 import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.Format
+import java.text.SimpleDateFormat
 
 @Command(name = "event")
 @Permission("tumbling.event")
 class EventCommand {
     val eventController: EventController by ControllerRegistry.controller()
+    val databaseController: DatabaseController by ControllerRegistry.controller()
 
     @Execute(name = "start")
-    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean) {
+    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean, @Flag("--skip-intro") skipIntro: Boolean) {
         if(eventController.state != EventController.State.EVENT_INACTIVE) {
             sender.sendMessage(Format.error("The event is already active!"))
             return
@@ -42,7 +45,7 @@ class EventCommand {
         }
 
 
-        eventController.startEvent(finale)
+        eventController.startEvent(finale, skipIntro)
         sender.sendMessage(Format.success("Start signal sent successfully!"))
     }
 
@@ -92,5 +95,42 @@ class EventCommand {
     fun executePodiumsRefresh(@Context sender: CommandSender) {
         eventController.refreshLeaderboards()
         sender.sendMessage(Format.success("Podiums refreshed successfully!"))
+    }
+
+    @Execute(name = "recovery list")
+    fun executeRecover(@Context sender: CommandSender) {
+        var component = Format.mm("<green>Here's a list of recovery states for the event:</green>")
+        databaseController.recoveryStates.forEachIndexed { index, state ->
+            component = component.append(Format.mm("<br><white><yellow><click:run_command:/event recovery state ${state.id}>[${state.id}]</click></yellow> - ${SimpleDateFormat("hh:mm:ss EEE MMM d").format(state.timestamp.time)}${if(index == 0) " <gold>(latest)</gold>" else ""}</white>"))
+        }
+
+        sender.sendMessage(component)
+    }
+
+    @Execute(name = "recovery state")
+    fun executeRecoveryState(@Context sender: CommandSender, @Arg state: DatabaseController.EventRecoveryState) {
+        val eventState = state.eventState
+        sender.sendMessage(Format.mm(
+            "<white><green>Recovery state <yellow>${state.id}</yellow></green><br>" +
+                    "Event Active: <aqua>${eventState.eventActive}</aqua><br>" +
+                    "Current Game: <aqua>${eventState.currentGame}</aqua><br>" +
+                    "Voting Quadrant Games: <aqua>${eventState.votingQuadrantGames}</aqua><br>" +
+                    "Played Games: <aqua>${eventState.playedGames}</aqua><br>" +
+                    "Last Game Team Placements: <aqua>${eventState.lastGameTeamPlacements?.let { "[${it.size} entries]" } ?: "null"}</aqua><br>" +
+                    "Last Game Player Placements: <aqua>${eventState.lastGamePlayerPlacements?.let { "[${it.size} entries]" } ?: "null"}</aqua><br>" +
+                    "Last Game Team Scores: <aqua>${eventState.lastGameTeamScores?.let { "[${it.size} entries]" } ?: "null"}</aqua><br>" +
+                    "Last Game Player Scores: <aqua>${eventState.lastGamePlayerScores?.let { "[${it.size} entries]" } ?: "null"}</aqua></white>"
+        ))
+    }
+
+    @Execute(name = "recovery restore")
+    fun executeRecoveryRestore(@Context sender: CommandSender, @Arg state: DatabaseController.EventRecoveryState, @Flag("--confirm", "-c") confirm: Boolean) {
+        if(!confirm) {
+            sender.sendMessage(Format.mm("This action is destructive! Re-run with the --confirm flag to execute."))
+            return
+        }
+
+        sender.sendMessage(Format.info("Starting restore job"))
+        eventController.recover(state)
     }
 }

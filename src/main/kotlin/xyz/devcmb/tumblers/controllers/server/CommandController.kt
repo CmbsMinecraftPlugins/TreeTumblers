@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.commands.arguments.GameArgument
 import xyz.devcmb.tumblers.commands.arguments.PartyGameArgument
 import xyz.devcmb.tumblers.commands.arguments.PartyGameSchematicArgument
 import xyz.devcmb.tumblers.commands.arguments.QibTypeArgument
+import xyz.devcmb.tumblers.commands.arguments.RecoveryStateArgument
 import xyz.devcmb.tumblers.commands.arguments.TeamArgument
 import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
 import xyz.devcmb.tumblers.commands.arguments.TimerArgument
@@ -33,6 +34,7 @@ import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
 import xyz.devcmb.tumblers.commands.organizer.TeamCommand
 import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
 import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.player.NoxesiumController
@@ -48,7 +50,7 @@ import xyz.devcmb.tumblers.util.Format
 class CommandController : ControllerBase() {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {
-        liteCommands = LiteBukkitFactory.builder("tumblers", TreeTumblers.Companion.plugin)
+        liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.Companion.plugin)
             .commands(
                 DebugCommand(),
                 WhitelistCommand(),
@@ -75,6 +77,7 @@ class CommandController : ControllerBase() {
             .argument(PlayerController.ChatChannel::class.java, ChatChannelArgument())
             .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
             .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
+            .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())
             .extension(LiteAdventureExtension<CommandSender>()) { config ->
                 config.serializer(Format.miniMessage)
             }
