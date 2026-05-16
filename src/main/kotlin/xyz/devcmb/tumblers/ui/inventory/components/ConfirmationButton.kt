@@ -87,6 +87,6 @@ class ConfirmationButton(
 
     enum class ConfirmationButtonType(val itemName: Component, val model: String, val clickedModel: String) {
         YES(Format.mm("<green><b>Yes</b></green>"), "confirmation/yes_large", "confirmation/yes_large_clicked"),
-        NO(Format.mm("<green><b>No</b></green>"),"confirmation/no_large", "confirmation/no_large_clicked")
+        NO(Format.mm("<red><b>No</b></red>"),"confirmation/no_large", "confirmation/no_large_clicked")
     }
 }
