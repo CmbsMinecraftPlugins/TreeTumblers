@@ -33,7 +33,7 @@ class WorldController : ControllerBase() {
         var worldRoot: String = "&/templates/worlds"
             get() {
                 return field
-                    .replace("&", TreeTumblers.Companion.plugin.dataFolder.path.toString())
+                    .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
             }
 
         @field:Configurable("lobby.world")
@@ -122,7 +122,7 @@ class WorldController : ControllerBase() {
 
         val worldsFolder = Path.of(
             worldRoot,
-            TreeTumblers.Companion.plugin.config.getString("${game.configRoot}.worlds_folder")
+            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
         )
 
         saveWorld(world, File(worldsFolder.toString(), name))
@@ -149,10 +149,9 @@ class WorldController : ControllerBase() {
         delay(3000)
 
         withContext(Dispatchers.IO) {
-            val destination = path
-            FileUtils.copyDirectory(worldFolder, destination)
+            FileUtils.copyDirectory(worldFolder, path)
 
-            val idFile = File(destination, "uid.dat")
+            val idFile = File(path, "uid.dat")
             if (idFile.exists()) {
                 idFile.delete()
             }
@@ -172,7 +171,7 @@ class WorldController : ControllerBase() {
         val game = game.getTemplate()
         val worldsFolder = File(
             worldRoot,
-            TreeTumblers.Companion.plugin.config.getString("${game.configRoot}.worlds_folder")!!
+            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
         )
 
         return File(worldsFolder, name).exists()

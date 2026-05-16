@@ -46,7 +46,7 @@ class BadgeController : ControllerBase() {
 
     fun grantBadge(player: TumblingPlayer, badge: Badge) {
         if(player.badges.contains(badge)) return
-        player.badges.put(badge, Timestamp(Date().time))
+        player.badges[badge] = Timestamp(Date().time)
     }
 
     interface Badge {

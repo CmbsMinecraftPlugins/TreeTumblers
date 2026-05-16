@@ -20,10 +20,10 @@ class CooldownBossbar(
         val activeGame = gameController.activeGame
         if(activeGame == null || activeGame !is DeathrunController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
 
-        val currentTrap = activeGame.currentTraps[player]
-        if(currentTrap == null) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
+        val currentTrap = activeGame.currentTraps[player] ?: return Component.text(DebugUtil.DebugLogLevel.ERROR.icon)
+            .font(UserInterfaceUtility.WARNINGS)
 
-        val cooldownTime = activeGame.cooldownTimes.get(currentTrap)
+        val cooldownTime = activeGame.cooldownTimes[currentTrap]
         return if(cooldownTime != null) {
             val trap = activeGame.mapTraps[activeGame.roundIndex]!![currentTrap]
             val elapsedSeconds = (System.currentTimeMillis() - cooldownTime) / 1000L

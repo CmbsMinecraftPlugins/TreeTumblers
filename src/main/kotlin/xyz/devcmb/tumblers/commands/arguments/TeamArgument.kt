@@ -17,7 +17,7 @@ class TeamArgument: ArgumentResolver<CommandSender, Team>() {
         argument: String
     ): ParseResult<Team> {
         val types = Team.entries
-        val enum = types.find { it.name.lowercase() == argument.lowercase() }
+        val enum = types.find { it.name.equals(argument, ignoreCase = true) }
 
         if(enum == null) {
             return ParseResult.failure(Format.error("That isn't a valid team"))

@@ -62,7 +62,7 @@ class GameController : ControllerBase() {
     }
 
     fun startGameAsync(id: String) {
-        TreeTumblers.Companion.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
             startGame(id)
         }
     }
@@ -76,19 +76,19 @@ class GameController : ControllerBase() {
         val game = gameClass.getDeclaredConstructor().newInstance()
 
         activeGame = game
-        Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.Companion.plugin)
+        Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
         game.load()
         game.finishLoading()
         game.runCutscene()
         game.pregame()
-        activeGameJob = TreeTumblers.Companion.pluginScope.launch {
+        activeGameJob = TreeTumblers.pluginScope.launch {
             game.gameMain()
         }
         activeGameJob!!.join()
         activeGameJob = null
         game.basePostGame()
-        TreeTumblers.Companion.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
             game.cleanup()
         }
         HandlerList.unregisterAll(game)

@@ -22,7 +22,7 @@ object DebugUtil {
     val loggingSubscriptions: HashMap<Player, DebugLogLevel> = HashMap()
 
     fun subscribe(player: Player, level: DebugLogLevel) {
-        loggingSubscriptions.put(player, level)
+        loggingSubscriptions[player] = level
     }
 
     fun info(message: String) = log(message, DebugLogLevel.INFO)
@@ -38,7 +38,7 @@ object DebugUtil {
 
         val stackTrace = Thread.currentThread().stackTrace
         val caller = stackTrace[3]
-        loggingSubscriptions.forEach { player, logLevel ->
+        loggingSubscriptions.forEach { (player, logLevel) ->
             if(logLevel.level >= level.level) {
                 player.sendMessage(
                     Component.text("[")

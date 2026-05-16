@@ -29,7 +29,7 @@ class MaceDuels(
                 it.addEnchant(Enchantment.WIND_BURST, 1, true)
             }
         }, ItemStack.of(Material.WIND_CHARGE, 64))
-        override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true

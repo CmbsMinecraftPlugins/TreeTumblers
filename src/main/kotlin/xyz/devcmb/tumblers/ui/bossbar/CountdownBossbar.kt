@@ -15,8 +15,7 @@ class CountdownBossbar(
 ) : HandledBossbar {
 
     override fun getComponent(): Component {
-        val currentGame = gameController.activeGame
-        if(currentGame == null) return Component.text("0:00")
+        val currentGame = gameController.activeGame ?: return Component.text("0:00")
 
         if(currentGame.currentTimer?.paused == true) {
             return UserInterfaceUtility.backgroundTextCenter(

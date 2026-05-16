@@ -28,7 +28,7 @@ class MusicController : ControllerBase() {
             }
 
             loopingTasks[it] = loopTask
-            loopTask.runTaskTimer(TreeTumblers.Companion.plugin, 0L, music.duration)
+            loopTask.runTaskTimer(TreeTumblers.plugin, 0L, music.duration)
         }
     }
 

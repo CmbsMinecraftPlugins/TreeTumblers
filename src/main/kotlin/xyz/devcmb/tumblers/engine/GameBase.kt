@@ -147,10 +147,10 @@ abstract class GameBase(
         gamePlayers.addAll(Bukkit.getOnlinePlayers())
         gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
         gameParticipants.forEach {
-            playerScores.put(it.tumblingPlayer, 0)
+            playerScores[it.tumblingPlayer] = 0
         }
         Team.entries.filter { it.playingTeam }.forEach {
-            teamScores.put(it, 0)
+            teamScores[it] = 0
         }
 
         Bukkit.getOnlinePlayers().forEach {
@@ -356,7 +356,7 @@ abstract class GameBase(
                 it.deactivateScoreboard("healthIndicatorScoreboard")
                 it.activateScoreboard("intermissionScoreboard")
 
-                it.uiController.otherTeams.forEach { tumblingTeam, team ->
+                it.uiController.otherTeams.forEach { (_, team) ->
                     team.setOption(
                         org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
                         org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
@@ -440,8 +440,8 @@ abstract class GameBase(
         val amount = amountOverride ?: getScoreSource(source)
         val team = player.team
 
-        teamScores.put(team, teamScores[team]!! + amount)
-        playerScores.put(player, (playerScores[player] ?: 0) + amount)
+        teamScores[team] = teamScores[team]!! + amount
+        playerScores[player] = (playerScores[player] ?: 0) + amount
 
         if(scoreMessages.contains(source) && player.bukkitPlayer != null)
             player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
@@ -480,7 +480,7 @@ abstract class GameBase(
                 remainder--
             }
 
-            scores.put(it, scoreToGrant)
+            scores[it] = scoreToGrant
             grantScore(it, source, scoreToGrant)
         }
 

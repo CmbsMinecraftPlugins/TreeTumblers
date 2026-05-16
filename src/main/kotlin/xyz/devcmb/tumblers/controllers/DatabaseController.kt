@@ -217,7 +217,7 @@ class DatabaseController : ControllerBase() {
 
         statement.executeUpdate()
 
-        player.badges.forEach { badge, timestamp ->
+        player.badges.forEach { (badge, timestamp) ->
             val insertStatement = connection.prepareStatement("""
                 INSERT INTO tumbling_badges (badge, game, player, achieved)
                 SELECT ?, ?, ?, ?
@@ -253,7 +253,7 @@ class DatabaseController : ControllerBase() {
             val uuidColumn = resultSet.getString("uuid")
             val username = resultSet.getString("username")
 
-            val team = Team.entries.find { it.name.lowercase() == teamColumn.lowercase() }
+            val team = Team.entries.find { it.name.equals(teamColumn, ignoreCase = true) }
             if(team == null) {
                 throw TumblingDatabaseException("Could not find a team with value $teamColumn")
             }
@@ -280,7 +280,7 @@ class DatabaseController : ControllerBase() {
                 // if a game gets fully removed and had badges we have bigger fish to fry
                 val badge = registeredGame.badges?.find { it.name.lowercase() == id } ?: continue
 
-                badges.put(badge, timestamp)
+                badges[badge] = timestamp
             }
 
             tumblingPlayer.bukkitPlayer = Bukkit.getPlayer(uuid)
@@ -305,7 +305,7 @@ class DatabaseController : ControllerBase() {
         while(resultSet.next()) {
             val name = resultSet.getString("name")
             val score = resultSet.getInt("score")
-            map.put(Team.entries.find { it.name == name.uppercase() }!!, score)
+            map[Team.entries.find { it.name.equals(name, ignoreCase = true) }!!] = score
         }
 
         map

@@ -26,12 +26,12 @@ class SpectatorController : ControllerBase() {
     override fun init() {
         spectatorTask = object : BukkitRunnable() {
             override fun run() {
-                spectators.forEach { player, bar ->
+                spectators.forEach { (player, bar) ->
                     if(bar) player.sendActionBar(Format.mm("<gray>Spectating</gray>"))
                 }
             }
         }
-        spectatorTask!!.runTaskTimer(TreeTumblers.Companion.plugin, 0, 10)
+        spectatorTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
     }
 
     override fun cleanup() {
@@ -39,7 +39,7 @@ class SpectatorController : ControllerBase() {
     }
 
     fun makeSpectator(player: Player, sendActionBar: Boolean = true) {
-        spectators.put(player, sendActionBar)
+        spectators[player] = sendActionBar
 
         player.hideToAll()
         player.heal(20.0)

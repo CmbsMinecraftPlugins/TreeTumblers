@@ -20,7 +20,7 @@ class DebugCommand {
         val loggingLevel = loggingLevel.getOrNull()
         if(loggingLevel == null) {
             player.sendMessage(
-                Format.info("You are currently in the ${DebugUtil.loggingSubscriptions.getOrElse(player, { DebugUtil.DebugLogLevel.NONE })} logging group")
+                Format.info("You are currently in the ${DebugUtil.loggingSubscriptions.getOrElse(player) { DebugUtil.DebugLogLevel.NONE }} logging group")
             )
             return
         }

@@ -20,10 +20,8 @@ class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
         context: Argument<Timer>,
         argument: String
     ): ParseResult<Timer> {
-        val timer = timerController.timers[argument]
-        if(timer == null) {
-            return ParseResult.failure(Format.error("Timer does not exist!"))
-        }
+        val timer =
+            timerController.timers[argument] ?: return ParseResult.failure(Format.error("Timer does not exist!"))
 
         return ParseResult.success(timer)
     }

@@ -13,7 +13,7 @@ import xyz.devcmb.tumblers.packet.ScoreboardNumbersListener
 @Controller(Controller.Priority.HIGH)
 class PacketController : ControllerBase() {
     override fun init() {
-        val api = SpigotPacketEventsBuilder.build(TreeTumblers.Companion.plugin)
+        val api = SpigotPacketEventsBuilder.build(TreeTumblers.plugin)
         PacketEvents.setAPI(api)
         PacketEvents.getAPI().load()
 

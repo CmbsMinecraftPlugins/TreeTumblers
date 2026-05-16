@@ -504,7 +504,7 @@ class SnifferCaretakerController : GameBase(
 
                 snifferLocation.chunk.load()
 
-                chestItems.forEach { key, _ ->
+                chestItems.forEach { (key, _) ->
                     val chestPosition = currentMap.data.getList(key)?.validateLocation(map.world)
                         ?: throw GameControllerException("Chest position not found")
 
@@ -615,7 +615,7 @@ class SnifferCaretakerController : GameBase(
 
         val tickTask = object : BukkitRunnable() {
             override fun run() {
-                timers.forEach { key, it ->
+                timers.forEach { (key, _) ->
                     timers[key] = timers[key]!! - 1
                     if (timers[key]!! < 0) {
                         timers[key] = timerBases[key]!!
@@ -675,7 +675,7 @@ class SnifferCaretakerController : GameBase(
      */
     override suspend fun postGame() {
         suspendSync {
-            currentTasks.forEach { team, tasks ->
+            currentTasks.forEach { (team, tasks) ->
                 tasks.forEach { task ->
                     completeTask(
                         team,
@@ -738,7 +738,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun stockChests(team: Team) {
-        chestItems.forEach { key, it ->
+        chestItems.forEach { (key, it) ->
             val chestPosition = currentMap.data.getList(key)?.validateLocation(currentMap.world)
                 ?: throw GameControllerException("Chest position not found")
 
@@ -756,9 +756,8 @@ class SnifferCaretakerController : GameBase(
 
                 fun chooseIndex() : Int {
                     val index = (0..26).random()
-                    val slot = inventory.getItem(index)
+                    val slot = inventory.getItem(index) ?: return index
 
-                    if (slot == null) return index
                     if (slot.type != material) return chooseIndex()
 
                     return index
@@ -801,9 +800,7 @@ class SnifferCaretakerController : GameBase(
             val doorMin = offsetLocation(door[0]!!, team)
             val doorMax = offsetLocation(door[1]!!, team)
 
-            var i = 0
-
-            for (it in (doorMin.y.toInt()..doorMax.y.toInt())) {
+            for ((i, it) in (doorMin.y.toInt()..doorMax.y.toInt()).withIndex()) {
                 runTaskLater((i * 3).toLong()) {
                     currentMap.world.fill(
                         Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
@@ -811,8 +808,6 @@ class SnifferCaretakerController : GameBase(
                         Material.AIR
                     )
                 }
-
-                i++
             }
 
             currentMap.world.fill(
@@ -876,9 +871,7 @@ class SnifferCaretakerController : GameBase(
                 }
             }
 
-            var i = 0
-
-            for (it in (doorMin.y.toInt()..doorMax.y.toInt()).reversed()) {
+            for ((i, it) in (doorMin.y.toInt()..doorMax.y.toInt()).reversed().withIndex()) {
                 runTaskLater((i * 3).toLong() + 70) {
                     currentMap.world.fill(
                         Location(currentMap.world, doorMin.x, it.toDouble(), doorMin.z),
@@ -887,7 +880,6 @@ class SnifferCaretakerController : GameBase(
                     )
                 }
 
-                i++
             }
 
             runTaskLater(70) {
@@ -937,8 +929,8 @@ class SnifferCaretakerController : GameBase(
         if (task.completer != null && task.completer!!.isOnline) {
             grantScore(task.completer!!, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
 
-            completedTasks.put(task.completer!!.tumblingPlayer, (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + 1)
-            starsCollected.put(task.completer!!.tumblingPlayer, (starsCollected[task.completer!!.tumblingPlayer] ?: 0) + task.stars)
+            completedTasks[task.completer!!.tumblingPlayer] = (completedTasks[task.completer!!.tumblingPlayer] ?: 0) + 1
+            starsCollected[task.completer!!.tumblingPlayer] = (starsCollected[task.completer!!.tumblingPlayer] ?: 0) + task.stars
         } else {
             grantTeamScore(team, SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
         }
@@ -976,7 +968,7 @@ class SnifferCaretakerController : GameBase(
             text = text.append(Component.text(starSprite).font(NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")))
         }
 
-        val score = scores.get(SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR"))
+        val score = scores[SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR")]
 
         text = text.append(Format.mm(" <gold>[+${score}]</gold>"))
 
@@ -1056,7 +1048,7 @@ class SnifferCaretakerController : GameBase(
         createdTask.display = display
         createdTask.init()
 
-        currentTasks.get(team)!!.add(createdTask)
+        currentTasks[team]!!.add(createdTask)
         currentMap.world.playSound(displayLocation, Sound.BLOCK_NOTE_BLOCK_BELL, 1.0f, (createdTask.stars.toFloat() / 12f) + 0.7f)
         Bukkit.getServer().pluginManager.registerEvents(createdTask, TreeTumblers.plugin)
 
@@ -1092,7 +1084,7 @@ class SnifferCaretakerController : GameBase(
     }
 
     fun updateSigns(team: Team) {
-        signs[team]!!.forEach { key, it ->
+        signs[team]!!.forEach { (key, it) ->
             it.interpolationDelay = 0
             it.interpolationDuration = 0
             it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))

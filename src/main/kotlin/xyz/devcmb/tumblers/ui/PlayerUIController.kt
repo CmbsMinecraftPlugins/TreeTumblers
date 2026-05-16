@@ -74,7 +74,7 @@ class PlayerUIController(val player: Player) {
             val team = playerScoreboard.registerNewTeam(it.name.lowercase())
             team.color(it.namedColor)
             team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
-            otherTeams.put(it, team)
+            otherTeams[it] = team
         }
 
         Bukkit.getOnlinePlayers().forEach {
@@ -189,8 +189,8 @@ class PlayerUIController(val player: Player) {
 
         player.showBossBar(bossbar)
 
-        activeBossBars.put(id, bossbar)
-        paddingBossBars.put(id, ArrayList())
+        activeBossBars[id] = bossbar
+        paddingBossBars[id] = ArrayList()
 
         repeat(bar.padding) {
             val paddingBar = BossBar.bossBar(

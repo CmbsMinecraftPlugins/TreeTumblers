@@ -20,7 +20,7 @@ class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.Cha
         val channels = PlayerController.ChatChannel.entries
         val channel = channels
             .filter { if(invocation.sender() is Player) it.canSend(invocation.sender() as Player) else true }
-            .find { it.name.lowercase() == argument.lowercase() }
+            .find { it.name.equals(argument, ignoreCase = true) }
 
         if(channel == null) {
             return ParseResult.failure(Format.error("Invalid channel name!"))

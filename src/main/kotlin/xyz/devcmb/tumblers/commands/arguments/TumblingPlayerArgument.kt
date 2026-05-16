@@ -21,7 +21,7 @@ class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() 
         argument: String
     ): ParseResult<TumblingPlayer> {
         val players = playerController.players
-        val player = players.find { it.name.lowercase() == argument.lowercase() }
+        val player = players.find { it.name.equals(argument, ignoreCase = true) }
 
         if(player == null) {
             return ParseResult.failure(Format.error("That isn't a valid player"))

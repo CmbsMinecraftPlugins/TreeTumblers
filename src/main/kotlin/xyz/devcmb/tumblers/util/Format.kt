@@ -50,7 +50,7 @@ object Format {
             })
             .resolver(TagResolver.resolver("team") { args, context ->
                 val team = args.popOr { "Team argument must be a specified team color!" }.value()
-                val tumblingTeam = Team.entries.find { it.name.lowercase() == team.lowercase() }
+                val tumblingTeam = Team.entries.find { it.name.equals(team, ignoreCase = true) }
                 if(tumblingTeam == null) {
                     throw IllegalStateException("Team argument must be a valid team color!")
                 }

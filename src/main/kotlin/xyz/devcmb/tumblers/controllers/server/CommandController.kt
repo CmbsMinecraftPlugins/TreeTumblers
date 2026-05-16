@@ -50,7 +50,7 @@ import xyz.devcmb.tumblers.util.Format
 class CommandController : ControllerBase() {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {
-        liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.Companion.plugin)
+        liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.plugin)
             .commands(
                 DebugCommand(),
                 WhitelistCommand(),
@@ -78,7 +78,7 @@ class CommandController : ControllerBase() {
             .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
             .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
             .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())
-            .extension(LiteAdventureExtension<CommandSender>()) { config ->
+            .extension(LiteAdventureExtension()) { config ->
                 config.serializer(Format.miniMessage)
             }
             .invalidUsage(InvalidUsageHandler())

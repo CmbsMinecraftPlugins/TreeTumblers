@@ -83,7 +83,7 @@ class CutsceneContext(
         pig.isInvisible = true
         pig.addPassenger(player)
 
-        step.pigs.put(player, pig)
+        step.pigs[player] = pig
     }
 
     @EventHandler

@@ -14,7 +14,7 @@ object AdvancedItemRegistry {
     val key = NamespacedKey(TreeTumblers.NAMESPACE, "advanced_item")
 
     fun register(stack: AdvancedItemStackContext) {
-        items.put(stack.id, stack)
+        items[stack.id] = stack
     }
 
     fun handleInteract(event: PlayerInteractEvent) {

@@ -11,7 +11,7 @@ class TimerController : ControllerBase() {
     }
 
     fun register(timer: Timer) {
-        timers.put(timer.id, timer)
+        timers[timer.id] = timer
     }
 
     fun unregister(timer: Timer) {

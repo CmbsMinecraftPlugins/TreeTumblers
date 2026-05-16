@@ -20,7 +20,7 @@ class StandardAxeDuels(
     override val id: String = "shared_standard_axe_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.WOODEN_AXE))
-        override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true

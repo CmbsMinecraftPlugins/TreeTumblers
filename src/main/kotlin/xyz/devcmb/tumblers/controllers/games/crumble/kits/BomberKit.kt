@@ -137,8 +137,7 @@ class BomberKit(
         val player = event.entity
         if(player !is Player) return
 
-        val causingEntity = event.damageSource.directEntity
-        if(causingEntity == null) return
+        val causingEntity = event.damageSource.directEntity ?: return
 
         val dataContainer = causingEntity.persistentDataContainer
         if (dataContainer.get(nukeKey, PersistentDataType.BOOLEAN) == true) {

@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.deathrun.traps
 
-import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -36,7 +36,7 @@ class BeamRunTrap(
                 int.toDouble()
             }
         }?.forEach {
-            TreeTumblers.pluginScope.async {
+            TreeTumblers.pluginScope.launch {
                 val currentMap = deathrunController.currentMap
                 val location = it.unpackCoordinates(currentMap.world)
                 val sourceId = (0..10000000).random()

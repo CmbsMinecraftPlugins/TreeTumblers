@@ -221,7 +221,7 @@ class DeathrunController : GameBase(
         }
     )
 
-    override val debugToolkit: DebugToolkit? = object : DebugToolkit() {
+    override val debugToolkit: DebugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (CommandSender) -> Unit> = hashMapOf()
 
         override fun killEvent(killer: Player?, killed: Player?) {
@@ -320,7 +320,7 @@ class DeathrunController : GameBase(
                 trapClass.newInstance(this, data, start, end)
             } ?: throw GameControllerException("Traps list not found"))
 
-            mapTraps.put(it, roundMapTraps)
+            mapTraps[it] = roundMapTraps
         }
     }
 
@@ -384,7 +384,7 @@ class DeathrunController : GameBase(
         player.tp(attackerSpawn)
         player.enableBossBar("deathrunCooldownBossbar")
 
-        placements[roundIndex].put(player, -2)
+        placements[roundIndex][player] = -2
         giveTrapItem(player, player.location)
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
     }
@@ -682,7 +682,7 @@ class DeathrunController : GameBase(
                     return@rightClick
                 }
 
-                cooldownTimes.put(index, System.currentTimeMillis())
+                cooldownTimes[index] = System.currentTimeMillis()
                 TreeTumblers.pluginScope.launch {
                     val round = currentRound
                     trap.activate()
@@ -747,8 +747,8 @@ class DeathrunController : GameBase(
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
 
-        completionTimes.put(player, ticksElapsed)
-        placements[roundIndex].put(player, completionTimes.size)
+        completionTimes[player] = ticksElapsed
+        placements[roundIndex][player] = completionTimes.size
 
         MiscUtils.spawnFirework(player, FireworkEffect.builder()
             .trail(false)
@@ -782,7 +782,7 @@ class DeathrunController : GameBase(
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
-        placements[roundIndex].put(player, -1)
+        placements[roundIndex][player] = -1
 
         player.showTitle(Title.title(
             Component.empty(),
@@ -818,7 +818,7 @@ class DeathrunController : GameBase(
         val currentCheckpoint = playerCheckpoints[player] ?: -1
         if(index <= currentCheckpoint) return
 
-        playerCheckpoints.put(player, index)
+        playerCheckpoints[player] = index
         player.showTitle(Title.title(
             Component.empty(),
             Format.success("Checkpoint!"),

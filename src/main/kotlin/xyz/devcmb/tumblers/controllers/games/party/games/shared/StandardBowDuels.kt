@@ -26,7 +26,7 @@ class StandardBowDuels(
                 it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
             }
         }, ItemStack.of(Material.ARROW))
-        override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true

@@ -38,8 +38,7 @@ class ThirstyTask(
         val tumblingPlayer = event.player.tumblingPlayer
         if (tumblingPlayer.team != team) return
 
-        val cauldron = event.clickedBlock
-        if (cauldron == null) return
+        val cauldron = event.clickedBlock ?: return
         if (cauldron.type != Material.CAULDRON) return
 
         val playerItem = event.item

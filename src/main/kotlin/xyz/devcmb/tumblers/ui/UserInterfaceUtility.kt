@@ -142,7 +142,7 @@ object UserInterfaceUtility {
     }
 
     fun refreshAll(id: String) {
-        playerController.playerUIControllers.forEach { player, controller ->
+        playerController.playerUIControllers.forEach { (player, controller) ->
             val inv = controller.inventories.find { it.id == id }
             require(inv != null) { "Inventory with an id of $id was not found for ${player.name}" }
             inv.inventory.reload()
@@ -182,7 +182,7 @@ object UserInterfaceUtility {
             )
 
             val nextPlacement = placements.getOrNull(teamPlacementIndex - 2)
-            if(teams.filter { it != null }.size != 3 && nextPlacement != null) {
+            if(teams.filterNotNull().size != 3 && nextPlacement != null) {
                 teams.addFirst(nextPlacement)
             }
 

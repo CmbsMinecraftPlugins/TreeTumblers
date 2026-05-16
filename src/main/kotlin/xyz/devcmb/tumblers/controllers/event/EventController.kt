@@ -7,6 +7,7 @@ import io.papermc.paper.datacomponent.item.ResolvableProfile
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.Serializable
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
@@ -141,7 +142,7 @@ class EventController : ControllerBase() {
     }
 
     override fun init() {
-        TreeTumblers.Companion.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
             teamScores = databaseController.getTeamScores()
         }
 
@@ -154,7 +155,7 @@ class EventController : ControllerBase() {
                 }
             }
         }
-        topbarRunnable.runTaskTimer(TreeTumblers.Companion.plugin, 0, 20)
+        topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
 
     fun startEvent(finale: Boolean, skipIntro: Boolean) {
@@ -220,7 +221,7 @@ class EventController : ControllerBase() {
                 )
             }
         }
-        actionBarTask!!.runTaskTimer(TreeTumblers.Companion.plugin, 0, 10)
+        actionBarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
 
         delay(4000)
 
@@ -768,7 +769,7 @@ class EventController : ControllerBase() {
 
     fun grantScore(player: TumblingPlayer, amount: Int) {
         player.score += amount
-        teamScores.put(player.team, (teamScores[player.team] ?: 0) + amount)
+        teamScores[player.team] = (teamScores[player.team] ?: 0) + amount
     }
 
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
@@ -786,7 +787,7 @@ class EventController : ControllerBase() {
     fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
         playerController.players.filter { it.team.playingTeam }.forEach {
-            playerScores.put(it, it.score)
+            playerScores[it] = it.score
         }
 
         val sorted = playerScores.entries.sortedWith(
@@ -798,7 +799,7 @@ class EventController : ControllerBase() {
     fun replicateScores() {
         if(!eventMode) return
 
-        TreeTumblers.Companion.pluginScope.launch {
+        TreeTumblers.pluginScope.launch {
             DebugUtil.info("Replicating event data...")
             databaseController.replicateTeamData(teamScores)
             playerController.players.forEach {
@@ -995,7 +996,7 @@ class EventController : ControllerBase() {
                 true
             )
             display.isVisibleByDefault = false
-            player.showEntity(TreeTumblers.Companion.plugin, display)
+            player.showEntity(TreeTumblers.plugin, display)
 
             textDisplays.add(display)
             playerSpecificMannequinNameTags[player]!!.add(display)
@@ -1018,12 +1019,12 @@ class EventController : ControllerBase() {
 
             if(player != null) {
                 npc.isVisibleByDefault = false
-                player.showEntity(TreeTumblers.Companion.plugin, npc)
+                player.showEntity(TreeTumblers.plugin, npc)
                 playerSpecificMannequins[player]!!.add(npc)
             }
 
             val player = placement.first
-            TreeTumblers.Companion.pluginScope.launch {
+            TreeTumblers.pluginScope.launch {
                 val data = getSkinData(player)
                 val skin = data.properties.first()
 
@@ -1046,7 +1047,7 @@ class EventController : ControllerBase() {
             displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.Companion.plugin, it)
+                    player.showEntity(TreeTumblers.plugin, it)
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
@@ -1059,7 +1060,7 @@ class EventController : ControllerBase() {
         displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
             if(player != null) {
                 it.isVisibleByDefault = false
-                player.showEntity(TreeTumblers.Companion.plugin, it)
+                player.showEntity(TreeTumblers.plugin, it)
                 playerSpecificMannequinNameTags[player]!!.add(it)
             }
 
@@ -1071,7 +1072,7 @@ class EventController : ControllerBase() {
             displays.add(location.world.spawn(location.clone().add(0.0,offset,0.0), TextDisplay::class.java) {
                 if(player != null) {
                     it.isVisibleByDefault = false
-                    player.showEntity(TreeTumblers.Companion.plugin, it)
+                    player.showEntity(TreeTumblers.plugin, it)
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
@@ -1095,7 +1096,7 @@ class EventController : ControllerBase() {
     suspend fun getSkinData(player: TumblingPlayer): SkinDataResponse {
         if(skinResponseCache.containsKey(player)) return skinResponseCache[player]!!
 
-        return TreeTumblers.Companion.httpClient.get(
+        return TreeTumblers.httpClient.get(
             "https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}?unsigned=false"
         ).body<SkinDataResponse>()
     }
@@ -1136,8 +1137,8 @@ class EventController : ControllerBase() {
     @EventHandler(priority = EventPriority.HIGH)
     fun playerJoinEvent(event: PlayerJoinEvent) {
         val player = event.player
-        playerSpecificMannequins.put(player, arrayListOf())
-        playerSpecificMannequinNameTags.put(player, arrayListOf())
+        playerSpecificMannequins[player] = arrayListOf()
+        playerSpecificMannequinNameTags[player] = arrayListOf()
 
         spawnPlayerIndividualMannequin(player)
     }
@@ -1219,7 +1220,7 @@ class EventController : ControllerBase() {
 
         refreshLeaderboards()
 
-        TreeTumblers.pluginScope.launch {
+        runBlocking {
             eventState.votingQuadrantGames.forEach {
                 votingController.placeGame(it.key, gameController.games.find { game -> game.id == it.value }!!, null)
             }

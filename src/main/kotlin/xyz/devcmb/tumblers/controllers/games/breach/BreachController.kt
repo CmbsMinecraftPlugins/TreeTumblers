@@ -364,7 +364,7 @@ class BreachController: GameBase(
 
             gamePlayers.forEach {
                 if (it.tumblingPlayer.team != playingTeams.first && it.tumblingPlayer.team != playingTeams.second) {
-                    makeSpectator(it, true, false)
+                    makeSpectator(it, sendActionBar = true, participating = false)
                     it.tp(spectatorSpawn)
                 }
             }
@@ -505,7 +505,7 @@ class BreachController: GameBase(
 
 
             if (gameState == GameState.KIT_SELECT) {
-                if (chosenKits.get(player) != null) {
+                if (chosenKits[player] != null) {
                     giveKit(player, chosenKits[player]!!)
                 } else {
                     player.inventory.setItem(8, kitSelector.clone())
@@ -515,7 +515,7 @@ class BreachController: GameBase(
             if (gameState == GameState.PRE_ROUND) {
                 player.closeInventory()
 
-                if (chosenKits.get(player) == null) {
+                if (chosenKits[player] == null) {
                     chosenKits[player] = BreachKit.entries.random()
                 }
 
@@ -530,7 +530,7 @@ class BreachController: GameBase(
             }
         } else {
             player.tp(spectatorSpawn)
-            makeSpectator(player, true, false)
+            makeSpectator(player, sendActionBar = true, participating = false)
         }
     }
 
@@ -576,7 +576,7 @@ class BreachController: GameBase(
             playingTeams.first.getOnlinePlayers().forEach {
                 it.closeInventory()
 
-                if (chosenKits.get(it) == null) {
+                if (chosenKits[it] == null) {
                     chosenKits[it] = BreachKit.entries.random()
                 }
 
@@ -586,7 +586,7 @@ class BreachController: GameBase(
             playingTeams.second.getOnlinePlayers().forEach {
                 it.closeInventory()
 
-                if (chosenKits.get(it) == null) {
+                if (chosenKits[it] == null) {
                     chosenKits[it] = BreachKit.entries.random()
                 }
 
@@ -604,7 +604,7 @@ class BreachController: GameBase(
     fun roundStart(round: Int) {
         val doors: List<List<List<Int>>> = (currentMap.data.getList("doors")?.map { list ->
             if (list !is List<*>) throw GameControllerException("Door locations is not a valid list")
-            list.map { it ->
+            list.map {
                 if (it !is List<*>) throw GameControllerException("Door locations is not a valid list")
                 it.validateList<Int>() ?: throw GameControllerException("Door locations does not contain exclusively Integers")
             }
@@ -962,7 +962,7 @@ class BreachController: GameBase(
         }
     }
 
-    override fun overrideTabList(): Component? {
+    override fun overrideTabList(): Component {
         var component = Component.empty()
 
         playingTeams.toList().forEachIndexed { index, team ->

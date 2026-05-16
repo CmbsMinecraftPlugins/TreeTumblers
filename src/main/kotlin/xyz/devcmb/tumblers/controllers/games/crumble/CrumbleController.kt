@@ -328,7 +328,7 @@ class CrumbleController : GameBase(
 
         val teams = Team.entries.filter { it.playingTeam }.toMutableList()
         teams.forEach {
-            alivePlayers.put(it, arrayListOf())
+            alivePlayers[it] = arrayListOf()
         }
 
         repeat(rounds) {
@@ -362,8 +362,8 @@ class CrumbleController : GameBase(
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
-        kitTemplates.put(id, kit.getConstructor(Player::class.java, CrumbleController::class.java).newInstance(null, this))
-        registeredKits.put(id, kit)
+        kitTemplates[id] = kit.getConstructor(Player::class.java, CrumbleController::class.java).newInstance(null, this)
+        registeredKits[id] = kit
     }
 
     override suspend fun spawn(cycle: SpawnCycle) {
@@ -702,7 +702,7 @@ class CrumbleController : GameBase(
         spawn(SpawnCycle.PRE_ROUND)
         alivePlayers.values.forEach { it.clear() }
         Team.entries.filter { it.playingTeam }.forEach {
-            alivePlayers.put(it, ArrayList(it.getAllPlayers()))
+            alivePlayers[it] = ArrayList(it.getAllPlayers())
         }
         gamePlayers.forEach {
             it.enableBossBar("crumbleAliveTeamsBossbar")
@@ -822,7 +822,7 @@ class CrumbleController : GameBase(
 
         Team.entries.filter { it.playingTeam }.forEach {
             if(matchResults[roundIndex][it] == null) {
-                matchResults[roundIndex].put(it, RoundResult.DRAW)
+                matchResults[roundIndex][it] = RoundResult.DRAW
             }
         }
 
@@ -884,7 +884,7 @@ class CrumbleController : GameBase(
 
     suspend fun dropWalls() {
         val currentMap = loadedMaps.getOrNull(roundIndex)
-        if(currentMap == null) throw GameControllerException("Current map for round $currentRound was not found")
+            ?: throw GameControllerException("Current map for round $currentRound was not found")
 
         val walls = currentMap.data.getList("walls")
             ?.map { wall ->
@@ -949,7 +949,7 @@ class CrumbleController : GameBase(
         }
 
         grantTeamScore(team, CommonScoreSource.TEAM_ROUND_WIN)
-        matchResults[roundIndex].put(team, RoundResult.WIN)
+        matchResults[roundIndex][team] = RoundResult.WIN
     }
 
     fun roundLoss(team: Team) {
@@ -964,7 +964,7 @@ class CrumbleController : GameBase(
         }
 
         grantTeamScore(team, CommonScoreSource.TEAM_ROUND_LOSE)
-        matchResults[roundIndex].put(team, RoundResult.LOSS)
+        matchResults[roundIndex][team] = RoundResult.LOSS
     }
 
     fun roundDraw(team: Team) {
@@ -979,7 +979,7 @@ class CrumbleController : GameBase(
         }
 
         grantTeamScore(team, CommonScoreSource.TEAM_ROUND_DRAW)
-        matchResults[roundIndex].put(team, RoundResult.DRAW)
+        matchResults[roundIndex][team] = RoundResult.DRAW
     }
 
     fun giveKits() = playerKits.keys.forEach(this::givePlayerKit)
@@ -1060,12 +1060,12 @@ class CrumbleController : GameBase(
 
     fun selectKit(player: Player, id: String) {
         deselectKit(player)
-        require(registeredKits.get(id) != null) { "Kit with id $id does not exist" }
+        require(registeredKits[id] != null) { "Kit with id $id does not exist" }
 
         val kit = registeredKits[id]!!
             .getDeclaredConstructor(Player::class.java, CrumbleController::class.java)
             .newInstance(player, this)
-        playerKits.put(player.tumblingPlayer, kit)
+        playerKits[player.tumblingPlayer] = kit
         givePlayerKit(player, true)
         Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
     }

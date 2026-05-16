@@ -20,7 +20,7 @@ class StandardSwordDuels(
     override val id: String = "shared_standard_sword_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.STONE_SWORD))
-        override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true

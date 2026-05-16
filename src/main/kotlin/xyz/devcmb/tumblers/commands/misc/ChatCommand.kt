@@ -16,7 +16,7 @@ class ChatCommand {
 
     @Execute
     fun executeChat(@Context executor: Player, @Arg channel: PlayerController.ChatChannel) {
-        playerController.channels.put(executor, channel)
+        playerController.channels[executor] = channel
         executor.sendMessage(Format.info(Format.mm(
             "You are now in the <channel> channel.",
             Placeholder.component("channel", Format.mm("<color:${channel.color.asHexString()}>${channel.channelName}</color>"))

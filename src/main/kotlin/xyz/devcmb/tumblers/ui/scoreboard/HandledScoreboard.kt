@@ -17,7 +17,7 @@ sealed interface HandledScoreboard {
     fun update(scoreboard: Scoreboard)
     fun disable(scoreboard: Scoreboard)
 
-    abstract class SidebarScoreboard() : HandledScoreboard {
+    abstract class SidebarScoreboard : HandledScoreboard {
         var objective: Objective? = null
         val lastLines: ArrayList<Component> = ArrayList()
         val scores: ArrayList<Score> = ArrayList()

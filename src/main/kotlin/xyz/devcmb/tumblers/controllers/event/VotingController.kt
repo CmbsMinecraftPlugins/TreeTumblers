@@ -79,7 +79,7 @@ class VotingController : ControllerBase() {
         @field:Configurable("templates.dioramas")
         var dioramasFolder: String = "&/templates/dioramas"
             get() {
-                return field.replace("&", TreeTumblers.Companion.plugin.dataFolder.toString())
+                return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
             }
 
         @field:Configurable("lobby.world")
@@ -308,7 +308,7 @@ class VotingController : ControllerBase() {
                     suspendSync {
                         blocks.forEach { base ->
                             val location = Location(base.world, base.x, base.y + i, base.z)
-                            originalBlocks.put(location, location.block.type)
+                            originalBlocks[location] = location.block.type
                             location.block.type = quadrantReplacement
                         }
                     }
@@ -361,7 +361,7 @@ class VotingController : ControllerBase() {
         )
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
-        quadrantGames.forEach { i, it ->
+        quadrantGames.forEach { (i, it) ->
             votesComponent = votesComponent.append(
                 Format.mm(
                     "<white><br><game> - ${votes[i]}</white>",
@@ -401,7 +401,7 @@ class VotingController : ControllerBase() {
 
             val index = (0..3).first { num -> num !in quadrantGames.keys }
             val game = games.random()
-            quadrantGames.put(index, game)
+            quadrantGames[index] = game
 
             val diorama = loadDiorama(game.id, index)
             blinkQuadrant(it, votingConcretes[index], 3, 200, true)
@@ -426,7 +426,7 @@ class VotingController : ControllerBase() {
         val diorama = dioramaSession ?: loadDiorama(game.id, quadrantIndex)
 
         val lobby = Bukkit.getWorld(lobbyWorld)!!
-        quadrantGames.put(quadrantIndex, game)
+        quadrantGames[quadrantIndex] = game
 
         if(diorama != null) {
             runTask {
@@ -436,14 +436,14 @@ class VotingController : ControllerBase() {
                     Operations.complete(operation)
                     session.flushQueue()
 
-                    quadrantDioramaEditSessions.put(quadrantIndex, session)
+                    quadrantDioramaEditSessions[quadrantIndex] = session
                 } catch(e: Exception) {
                     session.close()
                     DebugUtil.severe("Failed to load game diorama for ${game.id}: ${e.message}")
                 }
             }
         } else {
-            quadrantDioramaEditSessions.put(quadrantIndex, null)
+            quadrantDioramaEditSessions[quadrantIndex] = null
         }
 
         suspendSync {
@@ -467,14 +467,14 @@ class VotingController : ControllerBase() {
     private fun countVotes(): Pair<GameController.RegisteredGame, Int> {
         var highest: Pair<Int, Int>? = null
 
-        quadrantGames.forEach { i, it ->
+        quadrantGames.forEach { (i, _) ->
             val quadrant = votingQuadrants[i]
             if(quadrantGames[i] == null) return@forEach
 
             val players = quadrant.getPlayers(3, 0) { it.tumblingPlayer.team.playingTeam }
-            votes.put(i, players.size)
+            votes[i] = players.size
 
-            if(highest == null || players.size > highest!!.second) {
+            if(highest == null || players.size > highest.second) {
                 highest = Pair(i, players.size)
             }
         }
@@ -543,7 +543,7 @@ class VotingController : ControllerBase() {
 
     override fun serverLoad() {
         val lobby = Bukkit.getWorld(lobbyWorld)!!
-        val votingQuadrantPositions = TreeTumblers.Companion.plugin.config.getList("event.voting.quadrants")?.map {
+        val votingQuadrantPositions = TreeTumblers.plugin.config.getList("event.voting.quadrants")?.map {
             if(it !is List<*>) throw TumblingEventException("Voting quadrant is not a 2d list")
             it.validateList<Int>() ?: throw TumblingEventException("Voting quadrant does not contain exclusively Integers")
         } ?: throw TumblingEventException("Voting quadrant positions not provided")

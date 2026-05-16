@@ -7,8 +7,10 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.session.ClipboardHolder
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -269,7 +271,7 @@ class PartyController : GameBase(
         }
 
         gameParticipants.forEach {
-            gameOutcomes.put(it, ArrayList())
+            gameOutcomes[it] = ArrayList()
         }
 
         pivot = pivotLocation
@@ -563,11 +565,11 @@ class PartyController : GameBase(
         matchup.announceLoading()
 
         if(matchup is PartyMatchup.IndividualMatchup && matchup.player1 != null && matchup.player2 != null) {
-            lastIndividualMatchups.put(matchup.player1, matchup.player2)
-            lastIndividualMatchups.put(matchup.player2, matchup.player1)
+            lastIndividualMatchups[matchup.player1] = matchup.player2
+            lastIndividualMatchups[matchup.player2] = matchup.player1
         } else if(matchup is PartyMatchup.TeamMatchup) {
-            lastTeamMatchups.put(matchup.team1, matchup.team2)
-            lastTeamMatchups.put(matchup.team2, matchup.team1)
+            lastTeamMatchups[matchup.team1] = matchup.team2
+            lastTeamMatchups[matchup.team2] = matchup.team1
         }
 
         val gameClass = game
@@ -583,39 +585,40 @@ class PartyController : GameBase(
         Bukkit.getPluginManager().registerEvents(gameClass, TreeTumblers.plugin)
         activeGames.add(gameClass)
 
-        val schematicFolder = File(partyGamesDirectory, gameClass.id)
-        if(!schematicFolder.exists() || !schematicFolder.isDirectory) throw GameControllerException("Game ${gameClass.id} does not have any schematic files")
-
-        val chosenSchematic = Files.list(Path.of(schematicFolder.path)).use { it.toList() }.random()
-        val chosenFile = File(chosenSchematic.toString())
-        val format = ClipboardFormats.findByFile(chosenFile)
-
-        if(format == null) throw GameControllerException("Schematic $chosenSchematic for game ${gameClass.id} is not a valid schematic!")
-
         val clipboard: Clipboard
-        format.getReader(chosenFile.inputStream()).use { reader ->
-            clipboard = reader.read()
-        }
-
         val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(xPosition)
 
-        val editSession = WorldEdit.getInstance()
-            .newEditSessionBuilder()
-            .world(BukkitAdapter.adapt(map.world))
-            .fastMode(true)
-            .build()
+        withContext(Dispatchers.IO) {
+            val schematicFolder = File(partyGamesDirectory, gameClass.id)
+            if(!schematicFolder.exists() || !schematicFolder.isDirectory) throw GameControllerException("Game ${gameClass.id} does not have any schematic files")
 
-        val operation = ClipboardHolder(clipboard)
-            .createPaste(editSession)
-            .to(pos)
-            .ignoreAirBlocks(false)
-            .build()
+            val chosenSchematic = Files.list(Path.of(schematicFolder.path)).use { it.toList() }.random()
+            val chosenFile = File(chosenSchematic.toString())
+            val format = ClipboardFormats.findByFile(chosenFile)
+                ?: throw GameControllerException("Schematic $chosenSchematic for game ${gameClass.id} is not a valid schematic!")
 
-        Operations.complete(operation)
-        editSession.flushQueue()
-        editSession.close()
+            format.getReader(chosenFile.inputStream()).use { reader ->
+                clipboard = reader.read()
+            }
 
-        DebugUtil.success("Loaded party arena $chosenSchematic successfully")
+            val editSession = WorldEdit.getInstance()
+                .newEditSessionBuilder()
+                .world(BukkitAdapter.adapt(map.world))
+                .fastMode(true)
+                .build()
+
+            val operation = ClipboardHolder(clipboard)
+                .createPaste(editSession)
+                .to(pos)
+                .ignoreAirBlocks(false)
+                .build()
+
+            Operations.complete(operation)
+            editSession.flushQueue()
+            editSession.close()
+
+            DebugUtil.success("Loaded party arena $chosenSchematic successfully")
+        }
 
         val firstSideSpawns: ArrayList<Location> = ArrayList()
         val secondSideSpawns: ArrayList<Location> = ArrayList()

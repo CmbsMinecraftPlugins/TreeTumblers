@@ -24,7 +24,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                 },
                 ItemStack(Material.ARROW, 1)
             )
-            override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.BOW
     ),
@@ -43,7 +43,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                 },
                 ItemStack(Material.ARROW, 1)
             )
-            override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.CROSSBOW
     ),
@@ -61,7 +61,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                     }
                 }
             )
-            override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.TRIDENT
     )

@@ -79,7 +79,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     }
 
     fun timeExecution(time: Int, method: suspend Timer.() -> Unit) {
-        timeExecutions.put(time, method)
+        timeExecutions[time] = method
     }
 
 

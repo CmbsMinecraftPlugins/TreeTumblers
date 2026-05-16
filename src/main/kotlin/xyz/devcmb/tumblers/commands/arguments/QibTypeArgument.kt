@@ -17,7 +17,7 @@ class QibTypeArgument: ArgumentResolver<CommandSender, NoxesiumController.QibTyp
         argument: String
     ): ParseResult<NoxesiumController.QibType> {
         val types = NoxesiumController.QibType.entries
-        val enum = types.find { it.name.lowercase() == argument.lowercase() }
+        val enum = types.find { it.name.equals(argument, ignoreCase = true) }
 
         if(enum == null) {
             return ParseResult.failure(Format.error("That isn't a valid Qib Type"))

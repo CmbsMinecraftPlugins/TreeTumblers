@@ -45,7 +45,7 @@ class MagmaFallTrap(
         suspendSync {
             replaceStart.forEachRegion(replaceEnd) {
                 if(it.type == replaceBlockType) {
-                    oldBlocks.put(it.location, it.type)
+                    oldBlocks[it.location] = it.type
                     it.type = Material.RED_CONCRETE
                 }
             }

@@ -141,7 +141,7 @@ object MiscUtils {
     }
 
     fun getOrdinalSuffix(num: Int): String {
-        if (num % 100 >= 11 && num % 100 <= 13) {
+        if (num % 100 in 11..13) {
             return "th"
         }
         return when (num % 10) {

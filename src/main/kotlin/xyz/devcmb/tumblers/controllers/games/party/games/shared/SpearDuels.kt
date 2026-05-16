@@ -20,7 +20,7 @@ class SpearDuels(
     override val id: String = "shared_spear_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.DIAMOND_SPEAR))
-        override val teamArmorSlot: EquipmentSlot? = EquipmentSlot.FEET
+        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
     }
 
     override val team: Boolean = true

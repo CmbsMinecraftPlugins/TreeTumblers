@@ -43,7 +43,7 @@ object ControllerRegistry : Listener {
         val manager: PluginManager = Bukkit.getServer().pluginManager
         manager.registerEvents(controller, TreeTumblers.plugin)
 
-        controllers.put(controller, annotation.priority)
+        controllers[controller] = annotation.priority
         controller.init() // guess who forgot this :eyes:
         DebugUtil.success("Registered controller ${controller::class.java.simpleName} successfully")
     }
