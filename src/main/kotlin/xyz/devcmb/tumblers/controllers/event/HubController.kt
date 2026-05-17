@@ -10,12 +10,14 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.TumblingGenericException
 import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -56,6 +58,9 @@ class HubController : ControllerBase() {
 
         @field:Configurable("lobby.spawn.floor")
         var lobbySpawnFloor: Material = Material.STONE_BRICKS
+
+        @field:Configurable("lobby.void_height")
+        var voidHeight: Int = 144
     }
 
     val compass = AdvancedItemStack(Material.COMPASS) {
@@ -115,5 +120,11 @@ class HubController : ControllerBase() {
         if(isHub && event.player.gameMode != GameMode.CREATIVE) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        if(event.to.y > voidHeight) return
+        event.player.fadeTp(getLobbyPosition())
     }
 }

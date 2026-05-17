@@ -80,11 +80,14 @@ fun Player.tp(location: Location) {
 
     playerController.removeNametag(this)
     this.teleport(location)
-
     playerController.reloadNametag(this)
 }
 
-fun Player.fadeTp(location: Location) {
+val teleportingPlayers: ArrayList<Player> = ArrayList()
+fun Player.fadeTp(location: Location, force: Boolean = false) {
+    if(this in teleportingPlayers && !force) return
+    teleportingPlayers.add(this)
+
     val fade = 4
     val title = Title.title(
         Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
@@ -95,6 +98,7 @@ fun Player.fadeTp(location: Location) {
     this.showTitle(title)
     runTaskLater(fade.toLong()) {
         this.tp(location)
+        teleportingPlayers.remove(player)
     }
 }
 

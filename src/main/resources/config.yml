@@ -91,6 +91,7 @@ templates:
 lobby:
   # The hub world
   world: hub
+
   # Where to teleport players in the hub world
   spawn:
     start: [-76, 200, 13]
@@ -102,6 +103,8 @@ lobby:
   navigator:
     lodge: [-73, 202, 8, -90, 0]
     practice_courses: [40, 202, -92, 180, 0]
+
+  void_height: 144
 
 games:
   crumble:
