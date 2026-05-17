@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.ui.inventory.hub
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import org.bukkit.Bukkit
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
@@ -23,8 +24,11 @@ class HubNavigationInventory(
     override val id: String = "hubNavigationInventory",
 ) : HandledInventory {
     companion object {
-        @field:Configurable("lobby.spawn.navigate")
-        var navigationPosition: List<Int> = listOf(-73, 202, 8, -90, 0)
+        @field:Configurable("lobby.navigator.lodge")
+        var lodgeNavigationPosition: List<Int> = listOf(-73, 202, 8, -90, 0)
+
+        @field:Configurable("lobby.navigator.practice_courses")
+        var practiceCoursesNavigationPosition: List<Int> = listOf(40, 201, -92, 180, 0)
 
         @field:Configurable("lobby.world")
         var lobbyWorld: String = "hub"
@@ -38,25 +42,43 @@ class HubNavigationInventory(
         val page = ChestInventoryPage()
         addPage("main", page, true)
 
-        page.addItem(InventoryItem(
-            getItemStack = { page, item ->
-                ItemStack.of(Material.OAK_LOG).apply {
-                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
-                    itemMeta = itemMeta.also {
-                        it.itemName(Format.mm("<yellow>Lodge</yellow>"))
-                    }
+        page.addItem(HubNavigationEntry(
+            ItemStack.of(Material.OAK_LOG).apply {
+                editMeta {
+                    it.itemName(Format.mm("<yellow>Lodge</yellow>"))
                 }
             },
-            slot = 0,
-            onClick = { page, item ->
-                page.ui.close()
-                player.buttonClickSound()
-
-                val location = navigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+            0,
+            lodgeNavigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
                     ?: throw TumblingGenericException("Hub navigation position for lodge building is not a valid position!")
+        ))
 
-                player.fadeTp(location.toCenterXZLocation())
-            }
+        page.addItem(HubNavigationEntry(
+            ItemStack.of(Material.DARK_OAK_LOG).apply {
+                editMeta {
+                    it.itemName(Format.mm("<aqua>Practice Courses</aqua>"))
+                }
+            },
+            1,
+            practiceCoursesNavigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                    ?: throw TumblingGenericException("Hub navigation position for practice courses is not a valid position!")
         ))
     }
+
+    class HubNavigationEntry(
+        val itemStack: ItemStack,
+        itemSlot: Int,
+        val location: Location
+    ) : InventoryItem(
+        getItemStack = { _,_ ->
+            itemStack
+        },
+        slot = itemSlot,
+        onClick = { page, item ->
+            page.ui.close()
+            val player = page.ui.player
+            player.buttonClickSound()
+            player.fadeTp(location.toCenterXZLocation())
+        }
+    )
 }
