@@ -17,7 +17,7 @@ import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
 import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.breach.ScoreBossbar
-import xyz.devcmb.tumblers.ui.bossbar.games.crumble.AliveTeamsBossbar
+import xyz.devcmb.tumblers.ui.bossbar.games.crumble.CrumbleBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
@@ -125,7 +125,7 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerBossBars() {
-        registerBossBar(AliveTeamsBossbar(gameController))
+        registerBossBar(CrumbleBossbar(player, gameController))
         registerBossBar(CountdownBossbar(gameController))
         registerBossBar(CooldownBossbar(player, gameController))
         registerBossBar(ScoreBossbar(gameController))

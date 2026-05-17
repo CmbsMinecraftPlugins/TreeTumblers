@@ -531,11 +531,12 @@ class CrumbleController : GameBase(
 
         suspendSync {
             gameParticipants.forEach {
+                it.disableBossBar("countdownBossbar")
                 if(!playerKits.containsKey(it.tumblingPlayer)) {
                     selectKit(
                         it,
                         registeredKits.keys.filter { registeredKit ->
-                            playerKits.filter { kit -> kit.value.id == registeredKit }.size < maxPlayersPerKit
+                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == it.tumblingPlayer.team }.size < maxPlayersPerKit
                         }.random()
                     )
                 }
@@ -631,8 +632,7 @@ class CrumbleController : GameBase(
             }
         }
         Bukkit.getOnlinePlayers().forEach {
-            it.disableBossBar("countdownBossbar")
-            it.disableBossBar("crumbleAliveTeamsBossbar")
+            it.disableBossBar("crumbleBossbar")
         }
         super.cleanup()
     }
@@ -641,7 +641,7 @@ class CrumbleController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossbar")
+        player.enableBossBar("crumbleBossbar")
 
         if(!player.tumblingPlayer.team.playingTeam) {
             val arena1Center: Location = currentMap.data
@@ -705,7 +705,7 @@ class CrumbleController : GameBase(
             alivePlayers[it] = ArrayList(it.getAllPlayers())
         }
         gamePlayers.forEach {
-            it.enableBossBar("crumbleAliveTeamsBossbar")
+            it.enableBossBar("crumbleBossbar")
         }
         abilitiesUsed.clear()
     }
