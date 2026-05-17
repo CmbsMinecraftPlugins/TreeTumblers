@@ -216,7 +216,7 @@ class VotingController : ControllerBase() {
                     })
                 }
 
-                delay(1000)
+                delay(500)
             }
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
@@ -226,10 +226,10 @@ class VotingController : ControllerBase() {
                     if(index != (players.size - 1)) new = new.append(Component.text(" • ", NamedTextColor.WHITE))
                     new
                 },
-                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(10))
+                Title.Times.times(Tick.of(0), Tick.of(80), Tick.of(10))
             ))
 
-            delay(4000)
+            delay(6000)
 
             suspendSync {
                 players.forEach { player ->
@@ -248,7 +248,7 @@ class VotingController : ControllerBase() {
             textDisplays.clear()
         }
 
-        suspendSync { cutscene.cleanup() }
+        suspendSync { cutscene.cleanup(observers.filter { it.isOnline }.toSet()) }
     }
 
     private suspend fun blinkQuadrant(quadrantIndex: Int, concrete: Material, times: Int, delay: Long, endOn: Boolean) {

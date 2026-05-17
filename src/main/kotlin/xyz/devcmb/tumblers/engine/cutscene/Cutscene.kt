@@ -16,6 +16,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.hideToAll
+import xyz.devcmb.tumblers.util.showToAll
 
 class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = false) {
     var currentStepIndex: Int = 0
@@ -23,7 +24,7 @@ class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = fal
     val pigs: HashMap<Player, Pig> = HashMap()
 
     companion object {
-        const val CUTSCENE_MESSAGE_FORMAT = "<white><green><line:30></green><br><br><message><br><br></white><green><line:30></green>"
+        const val CUTSCENE_MESSAGE_FORMAT = "<white><green><line:38></green><br><br><message><br><br></white><green><line:38></green>"
     }
 
     suspend fun run(observers: Set<Player>, map: LoadedMap, game: GameBase?) {
@@ -37,27 +38,32 @@ class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = fal
 
             step.startingTeleport?.let { path ->
                 context.teleportConfig(path)
-                step.chatMessage?.let { message ->
-                    observers.forEach {
-                        it.sendMessage(Format.mm(
-                            CUTSCENE_MESSAGE_FORMAT,
-                            Placeholder.component("message", message)
-                        ))
-                    }
-                }
-                step.run(context, map)
             }
+
+            step.chatMessage?.let { message ->
+                observers.forEach {
+                    it.sendMessage(Format.mm(
+                        CUTSCENE_MESSAGE_FORMAT,
+                        Placeholder.component("message", message)
+                    ))
+                }
+            }
+
+            step.run(context, map)
         }
 
         if(dontAutoCleanup) return
-        suspendSync { cleanup() }
+        suspendSync { cleanup(observers) }
     }
 
-    fun cleanup() {
+    fun cleanup(observers: Set<Player>) {
         HandlerList.unregisterAll(context)
         pigs.forEach {
             it.value.remove()
         }
+        pigs.clear()
+
+        observers.forEach(this::removeObserver)
     }
 
     suspend fun run(observers: Set<Player>, world: World, config: ConfigurationSection) =
@@ -90,6 +96,7 @@ class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = fal
     }
 
     fun removeObserver(player: Player) {
+        player.showToAll()
         player.removePotionEffect(PotionEffectType.INVISIBILITY)
         pigs[player]?.remove()
         pigs.remove(player)
