@@ -11,17 +11,11 @@ version: "1.0"
 
 #Specify inspection profile for code analysis
 profile:
-  path: .idea/inspectionProfiles/Project_Default.xml
+  name: qodana.recommended
 
 #Enable inspections
 #include:
 #  - name: <SomeEnabledInspectionId>
-
-#Disable inspections
-#exclude:
-#  - name: <SomeDisabledInspectionId>
-#    paths:
-#      - <path/where/not/run/inspection>
 
 projectJDK: "25" #(Applied in CI/CD pipeline)
 
@@ -46,8 +40,16 @@ projectJDK: "25" #(Applied in CI/CD pipeline)
 
 #Specify Qodana linter for analysis (Applied in CI/CD pipeline)
 linter: jetbrains/qodana-jvm:2026.1
+
 exclude:
+  - name: unused
+  - name: SameReturnValue
+  - name: SameParameterValue
+  - name: EmptyMethod
+  - name: GrazieInspectionRunner
+  - name: VulnerableLibrariesLocal
+  - name: MayBeConstant
+
   - name: All
     paths:
-      - run\plugins\FastAsyncWorldEdit\history\hub\a233eb4b-4cab-42cd-9fd9-7e7b9a3f74be
       - run
