@@ -19,14 +19,11 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.unpackCoordinates
 
 class CutsceneContext(
+    val cutscene: Cutscene,
     val observers: Set<Player>,
     val map: LoadedMap,
-    val step: CutsceneStep,
     val game: GameBase?,
 ): Listener {
-    constructor(observers: Set<Player>, world: World, config: ConfigurationSection, step: CutsceneStep):
-        this(observers, LoadedMap(world.name, world, config), step, null)
-
     suspend fun teleport(x: Double, y: Double, z: Double, pitch: Float, yaw: Float) {
         suspendSync {
             observers.forEach {
@@ -76,6 +73,13 @@ class CutsceneContext(
     }
 
     private fun createPassengerPig(player: Player, location: Location) {
+        if(cutscene.pigs.containsKey(player)) {
+            val pig = cutscene.pigs[player]!!
+            pig.teleport(location)
+            player.setRotation(location.yaw, location.pitch)
+            return
+        }
+
         val pig = map.world.spawnEntity(location, EntityType.PIG) as Pig
         pig.setAI(false)
         pig.isInvulnerable = true
@@ -83,7 +87,7 @@ class CutsceneContext(
         pig.isInvisible = true
         pig.addPassenger(player)
 
-        step.pigs[player] = pig
+        cutscene.pigs[player] = pig
     }
 
     @EventHandler

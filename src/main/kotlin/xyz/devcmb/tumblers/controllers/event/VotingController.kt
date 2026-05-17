@@ -38,6 +38,7 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -155,10 +156,14 @@ class VotingController : ControllerBase() {
 
     suspend fun announceTeamPlayers() {
         // TODO: Create an event controller timer here
-        val step = CutsceneStep(null, "teamIntroduction") {}
+        val cutscene = Cutscene(
+            listOf(CutsceneStep(null, "teamIntroduction") {}),
+            true
+        )
         val observers = Bukkit.getOnlinePlayers().toSet()
         val hub = Bukkit.getWorld(lobbyWorld)!!
-        step.run(
+
+        cutscene.run(
             observers,
             hub,
             TreeTumblers.plugin.config.getConfigurationSection("event.cutscene")!!
@@ -181,7 +186,7 @@ class VotingController : ControllerBase() {
 
                 suspendSync {
                     player.bukkitPlayer?.let {
-                        step.playerLeave(it)
+                        cutscene.removeObserver(it)
                         it.teleport(quadrantSpawns[quadrantIndex])
                     }
 
@@ -226,12 +231,13 @@ class VotingController : ControllerBase() {
 
             delay(4000)
 
-            players.forEach { player ->
-                player.bukkitPlayer?.let {
-                    step.playerJoin(it)
-                }
-            }
             suspendSync {
+                players.forEach { player ->
+                    player.bukkitPlayer?.let {
+                        cutscene.addObserver(it, true)
+                    }
+                }
+
                 textDisplays.toList().forEach(TextDisplay::remove)
                 votingQuadrants.forEach {
                     it.forEach { location ->
@@ -242,7 +248,7 @@ class VotingController : ControllerBase() {
             textDisplays.clear()
         }
 
-        step.cleanup(observers)
+        suspendSync { cutscene.cleanup() }
     }
 
     private suspend fun blinkQuadrant(quadrantIndex: Int, concrete: Material, times: Int, delay: Long, endOn: Boolean) {

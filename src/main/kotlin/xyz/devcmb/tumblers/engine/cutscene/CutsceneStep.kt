@@ -24,105 +24,10 @@ import xyz.devcmb.tumblers.util.showToAll
  * These are for explaining the game before it begins
  *
  * @param chatMessage The message to send all observers of the cutscene
- * @param init The function to run with a [LoadedMap] param and an attached [CutsceneContext]
+ * @param run The function to run with a [LoadedMap] param and an attached [CutsceneContext]
  */
 class CutsceneStep(
     val chatMessage: Component?,
     val startingTeleport: String? = null,
-    val init: suspend CutsceneContext.(map: LoadedMap) -> Unit
-) {
-    val pigs: HashMap<Player, Entity> = HashMap()
-    var context: CutsceneContext? = null
-    suspend fun run(observers: Set<Player>, map: LoadedMap, game: GameBase?) {
-        extraCutsceneWork(observers)
-
-        context = CutsceneContext(observers, map, this, game)
-        Bukkit.getPluginManager().registerEvents(context!!, TreeTumblers.plugin)
-        startingTeleport?.let {
-            context!!.teleportConfig(it)
-        }
-        context!!.init(map)
-    }
-
-    suspend fun run(observers: Set<Player>, world: World, config: ConfigurationSection) {
-        extraCutsceneWork(observers)
-
-        context = CutsceneContext(observers, world, config, this)
-        Bukkit.getPluginManager().registerEvents(context!!, TreeTumblers.plugin)
-        startingTeleport?.let {
-            context!!.teleportConfig(it)
-        }
-        context!!.init(context!!.map)
-    }
-
-    suspend fun playerJoin(player: Player) {
-        if(context == null) return
-
-        suspendSync {
-            player.addPotionEffect(PotionEffect(
-                PotionEffectType.INVISIBILITY,
-                PotionEffect.INFINITE_DURATION,
-                1,
-                true,
-                false,
-                false
-            ))
-        }
-
-        startingTeleport?.let {
-            context!!.teleportConfig(it, player)
-            player.hideToAll()
-        }
-    }
-
-    fun playerLeave(player: Player) {
-        if(context == null) return
-        if(pigs.containsKey(player)) {
-            pigs[player]!!.remove()
-            pigs.remove(player)
-        }
-
-        player.removePotionEffect(PotionEffectType.INVISIBILITY)
-    }
-
-    suspend fun extraCutsceneWork(observers: Set<Player>) {
-        suspendSync {
-            observers.forEach {
-                it.hideToAll()
-                it.addPotionEffect(PotionEffect(
-                    PotionEffectType.INVISIBILITY,
-                    PotionEffect.INFINITE_DURATION,
-                    1,
-                    true,
-                    false,
-                    false
-                ))
-                it.inventory.clear()
-
-                if(chatMessage != null) {
-                    it.sendMessage(Format.mm(
-                        "<aqua><line:35><br><white><message></white><br><line:35></aqua>",
-                        Placeholder.component("message", chatMessage)
-                    ))
-                }
-            }
-        }
-    }
-
-    suspend fun cleanup(observers: Set<Player>) {
-        HandlerList.unregisterAll(context!!)
-
-        suspendSync {
-            observers.forEach {
-                it.showToAll()
-                it.removePotionEffect(PotionEffectType.INVISIBILITY)
-            }
-        }
-
-        suspendSync {
-            pigs.forEach {
-                it.value.remove()
-            }
-        }
-    }
-}
+    val run: suspend CutsceneContext.(map: LoadedMap) -> Unit
+)

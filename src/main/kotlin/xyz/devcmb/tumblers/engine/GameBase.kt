@@ -39,6 +39,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
@@ -100,7 +101,7 @@ abstract class GameBase(
             field = value
         }
 
-    var currentCutsceneStep: CutsceneStep? = null
+    var currentCutscene: Cutscene? = null
 
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
@@ -222,12 +223,8 @@ abstract class GameBase(
         currentState = State.CUTSCENE
         playerController.muteChat()
 
-        cutsceneSteps.forEach {
-            currentCutsceneStep = it
-            it.run(gamePlayers, loadedMaps.first(), this)
-            it.cleanup(gamePlayers)
-            currentCutsceneStep = null
-        }
+        currentCutscene = Cutscene(cutsceneSteps)
+        currentCutscene!!.run(gamePlayers, loadedMaps.first(), this)
 
         suspendSync {
             playerController.reloadNametags()
@@ -687,9 +684,7 @@ abstract class GameBase(
         runTaskLater(2) {
             when(currentState) {
                 State.CUTSCENE -> {
-                    TreeTumblers.pluginScope.launch {
-                        currentCutsceneStep?.playerJoin(player)
-                    }
+                    currentCutscene!!.addObserver(player, true)
                 }
                 State.PREGAME,
                 State.GAME_ON -> {
@@ -718,6 +713,10 @@ abstract class GameBase(
         unSpectate(player)
 
         when(currentState) {
+            State.CUTSCENE -> {
+                currentCutscene!!.removeObserver(player)
+            }
+
             State.PREGAME,
             State.GAME_ON -> {
                 playerLeave(player)
