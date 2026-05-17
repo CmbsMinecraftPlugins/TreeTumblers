@@ -225,6 +225,7 @@ abstract class GameBase(
 
         currentCutscene = Cutscene(cutsceneSteps)
         currentCutscene!!.run(gamePlayers, loadedMaps.first(), this)
+        currentCutscene = null
 
         suspendSync {
             playerController.reloadNametags()
