@@ -26,6 +26,8 @@ jobs:
 
       - name: 'Qodana Scan'
         uses: JetBrains/qodana-action@v2026.1
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+          QODANA_ENDPOINT: 'https://qodana.cloud'
         with:
-          args: --save-report
-          upload-result: true
+          pr-mode: false
