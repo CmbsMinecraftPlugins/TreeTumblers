@@ -60,7 +60,7 @@ class HubController : ControllerBase() {
         var lobbySpawnFloor: Material = Material.STONE_BRICKS
 
         @field:Configurable("lobby.void_height")
-        var voidHeight: Int = 144
+        var voidHeight: Int = 177
     }
 
     val compass = AdvancedItemStack(Material.COMPASS) {
@@ -124,7 +124,7 @@ class HubController : ControllerBase() {
 
     @EventHandler
     fun playerMoveEvent(event: PlayerMoveEvent) {
-        if(event.to.y > voidHeight) return
+        if(event.to.y > voidHeight || event.to.world.name != lobbyWorld) return
         event.player.fadeTp(getLobbyPosition())
     }
 }

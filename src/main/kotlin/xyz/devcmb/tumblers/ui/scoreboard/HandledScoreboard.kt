@@ -1,17 +1,21 @@
 package xyz.devcmb.tumblers.ui.scoreboard
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.RenderType
 import org.bukkit.scoreboard.Score
 import org.bukkit.scoreboard.Scoreboard
+import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.MiscUtils
 
 sealed interface HandledScoreboard {
     val id: String
-    val displayName: Component
+    val displayName: String
 
     fun enable(scoreboard: Scoreboard)
     fun update(scoreboard: Scoreboard)
@@ -22,11 +26,17 @@ sealed interface HandledScoreboard {
         val lastLines: ArrayList<Component> = ArrayList()
         val scores: ArrayList<Score> = ArrayList()
 
+        private val eventController: EventController by ControllerRegistry.controller()
+
         override fun enable(scoreboard: Scoreboard) {
             objective = scoreboard.registerNewObjective(
                 id,
                 Criteria.DUMMY,
-                displayName
+                Format.mm(
+                    displayName,
+                    Placeholder.unparsed("game", eventController.game.toString()),
+                    Placeholder.unparsed("total", eventController.totalGames.toString())
+                )
             )
 
             objective!!.displaySlot = DisplaySlot.SIDEBAR
@@ -74,7 +84,12 @@ sealed interface HandledScoreboard {
         var objective: Objective? = null
 
         override fun enable(scoreboard: Scoreboard) {
-            objective = scoreboard.registerNewObjective(id, criteria, displayName, renderType)
+            objective = scoreboard.registerNewObjective(
+                id,
+                criteria,
+                Format.mm(displayName),
+                renderType
+            )
             objective!!.displaySlot = displaySlot
         }
 

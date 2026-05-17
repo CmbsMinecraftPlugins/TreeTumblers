@@ -104,7 +104,7 @@ lobby:
     lodge: [-73, 202, 8, -90, 0]
     practice_courses: [40, 202, -92, 180, 0]
 
-  void_height: 144
+  void_height: 177
 
 games:
   crumble:

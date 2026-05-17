@@ -13,7 +13,7 @@ class IntermissionScoreboard(
     val eventController: EventController,
     val player: Player,
     override val id: String = "intermissionScoreboard",
-    override val displayName: Component = Format.mm(MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE)
+    override val displayName: String = MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {
         val timer: Component = Component.empty()
@@ -48,11 +48,10 @@ class IntermissionScoreboard(
         if(teamPlacement != null) {
             teamComponent.add(
                 Format.mm(
-                    if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
-                    else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
+                    MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
                     Placeholder.unparsed("placement", teamPlacement.second.toString()),
                     Placeholder.component("team", player.tumblingPlayer.team.boldedName),
-                    Placeholder.unparsed("score", (eventController.teamScores[team] ?: 0).toString())
+                    Placeholder.unparsed("score", if(eventController.scoresHidden) "??????" else (eventController.teamScores[team] ?: 0).toString())
                 )
             )
 

@@ -14,10 +14,7 @@ import xyz.devcmb.tumblers.util.MiscUtils
 class DeathrunScoreboard(
     val gameController: GameController,
     val player: Player,
-    override val displayName: Component = Format.mm(
-        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-        Placeholder.unparsed("name", "Deathrun")
-    ),
+    override val displayName: String = "<yellow>Deathrun</yellow> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
     override val id: String = "deathrunScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {

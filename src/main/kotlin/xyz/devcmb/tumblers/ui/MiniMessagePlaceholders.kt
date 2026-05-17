@@ -48,11 +48,6 @@ object MiniMessagePlaceholders {
         const val SCOREBOARD_CURRENT_ROUND = "<aqua>Round <white><current>/<total></white></aqua>"
 
         /**
-         * name - The name of the game
-         */
-        const val SCOREBOARD_TITLE = "<yellow><bold><name></bold></yellow>"
-
-        /**
          * player - The player who died
          */
         val DEATH_MESSAGES = arrayListOf(

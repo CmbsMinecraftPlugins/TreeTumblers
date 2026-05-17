@@ -5,7 +5,6 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
-import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -14,10 +13,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 class SnifferCaretakerScoreboard(
     val gameController: GameController,
     val player: Player,
-    override val displayName: Component = Format.mm(
-        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-        Placeholder.unparsed("name", "Sniffer Caretaker")
-    ),
+    override val displayName: String = "<red>Sniffer Caretaker</red> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
     override val id: String = "snifferCaretakerScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {
@@ -27,6 +23,11 @@ class SnifferCaretakerScoreboard(
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
 
         return arrayListOf(
+            Component.empty(),
+            Format.mm(
+                "<white>Game ends in: <aqua><timer></aqua></white>",
+                Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("10:00"))
+            ),
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),

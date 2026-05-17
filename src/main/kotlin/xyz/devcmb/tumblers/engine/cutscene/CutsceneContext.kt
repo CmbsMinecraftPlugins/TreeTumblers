@@ -3,8 +3,6 @@ package xyz.devcmb.tumblers.engine.cutscene
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.bukkit.Location
-import org.bukkit.World
-import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Pig
 import org.bukkit.entity.Player
@@ -73,6 +71,7 @@ class CutsceneContext(
     }
 
     private fun createPassengerPig(player: Player, location: Location) {
+        location.chunk.load()
         if(cutscene.pigs.containsKey(player)) {
             val pig = cutscene.pigs[player]!!
             pig.teleport(location)

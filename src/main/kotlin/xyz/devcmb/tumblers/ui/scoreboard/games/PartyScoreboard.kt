@@ -5,7 +5,6 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
-import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -13,10 +12,7 @@ import xyz.devcmb.tumblers.util.Format
 class PartyScoreboard(
     val gameController: GameController,
     val player: Player,
-    override val displayName: Component = Format.mm(
-        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-        Placeholder.unparsed("name", "Party")
-    ),
+    override val displayName: String = "<aqua>Party</aqua> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
     override val id: String = "partyScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {

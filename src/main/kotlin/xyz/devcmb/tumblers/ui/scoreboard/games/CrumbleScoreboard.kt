@@ -14,10 +14,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 class CrumbleScoreboard(
     val gameController: GameController,
     val player: Player,
-    override val displayName: Component = Format.mm(
-        MiniMessagePlaceholders.Game.SCOREBOARD_TITLE,
-        Placeholder.unparsed("name", "Crumble")
-    ),
+    override val displayName: String = "<green>Crumble</green> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
     override val id: String = "crumbleScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
     override fun getLines(): ArrayList<Component> {

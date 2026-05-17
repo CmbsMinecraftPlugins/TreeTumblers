@@ -415,7 +415,7 @@ class EventController : ControllerBase() {
         Bukkit.broadcast(
             Format.mm(
             "<aqua><line:30></aqua><br>" +
-                "Thank you all so much for attending <red>❤</red><br>" +
+                "Thank you all so much for participating <red>❤</red><br>" +
                 "Now, onto our finale, <gold><b>Breach!</b></gold><br>" +
                 "<aqua><line:30></aqua>"
         ))
