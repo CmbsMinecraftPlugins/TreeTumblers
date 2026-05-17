@@ -248,7 +248,7 @@ class VotingController : ControllerBase() {
             textDisplays.clear()
         }
 
-        suspendSync { cutscene.cleanup(observers.filter { it.isOnline }.toSet()) }
+        suspendSync { cutscene.cleanup() }
     }
 
     private suspend fun blinkQuadrant(quadrantIndex: Int, concrete: Material, times: Int, delay: Long, endOn: Boolean) {

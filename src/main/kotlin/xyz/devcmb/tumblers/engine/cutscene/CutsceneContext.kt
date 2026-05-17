@@ -1,7 +1,5 @@
 package xyz.devcmb.tumblers.engine.cutscene
 
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.title.Title
 import org.bukkit.Location
 import org.bukkit.entity.EntityType
 import org.bukkit.entity.Pig
@@ -14,26 +12,28 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import xyz.devcmb.tumblers.util.tp
-import xyz.devcmb.tumblers.util.unpackCoordinates
+import xyz.devcmb.tumblers.util.validateLocation
 
+/**
+ * A context object for a running [Cutscene] instance
+ *
+ * @param cutscene The cutscene object
+ * @param observers A set of [Player] instances that are viewing the cutscene at the time of its creation. See [Cutscene.addObserver] and [Cutscene.removeObserver] for modifying this while a cutscene is running.
+ * @param map The [LoadedMap] where the cutscene is happening. Does not have to be associated with a game
+ * @param game The optional [GameBase] instance that this is attached to. Optional and is only required to pass on to the game object to the [CutsceneStep] lambda
+ */
 class CutsceneContext(
     val cutscene: Cutscene,
     val observers: Set<Player>,
     val map: LoadedMap,
     val game: GameBase?,
 ): Listener {
-    suspend fun teleport(x: Double, y: Double, z: Double, pitch: Float, yaw: Float) {
-        suspendSync {
-            observers.forEach {
-                if(!it.isOnline) return@forEach
-
-                val location = Location(map.world, x, y, z, pitch, yaw)
-                createPassengerPig(it, location)
-                it.setRotation(location.yaw, location.pitch)
-            }
-        }
-    }
-
+    /**
+     * Teleports a specified [player] or all observers to a certain location based on the result of [getLocation] with the specified [path]
+     *
+     * @param path The path of the location array
+     * @param player An optional player to specifically apply the teleportation to
+     */
     suspend fun teleportConfig(path: String, player: Player? = null) {
         val location = getLocation(path)
         val players = if(player != null) listOf(player) else observers
@@ -48,28 +48,27 @@ class CutsceneContext(
         }
     }
 
-    fun title(title: Component? = null, subtitle: Component? = null, times: Title.Times? = null) {
-        observers.forEach {
-            if(!it.isOnline) return@forEach
-
-            it.showTitle(Title.title(
-                title ?: Component.empty(),
-                subtitle ?: Component.empty(),
-                times
-            ))
-        }
-    }
-
+    /**
+     * Get a location from the loaded map's configuration section
+     *
+     * @param path The path in the [LoadedMap]s [org.bukkit.configuration.ConfigurationSection]
+     * @return The [Location] corresponding to the [path]
+     * @throws GameControllerException If the teleport path failed to resolve to a valid location list
+     */
     fun getLocation(path: String): Location {
         val config = map.data.getList(path) ?: throw GameControllerException("Teleport config path did not resolve to a valid list")
-        val location: List<Double> = config.map {
-            if(it !is Double) throw GameControllerException("Teleport list does not contain exclusively doubles")
-            it
-        }
+        val location: Location =
+            config.validateLocation(map.world) ?: throw GameControllerException("Teleport config did not resolve to a valid location list")
 
-        return location.unpackCoordinates(map.world)
+        return location
     }
 
+    /**
+     * Creates a pig for the specified [player] to ride during a cutscene
+     *
+     * @param player The player to create the pig for
+     * @param location The location to spawn the pig at
+     */
     private fun createPassengerPig(player: Player, location: Location) {
         location.chunk.load()
         if(cutscene.pigs.containsKey(player)) {

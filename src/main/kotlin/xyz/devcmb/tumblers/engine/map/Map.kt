@@ -13,7 +13,7 @@ import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
 import kotlin.io.path.Path
 
 /**
- * A map that can be played during the event
+ * A world for a specific game that can be loaded into a [org.bukkit.World]
  *
  * The config for all games is standard, but has an additional `data` field that contains stuff specific for that map and game.
  *
@@ -37,10 +37,20 @@ class Map(
 
     lateinit var game: GameBase
 
+    /**
+     * Initializes the map with an attached GameBase
+     * @param game The game the map is a part of
+     */
     fun init(game: GameBase) {
         this.game = game
     }
 
+    /**
+     * Loads a map with a specified index
+     *
+     * @param index The index to load the map with
+     * @return The [LoadedMap]
+     */
     suspend fun load(index: Int): LoadedMap {
         val config = TreeTumblers.plugin.config
         val gameWorlds = config.getString("${game.configRoot}.worlds_folder")

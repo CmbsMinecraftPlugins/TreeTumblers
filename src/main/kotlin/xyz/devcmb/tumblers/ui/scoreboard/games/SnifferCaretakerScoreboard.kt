@@ -5,6 +5,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
+import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -25,7 +26,9 @@ class SnifferCaretakerScoreboard(
         return arrayListOf(
             Component.empty(),
             Format.mm(
-                "<white>Game ends in: <aqua><timer></aqua></white>",
+                "<white>${
+                    if(activeGame.currentState == GameBase.State.PREGAME) "Game starts in"
+                    else "Game ends in"}: <aqua><timer></aqua></white>",
                 Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("10:00"))
             ),
             Component.empty(),
