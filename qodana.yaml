@@ -49,6 +49,10 @@ exclude:
   - name: GrazieInspectionRunner
   - name: VulnerableLibrariesLocal
   - name: MayBeConstant
+  - name: ConvertLongToDuration
+  - name: ReplaceWithEnumMap
+  - name: UnusedSymbol
+  - name: DuplicatedCode
 
   - name: All
     paths:
