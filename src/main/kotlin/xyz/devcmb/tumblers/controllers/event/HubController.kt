@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.event
 
+import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Location
@@ -65,6 +66,10 @@ class HubController : ControllerBase() {
 
     val compass = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<aqua>Navigator</aqua>"))
+        lore(listOf(
+            Format.mm("<white>Teleport to different landmarks</white>"),
+            Format.mm("<white>around the <yellow>hub world!</yellow>")
+        ).map { it.decoration(TextDecoration.ITALIC, false) })
         droppable(false)
         movable(false)
         rightClick {

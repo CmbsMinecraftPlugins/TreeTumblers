@@ -34,7 +34,7 @@ class WorkerKit(
     )
 
     override val abilityName: String = "Megamine"
-    override val abilityDescription: String = "You yearn for the mines' tnt but just can't get it. Lets your pickaxe mine a 3x3x3 volume for ${megaMineDuration.tickSeconds}s"
+    override val abilityDescription: String = "You yearn for the mines' TNT but just can't get it. Lets your pickaxe mine a 3x3x3 volume for ${megaMineDuration.tickSeconds}s"
     override val killPowerName: String = "Efficiency"
     override val killPowerDescription: String = "Gives you efficiency II on your tools for ${efficiencyDuration.tickSeconds}s"
 

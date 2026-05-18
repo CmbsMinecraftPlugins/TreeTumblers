@@ -113,8 +113,8 @@ games:
     worlds_folder: "crumble"
 
     # The maximum amount of players that can have the same kit
-    # Default 2
-    max_kit_players: 2
+    # Default 1
+    max_kit_players: 1
 
     # The amount of time it takes for TNT to explode
     # Default 80
