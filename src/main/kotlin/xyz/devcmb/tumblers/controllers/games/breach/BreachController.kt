@@ -46,7 +46,6 @@ import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
@@ -59,6 +58,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
@@ -209,15 +209,12 @@ class BreachController: GameBase(
         val team1starKey = NamespacedKey(TreeTumblers.NAMESPACE, "breach_star_1")
         val team2starKey = NamespacedKey(TreeTumblers.NAMESPACE, "breach_star_2")
 
-        @field:Configurable("games.breach.best_of")
-        var bestOf: Int = 3
-
-        val rounds: Int
-            get() { return (bestOf * 2) - 1 }
-
-        @field:Configurable("games.breach.star_pickup_ticks")
-        var starPickupTicks = 60
+        val bestOf: Int = configurable("games.breach.best_of")
     }
+
+    val starPickupTicks: Int = configurable("games.breach.star_pickup_ticks")
+    val rounds: Int
+        get() { return (bestOf * 2) - 1 }
 
     val currentMap: LoadedMap
         get() {

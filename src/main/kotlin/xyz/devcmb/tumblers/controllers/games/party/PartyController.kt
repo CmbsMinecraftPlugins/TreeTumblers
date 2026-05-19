@@ -37,7 +37,6 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.MaceDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.SpearDuels
@@ -55,6 +54,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
@@ -160,10 +160,18 @@ class PartyController : GameBase(
     scoreboard = "partyScoreboard",
     logo = Component.text("\uEA01").font(font)
 ) {
+    val allowSolos: Boolean = configurable("games.party.allow_solos")
+    val allowRefights: Boolean = configurable("games.party.allow_refights")
+
     data class PartyGameIdentifier(val id: String)
     data class PartyGameSchematic(val file: File)
 
     companion object {
+        val partyGamesDirectory: String = configurable("templates.party_games")
+            get() {
+                return field.replace("&", TreeTumblers.plugin.dataPath.toString())
+            }
+
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/party")
 
         val games: ArrayList<Class<out PartyGame>> = arrayListOf(
@@ -187,18 +195,6 @@ class PartyController : GameBase(
         val gameIds: List<String> = games.map {
             it.getDeclaredConstructor().newInstance().id
         }
-
-        @field:Configurable("templates.party_games")
-        var partyGamesDirectory: String = "&/templates/party"
-            get() {
-                return field.replace("&", TreeTumblers.plugin.dataPath.toString())
-            }
-
-        @field:Configurable("games.party.allow_solos")
-        var allowSolos: Boolean = false
-
-        @field:Configurable("games.party.allow_refights")
-        var allowRefights: Boolean = false
     }
 
     override val scoreMessages: HashMap<ScoreSource, (Int) -> Component> = hashMapOf(

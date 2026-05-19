@@ -11,7 +11,6 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerJoinEvent
 import xyz.devcmb.tumblers.TumblingDatabaseException
 import xyz.devcmb.tumblers.TumblingDatabaseStateException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
@@ -21,6 +20,7 @@ import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.configurable
 import java.sql.Connection
 import java.sql.DriverManager
 import java.sql.SQLException
@@ -44,24 +44,13 @@ import kotlin.toString
  * whitelisted - If the player is currently whitelisted
  */
 
-@Controller(Controller.Priority.HIGH)
+@Controller(Controller.Priority.HIGHEST)
 class DatabaseController : ControllerBase() {
-    companion object {
-        @field:Configurable("database.host", true)
-        var host: String = ""
-
-        @field:Configurable("database.port")
-        var port: Int = 3306
-
-        @field:Configurable("database.username", true)
-        var username: String = ""
-
-        @field:Configurable("database.password", true)
-        var password: String = ""
-
-        @field:Configurable("database.database")
-        var database: String = ""
-    }
+    val host: String = configurable("database.host")
+    val port: Int = configurable("database.port")
+    val username: String = configurable("database.username")
+    val password: String = configurable("database.password")
+    val database: String = configurable("database.database")
 
     lateinit var connection: Connection
         private set

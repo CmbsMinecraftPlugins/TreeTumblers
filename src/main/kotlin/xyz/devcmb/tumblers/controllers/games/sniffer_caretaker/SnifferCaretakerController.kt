@@ -55,7 +55,6 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.BoredTask
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.HungryTask
@@ -71,6 +70,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
@@ -261,24 +261,15 @@ class SnifferCaretakerController : GameBase(
     name = "Sniffer Caretaker",
     badges = SnifferCaretakerBadge.entries
 ) {
+    val gameLength: Int = configurable("games.sniffer_caretaker.game_length")
+    val chestRefresh: Long = configurable("games.sniffer_caretaker.chest_refresh")
+    val blockRefresh: Long = configurable("games.sniffer_caretaker.block_refresh")
+    val mobRefresh: Long = configurable("games.sniffer_caretaker.mob_refresh")
+    val taskInterval: Long = configurable("games.sniffer_caretaker.task_interval")
+
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")
         val snifferTeamKey = NamespacedKey(TreeTumblers.NAMESPACE, "sniffer_team")
-
-        @field:Configurable("games.sniffer_caretaker.game_length")
-        var gameLength: Int = 600
-
-        @field:Configurable("games.sniffer_caretaker.chest_refresh")
-        var chestRefresh: Long = 20
-
-        @field:Configurable("games.sniffer_caretaker.block_refresh")
-        var blockRefresh: Long = 15
-
-        @field:Configurable("games.sniffer_caretaker.mob_refresh")
-        var mobRefresh: Long = 30
-
-        @field:Configurable("games.sniffer_caretaker.task_interval")
-        var taskInterval: Long = 8
     }
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(

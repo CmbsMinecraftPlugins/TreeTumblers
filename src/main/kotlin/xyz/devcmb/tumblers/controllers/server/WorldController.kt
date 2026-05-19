@@ -14,12 +14,12 @@ import org.bukkit.entity.Entity
 import org.bukkit.persistence.PersistentDataHolder
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.WorldCreationException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.VoidGenerator
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import java.io.File
@@ -30,16 +30,13 @@ import java.nio.file.Path
 @Controller(Controller.Priority.HIGH)
 class WorldController : ControllerBase() {
     companion object {
-        @field:Configurable("templates.world_root")
-        var worldRoot: String = "&/templates/worlds"
+        val worldRoot: String = configurable("templates.world_root")
             get() {
                 return field
                     .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
             }
 
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "hub"
-
+        val lobbyWorld: String = configurable("lobby.world")
         val temporaryEntityKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "temp_entity")
     }
 

@@ -9,10 +9,11 @@ import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.tumblers.TumblingGenericException
-import xyz.devcmb.tumblers.annotations.Configurable
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.toCenterXZLocation
 import xyz.devcmb.tumblers.util.validateLocation
@@ -21,16 +22,8 @@ class HubNavigationInventory(
     val player: Player,
     override val id: String = "hubNavigationInventory",
 ) : HandledInventory {
-    companion object {
-        @field:Configurable("lobby.navigator.lodge")
-        var lodgeNavigationPosition: List<Int> = listOf(-73, 202, 8, -90, 0)
-
-        @field:Configurable("lobby.navigator.practice_courses")
-        var practiceCoursesNavigationPosition: List<Int> = listOf(40, 201, -92, 180, 0)
-
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "hub"
-    }
+    val lodgeNavigationPosition: List<Int> = configurable("lobby.navigator.lodge")
+    val practiceCoursesNavigationPosition: List<Int> = configurable("lobby.navigator.practice_courses")
 
     override val inventory: ChestInventoryUI = ChestInventoryUI(
         player,
@@ -47,7 +40,7 @@ class HubNavigationInventory(
                 }
             },
             0,
-            lodgeNavigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+            lodgeNavigationPosition.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingGenericException("Hub navigation position for lodge building is not a valid position!")
         ))
 
@@ -58,7 +51,7 @@ class HubNavigationInventory(
                 }
             },
             1,
-            practiceCoursesNavigationPosition.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+            practiceCoursesNavigationPosition.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingGenericException("Hub navigation position for practice courses is not a valid position!")
         ))
     }

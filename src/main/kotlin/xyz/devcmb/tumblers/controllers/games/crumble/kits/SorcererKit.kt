@@ -13,15 +13,19 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tickSeconds
 
 class SorcererKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
+    val poisonDuration: Long = configurable("games.crumble.kits.sorcerer.poison_duration")
+    val healHearts: Int = configurable("games.crumble.kits.sorcerer.heal_hearts")
+    val healDuration: Long = configurable("games.crumble.kits.sorcerer.heal_duration")
+
     override val id: String = "sorcerer"
     override val name: String = "Sorcerer"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/sorcerer")
@@ -38,17 +42,6 @@ class SorcererKit(
 
     override val kitIcon: String = "\uE005"
     override val kitDisplayTextLength: Double = 59.75
-
-    companion object {
-        @field:Configurable("games.crumble.kits.sorcerer.poison_duration")
-        var poisonDuration: Long = 70
-
-        @field:Configurable("games.crumble.kits.sorcerer.heal_hearts")
-        var healHearts: Int = 2
-
-        @field:Configurable("games.crumble.kits.sorcerer.heal_duration")
-        var healDuration: Long = 60
-    }
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }

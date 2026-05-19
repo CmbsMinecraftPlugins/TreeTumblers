@@ -13,15 +13,17 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tickSeconds
 
 class WarriorKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
+    val blindnessTicks: Long = configurable("games.crumble.kits.warrior.blindness_ticks")
+
     override val id: String = "warrior"
     override val name: String = "Warrior"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/warrior")
@@ -38,11 +40,6 @@ class WarriorKit(
 
     override val kitIcon: String = "\uE006"
     override val kitDisplayTextLength: Double = 50.5
-
-    companion object {
-        @field:Configurable("games.crumble.kits.warrior.blindness_ticks")
-        var blindnessTicks: Long = 50
-    }
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }

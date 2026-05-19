@@ -25,7 +25,6 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -131,11 +130,6 @@ abstract class GameBase(
         }
     var currentTimer: Timer? = null
     val gameTimers: ArrayList<Timer> = ArrayList()
-
-    companion object {
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "world"
-    }
 
     /**
      * The internal load stage called by the [GameController]

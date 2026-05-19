@@ -20,6 +20,7 @@ import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.block.Biome
 import org.bukkit.block.Block
+import org.bukkit.configuration.MemorySection
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Firework
 import org.bukkit.entity.Player
@@ -37,6 +38,7 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingConfigurationException
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.PlayerUIController
@@ -516,4 +518,31 @@ suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int)
         audience.showTitle(title)
         delay(1000)
     }
+}
+
+inline fun <reified T> configurable(path: String): T {
+    val cfg = TreeTumblers.plugin.config
+    if(!cfg.contains(path)) throw TumblingConfigurationException("Config path $path was not found in config files")
+
+    val value = when(T::class) {
+        Int::class -> cfg.getInt(path)
+        Long::class -> cfg.getLong(path)
+        Double::class -> cfg.getDouble(path)
+        Float::class -> cfg.getDouble(path).toFloat()
+        String::class -> cfg.getString(path)
+
+        HashMap::class -> cfg.getConfigurationSection(path)
+            ?.getKeys(false)
+            ?.associateWith { key ->
+                cfg.get("$path.$key")
+            }
+            ?.toMap(HashMap())
+            ?: HashMap<String, MemorySection>()
+
+        Material::class -> Material.matchMaterial(cfg.getString(path)!!)
+
+        else -> cfg.get(path) as? T ?: throw TumblingConfigurationException("Configurable value was expected to be of type ${T::class.simpleName}, got ${cfg.get(path)!!::class.simpleName}")
+    }
+
+    return value as T
 }

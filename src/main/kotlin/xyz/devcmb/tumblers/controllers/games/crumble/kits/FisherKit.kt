@@ -14,11 +14,11 @@ import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.EquipmentSlotGroup
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.intToRoman
 import java.util.UUID
 
@@ -26,6 +26,10 @@ class FisherKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
+    val tridentLoyaltyLevel: Int = configurable("games.crumble.kits.fisher.trident_loyalty_level")
+    val tridentDamage: Double = configurable("games.crumble.kits.fisher.trident_damage")
+    val tridentAttackSpeed: Double = configurable("games.crumble.kits.fisher.trident_attack_speed")
+
     override val id: String = "fisher"
     override val name: String = "Fisher"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/fisher")
@@ -74,17 +78,6 @@ class FisherKit(
 
     override val kitIcon: String = "\uE002"
     override val kitDisplayTextLength: Double = 45.5
-
-    companion object {
-        @field:Configurable("games.crumble.kits.fisher.trident_loyalty_level")
-        var tridentLoyaltyLevel: Int = 2
-
-        @field:Configurable("games.crumble.kits.fisher.trident_damage")
-        var tridentDamage: Double = 5.0
-
-        @field:Configurable("games.crumble.kits.fisher.trident_attack_speed")
-        var tridentAttackSpeed: Double = 1.1
-    }
 
     var knockbackLevel: Int = 1
     override fun onKill(killed: Player) {

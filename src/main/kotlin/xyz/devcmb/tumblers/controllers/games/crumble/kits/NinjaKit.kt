@@ -23,9 +23,9 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -35,6 +35,10 @@ class NinjaKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
+    val invisibilityDuration: Int = configurable("games.crumble.kits.ninja.invisibility_duration")
+    val smokeDuration: Int = configurable("games.crumble.kits.ninja.smoke_duration")
+    val smokeSize: Double = configurable("games.crumble.kits.ninja.smoke_size")
+
     override val id: String = "ninja"
     override val name: String = "Ninja"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/ninja")
@@ -55,15 +59,6 @@ class NinjaKit(
     companion object {
         val ninjaOwnerKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_owner")
         val ninjaSmokeBombKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_smoke_bomb")
-
-        @field:Configurable("games.crumble.kits.ninja.invisibility_duration")
-        var invisibilityDuration: Int = 80
-
-        @field:Configurable("games.crumble.kits.ninja.smoke_duration")
-        var smokeDuration: Int = 100
-
-        @field:Configurable("games.crumble.kits.ninja.smoke_size")
-        var smokeSize: Double = 2.5
     }
 
     override fun onKill(killed: Player) {

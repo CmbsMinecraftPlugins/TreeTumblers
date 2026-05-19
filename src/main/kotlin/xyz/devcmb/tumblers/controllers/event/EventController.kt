@@ -29,7 +29,6 @@ import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingGenericException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -46,6 +45,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.calculatePlacements
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -96,51 +96,26 @@ class EventController : ControllerBase() {
     var lastGamePlayerScores: HashMap<TumblingPlayer, Int>? = null
 
     companion object {
-        @field:Configurable("event.event_mode")
-        var eventMode: Boolean = false
+        val eventMode: Boolean = configurable("event.event_mode")
+    }
 
-        @field:Configurable("event.override_motd")
-        var overrideMotd: Boolean = false
+    val overrideMotd: Boolean = configurable("event.override_motd")
+    val skipIntermission: Boolean = configurable("event.intermission.skip")
+    val intermissionLength: Int = configurable("event.intermission.time")
 
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "hub"
+    object Podiums {
+        val podiumYaw: Double = configurable("event.podiums.yaw")
+        val podiumPitch: Double = configurable("event.podiums.pitch")
+        val firstPodium: List<Int> = configurable("event.podiums.first")
+        val secondPodium: List<Int> = configurable("event.podiums.second")
+        val thirdPodiums: List<Int> = configurable("event.podiums.third")
+        val individualPodium: List<Int> = configurable("event.podiums.individual")
+    }
 
-        @field:Configurable("event.intermission.skip")
-        var skipIntermission: Boolean = false
-
-        @field:Configurable("event.intermission.time")
-        var intermissionLength: Int = 90
-
-        object Podiums {
-            @field:Configurable("event.podiums.yaw")
-            var podiumYaw: Double = -180.0
-
-            @field:Configurable("event.podiums.pitch")
-            var podiumPitch: Double = 0.0
-
-            @field:Configurable("event.podiums.first")
-            var firstPodium: List<Int> = listOf(-63, 196, 29)
-
-            @field:Configurable("event.podiums.second")
-            var secondPodium: List<Int> = listOf(-65, 195, 29)
-
-            @field:Configurable("event.podiums.third")
-            var thirdPodiums: List<Int> = listOf(-67, 194, 29)
-
-            @field:Configurable("event.podiums.individual")
-            var individualPodium: List<Int> = listOf(-61, 192, 27, 135, 0)
-        }
-
-        object Leaderboards {
-            @field:Configurable("event.leaderboards.last_game_team")
-            var lastGameTeamPosition: List<Double> = listOf(-90.0, 203.0, 29.0, -180.0, 0.0)
-
-            @field:Configurable("event.leaderboards.last_game_indiv")
-            var lastGameIndividualPosition: List<Double> = listOf(-93.75, 203.0, 27.5, -135.0, 0.0)
-
-            @field:Configurable("event.leaderboards.overall_team")
-            var overallTeamPosition: List<Double> = listOf(-95.5, 203.0, 24.0, -90.0, 0.0)
-        }
+    object Leaderboards {
+        val lastGameTeamPosition: List<Double> = configurable("event.leaderboards.last_game_team")
+        val lastGameIndividualPosition: List<Double> = configurable("event.leaderboards.last_game_indiv")
+        val overallTeamPosition: List<Double> = configurable("event.leaderboards.overall_team")
     }
 
     override fun init() {
@@ -844,7 +819,7 @@ class EventController : ControllerBase() {
         val top = placements.take(3)
 
         val podiums = arrayListOf(Podiums.firstPodium, Podiums.secondPodium, Podiums.thirdPodiums)
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         top.forEachIndexed { i, placement ->
             val podium = podiums[i].validateLocation(hub)
                 ?: throw TumblingGenericException("Podium ${i + 1} position is not valid!")
@@ -871,7 +846,7 @@ class EventController : ControllerBase() {
     fun refreshLastGameTeamScoreboard() {
         if(lastGameTeamPlacements == null || lastGameTeamScores == null) return
 
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.lastGameTeamPosition.validateLocation(hub)
             ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
 
@@ -909,7 +884,7 @@ class EventController : ControllerBase() {
     fun refreshLastGameIndividualScoreboard() {
         if(lastGamePlayerPlacements == null || lastGamePlayerScores == null) return
 
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.lastGameIndividualPosition.validateLocation(hub)
             ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
 
@@ -940,7 +915,7 @@ class EventController : ControllerBase() {
     fun refreshOverallTeamScoreboard() {
         if(!teamScores.any { it.value != 0 }) return
 
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.overallTeamPosition.validateLocation(hub)
             ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
 
@@ -978,7 +953,7 @@ class EventController : ControllerBase() {
         val placements = getEventPlayerPlacements()
         val playerPlacement = placements.find { it.first == player.tumblingPlayer } ?: Pair(player.tumblingPlayer, 0)
 
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
 
         val individualPosition = Podiums.individualPodium.validateLocation(hub)
             ?: throw TumblingGenericException("Individual podium position is not valid!")

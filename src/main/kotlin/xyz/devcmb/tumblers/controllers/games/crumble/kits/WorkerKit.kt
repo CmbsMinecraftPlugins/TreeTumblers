@@ -12,9 +12,9 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
 
@@ -22,6 +22,9 @@ class WorkerKit(
     override val player: Player?,
     override val crumble: CrumbleController
 ) : Kit {
+    val megaMineDuration: Long = configurable("games.crumble.kits.worker.megamine_duration")
+    val efficiencyDuration: Long = configurable("games.crumble.kits.worker.efficiency_duration")
+
     override val id: String = "worker"
     override val name: String = "Worker"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/worker")
@@ -40,14 +43,6 @@ class WorkerKit(
 
     override val kitIcon: String = "\uE007"
     override val kitDisplayTextLength: Double = 48.5
-
-    companion object {
-        @field:Configurable("games.crumble.kits.worker.megamine_duration")
-        var megaMineDuration: Long = 150
-
-        @field:Configurable("games.crumble.kits.worker.efficiency_duration")
-        var efficiencyDuration: Long = 200
-    }
 
     var kills: Int = 0
     override fun onKill(killed: Player) {

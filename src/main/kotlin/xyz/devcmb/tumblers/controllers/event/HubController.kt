@@ -13,11 +13,12 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.TumblingGenericException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -41,28 +42,12 @@ class HubController : ControllerBase() {
             return eventController.state == EventController.State.VOTING
         }
 
-    companion object {
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "world"
-
-        @field:Configurable("lobby.spawn.start")
-        var lobbySpawnStart: List<Int> = listOf(-56, 190, 13)
-
-        @field:Configurable("lobby.spawn.end")
-        var lobbySpawnEnd: List<Int> = listOf(-80,190,3)
-
-        @field:Configurable("lobby.spawn.yaw")
-        var lobbySpawnYaw: Double = -90.0
-
-        @field:Configurable("lobby.spawn.pitch")
-        var lobbySpawnPitch: Double = 0.0
-
-        @field:Configurable("lobby.spawn.floor")
-        var lobbySpawnFloor: Material = Material.STONE_BRICKS
-
-        @field:Configurable("lobby.void_height")
-        var voidHeight: Int = 177
-    }
+    val lobbySpawnStart: List<Int> = configurable("lobby.spawn.start")
+    val lobbySpawnEnd: List<Int> = configurable("lobby.spawn.end")
+    val lobbySpawnYaw: Double = configurable("lobby.spawn.yaw")
+    val lobbySpawnPitch: Double = configurable("lobby.spawn.pitch")
+    val lobbySpawnFloor: Material = configurable("lobby.spawn.floor")
+    val voidHeight: Int = configurable("lobby.void_height")
 
     val compass = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<aqua>Navigator</aqua>"))
@@ -87,7 +72,7 @@ class HubController : ControllerBase() {
     }
 
     fun getLobbyPosition(): Location {
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startLocation = lobbySpawnStart.validateLocation(hub)
             ?: throw TumblingGenericException("Start location for hub spawning is not a valid location list")
 
@@ -129,7 +114,7 @@ class HubController : ControllerBase() {
 
     @EventHandler
     fun playerMoveEvent(event: PlayerMoveEvent) {
-        if(event.to.y > voidHeight || event.to.world.name != lobbyWorld) return
+        if(event.to.y > voidHeight || event.to.world.name != WorldController.lobbyWorld) return
         event.player.fadeTp(getLobbyPosition())
     }
 }

@@ -31,17 +31,18 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.MusicController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPlayers
@@ -58,34 +59,17 @@ import kotlin.collections.takeLast
 
 @Controller(Controller.Priority.LOWEST)
 class VotingController : ControllerBase() {
-    companion object {
-        @field:Configurable("event.voting.inactive_quadrant_material")
-        var inactiveQuadrantMaterial: Material = Material.GRAY_CONCRETE
+    val inactiveQuadrantMaterial: Material = configurable("event.voting.inactive_quadrant_material")
+    val voteCenter: List<Int> = configurable("event.voting.center")
+    val quadrantSeparator: Material = configurable("event.voting.quadrant_separator")
+    val quadrantReplacement: Material = configurable("event.voting.quadrant_replacement")
+    val domeStart: List<Int> = configurable("event.voting.dome_start")
+    val domeEnd: List<Int> = configurable("event.voting.dome_end")
 
-        @field:Configurable("event.voting.center")
-        var voteCenter: List<Int> = listOf(0,0,0)
-
-        @field:Configurable("event.voting.quadrant_separator")
-        var quadrantSeparator: Material = Material.SMOOTH_QUARTZ_SLAB
-
-        @field:Configurable("event.voting.quadrant_replacement")
-        var quadrantReplacement: Material = Material.SMOOTH_QUARTZ
-
-        @field:Configurable("event.voting.dome_start")
-        var domeStart: List<Int> = listOf(-8,189,24)
-
-        @field:Configurable("event.voting.dome_end")
-        var domeEnd: List<Int> = listOf(26,197,-11)
-
-        @field:Configurable("templates.dioramas")
-        var dioramasFolder: String = "&/templates/dioramas"
-            get() {
-                return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
-            }
-
-        @field:Configurable("lobby.world")
-        var lobbyWorld: String = "hub"
-    }
+    val dioramasFolder: String = configurable("templates.dioramas")
+        get() {
+            return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
+        }
 
     val eventController: EventController by controller()
     val musicController: MusicController by controller()
@@ -110,7 +94,7 @@ class VotingController : ControllerBase() {
         TreeTumblers.plugin.config.getList("event.voting.quadrant_spawns")
             ?.map {
                 if (it !is List<*>) throw TumblingEventException("Voting logo positions is not a 2d list")
-                it.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                it.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting logo positions are not valid locations")
             } ?: throw TumblingEventException("Voting logo positions not provided")
     }
@@ -129,7 +113,7 @@ class VotingController : ControllerBase() {
     }
 
     val logoLocations: List<Location> by lazy {
-        logoPositions.map { it.validateLocation(Bukkit.getWorld(lobbyWorld)!!)!! }
+        logoPositions.map { it.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)!! }
     }
 
     val votingOn: Boolean
@@ -161,7 +145,7 @@ class VotingController : ControllerBase() {
             true
         )
         val observers = Bukkit.getOnlinePlayers().toSet()
-        val hub = Bukkit.getWorld(lobbyWorld)!!
+        val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
 
         cutscene.run(
             observers,
@@ -285,7 +269,7 @@ class VotingController : ControllerBase() {
 
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
-                val location = voteCenter.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val location = voteCenter.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingEventException("Voting arena does not have a center location")
 
                 it.inventory.clear()
@@ -299,9 +283,9 @@ class VotingController : ControllerBase() {
             joined = true
 
             timeExecution(2) {
-                val domeFrom = domeStart.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val domeFrom = domeStart.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingEventException("Dome from coordinates aren't valid!")
-                val domeTo = domeEnd.validateLocation(Bukkit.getWorld(lobbyWorld)!!)
+                val domeTo = domeEnd.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
                     ?: throw TumblingEventException("Dome to coordinates aren't valid!")
 
                 val blocks: ArrayList<Location> = ArrayList()
@@ -431,7 +415,7 @@ class VotingController : ControllerBase() {
 
         val diorama = dioramaSession ?: loadDiorama(game.id, quadrantIndex)
 
-        val lobby = Bukkit.getWorld(lobbyWorld)!!
+        val lobby = Bukkit.getWorld(WorldController.lobbyWorld)!!
         quadrantGames[quadrantIndex] = game
 
         if(diorama != null) {
@@ -507,7 +491,7 @@ class VotingController : ControllerBase() {
             clipboard = reader.read()
         }
 
-        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        val lobbyWorld = Bukkit.getWorld(WorldController.lobbyWorld)!!
         clipboard.origin = BukkitAdapter.adapt(voteCenter.validateLocation(lobbyWorld)).toBlockPoint()
 
         val editSession = WorldEdit.getInstance()
@@ -533,7 +517,7 @@ class VotingController : ControllerBase() {
     private fun cleanupDiorama(quadrantIndex: Int) {
         val session = quadrantDioramaEditSessions[quadrantIndex] ?: return
 
-        val lobbyWorld = Bukkit.getWorld(lobbyWorld)!!
+        val lobbyWorld = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val undoSession = WorldEdit.getInstance()
             .newEditSessionBuilder()
             .world(BukkitAdapter.adapt(lobbyWorld))
@@ -548,7 +532,7 @@ class VotingController : ControllerBase() {
     }
 
     override fun serverLoad() {
-        val lobby = Bukkit.getWorld(lobbyWorld)!!
+        val lobby = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val votingQuadrantPositions = TreeTumblers.plugin.config.getList("event.voting.quadrants")?.map {
             if(it !is List<*>) throw TumblingEventException("Voting quadrant is not a 2d list")
             it.validateList<Int>() ?: throw TumblingEventException("Voting quadrant does not contain exclusively Integers")

@@ -39,7 +39,6 @@ import org.joml.AxisAngle4f
 import org.joml.Vector3f
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
@@ -171,11 +170,10 @@ class DeathrunController : GameBase(
         .shadowColor(ShadowColor.none()),
     scoreboard = "deathrunScoreboard"
 ) {
-    companion object {
-        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")
 
-        @field:Configurable("games.deathrun.lives")
-        var lives: Int = 3
+    companion object {
+        val lives: Int = configurable("games.deathrun.lives")
+        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")
     }
 
     val playingTeams = Team.entries.filter { it.playingTeam }

@@ -47,7 +47,6 @@ import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
@@ -64,6 +63,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
@@ -173,19 +173,12 @@ class CrumbleController : GameBase(
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")
         val kitItemsKey = NamespacedKey(TreeTumblers.NAMESPACE, "kit_item")
-
-        @field:Configurable("games.crumble.max_kit_players")
-        var maxPlayersPerKit: Int = 1
-
-        @field:Configurable("games.crumble.tnt_detonation_time")
-        var tntDetonationTime: Int = 80
-
-        @field:Configurable("games.crumble.crumble_speed")
-        var crumbleSpeed: Double = 0.6
-
-        @field:Configurable("games.crumble.round_length")
-        var roundLength: Int = 75
+        val maxPlayersPerKit: Int = configurable("games.crumble.max_kit_players")
     }
+
+    val tntDetonationTime: Int = configurable("games.crumble.tnt_detonation_time")
+    val crumbleSpeed: Double = configurable("games.crumble.crumble_speed")
+    val roundLength: Int = configurable("games.crumble.round_length")
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         CommonScoreSource.TEAM_ROUND_WIN to { amount ->

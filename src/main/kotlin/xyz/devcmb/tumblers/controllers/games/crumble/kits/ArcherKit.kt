@@ -11,9 +11,9 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.intToRoman
 import xyz.devcmb.tumblers.util.tickSeconds
 
@@ -21,6 +21,10 @@ class ArcherKit(
     override val player: Player?,
     override val crumble: CrumbleController,
 ) : Kit {
+    val powerLevel: Int = configurable("games.crumble.kits.archer.power_level")
+    val punchLevel: Int = configurable("games.crumble.kits.archer.punch_level")
+    val swiftnessTicks: Long = configurable("games.crumble.kits.archer.swiftness_ticks")
+
     override val id: String = "archer"
     override val name: String = "Archer"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/archer")
@@ -46,17 +50,6 @@ class ArcherKit(
 
     override val kitIcon: String = "\uE000"
     override val kitDisplayTextLength: Double = 48.5
-
-    companion object {
-        @field:Configurable("games.crumble.kits.archer.power_level")
-        var powerLevel: Int = 3
-
-        @field:Configurable("games.crumble.kits.archer.punch_level")
-        var punchLevel: Int = 2
-
-        @field:Configurable("games.crumble.kits.archer.swiftness_ticks")
-        var swiftnessTicks: Long = 30
-    }
 
     var abilityActive = false
 

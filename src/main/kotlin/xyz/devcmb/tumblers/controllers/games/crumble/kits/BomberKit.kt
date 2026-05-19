@@ -14,16 +14,20 @@ import org.bukkit.event.entity.ExplosionPrimeEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.annotations.Configurable
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.configurable
 import java.util.UUID
 
 class BomberKit(
     override val player: Player?,
     override val crumble: CrumbleController,
 ) : Kit {
+    val nukePower: Float = configurable("games.crumble.kits.bomber.nuke_radius")
+    val nukeDamage: Int = configurable("games.crumble.kits.bomber.nuke_damage")
+    val blastProtectionLevel: Int = configurable("games.crumble.kits.bomber.blast_protection_level")
+
     override val id: String = "bomber"
     override val name: String = "Bomber"
     override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/bomber")
@@ -54,20 +58,10 @@ class BomberKit(
     override val kitDisplayTextLength: Double = 48.5
 
     companion object {
+        val nukeExplosionTicks: Int = configurable("games.crumble.kits.bomber.nuke_explosion_ticks")
+
         val nukeKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke")
         val nukeIdKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke_id")
-
-        @field:Configurable("games.crumble.kits.bomber.nuke_explosion_ticks")
-        var nukeExplosionTicks = 5
-
-        @field:Configurable("games.crumble.kits.bomber.nuke_radius")
-        var nukePower: Float = 7.0f
-
-        @field:Configurable("games.crumble.kits.bomber.nuke_damage")
-        var nukeDamage: Int = 7
-
-        @field:Configurable("games.crumble.kits.bomber.blast_protection_level")
-        var blastProtectionLevel: Int = 1
     }
 
     override fun onKill(killed: Player) {
