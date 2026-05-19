@@ -19,7 +19,8 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.VoidGenerator
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -78,7 +79,7 @@ class WorldController : ControllerBase() {
     fun createVoidWorld(worldName: String): World {
         val world = Bukkit.createWorld(
             WorldCreator(worldName)
-            .generator(MiscUtils.VoidGenerator))!!
+            .generator(VoidGenerator))!!
 
         world.getBlockAt(0, 64, 0).type = Material.STONE
 
@@ -106,10 +107,10 @@ class WorldController : ControllerBase() {
             )
         }
 
-        return MiscUtils.suspendSync {
+        return suspendSync {
             var worldCreator = WorldCreator(name)
             if (File(path.toString(), "void.txt").exists()) {
-                worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
+                worldCreator = worldCreator.generator(VoidGenerator)
             }
 
             Bukkit.createWorld(worldCreator)!!
@@ -131,7 +132,7 @@ class WorldController : ControllerBase() {
     suspend fun saveWorld(world: World, path: File, reload: Boolean = false) {
         val worldFolder = world.worldFolder
 
-        MiscUtils.suspendSync {
+        suspendSync {
             world.players.forEach {
                 val hub = Bukkit.getWorld(lobbyWorld)
                 val location = if (world.name == lobbyWorld || hub == null) {
@@ -157,7 +158,7 @@ class WorldController : ControllerBase() {
             }
 
             if (reload) {
-                MiscUtils.suspendSync {
+                suspendSync {
                     Bukkit.createWorld(
                         WorldCreator(world.name)
                             .generator(world.generator)
@@ -179,7 +180,7 @@ class WorldController : ControllerBase() {
 
     suspend fun cleanupWorld(world: World) = withContext(Dispatchers.IO) {
         val file = File(Bukkit.getWorldContainer(), world.name)
-        MiscUtils.suspendSync {
+        suspendSync {
             Bukkit.unloadWorld(world, false)
         }
 
@@ -212,7 +213,7 @@ class WorldController : ControllerBase() {
         )
 
         var worldCreator = WorldCreator(name)
-        worldCreator = worldCreator.generator(MiscUtils.VoidGenerator)
+        worldCreator = worldCreator.generator(VoidGenerator)
 
         val world = Bukkit.createWorld(worldCreator)!!
         world.entities

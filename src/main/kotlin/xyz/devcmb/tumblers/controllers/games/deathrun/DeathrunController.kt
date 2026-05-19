@@ -52,7 +52,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.*
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import kotlin.collections.get
 import kotlin.math.max
@@ -329,7 +329,7 @@ class DeathrunController : GameBase(
             override fun run() {
                 gameParticipants.forEach {
                     val time = completionTimes.getOrElse(it) { ticksElapsed }
-                    val text = MiscUtils.formatMsTime(time * 50L)
+                    val text = formatMsTime(time * 50L)
 
                     it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
                         Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
@@ -506,7 +506,7 @@ class DeathrunController : GameBase(
             }
         }
 
-        MiscUtils.subtitleCountdown(
+        subtitleCountdown(
             audience,
             Format.mm("<bold><yellow>Round $currentRound</yellow></bold>"),
             5
@@ -574,7 +574,7 @@ class DeathrunController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
@@ -734,7 +734,11 @@ class DeathrunController : GameBase(
         val placement = placements[roundIndex].size + 1
         Audience.audience(Bukkit.getOnlinePlayers()).sendMessage(
             gameMessage(Format.mm(
-                "<green><player> has completed the run <white>${placement}${MiscUtils.getOrdinalSuffix(placement)}</white> in <white><font:${TreeTumblers.NAMESPACE}:hud>\uEF04</font> ${MiscUtils.formatMsTime(ticksElapsed * 50L)}</white>!</green>",
+                "<green><player> has completed the run <white>${placement}${getOrdinalSuffix(placement)}</white> in <white><font:${TreeTumblers.NAMESPACE}:hud>\uEF04</font> ${
+                    formatMsTime(
+                        ticksElapsed * 50L
+                    )
+                }</white>!</green>",
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
@@ -750,13 +754,14 @@ class DeathrunController : GameBase(
         completionTimes[player] = ticksElapsed
         placements[roundIndex][player] = completionTimes.size
 
-        MiscUtils.spawnFirework(player, FireworkEffect.builder()
-            .trail(false)
-            .flicker(false)
-            .withColor(Color.YELLOW)
-            .withColor(Color.ORANGE)
-            .with(FireworkEffect.Type.BALL_LARGE)
-            .build()
+        spawnFirework(
+            player, FireworkEffect.builder()
+                .trail(false)
+                .flicker(false)
+                .withColor(Color.YELLOW)
+                .withColor(Color.ORANGE)
+                .with(FireworkEffect.Type.BALL_LARGE)
+                .build()
         )
 
     }
@@ -771,7 +776,7 @@ class DeathrunController : GameBase(
     fun failRun(player: Player) {
         val scores = grantTeamScore(currentTeam, DeathrunScoreSource.TRAP_KILL)
         currentTeam.getOnlinePlayers().forEach {
-            MiscUtils.announceKill(it, player, scores[it.tumblingPlayer]!!)
+            announceKill(it, player, scores[it.tumblingPlayer]!!)
         }
 
         makePlayerSpectate(player)

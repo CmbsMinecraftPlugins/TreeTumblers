@@ -7,7 +7,8 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.formatToMSS
+
 class CountdownBossbar(
     val gameController: GameController,
     override val id: String = "countdownBossbar",
@@ -26,7 +27,7 @@ class CountdownBossbar(
             )
         }
 
-        val text = MiscUtils.formatToMSS(currentGame.countdownTime)
+        val text = formatToMSS(currentGame.countdownTime)
         return UserInterfaceUtility.backgroundTextCenter(
             Component.text("\uEF01").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
             Component.text(text).font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_5")),

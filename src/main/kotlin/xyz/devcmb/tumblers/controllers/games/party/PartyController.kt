@@ -55,10 +55,10 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
-import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tp
@@ -418,7 +418,7 @@ class PartyController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))

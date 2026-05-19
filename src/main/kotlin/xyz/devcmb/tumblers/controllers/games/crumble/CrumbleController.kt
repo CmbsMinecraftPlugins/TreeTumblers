@@ -64,16 +64,19 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
+import xyz.devcmb.tumblers.util.getEquidistantPoints
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
+import xyz.devcmb.tumblers.util.isArmor
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.unpackCoordinates
 import xyz.devcmb.tumblers.util.validateLocation
+import xyz.devcmb.tumblers.util.wrapComponent
 import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
@@ -607,7 +610,7 @@ class CrumbleController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
@@ -777,7 +780,7 @@ class CrumbleController : GameBase(
         borderEvent = object : BukkitRunnable() {
             override fun run() {
                 arenaCenters.forEach { center ->
-                    val points = MiscUtils.getEquidistantPoints(center, currentCrumbleRadius, 30)
+                    val points = getEquidistantPoints(center, currentCrumbleRadius, 30)
                     points.forEach {
                         for(y in -5..5) {
                             currentMap.world.spawnParticle(
@@ -1002,7 +1005,7 @@ class CrumbleController : GameBase(
                 meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
             }
 
-            if(MiscUtils.isArmor(item)) {
+            if(isArmor(item)) {
                 if(item.type.name.contains("LEATHER")) {
                     item.itemMeta = item.itemMeta.also { meta ->
                         val meta = meta as LeatherArmorMeta
@@ -1020,7 +1023,7 @@ class CrumbleController : GameBase(
         val abilityItem = AdvancedItemStack(Material.PAPER) {
             name(Component.text("${kit.name} Ability: ${kit.abilityName}", NamedTextColor.AQUA))
             lore(
-                MiscUtils.wrapComponent(
+                wrapComponent(
                     Component.text(kit.abilityDescription, NamedTextColor.WHITE),
                     40
                 ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
@@ -1041,7 +1044,7 @@ class CrumbleController : GameBase(
                 meta.itemModel = killModel
                 meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
                 meta.lore(
-                    MiscUtils.wrapComponent(
+                    wrapComponent(
                         Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
                         40
                     ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }

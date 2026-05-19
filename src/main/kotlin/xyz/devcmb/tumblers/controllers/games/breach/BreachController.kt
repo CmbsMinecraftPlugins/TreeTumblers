@@ -59,8 +59,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
@@ -72,6 +71,8 @@ import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.sound
+import xyz.devcmb.tumblers.util.spawnFirework
+import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
@@ -447,13 +448,14 @@ class BreachController: GameBase(
 
         val fireworkTask = object : BukkitRunnable() {
             override fun run() {
-                MiscUtils.spawnFirework(bound1.randomBetween(bound2).add(0.0,10.0,0.0), FireworkEffect.builder()
-                    .trail(true)
-                    .flicker(true)
-                    .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
-                    .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
-                    .with(types.random())
-                    .build(), (10..30).random().toLong()
+                spawnFirework(
+                    bound1.randomBetween(bound2).add(0.0, 10.0, 0.0), FireworkEffect.builder()
+                        .trail(true)
+                        .flicker(true)
+                        .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                        .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                        .with(types.random())
+                        .build(), (10..30).random().toLong()
                 )
             }
         }
@@ -597,7 +599,7 @@ class BreachController: GameBase(
         gameState = GameState.PRE_ROUND
         asyncCountdown(8, "pre_round")
         delay(3000)
-        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
+        titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
         gameState = GameState.GAME_ON
     }
 
@@ -727,13 +729,14 @@ class BreachController: GameBase(
             return
         }
 
-        MiscUtils.spawnFirework(fireworkPos.clone().add(0.0,5.0,0.0), FireworkEffect.builder()
-            .trail(false)
-            .flicker(true)
-            .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
-            .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
-            .with(FireworkEffect.Type.STAR)
-            .build()
+        spawnFirework(
+            fireworkPos.clone().add(0.0, 5.0, 0.0), FireworkEffect.builder()
+                .trail(false)
+                .flicker(true)
+                .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                .withColor(Color.fromRGB(winner.color.red(), winner.color.green(), winner.color.blue()))
+                .with(FireworkEffect.Type.STAR)
+                .build()
         )
 
         winner.getOnlinePlayers().forEach {

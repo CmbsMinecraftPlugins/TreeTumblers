@@ -10,7 +10,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.formatToMSS
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleBossbar(
@@ -56,7 +56,7 @@ class CrumbleBossbar(
         ))
 
         component = component.append(Component.text(" ".repeat(5)))
-        val time = MiscUtils.formatToMSS(crumble.countdownTime)
+        val time = formatToMSS(crumble.countdownTime)
         component = component.append(Component.text(time))
         component = component.append(Component.text(" ".repeat(5)))
 

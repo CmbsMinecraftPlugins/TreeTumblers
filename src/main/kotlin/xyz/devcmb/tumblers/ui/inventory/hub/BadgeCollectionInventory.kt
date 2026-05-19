@@ -21,9 +21,9 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.wrapComponent
 import java.text.SimpleDateFormat
 
 class BadgeCollectionInventory(
@@ -146,7 +146,7 @@ class BadgeCollectionInventory(
                                             Component.empty(),
                                             Format.mm("<red>Locked!</red>"),
                                             Component.empty(),
-                                            *MiscUtils.wrapComponent(Component.text(badge.hint, NamedTextColor.WHITE), 30).toTypedArray()
+                                            *wrapComponent(Component.text(badge.hint, NamedTextColor.WHITE), 30).toTypedArray()
                                         ).map { entry ->
                                             entry.decoration(TextDecoration.ITALIC, false)
                                         })
@@ -162,7 +162,7 @@ class BadgeCollectionInventory(
                                             Component.empty(),
                                             Format.mm("<green>Unlocked on ${SimpleDateFormat("EEE MMM d, yyyy ").format(timestamp.time)}</green>"),
                                             Component.empty(),
-                                            *MiscUtils.wrapComponent(Component.text(badge.hint, NamedTextColor.WHITE), 30).toTypedArray()
+                                            *wrapComponent(Component.text(badge.hint, NamedTextColor.WHITE), 30).toTypedArray()
                                         ).map { entry ->
                                             entry.decoration(TextDecoration.ITALIC, false)
                                         })

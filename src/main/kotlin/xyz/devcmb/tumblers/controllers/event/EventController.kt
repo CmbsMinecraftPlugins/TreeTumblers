@@ -45,10 +45,12 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
@@ -447,13 +449,13 @@ class EventController : ControllerBase() {
             Bukkit.broadcast(
                 Format.mm(
                 "<br>".repeat(15) +
-                        "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place..." +
+                        "In ${placement}${getOrdinalSuffix(placement)} place..." +
                         "<br>".repeat(5)
             ))
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                 Title.title(
                 Component.empty(),
-                Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                Format.mm("In ${placement}${getOrdinalSuffix(placement)} place"),
                 Title.Times.times(Tick.of(0), Tick.of(9999), Tick.of(0))
             ))
 
@@ -475,14 +477,14 @@ class EventController : ControllerBase() {
                             }
                             .toTypedArray()
                     ),
-                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Format.mm("In ${placement}${getOrdinalSuffix(placement)} place"),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
 
                 Bukkit.broadcast(
                     Format.mm(
                     "<br>".repeat(15) +
-                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "In ${placement}${getOrdinalSuffix(placement)} place...<br>" +
                             teams +
                             "<br>".repeat(4),
                     *Team.entries
@@ -513,7 +515,7 @@ class EventController : ControllerBase() {
                 Bukkit.broadcast(
                     Format.mm(
                     "<br>".repeat(15) +
-                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "In ${placement}${getOrdinalSuffix(placement)} place...<br>" +
                             "$teams<br>" +
                             "With <gold>${teamScores[team] ?: 0}</gold> score!" +
                             "<br>".repeat(3),
@@ -529,13 +531,13 @@ class EventController : ControllerBase() {
                 Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                     Title.title(
                     team.formattedName,
-                    Format.mm("In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place"),
+                    Format.mm("In ${placement}${getOrdinalSuffix(placement)} place"),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
                 Bukkit.broadcast(
                     Format.mm(
                     "<br>".repeat(15) +
-                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "In ${placement}${getOrdinalSuffix(placement)} place...<br>" +
                             "<team:${team.name}:name>" +
                             "<br>".repeat(4)
                 ))
@@ -551,7 +553,7 @@ class EventController : ControllerBase() {
                 Bukkit.broadcast(
                     Format.mm(
                     "<br>".repeat(15) +
-                            "In ${placement}${MiscUtils.getOrdinalSuffix(placement)} place...<br>" +
+                            "In ${placement}${getOrdinalSuffix(placement)} place...<br>" +
                             "<team:${team.name}:name><br>" +
                             "With <gold>${teamScores[team] ?: 0}</gold> score!"+
                             "<br>".repeat(3)
@@ -570,7 +572,7 @@ class EventController : ControllerBase() {
                 readyCheckWaiting.addAll(it.getOnlinePlayers())
             }
 
-        MiscUtils.suspendSync {
+        suspendSync {
             readyCheckWaiting.forEach { it.openHandledInventory("readyCheckInventory") }
         }
 
@@ -606,7 +608,7 @@ class EventController : ControllerBase() {
         readyCheckTimer = null
 
         if(aborted) {
-            MiscUtils.suspendSync {
+            suspendSync {
                 Bukkit.getOnlinePlayers().forEach { it.closeInventory() }
             }
             Bukkit.broadcast(Format.warning("Not all players ready! Ready check failed!"))
@@ -777,7 +779,7 @@ class EventController : ControllerBase() {
             compareByDescending<MutableMap.MutableEntry<Team, Int>> { it.value }
                 .thenBy { it.key.priority }
         )
-        return MiscUtils.calculatePlacements(sorted)
+        return calculatePlacements(sorted)
     }
 
     fun getReverseEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
@@ -793,7 +795,7 @@ class EventController : ControllerBase() {
         val sorted = playerScores.entries.sortedWith(
             compareBy({ -it.value }, { it.key.team.priority }),
         )
-        return MiscUtils.calculatePlacements(sorted)
+        return calculatePlacements(sorted)
     }
 
     fun replicateScores() {
@@ -1034,7 +1036,7 @@ class EventController : ControllerBase() {
                     ProfileProperty("textures", skin.value, skin.signature)
                 )
 
-                MiscUtils.suspendSync {
+                suspendSync {
                     npc.profile = ResolvableProfile.resolvableProfile(profile)
                 }
             }

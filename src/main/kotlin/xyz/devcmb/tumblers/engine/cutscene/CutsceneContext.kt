@@ -10,7 +10,7 @@ import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.map.LoadedMap
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
 

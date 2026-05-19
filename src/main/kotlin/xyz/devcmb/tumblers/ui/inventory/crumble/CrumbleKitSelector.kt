@@ -18,9 +18,9 @@ import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.wrapComponent
 
 class CrumbleKitSelector(
     val player: Player,
@@ -40,8 +40,9 @@ class CrumbleKitSelector(
         addPage("main", page, true)
 
         val slots = listOf(2, 5, 11, 14, 20, 23, 29, 32)
-        val onClick: ((id: String) -> Unit) = onClick@{ id ->
+        val onClick: ((index: Int) -> Unit) = onClick@{ index ->
             val crumble = gameController.activeGame as? CrumbleController ?: return@onClick
+            val (id, kit) = crumble.kitTemplates.toList().getOrNull(index) ?: return@onClick
 
             if(crumble.playerKits.filter { item -> item.value.id == id }.size >= CrumbleController.maxPlayersPerKit) {
                 player.sendMessage(Format.error("This kit has too many players!"))
@@ -70,13 +71,13 @@ class CrumbleKitSelector(
                             meta.itemModel = kit.inventoryModel
                             meta.lore(listOf(
                                 Component.text("Ability: ${kit.abilityName}", NamedTextColor.AQUA),
-                                *MiscUtils.wrapComponent(
+                                *wrapComponent(
                                     Component.text(kit.abilityDescription, NamedTextColor.WHITE),
                                     40
                                 ).toTypedArray(),
                                 Component.empty(),
                                 Component.text("Kill Power: ${kit.killPowerName}", NamedTextColor.YELLOW),
-                                *MiscUtils.wrapComponent(
+                                *wrapComponent(
                                     Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
                                     40
                                 ).toTypedArray(),
@@ -85,10 +86,7 @@ class CrumbleKitSelector(
                     }
                 },
                 onClick = { page, item ->
-                    val crumbleController = gameController.activeGame as? CrumbleController ?: return@InventoryItem
-                    val (id, kit) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem
-
-                    onClick(id)
+                    onClick(index)
                 },
                 slot = slot
             ))
@@ -123,10 +121,7 @@ class CrumbleKitSelector(
                     },
                     slot = slot + (pIndex + 1),
                     onClick = { page, item ->
-                        val crumbleController = gameController.activeGame as? CrumbleController ?: return@InventoryItem
-                        val (id, kit) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem
-
-                        onClick(id)
+                        onClick(index)
                     },
                 ))
             }

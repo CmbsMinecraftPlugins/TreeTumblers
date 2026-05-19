@@ -43,13 +43,14 @@ import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
+import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.uiController
+import xyz.devcmb.tumblers.util.wrapComponent
 
 /**
  * Base class for all games
@@ -500,7 +501,7 @@ abstract class GameBase(
         val sorted = teamScores.entries
             .sortedWith(compareBy({ -it.value }, { it.key.priority }))
 
-        return MiscUtils.calculatePlacements(sorted)
+        return calculatePlacements(sorted)
     }
 
     /**
@@ -511,7 +512,7 @@ abstract class GameBase(
         val sorted = playerScores.entries
             .sortedWith(compareBy({ -it.value }, { it.key.team.priority }))
         
-        return MiscUtils.calculatePlacements(sorted)
+        return calculatePlacements(sorted)
     }
 
     /**
@@ -659,7 +660,7 @@ abstract class GameBase(
                         "<gold>${badge.badgeName}</gold><br><white><hint></white>" +
                         "'>[${badge.badgeName}]</hover></gold></green>",
                 Placeholder.component("icon", Component.text("\uE00B").font(UserInterfaceUtility.ICONS)),
-                Placeholder.component("hint", MiscUtils.wrapComponent(Component.text(badge.hint), 30)
+                Placeholder.component("hint", wrapComponent(Component.text(badge.hint), 30)
                     .reduce { acc, component -> acc.append(Component.newline()).append(component) }
                 )
             ))

@@ -18,7 +18,7 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import java.io.File
 import java.util.Optional
@@ -144,7 +144,7 @@ class WorldCommand {
 
     @Execute(name = "tp")
     fun teleport(@Context sender: Player, @Arg world: World, @Arg pos: Optional<Location>) {
-        val position = pos.orElse(Location(world, 0.0, 128.0, 0.0))
+        val position = pos.getOrElse { Location(world, 0.0, 128.0, 0.0) }
         sender.tp(Location(world, position.x, position.y, position.z))
         sender.sendMessage(Format.success("Teleported to ${world.name} successfully!"))
     }

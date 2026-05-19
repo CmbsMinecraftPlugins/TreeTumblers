@@ -11,7 +11,7 @@ import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.addScoreboardObjectiveLines
 
 sealed interface HandledScoreboard {
     val id: String
@@ -71,7 +71,7 @@ sealed interface HandledScoreboard {
             lastLines.clear()
             lastLines.addAll(lines)
 
-            val scores = MiscUtils.addScoreboardObjectiveLines(objective!!, lines)
+            val scores = addScoreboardObjectiveLines(objective!!, lines)
             this.scores.addAll(scores)
         }
     }

@@ -71,13 +71,15 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
-import xyz.devcmb.tumblers.util.MiscUtils.suspendSync
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
+import xyz.devcmb.tumblers.util.formatToMSS
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
@@ -537,7 +539,7 @@ class SnifferCaretakerController : GameBase(
 
         delay(5000)
 
-        MiscUtils.titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 10)
+        titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 10)
     }
 
     /**
@@ -700,7 +702,7 @@ class SnifferCaretakerController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${MiscUtils.getOrdinalSuffix(teamPlacement)} place!", color),
+                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
@@ -1087,7 +1089,7 @@ class SnifferCaretakerController : GameBase(
         signs[team]!!.forEach { (key, it) ->
             it.interpolationDelay = 0
             it.interpolationDuration = 0
-            it.text(Component.text("Restocking in ${MiscUtils.formatToMSS(timers[key]!!.toInt() / 20)}"))
+            it.text(Component.text("Restocking in ${formatToMSS(timers[key]!!.toInt() / 20)}"))
         }
 
         currentTasks[team]!!.forEach {

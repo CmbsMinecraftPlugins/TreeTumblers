@@ -19,7 +19,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.intToRoman
 import java.util.UUID
 
 class FisherKit(
@@ -99,7 +99,7 @@ class FisherKit(
         knockbackLevel += 1
         fish.removeEnchantments()
         fish.addUnsafeEnchantment(Enchantment.KNOCKBACK, knockbackLevel)
-        player.sendMessage(Format.success("Knockback fish upgraded to knockback level ${MiscUtils.intToRoman(knockbackLevel)}!"))
+        player.sendMessage(Format.success("Knockback fish upgraded to knockback level ${intToRoman(knockbackLevel)}!"))
     }
 
     var abilityActive: Boolean = false

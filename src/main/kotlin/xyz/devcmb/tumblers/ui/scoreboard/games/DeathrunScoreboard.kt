@@ -9,7 +9,7 @@ import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 
 class DeathrunScoreboard(
     val gameController: GameController,
@@ -36,7 +36,7 @@ class DeathrunScoreboard(
                     }
                     -1 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
                     -2 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<red>\uD83D\uDDE1</red>]</white>")
-                    else -> Format.mm("${if (setRound != 0) " " else ""}<white>[<green>$result${MiscUtils.getOrdinalSuffix(result)}</green>]</white>")
+                    else -> Format.mm("${if (setRound != 0) " " else ""}<white>[<green>$result${getOrdinalSuffix(result)}</green>]</white>")
                 })
             }
 

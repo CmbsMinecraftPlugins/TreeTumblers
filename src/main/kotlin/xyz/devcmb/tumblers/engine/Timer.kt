@@ -10,7 +10,7 @@ import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.misc.TimerController
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.MiscUtils
+import xyz.devcmb.tumblers.util.formatToMSS
 import java.util.UUID
 
 class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
@@ -34,7 +34,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var onComplete: (suspend (interrupted: Boolean) -> Unit)? = null
     var format: () -> Component = format@{
         if(paused) return@format Format.mm("<yellow>PAUSED</yellow>")
-        Component.text(MiscUtils.formatToMSS(currentTime))
+        Component.text(formatToMSS(currentTime))
     }
     var joined: Boolean = false
 
