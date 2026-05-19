@@ -172,7 +172,7 @@ class CrumbleController : GameBase(
         val kitItemsKey = NamespacedKey(TreeTumblers.NAMESPACE, "kit_item")
 
         @field:Configurable("games.crumble.max_kit_players")
-        var maxPlayersPerKit: Int = 2
+        var maxPlayersPerKit: Int = 1
 
         @field:Configurable("games.crumble.tnt_detonation_time")
         var tntDetonationTime: Int = 80

@@ -1,7 +1,5 @@
 package xyz.devcmb.tumblers.ui.inventory.hub
 
-import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
-import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
