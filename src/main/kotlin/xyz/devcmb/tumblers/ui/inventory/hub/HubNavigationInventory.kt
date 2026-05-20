@@ -8,7 +8,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.ChestInventoryUI
 import xyz.devcmb.invcontrol.chest.InventoryItem
-import xyz.devcmb.tumblers.TumblingGenericException
+import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
@@ -41,7 +41,7 @@ class HubNavigationInventory(
             },
             0,
             lodgeNavigationPosition.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
-                    ?: throw TumblingGenericException("Hub navigation position for lodge building is not a valid position!")
+                    ?: throw TumblingException("Hub navigation position for lodge building is not a valid position!")
         ))
 
         page.addItem(HubNavigationEntry(
@@ -52,7 +52,7 @@ class HubNavigationInventory(
             },
             1,
             practiceCoursesNavigationPosition.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
-                    ?: throw TumblingGenericException("Hub navigation position for practice courses is not a valid position!")
+                    ?: throw TumblingException("Hub navigation position for practice courses is not a valid position!")
         ))
     }
 

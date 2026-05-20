@@ -1,14 +1,22 @@
 package xyz.devcmb.tumblers
 
-import kotlin.Exception
+open class TumblingException(message: String) : RuntimeException(message)
+open class TumblingDatabaseException(message: String) : TumblingException(message)
+open class TumblingGameException(message: String) : TumblingException(message)
+open class TumblingWorldException(message: String) : TumblingException(message)
+open class TumblingEventException(message: String) : TumblingException(message)
+open class TumblingUIException(message: String) : TumblingException(message)
 
-class GameOperatorException(override val message: String) : Exception()
-class GameControllerException(override val message: String) : Exception()
-class WorldCreationException(override val message: String) : Exception()
-class MapSetupException(override val message: String) : Exception()
-class TumblingEventException(override val message: String) : Exception()
-class TumblingDatabaseException(override val message: String) : Exception()
-class TumblingGenericException(override val message: String) : Exception()
-class TumblingDatabaseStateException(override val message: String) : Exception()
-class TumblingInterfaceException(override val message: String) : Exception()
-class TumblingConfigurationException(override val message: String) : Exception()
+class GameOperatorException(message: String) : TumblingGameException(message)
+class GameControllerException(message: String) : TumblingGameException(message)
+
+class WorldCreationException(message: String) : TumblingWorldException(message)
+class MapSetupException(message: String) : TumblingWorldException(message)
+
+class TumblingDatabaseStateException(message: String) : TumblingDatabaseException(message)
+
+
+class TumblingConfigKeyMissingException(key: String)
+    : TumblingException("Configuration did not have a valid value for key $key")
+class TumblingConfigTypeMismatchException(key: String, expected: String, actual: String)
+    : TumblingException("Expected config key $key to return type $expected, got $actual")

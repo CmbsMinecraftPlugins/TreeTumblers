@@ -38,7 +38,8 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingConfigurationException
+import xyz.devcmb.tumblers.TumblingConfigKeyMissingException
+import xyz.devcmb.tumblers.TumblingConfigTypeMismatchException
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.PlayerUIController
@@ -522,7 +523,8 @@ suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int)
 
 inline fun <reified T> configurable(path: String): T {
     val cfg = TreeTumblers.plugin.config
-    if(!cfg.contains(path)) throw TumblingConfigurationException("Config path $path was not found in config files")
+    if(!cfg.contains(path)) throw TumblingConfigKeyMissingException(path)
+    if(!cfg.isSet(path)) DebugUtil.warning("Config path $path is not set! Defaulting to default value.")
 
     val value = when(T::class) {
         Int::class -> cfg.getInt(path)
@@ -541,7 +543,7 @@ inline fun <reified T> configurable(path: String): T {
 
         Material::class -> Material.matchMaterial(cfg.getString(path)!!)
 
-        else -> cfg.get(path) as? T ?: throw TumblingConfigurationException("Configurable value was expected to be of type ${T::class.simpleName}, got ${cfg.get(path)!!::class.simpleName}")
+        else -> cfg.get(path) as? T ?: throw TumblingConfigTypeMismatchException(path, T::class.simpleName ?: "None", cfg.get(path)!!::class.simpleName ?: "None")
     }
 
     return value as T

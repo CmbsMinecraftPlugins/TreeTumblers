@@ -28,7 +28,7 @@ import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingGenericException
+import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -822,7 +822,7 @@ class EventController : ControllerBase() {
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         top.forEachIndexed { i, placement ->
             val podium = podiums[i].validateLocation(hub)
-                ?: throw TumblingGenericException("Podium ${i + 1} position is not valid!")
+                ?: throw TumblingException("Podium ${i + 1} position is not valid!")
 
             val pos = podium.toCenterLocation()
             pos.y = podium.y
@@ -833,7 +833,7 @@ class EventController : ControllerBase() {
         }
 
         val individualPosition = Podiums.individualPodium.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual podium position is not valid!")
+            ?: throw TumblingException("Individual podium position is not valid!")
 
         val pos = individualPosition.toCenterLocation()
         pos.y = individualPosition.y
@@ -848,7 +848,7 @@ class EventController : ControllerBase() {
 
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.lastGameTeamPosition.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+            ?: throw TumblingException("Individual scoreboard position is not valid!")
 
         if(!startPos.chunk.isLoaded) startPos.chunk.load()
 
@@ -886,7 +886,7 @@ class EventController : ControllerBase() {
 
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.lastGameIndividualPosition.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+            ?: throw TumblingException("Individual scoreboard position is not valid!")
 
         if(!startPos.chunk.isLoaded) startPos.chunk.load()
 
@@ -917,7 +917,7 @@ class EventController : ControllerBase() {
 
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startPos = Leaderboards.overallTeamPosition.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual scoreboard position is not valid!")
+            ?: throw TumblingException("Individual scoreboard position is not valid!")
 
         if(!startPos.chunk.isLoaded) startPos.chunk.load()
 
@@ -956,7 +956,7 @@ class EventController : ControllerBase() {
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
 
         val individualPosition = Podiums.individualPodium.validateLocation(hub)
-            ?: throw TumblingGenericException("Individual podium position is not valid!")
+            ?: throw TumblingException("Individual podium position is not valid!")
 
         val pos = individualPosition.toCenterLocation()
         pos.y = individualPosition.y

@@ -9,7 +9,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.invcontrol.chest.ChestInventoryPage
 import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.TumblingInterfaceException
+import xyz.devcmb.tumblers.TumblingUIException
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.runTaskLater
@@ -23,7 +23,7 @@ class ConfirmationButton(
     init {
         val slotColumn = (slot % 9) + 1
         if(slotColumn == 1 || slotColumn == 9) {
-            throw TumblingInterfaceException("Confirmation button may not be at the edge of the inventory panel")
+            throw TumblingUIException("Confirmation button may not be at the edge of the inventory panel")
         }
     }
 

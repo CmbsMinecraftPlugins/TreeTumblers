@@ -12,7 +12,7 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import xyz.devcmb.tumblers.TumblingGenericException
+import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -74,10 +74,10 @@ class HubController : ControllerBase() {
     fun getLobbyPosition(): Location {
         val hub = Bukkit.getWorld(WorldController.lobbyWorld)!!
         val startLocation = lobbySpawnStart.validateLocation(hub)
-            ?: throw TumblingGenericException("Start location for hub spawning is not a valid location list")
+            ?: throw TumblingException("Start location for hub spawning is not a valid location list")
 
         val endLocation = lobbySpawnEnd.validateLocation(hub)
-            ?: throw TumblingGenericException("End location for hub spawning is not a valid location list")
+            ?: throw TumblingException("End location for hub spawning is not a valid location list")
 
         val validSpawns: ArrayList<Location> = ArrayList()
         startLocation.forEachRegion(endLocation) {
