@@ -15,7 +15,6 @@ class MapSetupException(message: String) : TumblingWorldException(message)
 
 class TumblingDatabaseStateException(message: String) : TumblingDatabaseException(message)
 
-
 class TumblingConfigKeyMissingException(key: String)
     : TumblingException("Configuration did not have a valid value for key $key")
 class TumblingConfigTypeMismatchException(key: String, expected: String, actual: String)

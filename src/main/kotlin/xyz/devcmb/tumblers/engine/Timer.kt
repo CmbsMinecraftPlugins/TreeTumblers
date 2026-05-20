@@ -14,12 +14,6 @@ import xyz.devcmb.tumblers.util.formatToMSS
 import java.util.UUID
 
 class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
-    @Deprecated("For more control, this has been replaced with a DSL. Use that instead.")
-    constructor(id: String, time: Int, onComplete: suspend (early: Boolean) -> Unit = {}) : this(time) {
-        this.id = id
-        this.onComplete = onComplete
-    }
-
     var currentTime = time
     var job: Job? = null
     var endedEarly: Boolean? = null
