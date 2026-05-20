@@ -19,7 +19,7 @@ class ChatCommand {
         playerController.channels[executor] = channel
         executor.sendMessage(Format.info(Format.mm(
             "You are now in the <channel> channel.",
-            Placeholder.component("channel", Format.mm("<color:${channel.color.asHexString()}>${channel.channelName}</color>"))
+            Placeholder.parsed("channel", "<color:${channel.color.asHexString()}>${channel.channelName}</color>")
         )))
     }
 

@@ -6,6 +6,7 @@ open class TumblingGameException(message: String) : TumblingException(message)
 open class TumblingWorldException(message: String) : TumblingException(message)
 open class TumblingEventException(message: String) : TumblingException(message)
 open class TumblingUIException(message: String) : TumblingException(message)
+open class TumblingNoxesiumException(message: String) : TumblingException(message)
 
 class GameOperatorException(message: String) : TumblingGameException(message)
 class GameControllerException(message: String) : TumblingGameException(message)

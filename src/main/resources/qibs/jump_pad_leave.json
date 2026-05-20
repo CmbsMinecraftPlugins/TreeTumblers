@@ -1,0 +1,7 @@
+{
+  "type": "RemovePotionEffect",
+  "effect": {
+    "namespace": "minecraft",
+    "path": "jump_boost"
+  }
+}

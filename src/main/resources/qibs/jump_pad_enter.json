@@ -1,0 +1,12 @@
+{
+  "type": "GivePotionEffect",
+  "effect": {
+    "namespace": "minecraft",
+    "path": "jump_boost",
+    "duration": -1,
+    "amplifier": 8,
+    "ambient": true,
+    "visible": false,
+    "showIcon": false
+  }
+}

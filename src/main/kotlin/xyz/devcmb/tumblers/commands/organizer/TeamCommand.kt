@@ -37,9 +37,7 @@ class TeamCommand {
 
         player.team = team
         executor.sendMessage(Format.success(Format.mm("Assigned <player:${player.uuid}> to the <team:${team.name}:name> team successfully!")))
-
-        val onlinePlayer = player.bukkitPlayer
-        onlinePlayer?.kick(Component.text("You've been changed to the <color:${team.color.asHexString()}>${team.name.lowercase()}</color> team and need to rejoin."))
+        player.bukkitPlayer?.kick(Format.mm("You've been changed to the <color:${team.color.asHexString()}>${team.name.lowercase()}</color> team and need to rejoin."))
     }
 
     @Execute(name = "list")
