@@ -168,7 +168,8 @@ class CrumbleController : GameBase(
         .shadowColor(ShadowColor.none()),
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
-    scoreboard = "crumbleScoreboard"
+    scoreboard = "crumbleScoreboard",
+    badges = CrumbleBadge.entries
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")
