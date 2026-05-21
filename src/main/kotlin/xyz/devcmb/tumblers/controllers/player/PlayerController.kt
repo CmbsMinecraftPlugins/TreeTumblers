@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import com.noxcrew.noxesium.paper.component.noxesiumPlayer
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
 import io.papermc.paper.event.player.AsyncChatEvent
@@ -52,6 +53,7 @@ import xyz.devcmb.tumblers.util.announceKill
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
@@ -107,6 +109,16 @@ class PlayerController : ControllerBase() {
         player.isFlying = false
         player.allowFlight = false
         player.clearActivePotionEffects()
+
+        runTaskLater(40) {
+            if(player.noxesiumPlayer == null) {
+                player.sendMessage(Format.warning(Format.mm(
+                    "We highly recommend downloading the " +
+                            "<hover:show_text:'<green>Click to Download</green>'><click:open_url:https://modrinth.com/mod/noxesium><green>[Noxesium Mod]</green></click></hover>" +
+                            " to make your experience the best it can be during the event. This mod synchronizes certain events to make them work identically regardless of ping."
+                )))
+            }
+        }
 
         player.vehicle?.let {
             player.leaveVehicle()

@@ -65,8 +65,8 @@ class HubController : ControllerBase() {
     override fun init() {
     }
 
-    fun spawnHub(player: Player) {
-        player.tp(getLobbyPosition())
+    fun spawnHub(player: Player, teleport: Boolean = true) {
+        if(teleport) player.tp(getLobbyPosition())
         player.inventory.addItem(compass.build())
         badgeController.giveCollection(player)
     }
