@@ -128,6 +128,9 @@ games:
     # Default 75 (1:15)
     round_length: 75
 
+    # Whether offline players should be killed when the round starts
+    kill_offline_players: true
+
     kits:
       archer:
         # The level of punch that the archer kit gets on their bow

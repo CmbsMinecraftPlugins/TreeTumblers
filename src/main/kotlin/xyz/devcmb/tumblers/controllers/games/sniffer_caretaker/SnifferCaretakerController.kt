@@ -258,8 +258,7 @@ class SnifferCaretakerController : GameBase(
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
     scoreboard = "snifferCaretakerScoreboard",
-    name = "Sniffer Caretaker",
-    badges = SnifferCaretakerBadge.entries
+    name = "Sniffer Caretaker"
 ) {
     val gameLength: Int = configurable("games.sniffer_caretaker.game_length")
     val chestRefresh: Long = configurable("games.sniffer_caretaker.chest_refresh")
@@ -631,10 +630,6 @@ class SnifferCaretakerController : GameBase(
                     }
                 }
             }
-        }
-
-        Bukkit.getOnlinePlayers().forEach {
-            grantBadge(it.tumblingPlayer, SnifferCaretakerBadge.TEST)
         }
 
         suspendSync {

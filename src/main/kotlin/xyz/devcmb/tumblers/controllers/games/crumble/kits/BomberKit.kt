@@ -14,10 +14,12 @@ import org.bukkit.event.entity.ExplosionPrimeEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 class BomberKit(
@@ -124,26 +126,33 @@ class BomberKit(
     }
 
     val hitPlayers: HashMap<UUID, ArrayList<Player>> = hashMapOf()
+    var nukeKills: Int = 0
     @EventHandler(priority = EventPriority.LOWEST)
     fun onEntityDamage(event: EntityDamageEvent) {
         if(event.isCancelled) return
 
-        val player = event.entity
-        if(player !is Player) return
+        val player = event.entity as? Player ?: return
+        val tnt = event.damageSource.directEntity ?: return
 
-        val causingEntity = event.damageSource.directEntity ?: return
-
-        val dataContainer = causingEntity.persistentDataContainer
+        val dataContainer = tnt.persistentDataContainer
         if (dataContainer.get(nukeKey, PersistentDataType.BOOLEAN) == true) {
             DebugUtil.info("Nuke found, setting damage for ${player.name} to $nukeDamage")
             event.damage = nukeDamage.toDouble()
-            hitPlayers.putIfAbsent(causingEntity.uniqueId, arrayListOf())
-            hitPlayers[causingEntity.uniqueId]!!.add(player)
+            hitPlayers.putIfAbsent(tnt.uniqueId, arrayListOf())
+            hitPlayers[tnt.uniqueId]!!.add(player)
+
+            if(player.health - event.damage <= 0 && player != this.player) {
+                nukeKills++
+                if(nukeKills >= 2) {
+                    crumble.grantBadge(this.player!!.tumblingPlayer, CrumbleBadge.DOUBLE_BOOM)
+                }
+            }
         }
     }
 
     override fun cleanup() {
         hitPlayers.clear()
         nukeId = null
+        nukeKills = 0
     }
 }

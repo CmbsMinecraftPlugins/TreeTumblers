@@ -180,6 +180,7 @@ class CrumbleController : GameBase(
     val tntDetonationTime: Int = configurable("games.crumble.tnt_detonation_time")
     val crumbleSpeed: Double = configurable("games.crumble.crumble_speed")
     val roundLength: Int = configurable("games.crumble.round_length")
+    val killOfflinePlayers: Boolean = configurable("games.crumble.kill_offline_players")
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         CommonScoreSource.TEAM_ROUND_WIN to { amount ->
@@ -567,12 +568,14 @@ class CrumbleController : GameBase(
             announceMatchup()
             preRound = false
 
-            // this is so if you fight an empty team, the team gets the points for it while also immediately ending the round
-            suspendSync {
-                alivePlayers.forEach { aliveEntry ->
-                    aliveEntry.value.toList().forEach { player ->
-                        if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) {
-                            playerDeath(player, null)
+            if(killOfflinePlayers) {
+                // this is so if you fight an empty team, the team gets the points for it while also immediately ending the round
+                suspendSync {
+                    alivePlayers.forEach { aliveEntry ->
+                        aliveEntry.value.toList().forEach { player ->
+                            if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) {
+                                playerDeath(player, null)
+                            }
                         }
                     }
                 }
@@ -1101,7 +1104,7 @@ class CrumbleController : GameBase(
             if(currentPlayerMatchup.first == killedTeam) currentPlayerMatchup.second
             else currentPlayerMatchup.first
 
-        val emptyMatchup = (!alivePlayers[killedTeam]!!.any { it.isOnline } && !alivePlayers[killerTeam]!!.any { it.isOnline })
+        val emptyMatchup = (alivePlayers[killedTeam]!!.isEmpty() && alivePlayers[killerTeam]!!.isEmpty())
         if(!emptyMatchup) {
             val currentMatchup = getCurrentMatchup(killedTeam)!!
             val otherTeam =

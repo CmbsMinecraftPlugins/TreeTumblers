@@ -7,12 +7,11 @@ enum class CrumbleBadge(
     override val hint: String,
     override val game: String = "crumble"
 ) : BadgeController.Badge {
-    // TODO
+    // TODO: Test
     DOUBLE_BOOM("Double Boom", "Get a double kill with Bomber's nuke."),
-    // TODO
-    ACE("Ace", "Personally kill all members of the opposing team."),
-    // TODO
+    // TODO: Implement
+    ACE("Ace", "Kill all 4 members of the opposing team."),
+    // TODO: Implement
     SMOKY_GLORY("Smoky Glory", "Kill a player while inside a smoke bomb."),
-    // TODO
     BATTLE_WORKER("Battle Worker", "Spleef someone using Worker's Mega Mine ability")
 }

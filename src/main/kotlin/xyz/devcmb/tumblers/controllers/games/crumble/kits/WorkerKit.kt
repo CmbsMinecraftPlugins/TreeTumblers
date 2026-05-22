@@ -3,20 +3,26 @@ package xyz.devcmb.tumblers.controllers.games.crumble.kits
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.Block
+import org.bukkit.block.BlockFace
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.entity.EntityDeathEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class WorkerKit(
     override val player: Player?,
@@ -92,33 +98,61 @@ class WorkerKit(
         }
     }
 
-    override fun cleanup() {
-        abilityActive = false
-        kills = 0
-    }
-
     val processingBlocks = mutableSetOf<Block>()
+    val brokenBlocks = mutableSetOf<Location>()
 
     @EventHandler
     fun playerMineEvent(event: BlockBreakEvent) {
         val player = event.player
+        if(player != this.player) return
+
         val item = player.inventory.itemInMainHand
         val origin = event.block
 
         if (item.type != items[2].type || !abilityActive) return
         if (!processingBlocks.add(origin)) return
 
-        val location = origin.location
+        val originLocation = origin.location
+        brokenBlocks.add(originLocation)
 
         for (x in -1..1)
         for (y in -1..1)
         for (z in -1..1) {
-            val block = location.clone().add(x.toDouble(), y.toDouble(), z.toDouble()).block
+            val location = originLocation.clone().add(x.toDouble(), y.toDouble(), z.toDouble())
+            val block = location.block
 
             if (!processingBlocks.add(block)) continue
             player.breakBlock(block)
+            brokenBlocks.add(location)
         }
 
         processingBlocks.remove(origin)
+    }
+
+    val lastPlayerStandingBlocks: HashMap<Player, Location> = HashMap()
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        val blockBelow = player.location.block.getRelative(BlockFace.DOWN)
+        if(blockBelow.isSolid) {
+            lastPlayerStandingBlocks[player] = blockBelow.location
+        }
+    }
+
+    @EventHandler
+    fun playerDeathEvent(event: EntityDeathEvent) {
+        val player = event.entity as? Player ?: return
+        val lastPosition = lastPlayerStandingBlocks[player] ?: return
+
+        if(lastPosition in brokenBlocks && player != this.player) {
+            crumble.grantBadge(this.player!!.tumblingPlayer, CrumbleBadge.BATTLE_WORKER)
+        }
+    }
+
+    override fun cleanup() {
+        abilityActive = false
+        kills = 0
+        lastPlayerStandingBlocks.clear()
     }
 }

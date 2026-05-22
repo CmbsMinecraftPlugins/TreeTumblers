@@ -113,9 +113,9 @@ class CrumbleKitSelector(
 
                         ItemStack.of(Material.PLAYER_HEAD).apply {
                             editMeta { meta ->
-                                meta.itemName(Format.mm("<player:${player.uuid}>"))
                                 meta.itemModel = UserInterfaceUtility.FLAT_SKULL
                                 (meta as SkullMeta).owningPlayer = Bukkit.getOfflinePlayer(player.uuid)
+                                meta.itemName(Format.mm("<player:${player.uuid}>"))
                             }
                         }
                     },
