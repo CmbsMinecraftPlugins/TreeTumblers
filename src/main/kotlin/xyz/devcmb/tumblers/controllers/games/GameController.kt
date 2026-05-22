@@ -20,6 +20,7 @@ import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
@@ -34,8 +35,17 @@ class GameController : ControllerBase() {
         val votable: Boolean,
         val game: Class<out GameBase>,
         val logo: Component,
-        val badges: List<BadgeController.Badge>?
-    )
+        val badges: List<BadgeController.Badge>?,
+        val spawns: List<SpawnLocation>?
+    ) {
+        fun getTemplate(): GameBase {
+            val gameController = ControllerRegistry.getController<GameController>()
+            val gameType = gameController.games.find { it.id == id }?.game
+                ?: throw GameOperatorException("Cannot get a nonexistent game")
+
+            return gameType.getDeclaredConstructor().newInstance()
+        }
+    }
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -56,7 +66,8 @@ class GameController : ControllerBase() {
                     templateInstance.votable,
                     gameClass,
                     templateInstance.logo,
-                    templateInstance.badges
+                    templateInstance.badges,
+                    templateInstance.spawns
                 ))
             }
     }
@@ -107,16 +118,6 @@ class GameController : ControllerBase() {
             player.foodLevel = 20
             player.saturation = 0f
             player.hunger()
-        }
-    }
-
-    class Game(val id: String) {
-        fun getTemplate(): GameBase {
-            val gameController = ControllerRegistry.getController<GameController>()
-            val gameType = gameController.games.find { it.id == id }?.game
-                ?: throw GameOperatorException("Cannot get a nonexistent game")
-
-            return gameType.getDeclaredConstructor().newInstance()
         }
     }
 }

@@ -11,12 +11,12 @@ import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 
-class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
+class GameArgument: ArgumentResolver<CommandSender, GameController.RegisteredGame>() {
     override fun parse(
         invocation: Invocation<CommandSender>,
-        context: Argument<GameController.Game>,
+        context: Argument<GameController.RegisteredGame>,
         argument: String
-    ): ParseResult<GameController.Game> {
+    ): ParseResult<GameController.RegisteredGame> {
         val gameController = ControllerRegistry.getController<GameController>()
         val game = gameController.games.find { it.id == argument }
 
@@ -24,12 +24,12 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.Game>() {
             return ParseResult.failure(Format.error("That isn't a valid game"))
         }
 
-        return ParseResult.success(GameController.Game(game.id))
+        return ParseResult.success(game)
     }
 
     override fun suggest(
         invocation: Invocation<CommandSender>,
-        argument: Argument<GameController.Game>,
+        argument: Argument<GameController.RegisteredGame>,
         context: SuggestionContext
     ): SuggestionResult? {
         val gameController = ControllerRegistry.getController<GameController>()

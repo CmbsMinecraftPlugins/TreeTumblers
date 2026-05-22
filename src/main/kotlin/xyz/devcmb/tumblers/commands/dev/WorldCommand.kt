@@ -55,7 +55,7 @@ class WorldCommand {
     fun templateSave(
         @Context executor: CommandSender,
         @Arg("world") world: World,
-        @Arg("game") game: GameController.Game,
+        @Arg("game") game: GameController.RegisteredGame,
         @Arg("name") name: Optional<String>,
         @Flag("--confirm","-c") confirm: Boolean
     ) {

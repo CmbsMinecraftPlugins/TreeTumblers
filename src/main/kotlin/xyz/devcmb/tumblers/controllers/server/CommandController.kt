@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.commands.arguments.PartyGameArgument
 import xyz.devcmb.tumblers.commands.arguments.PartyGameSchematicArgument
 import xyz.devcmb.tumblers.commands.arguments.QibTypeArgument
 import xyz.devcmb.tumblers.commands.arguments.RecoveryStateArgument
+import xyz.devcmb.tumblers.commands.arguments.SpawnLocationArgument
 import xyz.devcmb.tumblers.commands.arguments.TeamArgument
 import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
 import xyz.devcmb.tumblers.commands.arguments.TimerArgument
@@ -46,6 +47,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
@@ -72,7 +74,7 @@ class CommandController : ControllerBase() {
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
-            .argument(GameController.Game::class.java, GameArgument())
+            .argument(GameController.RegisteredGame::class.java, GameArgument())
             .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
             .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
             .argument(Timer::class.java, TimerArgument())
@@ -83,6 +85,7 @@ class CommandController : ControllerBase() {
             .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
             .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())
             .argument(BadgeController.Badge::class.java, BadgeArgument())
+            .argument(SpawnLocation::class.java, SpawnLocationArgument())
             .extension(LiteAdventureExtension()) { config ->
                 config.serializer(Format.miniMessage)
             }

@@ -81,6 +81,7 @@ import java.util.UUID
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.sqrt
+import kotlin.random.Random
 
 @EventGame
 class CrumbleController : GameBase(
@@ -155,7 +156,8 @@ class CrumbleController : GameBase(
     ),
     flags = setOf(
         Flag.SURVIVAL_MODE,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM
+        Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,
+        Flag.DISABLE_NATURAL_REGENERATION
     ),
     scores = hashMapOf(
         CommonScoreSource.KILL to 45,
@@ -169,7 +171,8 @@ class CrumbleController : GameBase(
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
     scoreboard = "crumbleScoreboard",
-    badges = CrumbleBadge.entries
+    badges = CrumbleBadge.entries,
+    spawns = CrumbleSpawns.entries
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")
@@ -344,7 +347,25 @@ class CrumbleController : GameBase(
 
         for(i in 1..rounds) {
             val map = maps.random()
-            loadMap(map, i)
+            val loadedMap = loadMap(map, i)
+
+            val arenaCenters: List<Location> = (1..4).map { arena ->
+                val list = loadedMap.data.getList("centers.arena$arena")
+                    ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
+                    ?: throw GameControllerException("Map does not have a center specified for $arena")
+                list.unpackCoordinates(loadedMap.world)
+            }
+
+            suspendSync {
+                arenaCenters.forEach {
+                    for(x in -1..1)
+                    for(z in -1..1) {
+                        val chunk = it.world.getChunkAt(it.chunk.x + x, it.chunk.z + z)
+                        chunk.isForceLoaded = true
+                        chunk.load()
+                    }
+                }
+            }
         }
     }
 
@@ -375,59 +396,14 @@ class CrumbleController : GameBase(
             }
             SpawnCycle.PRE_ROUND -> {
                 val currentMatchups = matchups[roundIndex]
-                val spawnSetKeys = (1..4).map {
-                    "spawns.ingame.arena$it"
-                }.toMutableList()
+                suspendSync {
+                    currentMatchups.forEachIndexed { index, matchup ->
+                        val arena = index + 1
+                        val spawnSet1 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_1")
+                        val spawnSet2 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_2")
 
-                currentMatchups.forEachIndexed { index, matchup ->
-                    val spawns: List<List<List<Double>>> = currentMap.data
-                        .getList(spawnSetKeys.getOrNull(index) ?: spawnSetKeys.first())
-                        ?.map { l1 ->
-                            if(l1 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                            l1.map { l2 ->
-                                if(l2 !is List<*>) throw GameControllerException("Spawn set is not a 2d list")
-                                l2.map {
-                                    if(it !is Double) throw GameControllerException("Spawn locations do not contain exclusively doubles")
-                                    it
-                                }
-                            }
-                        } ?: throw GameControllerException("Spawn set not found")
-
-                    var firstOccupiedSpawns = 0
-                    var secondOccupiedSpawns = 0
-
-                    suspendSync {
-                        gamePlayers.forEach {
-                            it.spigot().respawn()
-                            it.fireTicks = 0
-                            val tumblingPlayer = it.tumblingPlayer
-
-                            when(tumblingPlayer.team) {
-                                matchup.first -> {
-                                    val firstSpawnSet = spawns[0]
-                                    val playerSpawn = firstSpawnSet[firstOccupiedSpawns]
-                                    val location = playerSpawn.unpackCoordinates(currentMap.world)
-
-                                    it.tp(location)
-                                    it.isFlying = false
-                                    it.allowFlight = false
-                                    DebugUtil.info("Spawned ${it.name} at $playerSpawn")
-
-                                    firstOccupiedSpawns++
-                                }
-                                matchup.second -> {
-                                    val secondSpawnSet = spawns[1]
-                                    val playerSpawn = secondSpawnSet[secondOccupiedSpawns]
-                                    val location = playerSpawn.unpackCoordinates(currentMap.world)
-
-                                    it.tp(location)
-                                    DebugUtil.info("Spawned ${it.name} at $playerSpawn")
-
-                                    secondOccupiedSpawns++
-                                }
-                                else -> return@forEach
-                            }
-                        }
+                        spawnPlayers(currentMap, matchup.first.getOnlinePlayers().toSet(), spawnSet1)
+                        spawnPlayers(currentMap, matchup.second.getOnlinePlayers().toSet(), spawnSet2)
                     }
                 }
 
@@ -789,13 +765,13 @@ class CrumbleController : GameBase(
                             point.y,
                             point.z,
                             3,
-                            Particle.DustOptions(Color.RED, 3.0f)
+                            Particle.DustOptions(Color.RED, Random.nextDouble(1.0, 5.5).toFloat())
                         )
                     }
                 }
             }
         }
-        borderEvent!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
+        borderEvent!!.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
     
     suspend fun awaitEnd() {

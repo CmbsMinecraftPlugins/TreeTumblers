@@ -11,6 +11,7 @@ import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
+import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -21,8 +22,10 @@ import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
@@ -38,6 +41,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.cutscene.Cutscene
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.suspendSync
@@ -46,6 +50,7 @@ import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.uiController
 
 /**
@@ -84,7 +89,8 @@ abstract class GameBase(
     val logo: Component,
     val tabLogo: Component,
     val scoreboard: String,
-    val badges: List<BadgeController.Badge>? = null
+    val badges: List<BadgeController.Badge>? = null,
+    val spawns: List<SpawnLocation>? = null
 ): Listener {
     init {
         maps.forEach {
@@ -127,6 +133,10 @@ abstract class GameBase(
         }
     var currentTimer: Timer? = null
     val gameTimers: ArrayList<Timer> = ArrayList()
+
+    companion object {
+        val spawnKey = NamespacedKey(TreeTumblers.NAMESPACE, "spawn_location")
+    }
 
     /**
      * The internal load stage called by the [GameController]
@@ -280,6 +290,26 @@ abstract class GameBase(
      * @param cycle The stage where the players are spawned
      */
     abstract suspend fun spawn(cycle: SpawnCycle)
+
+    /**
+     * Spawn a set of players at a set [SpawnLocation] set
+     *
+     * @param map The map to spawn the players at
+     * @param players The players to spawn
+     * @param location The [SpawnLocation] to spawn players at
+     */
+    fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
+        val world = map.world
+        val markers = world.entities
+            .filterIsInstance<Interaction>()
+            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+
+        if(markers.isEmpty()) throw GameControllerException("Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id}")
+
+        players.forEachIndexed { index, player ->
+            player.tp(markers[index % markers.size].location)
+        }
+    }
 
     /**
      * Internal function for starting the game
@@ -738,9 +768,9 @@ abstract class GameBase(
 
     @EventHandler(priority = EventPriority.LOW)
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
-        if(flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM)) {
+        if(flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
             event.isCancelled = true
-            makeSpectator(event.player)
+            makeSpectator(event.player, !flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
         }
     }
 

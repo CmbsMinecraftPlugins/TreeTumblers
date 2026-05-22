@@ -210,70 +210,12 @@ games:
           spawns:
             # The position players are spawned in the pre-game (kit selection)
             pregame: [-32.5,100.0,-33.5]
-            ingame:
-              # The same information applies to the other 3 arenas
-              arena1:
-                # The first set of spawns for the first team on this map
-                # Each entry is a list containing a list of coordinated
-                # The coordinates are formated as x,y,z, and must be doubles (having a decimal)
-                - [
-                  [ -38.5,100.0,-43.5 ],
-                  [ -38.5,100.0,-41.5 ],
-                  [ -40.5,100.0,-39.5 ],
-                  [ -42.5,100.0,-39.5 ]
-                ]
-                # The second set of spawns for the second team on this map
-                - [
-                  [ -32.5,100.0,-29.5 ],
-                  [ -32.5,100.0,-31.5 ],
-                  [ -30.5,100.0,-33.5 ],
-                  [ -28.5,100.0,-33.5 ]
-                ]
-              arena2:
-                - [
-                  [-538.5, 100.0, 456.5],
-                  [-538.5, 100.0, 458.5],
-                  [-540.5, 100.0, 460.5],
-                  [-542.5, 100.0, 460.5]
-                ]
-                - [
-                  [-532.5, 100.0, 470.5],
-                  [-532.5, 100.0, 468.5],
-                  [-530.5, 100.0, 466.5],
-                  [-528.5, 100.0, 466.5]
-                ]
-              arena3:
-                - [
-                  [471.5, 100.0, -539.5],
-                  [469.5, 100.0, -539.5],
-                  [467.5, 100.0, -541.5],
-                  [467.5, 100.0, -543.5]
-                ]
-                - [
-                  [457.5, 100.0, -533.5],
-                  [459.5, 100.0, -533.5],
-                  [461.5, 100.0, -531.5],
-                  [461.5, 100.0, -529.5]
-                ]
-              arena4:
-                - [
-                  [-542.5, 100.0, -533.5],
-                  [-540.5, 100.0, -533.5],
-                  [-538.5, 100.0, -531.5],
-                  [-538.5, 100.0, -529.5]
-                ]
-                - [
-                  [-528.5, 100.0, -539.5],
-                  [-530.5, 100.0, -539.5],
-                  [-532.5, 100.0, -541.5],
-                  [-532.5, 100.0, -543.5]
-                ]
           centers:
             # The center of their respective arena
             arena1: [-35.5,103.0,-36.5]
-            arena2: [-535.5,103.0,-463.5]
-            arena3: [464.5,103.0,-536.5]
-            arena4: [-535.5,103.0,-536.5]
+            arena2: [-535.5,103.0,-536.5]
+            arena3: [-535.5,103.0,463.0]
+            arena4: [464.5,103.0,-536.5]
             cutscene: [464.5,103.0,463.5]
           cutscene:
             # X,Y,Z,pitch,yaw
@@ -456,7 +398,7 @@ games:
           # This is used to set up the map relative to the original
           base_map: [[-27.0, 49.0, -23.0], [29.0, 75.0, 11.0]]
 
-          # All of the following keys are relative to the first map, then extended to the other ones
+          # All the following keys are relative to the first map, then extended to the other ones
           # The spawn location of the sniffer
           sniffer_spawn: [2.5, 65.0, -1.0]
           # The start and end positions of the pen

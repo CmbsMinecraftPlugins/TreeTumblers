@@ -114,7 +114,7 @@ class WorldController : ControllerBase() {
         }
     }
 
-    suspend fun saveWorld(world: World, game: GameController.Game, name: String? = null) {
+    suspend fun saveWorld(world: World, game: GameController.RegisteredGame, name: String? = null) {
         val name = name ?: world.name
         val game = game.getTemplate()
 
@@ -165,7 +165,7 @@ class WorldController : ControllerBase() {
         }
     }
 
-    fun worldFileExists(game: GameController.Game, name: String): Boolean {
+    fun worldFileExists(game: GameController.RegisteredGame, name: String): Boolean {
         val game = game.getTemplate()
         val worldsFolder = File(
             worldRoot,

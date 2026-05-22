@@ -9,12 +9,18 @@ import dev.rollczi.litecommands.annotations.join.Join
 import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import org.bukkit.command.CommandSender
+import org.bukkit.entity.Interaction
+import org.bukkit.entity.Player
+import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.toCenterXZLocation
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
 
@@ -24,7 +30,7 @@ class GameCommand {
     val gameController: GameController by ControllerRegistry.controller()
 
     @Execute(name = "start")
-    fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.Game) {
+    fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.RegisteredGame) {
         if(gameController.activeGame != null) {
             sender.sendMessage(Format.error("A game is already active!"))
             return
@@ -117,5 +123,15 @@ class GameCommand {
 
         sender.sendMessage(activeGame.gameMessage(Component.text(msg)))
         sender.sendMessage(Format.success("Game message sent successfully!"))
+    }
+
+    @Execute(name = "spawn summon")
+    fun executeSpawnSummon(@Context player: Player, @Arg("game") game: GameController.RegisteredGame, @Arg("spawn location") location: SpawnLocation) {
+        val playerLocation = player.location.toCenterXZLocation()
+        playerLocation.world.spawn(playerLocation, Interaction::class.java) {
+            it.persistentDataContainer.set(GameBase.spawnKey, PersistentDataType.STRING, location.name.lowercase())
+        }
+
+        player.sendMessage(Format.success(Format.mm("Summoned spawn <white>${location.name}</white> successfully!")))
     }
 }
