@@ -1,7 +1,9 @@
 package xyz.devcmb.tumblers.controllers.event
 
+import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -9,9 +11,11 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.wrapComponent
 import java.sql.Timestamp
 import java.util.Date
 
@@ -46,6 +50,19 @@ class BadgeController : ControllerBase() {
 
     fun grantBadge(player: TumblingPlayer, badge: Badge) {
         if(player.badges.contains(badge)) return
+
+        if(player.bukkitPlayer != null) {
+            player.bukkitPlayer!!.sendMessage(Format.mm(
+                "<green>(<white><icon></white>) You've unlocked a new badge: <gold><hover:show_text:'" +
+                        "<gold>${badge.badgeName}</gold><br><white><hint></white>" +
+                        "'>[${badge.badgeName}]</hover></gold></green>",
+                Placeholder.component("icon", Component.text("\uE00B").font(UserInterfaceUtility.ICONS)),
+                Placeholder.component("hint", wrapComponent(Component.text(badge.hint), 30)
+                    .reduce { acc, component -> acc.append(Component.newline()).append(component) }
+                )
+            ))
+        }
+
         player.badges[badge] = Timestamp(Date().time)
     }
 

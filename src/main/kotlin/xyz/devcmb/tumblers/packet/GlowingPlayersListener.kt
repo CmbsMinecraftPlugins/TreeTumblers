@@ -29,9 +29,7 @@ class GlowingPlayersListener : PacketListener {
 
         val receiver = event.getPlayer<Player>()
         val packet = WrapperPlayServerEntityMetadata(event)
-        val metaPlayer = Bukkit.getOnlinePlayers().find { it.entityId == packet.entityId }
-
-        if(metaPlayer == null) return
+        val metaPlayer = Bukkit.getOnlinePlayers().find { it.entityId == packet.entityId } ?: return
 
         if(receiver.tumblingPlayer.team == metaPlayer.tumblingPlayer.team && receiver != metaPlayer) {
             packet.entityMetadata.add(EntityData(0, EntityDataTypes.BYTE, 0x40))

@@ -6,7 +6,6 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -40,7 +39,6 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.score.ScoreSource
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
@@ -49,7 +47,6 @@ import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.uiController
-import xyz.devcmb.tumblers.util.wrapComponent
 
 /**
  * Base class for all games
@@ -645,23 +642,7 @@ abstract class GameBase(
      * @param player The player to award the badge to
      * @param badge The badge to award
      */
-    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) {
-        if(player.badges.containsKey(badge)) return
-        
-        if(player.bukkitPlayer != null) {
-            player.bukkitPlayer!!.sendMessage(Format.mm(
-                "<green>(<white><icon></white>) You've unlocked a new badge: <gold><hover:show_text:'" +
-                        "<gold>${badge.badgeName}</gold><br><white><hint></white>" +
-                        "'>[${badge.badgeName}]</hover></gold></green>",
-                Placeholder.component("icon", Component.text("\uE00B").font(UserInterfaceUtility.ICONS)),
-                Placeholder.component("hint", wrapComponent(Component.text(badge.hint), 30)
-                    .reduce { acc, component -> acc.append(Component.newline()).append(component) }
-                )
-            ))
-        }
-
-        badgeController.grantBadge(player, badge)
-    }
+    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = badgeController.grantBadge(player, badge)
 
     @EventHandler(priority = EventPriority.HIGHEST)
     fun playerJoinEvent(event: PlayerJoinEvent) {

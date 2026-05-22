@@ -154,10 +154,11 @@ class BadgeCollectionInventory(
                                 }
                             } else {
                                 val timestamp = playerBadges[badge]!!
-                                ItemStack.of(Material.LIME_STAINED_GLASS_PANE).apply {
+                                ItemStack.of(Material.ECHO_SHARD).apply {
                                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                                     itemMeta = itemMeta.also {
                                         it.itemName(Format.mm("<gold>${badge.badgeName}</gold>"))
+                                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "badges/${badge.game}/${badge.name.lowercase()}")
                                         it.lore(listOf(
                                             Component.empty(),
                                             Format.mm("<green>Unlocked on ${SimpleDateFormat("EEE MMM d, yyyy ").format(timestamp.time)}</green>"),
