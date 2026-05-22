@@ -67,8 +67,8 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
-import xyz.devcmb.tumblers.util.getEquidistantPoints
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
+import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.isArmor
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -777,18 +777,20 @@ class CrumbleController : GameBase(
         borderEvent = object : BukkitRunnable() {
             override fun run() {
                 arenaCenters.forEach { center ->
-                    val points = getEquidistantPoints(center, currentCrumbleRadius, 30)
-                    points.forEach {
-                        for(y in -5..5) {
-                            currentMap.world.spawnParticle(
-                                Particle.DUST,
-                                it.x,
-                                it.y + y,
-                                it.z,
-                                3,
-                                Particle.DustOptions(Color.RED, 3.0f)
-                            )
-                        }
+                    val radius = currentCrumbleRadius
+                    repeat(radius.toInt() * 10) {
+                        val center = center.clone()
+                        center.y += ((-5..5).random())
+
+                        val point = getRandomCirclePoint(center, radius)
+                        currentMap.world.spawnParticle(
+                            Particle.DUST,
+                            point.x,
+                            point.y,
+                            point.z,
+                            3,
+                            Particle.DustOptions(Color.RED, 3.0f)
+                        )
                     }
                 }
             }

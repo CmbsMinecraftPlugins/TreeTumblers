@@ -49,6 +49,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
+import kotlin.random.Random
 
 private val playerController: PlayerController by ControllerRegistry.controller()
 
@@ -458,15 +459,14 @@ fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): 
     return placements
 }
 
-// ai code
-// this is magic
-fun getEquidistantPoints(center: Location, radius: Double, count: Int): List<Location> {
-    return (0 until count).map { i ->
-        val angle = (2 * Math.PI * i) / count  // evenly spaced radians
-        val x = center.x + radius * cos(angle)
-        val z = center.z + radius * sin(angle)
-        Location(center.world, x, center.y, z)
-    }
+fun getRandomCirclePoint(center: Location, radius: Double): Location {
+    val angle = Random.nextDouble(0.0, Math.PI * 2)
+    return Location(
+        center.world,
+        center.x + radius * cos(angle),
+        center.y,
+        center.z + radius * sin(angle)
+    )
 }
 
 fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>): ArrayList<Score> {
