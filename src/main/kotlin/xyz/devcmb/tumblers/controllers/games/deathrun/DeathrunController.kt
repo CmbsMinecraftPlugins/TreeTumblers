@@ -60,7 +60,7 @@ import kotlin.math.max
 class DeathrunController : GameBase(
     id = "deathrun",
     name = "Deathrun",
-    votable = true,
+    votable = false,
     maps = setOf(
         Map("forest")
     ),
@@ -221,14 +221,6 @@ class DeathrunController : GameBase(
 
     override val debugToolkit: DebugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (CommandSender) -> Unit> = hashMapOf()
-
-        override fun killEvent(killer: Player?, killed: Player?) {
-            killed?.damage(1.0)
-        }
-
-        override fun deathEvent(killed: Player?) {
-            killed?.damage(1.0)
-        }
     }
 
     val traps: ArrayList<Class<out Trap>> = ArrayList()

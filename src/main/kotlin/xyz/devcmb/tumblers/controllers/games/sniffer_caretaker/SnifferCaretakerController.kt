@@ -326,9 +326,6 @@ class SnifferCaretakerController : GameBase(
                 }
             },
         )
-
-        override fun killEvent(killer: Player?, killed: Player?) {}
-        override fun deathEvent(killed: Player?) {}
     }
 
     val currentMap: LoadedMap

@@ -27,6 +27,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
+import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.annotations.Controller
@@ -1100,14 +1101,10 @@ class EventController : ControllerBase() {
     fun serverListPingEvent(event: ServerListPingEvent) {
         if(!overrideMotd) return
 
-        val firstGames = gameController.games.filter { it.votable }.take(4)
-        val colors = arrayListOf("red", "blue", "green", "yellow")
-        val footer = firstGames.mapIndexed { i, element -> "<color:${colors[i]}>${element.name}</color>" }.joinToString(" <b><white>•</white></b> ")
         event.motd(
             Format.mm(
-            "<color:#64ffb8>■■■■■■</color> <b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</b> <color:#64ffb8>■■■■■■</color><br>" +
-                    "<color:#64ffb8>■ <footer> ■</color>",
-            Placeholder.parsed("footer", footer)
+            "<b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</gold></b><br>" +
+                    "<aqua>${gameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>development (${Constants.BRANCH})</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
         ))
     }
 

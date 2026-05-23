@@ -319,9 +319,6 @@ class CrumbleController : GameBase(
                 sender.sendMessage(Format.success("Ended round successfully!"))
             }
         )
-
-        override fun killEvent(killer: Player?, killed: Player?) {}
-        override fun deathEvent(killed: Player?) {}
     }
 
     override suspend fun gameLoad() {
@@ -644,7 +641,7 @@ class CrumbleController : GameBase(
                     selectKit(
                         player,
                         registeredKits.keys.filter { registeredKit ->
-                            playerKits.filter { kit -> kit.value.id == registeredKit }.size < maxPlayersPerKit
+                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == player.tumblingPlayer.team }.size < maxPlayersPerKit
                         }.random()
                     )
                 }
@@ -689,7 +686,7 @@ class CrumbleController : GameBase(
     fun setupCrumble() {
         val currentMapSize = currentMap.data.getInt("map_size")
         // basically the size is the sidelength of a square
-        // so half of the diagonal is the radius to a circumscribed circle
+        // so half of the side length is the radius to a circumscribed circle
         // and a +1 for inaccuracies in rounding
         currentCrumbleRadius = ((currentMapSize * sqrt(2.0) * 0.5) + 1)
 

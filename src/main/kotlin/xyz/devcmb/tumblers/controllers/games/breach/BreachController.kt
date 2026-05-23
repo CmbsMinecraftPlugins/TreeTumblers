@@ -294,9 +294,6 @@ class BreachController: GameBase(
                 roundEnd(playingTeams.second, team2spawn)
             }
         )
-
-        override fun killEvent(killer: Player?, killed: Player?) {}
-        override fun deathEvent(killed: Player?) {}
     }
 
     /**
