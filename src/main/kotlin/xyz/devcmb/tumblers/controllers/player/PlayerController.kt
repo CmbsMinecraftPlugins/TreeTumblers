@@ -107,6 +107,7 @@ class PlayerController : ControllerBase() {
         player.inventory.clear()
         player.gameMode = GameMode.ADVENTURE
         player.isFlying = false
+        player.isGlowing = false
         player.allowFlight = false
         player.clearActivePotionEffects()
 
@@ -248,15 +249,9 @@ class PlayerController : ControllerBase() {
 
         val uuid = connection.authenticatedProfile?.id
         if(!databaseController.isConnected()) {
-            val message = if(uuid == UUID.fromString("23b0c30a-501c-4e58-8f7f-934c86888f57"))
-                Format.mm("<aqua><st>${" ".repeat(60)}</st><br><br>" +
-                        "Laragon.<br><br>" +
-                        "<st>${" ".repeat(60)}</st></aqua>")
-            else Format.mm("<red><st>${" ".repeat(60)}</st><br><br>" +
+            event.kickMessage(Format.mm("<red><st>${" ".repeat(60)}</st><br><br>" +
                     "Database initialization failed<br><br>" +
-                    "<st>${" ".repeat(60)}</st></red>")
-
-            event.kickMessage(message)
+                    "<st>${" ".repeat(60)}</st></red>"))
             return
         }
 
