@@ -6,14 +6,20 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.flag.Flag
 import dev.rollczi.litecommands.annotations.permission.Permission
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.apache.commons.io.FileUtils
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.World
+import org.bukkit.WorldCreator
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingWorldException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -21,6 +27,8 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import java.io.File
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
 import java.util.Optional
 import kotlin.io.path.Path
 import kotlin.jvm.optionals.getOrElse
@@ -147,5 +155,70 @@ class WorldCommand {
         val position = pos.getOrElse { Location(world, 0.0, 128.0, 0.0) }
         sender.tp(Location(world, position.x, position.y, position.z))
         sender.sendMessage(Format.success("Teleported to ${world.name} successfully!"))
+    }
+
+    @Execute(name = "migrate")
+    @Suppress("UnstableApiUsage")
+    fun migrate(@Context sender: CommandSender, @Arg world: WorldController.LoadableTemplate) {
+        if(Files.exists(Path(Bukkit.getServer().levelDirectory.toString(), "dimensions/minecraft/${world.file.name}"))) {
+            sender.sendMessage(Format.error("You cannot migrate a world while it is loaded!"))
+            return
+        }
+
+        if(!Files.exists(Path(world.file.toString(), "level.dat"))) {
+            sender.sendMessage(Format.warning("World is already migrated"))
+            return
+        }
+
+        sender.sendMessage(Format.info("Starting migration..."))
+        TreeTumblers.pluginScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    FileUtils.copyDirectory(world.file, File(Bukkit.getWorldContainer(), world.file.name))
+                }
+
+                delay(12000)
+
+                val bukkitWorld = suspendSync {
+                    Bukkit.createWorld(WorldCreator(world.file.name))
+                        ?: throw TumblingWorldException("Failed to load world ${world.file.name}")
+                }
+
+                delay(1000)
+
+                suspendSync {
+                    Bukkit.unloadWorld(bukkitWorld, false)
+                }
+
+                delay(3000)
+
+                withContext(Dispatchers.IO) {
+                    val isVoid = Files.exists(Path(world.file.toString(), "void.txt"))
+                    worldController.deleteDir(world.file)
+                    delay(5000)
+                    val from = File(worldController.getDimensions(), world.file.name)
+                    val idFile = File(from, "data/paper/metadata.dat")
+                    if (idFile.exists()) {
+                        idFile.delete()
+                    }
+
+                    FileUtils.copyDirectory(from, world.file)
+                    delay(3000)
+                    worldController.deleteDir(from)
+                    if(isVoid) {
+                        Files.write(
+                            File(world.file, "void.txt").toPath(),
+                            listOf(""),
+                            StandardCharsets.UTF_8
+                        )
+                    }
+                }
+
+                sender.sendMessage(Format.success("Migration success!"))
+            } catch (e: Exception) {
+                DebugUtil.severe("Failed to migrate world ${world.file.name}: ${e.message} (${e.cause})")
+                sender.sendMessage(Format.error("An error occurred while migrating the world"))
+            }
+        }
     }
 }

@@ -1,7 +1,7 @@
 name: TreeTumblers
 version: '1.0.0'
 main: xyz.devcmb.tumblers.TreeTumblers
-api-version: '1.21'
+api-version: '26.1.2'
 prefix: TreeTumblers
 authors: [ DevCmb ]
 depend: [ FastAsyncWorldEdit, LibsDisguises, packetevents ]

@@ -101,11 +101,11 @@ class NinjaKit(
         equipment.itemInMainHandDropChance = 0f
 
         equipment.setItemInMainHand(ItemStack(Material.WOODEN_SWORD))
-        equipment.helmet = ItemStack(Material.LEATHER_HELMET).apply {
+        equipment.setHelmet(ItemStack(Material.LEATHER_HELMET).apply {
             itemMeta = (itemMeta as LeatherArmorMeta).also {
                 it.setColor(Color.fromRGB(player.tumblingPlayer.team.color.value()))
             }
-        }
+        })
         abilityZombie = zombie
 
         player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, invisibilityDuration, 0))

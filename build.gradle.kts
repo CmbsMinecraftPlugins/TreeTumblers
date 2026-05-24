@@ -29,15 +29,15 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.11.2")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.11.2")
+    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.15.1")
+    compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
     compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
 
     // https://discord.com/channels/707193125478596668/1134515300742733985/1502698083354673186
     // lucydotp (roughly): it has changed from `paper` to `paper-platform`
     // thank you lucy
-    compileOnly("com.noxcrew.noxesium:paper-platform:3.0.0")
+    compileOnly("com.noxcrew.noxesium:paper-platform:3.1.0")
 
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -60,13 +60,14 @@ tasks {
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         dependsOn("build")
         downloadPlugins {
-            modrinth("packetevents", "2.11.2+spigot")
-            modrinth("fastasyncworldedit", "2.15.0")
-            modrinth("axiom-paper-plugin", "5.0.4+1.21.11")
-            github("libraryaddict", "LibsDisguises", "v11.0.16", "LibsDisguises-11.0.16-Github.jar")
-            github("noxcrew", "noxesium", "v3.0.0", "noxesium-paper-3.0.0+67135f29.jar")
+            modrinth("packetevents", "2.12.1+spigot")
+            modrinth("axiom-paper-plugin", "5.0.4+26.1")
+            modrinth("noxesium-paper-api", "3.1.0")
+            // The modrinth release shares the version tag for paper and spigot, and the spigot version crashes
+            github("IntellectualSites", "FastAsyncWorldEdit", "2.15.1", "FastAsyncWorldEdit-Paper-2.15.1.jar")
+            github("libraryaddict", "LibsDisguises", "v11.0.18", "LibsDisguises-11.0.18-Github.jar")
         }
-        minecraftVersion("1.21.11")
+        minecraftVersion("26.1.2")
     }
 }
 

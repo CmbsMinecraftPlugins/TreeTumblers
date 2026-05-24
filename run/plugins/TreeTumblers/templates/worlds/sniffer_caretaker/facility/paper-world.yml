@@ -3,6 +3,6 @@
 # 
 # For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
 # 
-# World: temp_facility (minecraft:temp_facility)
+# World: minecraft:facility
 
 _version: 31

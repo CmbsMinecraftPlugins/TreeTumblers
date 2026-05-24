@@ -13,11 +13,13 @@ import org.bukkit.WorldCreator
 import org.bukkit.entity.Entity
 import org.bukkit.persistence.PersistentDataHolder
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingWorldException
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.VoidGenerator
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
@@ -50,22 +52,12 @@ class WorldController : ControllerBase() {
     override fun cleanup() = cleanupTempWorlds()
 
     fun cleanupTempWorlds() {
-        Bukkit.getWorldContainer().listFiles().forEach { file ->
+        getDimensions().listFiles().forEach { file ->
+            DebugUtil.info("cleanup temporary world ${file.absolutePath}")
             if(file.isDirectory && (file.name.contains("temp_") || file.name == lobbyWorld)) {
+                DebugUtil.info("Cleaning up ${file.absolutePath}")
                 if(Bukkit.getWorld(file.name) !== null) {
                     Bukkit.unloadWorld(file.name, false)
-                }
-
-                // my savior
-                // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
-                fun deleteDir(file2: File) {
-                    val contents = file2.listFiles()
-                    if (contents != null) {
-                        for (f in contents) {
-                            deleteDir(f)
-                        }
-                    }
-                    file2.delete()
                 }
 
                 deleteDir(file)
@@ -80,7 +72,7 @@ class WorldController : ControllerBase() {
 
         world.getBlockAt(0, 64, 0).type = Material.STONE
 
-        val file = File(Bukkit.getWorldContainer(), worldName)
+        val file = File(getDimensions(), worldName)
         if(!file.exists() || !file.isDirectory) {
             Bukkit.unloadWorld(worldName, false)
             throw WorldCreationException("World does not have a world folder in the bukkit world container")
@@ -96,11 +88,15 @@ class WorldController : ControllerBase() {
     }
 
     suspend fun loadTemplate(path: Path, name: String): World {
+        val parent =
+            if(Files.exists(Path.of(path.toString(), name, "level.dat"))) Bukkit.getWorldContainer()
+            else getDimensions()
+
         val name = "temp_$name"
         withContext(Dispatchers.IO) {
             FileUtils.copyDirectory(
                 File(path.toString()),
-                File(Bukkit.getWorldContainer(), name)
+                File(parent, name)
             )
         }
 
@@ -110,7 +106,7 @@ class WorldController : ControllerBase() {
                 worldCreator = worldCreator.generator(VoidGenerator)
             }
 
-            Bukkit.createWorld(worldCreator)!!
+            Bukkit.createWorld(worldCreator) ?: throw TumblingWorldException("Failed to load template world $name")
         }
     }
 
@@ -149,7 +145,7 @@ class WorldController : ControllerBase() {
         withContext(Dispatchers.IO) {
             FileUtils.copyDirectory(worldFolder, path)
 
-            val idFile = File(path, "uid.dat")
+            val idFile = File(path, "data/paper/metadata.dat")
             if (idFile.exists()) {
                 idFile.delete()
             }
@@ -176,7 +172,7 @@ class WorldController : ControllerBase() {
     }
 
     suspend fun cleanupWorld(world: World) = withContext(Dispatchers.IO) {
-        val file = File(Bukkit.getWorldContainer(), world.name)
+        val file = File(getDimensions(), world.name)
         suspendSync {
             Bukkit.unloadWorld(world, false)
         }
@@ -189,7 +185,7 @@ class WorldController : ControllerBase() {
 
     // my savior
     // https://www.spigotmc.org/threads/cant-delete-world-folder-after-unloading-it.314857/
-    private fun deleteDir(file2: File) {
+    fun deleteDir(file2: File) {
         val contents = file2.listFiles()
         if (contents != null) {
             for (f in contents) {
@@ -202,7 +198,11 @@ class WorldController : ControllerBase() {
     override fun serverLoad() {
         val source = File(worldRoot, lobbyWorld)
         val name = lobbyWorld
-        val destination = File(Bukkit.getWorldContainer(), name)
+        val parent =
+            if(Files.exists(Path.of(source.toString(), "level.dat"))) Bukkit.getWorldContainer()
+            else getDimensions()
+
+        val destination = File(parent, name)
 
         FileUtils.copyDirectory(
             source,
@@ -216,6 +216,11 @@ class WorldController : ControllerBase() {
         world.entities
             .filter { it is PersistentDataHolder && it.persistentDataContainer.has(temporaryEntityKey) }
             .forEach(Entity::remove)
+    }
+
+    @Suppress("UnstableApiUsage")
+    fun getDimensions(): File {
+        return File(Bukkit.getServer().levelDirectory.toString(), "dimensions/minecraft")
     }
 
     data class LoadableTemplate(val file: File)
