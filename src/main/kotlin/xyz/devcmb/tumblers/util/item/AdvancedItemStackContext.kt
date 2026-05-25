@@ -21,7 +21,7 @@ class AdvancedItemStackContext(
     var rightClick: ((Player) -> Unit)? = null
     var leftClick: ((Player) -> Unit)? = null
     var droppable: Boolean = true
-    var movable: Boolean = false
+    var movable: Boolean = true
 
     fun name(component: Component) {
         item.itemMeta = item.itemMeta.also {
@@ -91,10 +91,6 @@ class AdvancedItemStackContext(
         )
 
         item.itemMeta = meta
-
-        if(Enchantment.BINDING_CURSE.canEnchantItem(item) && !droppable) {
-            item.addEnchantment(Enchantment.BINDING_CURSE, 1)
-        }
 
         if(!movable) {
             item.setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)

@@ -20,13 +20,16 @@ class StandardBowDuels(
 
     override val id: String = "shared_standard_bow_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.CROSSBOW).apply {
-            itemMeta = itemMeta.also {
-                it.addEnchant(Enchantment.INFINITY, 1, true)
-                it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
-            }
-        }, ItemStack.of(Material.ARROW))
-        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
+        override val items: ArrayList<ItemStack> = arrayListOf(
+            ItemStack.of(Material.CROSSBOW).apply {
+                itemMeta = itemMeta.also {
+                    it.addEnchant(Enchantment.INFINITY, 1, true)
+                    it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
+                }
+            },
+            ItemStack.of(Material.ARROW),
+            ItemStack(Material.LEATHER_BOOTS)
+        )
     }
 
     override val team: Boolean = true

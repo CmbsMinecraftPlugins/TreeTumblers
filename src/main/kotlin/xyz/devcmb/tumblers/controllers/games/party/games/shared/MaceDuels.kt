@@ -24,12 +24,15 @@ class MaceDuels(
 
     override val id: String = "shared_mace_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.MACE).apply {
-            itemMeta = itemMeta.also {
-                it.addEnchant(Enchantment.WIND_BURST, 1, true)
-            }
-        }, ItemStack.of(Material.WIND_CHARGE, 64))
-        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
+        override val items: ArrayList<ItemStack> = arrayListOf(
+            ItemStack.of(Material.MACE).apply {
+                itemMeta = itemMeta.also {
+                    it.addEnchant(Enchantment.WIND_BURST, 1, true)
+                }
+            },
+            ItemStack.of(Material.WIND_CHARGE, 64),
+            ItemStack(Material.LEATHER_BOOTS)
+        )
     }
 
     override val team: Boolean = true

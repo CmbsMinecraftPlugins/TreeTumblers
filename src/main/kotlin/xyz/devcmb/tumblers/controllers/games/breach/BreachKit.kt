@@ -22,9 +22,9 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
                 },
-                ItemStack(Material.ARROW, 1)
+                ItemStack(Material.ARROW, 1),
+                ItemStack(Material.LEATHER_BOOTS)
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.BOW
     ),
@@ -41,9 +41,9 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
                 },
-                ItemStack(Material.ARROW, 1)
+                ItemStack(Material.ARROW, 1),
+                ItemStack(Material.LEATHER_BOOTS)
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.CROSSBOW
     ),
@@ -59,9 +59,9 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.LOYALTY, 1, true)
                     }
-                }
+                },
+                ItemStack(Material.LEATHER_BOOTS)
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.TRIDENT
     )
