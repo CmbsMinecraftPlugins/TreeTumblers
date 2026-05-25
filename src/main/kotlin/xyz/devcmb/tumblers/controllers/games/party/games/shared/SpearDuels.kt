@@ -1,7 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.party.games.shared
 
 import org.bukkit.Material
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyGame
@@ -19,9 +18,9 @@ class SpearDuels(
 
     override val id: String = "shared_spear_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(
-            ItemStack.of(Material.DIAMOND_SPEAR),
-            ItemStack(Material.LEATHER_BOOTS)
+        override val items: ArrayList<Kit.KitItem> = arrayListOf(
+            Kit.KitItem.StandardItem(ItemStack.of(Material.DIAMOND_SPEAR)),
+            Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
         )
     }
 

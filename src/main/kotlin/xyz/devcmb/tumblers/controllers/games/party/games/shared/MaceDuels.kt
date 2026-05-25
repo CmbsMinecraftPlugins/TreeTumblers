@@ -5,7 +5,6 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyGame
@@ -24,14 +23,14 @@ class MaceDuels(
 
     override val id: String = "shared_mace_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(
-            ItemStack.of(Material.MACE).apply {
+        override val items: ArrayList<Kit.KitItem> = arrayListOf(
+            Kit.KitItem.StandardItem(ItemStack.of(Material.MACE).apply {
                 itemMeta = itemMeta.also {
                     it.addEnchant(Enchantment.WIND_BURST, 1, true)
                 }
-            },
-            ItemStack.of(Material.WIND_CHARGE, 64),
-            ItemStack(Material.LEATHER_BOOTS)
+            }),
+            Kit.KitItem.StandardItem(ItemStack.of(Material.WIND_CHARGE, 64)),
+            Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
         )
     }
 

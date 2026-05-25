@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.util.item
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 
-class AdvancedItemStack(val material: Material, val init: AdvancedItemStackContext.() -> Unit) {
+open class AdvancedItemStack(val material: Material, val init: AdvancedItemStackContext.() -> Unit) {
     constructor(itemStack: ItemStack, init: AdvancedItemStackContext.() -> Unit = {}): this(itemStack.type, {
         val meta = itemStack.itemMeta
 
@@ -22,9 +22,12 @@ class AdvancedItemStack(val material: Material, val init: AdvancedItemStackConte
         init()
     })
 
-    fun build(): ItemStack {
-        val context = AdvancedItemStackContext(material)
+    val context: AdvancedItemStackContext = AdvancedItemStackContext(material)
+    init {
         context.init()
+    }
+
+    fun build(): ItemStack {
         return context.build()
     }
 }
