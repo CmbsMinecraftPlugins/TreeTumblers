@@ -27,7 +27,6 @@ import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.inventory.hub.BadgeCollectionInventory
 import xyz.devcmb.tumblers.ui.inventory.hub.HubNavigationInventory
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.HealthIndicatorScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.BreachScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
@@ -144,7 +143,6 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(BreachScoreboard(gameController, player))
 
         registerScoreboard(IntermissionScoreboard(eventController, player))
-        registerScoreboard(HealthIndicatorScoreboard(player))
 
         if(gameController.activeGame == null) {
             activateScoreboard("intermissionScoreboard")

@@ -316,13 +316,6 @@ abstract class GameBase(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
-        if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
-            suspendSync {
-                Bukkit.getOnlinePlayers().forEach {
-                    it.activateScoreboard("healthIndicatorScoreboard")
-                }
-            }
-        }
         gameOn()
     }
 
@@ -373,7 +366,6 @@ abstract class GameBase(
                 it.foodLevel = 20
 
                 it.deactivateScoreboard(scoreboard)
-                it.deactivateScoreboard("healthIndicatorScoreboard")
                 it.activateScoreboard("intermissionScoreboard")
 
                 it.uiController.otherTeams.forEach { (_, team) ->
@@ -695,10 +687,6 @@ abstract class GameBase(
                 }
                 State.PREGAME,
                 State.GAME_ON -> {
-                    if(!flags.contains(Flag.HIDE_HEALTH_INDICATOR)) {
-                        player.activateScoreboard("healthIndicatorScoreboard")
-                    }
-
                     // this might be problematic in the future, but idk
                     if(flags.contains(Flag.SURVIVAL_MODE)) {
                         player.gameMode = GameMode.SURVIVAL
