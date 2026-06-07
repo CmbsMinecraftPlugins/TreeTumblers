@@ -580,7 +580,7 @@ class CrumbleController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
+                Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
@@ -898,7 +898,7 @@ class CrumbleController : GameBase(
         Bukkit.broadcast(gameMessage(Component.text("Round started!")))
     }
 
-    fun sendTeamMessage(player: TumblingPlayer, message: (receiver: Player) -> Component) {
+    fun sendMatchupMessage(player: TumblingPlayer, message: (receiver: Player) -> Component) {
         val matchup = getCurrentMatchup(player.team)!!
         val (team1, team2) = matchup
 
@@ -1088,12 +1088,15 @@ class CrumbleController : GameBase(
 
             if(killer != null) {
                 grantScore(killer, CommonScoreSource.KILL)
-                sendTeamMessage(killed) {
+                killer.tumblingPlayer.showKill(killed, getScoreSource(CommonScoreSource.KILL))
+
+                sendMatchupMessage(killed) {
                     Format.formatKillMessage(killer.tumblingPlayer, killed, it, getScoreSource(CommonScoreSource.KILL))
                 }
             } else {
                 val scores = grantTeamScore(otherTeam, CommonScoreSource.KILL)
-                sendTeamMessage(killed) {
+                sendMatchupMessage(killed) {
+                    if(it.tumblingPlayer.team == otherTeam) it.tumblingPlayer.showKill(killed, scores[it.tumblingPlayer] ?: 0)
                     Format.formatDeathMessage(killed, it, it.tumblingPlayer.team == otherTeam, scores[it.tumblingPlayer] ?: 0)
                 }
             }

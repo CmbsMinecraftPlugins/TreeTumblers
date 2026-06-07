@@ -1172,7 +1172,7 @@ class EventController : ControllerBase() {
 
     fun recover(state: DatabaseController.EventRecoveryState) {
         val eventState = state.eventState
-        Bukkit.broadcast(Format.warning("The current state of the event is being rolled back, please bear with us, things may lag!"))
+        Bukkit.broadcast(Format.warning("The current state of the event is being rolled back, things may lag!"))
 
         game = eventState.currentGame
         playedGames.clear()

@@ -49,7 +49,6 @@ import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.announceKill
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
@@ -209,7 +208,7 @@ class PlayerController : ControllerBase() {
         val currentGame = gameController.activeGame
         val score = currentGame?.getScoreSource(CommonScoreSource.KILL)
 
-        announceKill(killer, killed, if (score != null && score != 1) score else null)
+        killer.tumblingPlayer.showKill(killed.tumblingPlayer, if (score != null && score > 0) score else null)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

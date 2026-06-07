@@ -8,7 +8,6 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
@@ -21,12 +20,8 @@ import org.bukkit.World
 import org.bukkit.block.Biome
 import org.bukkit.block.Block
 import org.bukkit.configuration.MemorySection
-import org.bukkit.entity.Arrow
 import org.bukkit.entity.Firework
 import org.bukkit.entity.Player
-import org.bukkit.entity.TNTPrimed
-import org.bukkit.entity.Trident
-import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
@@ -273,31 +268,6 @@ fun Player.showToAll() {
             it.showPlayer(TreeTumblers.plugin, this)
         }
     }
-}
-
-fun announceKill(killer: Player, killed: Player, score: Int? = null) {
-    val source = killed.lastDamageCause
-    var icon: String? = null
-
-    if(source is EntityDamageByEntityEvent) {
-        icon = when (source.damager) {
-            is Player -> "\uD83D\uDDE1"
-
-            is Arrow,
-            is Firework -> "\uD83C\uDFF9"
-
-            is Trident -> "\uD83D\uDD31"
-            is TNTPrimed -> "\uD83D\uDCA3"
-
-            else -> null
-        }
-    }
-
-    killer.showTitle(Title.title(
-        Component.empty(),
-        Format.mm("<red>${icon ?: "\uD83D\uDDE1"}</red> <player>${if(score != null) " <gold>[+${score}]</gold>" else ""}", Placeholder.component("player", Format.formatPlayerName(killed))),
-        Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(5))
-    ))
 }
 
 suspend fun <T> suspendSync(task: () -> T): T = withContext(BukkitDispatcher) {

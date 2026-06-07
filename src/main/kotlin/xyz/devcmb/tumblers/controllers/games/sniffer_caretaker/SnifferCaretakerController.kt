@@ -685,7 +685,7 @@ class SnifferCaretakerController : GameBase(
 
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.text("$teamPlacement${getOrdinalSuffix(teamPlacement)} place!", color),
+                Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
