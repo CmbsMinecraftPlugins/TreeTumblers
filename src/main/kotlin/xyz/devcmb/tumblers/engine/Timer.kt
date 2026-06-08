@@ -32,9 +32,9 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     }
     var joined: Boolean = false
 
-    val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
-    val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()
-    val timeExecutions: HashMap<Int, suspend Timer.() -> Unit> = HashMap()
+    private val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
+    private val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()
+    private val timeExecutions: HashMap<Int, suspend Timer.() -> Unit> = HashMap()
 
     init {
         this.init()

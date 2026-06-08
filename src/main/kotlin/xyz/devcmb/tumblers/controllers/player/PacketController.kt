@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.ControllerBase
 import xyz.devcmb.tumblers.packet.GlowingPlayersListener
+import xyz.devcmb.tumblers.packet.InvisibleEquipmentListener
 import xyz.devcmb.tumblers.packet.ScoreboardNumbersListener
 
 @Controller(Controller.Priority.HIGH)
@@ -17,12 +18,13 @@ class PacketController : ControllerBase() {
         PacketEvents.setAPI(api)
         PacketEvents.getAPI().load()
 
-        loadListener(ScoreboardNumbersListener(), PacketListenerPriority.LOW)
-        loadListener(GlowingPlayersListener(), PacketListenerPriority.LOW)
+        loadListener(ScoreboardNumbersListener())
+        loadListener(GlowingPlayersListener())
+        loadListener(InvisibleEquipmentListener())
     }
 
-    private fun loadListener(listener: PacketListener, priority: PacketListenerPriority) {
-        PacketEvents.getAPI().eventManager.registerListener(listener, priority)
+    private fun loadListener(listener: PacketListener) {
+        PacketEvents.getAPI().eventManager.registerListener(listener, PacketListenerPriority.LOW)
     }
 
     override fun cleanup() {

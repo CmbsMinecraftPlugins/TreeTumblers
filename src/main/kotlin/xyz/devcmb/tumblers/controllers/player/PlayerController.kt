@@ -1,6 +1,11 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.protocol.player.Equipment
+import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityEquipment
 import com.noxcrew.noxesium.paper.component.noxesiumPlayer
+import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
 import io.papermc.paper.event.player.AsyncChatEvent
@@ -364,8 +369,37 @@ class PlayerController : ControllerBase() {
     @EventHandler
     fun playerEffectEvent(event: EntityPotionEffectEvent) {
         val player = event.entity as? Player ?: return
-        if(nameTags.containsKey(player) && (event.newEffect?.type == PotionEffectType.INVISIBILITY || event.oldEffect?.type == PotionEffectType.INVISIBILITY))
-            updateNametagVisibility(event.entity as Player)
+
+        if((event.newEffect?.type == PotionEffectType.INVISIBILITY || event.oldEffect?.type == PotionEffectType.INVISIBILITY)) {
+            Bukkit.getOnlinePlayers().forEach {
+                fun getNewStack(item: ItemStack): com.github.retrooper.packetevents.protocol.item.ItemStack {
+                    return SpigotConversionUtil.fromBukkitItemStack(
+                        if(
+                            (event.newEffect?.type == PotionEffectType.INVISIBILITY && it.tumblingPlayer.team != player.tumblingPlayer.team)
+                            || item.isEmpty || item.type == Material.AIR
+                        ) ItemStack.of(Material.AIR)
+                        else item
+                    )
+                }
+
+                val equipment = listOf(
+                    Equipment(EquipmentSlot.HELMET, getNewStack(player.inventory.helmet)),
+                    Equipment(EquipmentSlot.CHEST_PLATE, getNewStack(player.inventory.chestplate)),
+                    Equipment(EquipmentSlot.LEGGINGS, getNewStack(player.inventory.leggings)),
+                    Equipment(EquipmentSlot.BOOTS, getNewStack(player.inventory.boots)),
+                    Equipment(EquipmentSlot.MAIN_HAND, SpigotConversionUtil.fromBukkitItemStack(player.inventory.itemInMainHand)),
+                    Equipment(EquipmentSlot.OFF_HAND, SpigotConversionUtil.fromBukkitItemStack(player.inventory.itemInOffHand))
+                )
+
+                val packet = WrapperPlayServerEntityEquipment(
+                    player.entityId,
+                    equipment
+                )
+                PacketEvents.getAPI().playerManager.sendPacket(it, packet)
+            }
+
+            if(nameTags.containsKey(player)) updateNametagVisibility(event.entity as Player)
+        }
     }
 
     enum class NametagMode {

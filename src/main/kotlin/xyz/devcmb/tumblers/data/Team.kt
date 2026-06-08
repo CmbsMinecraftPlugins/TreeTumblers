@@ -125,7 +125,6 @@ enum class Team(
             return Audience.audience(getOnlinePlayers())
         }
 
-
     private val playerController: PlayerController by ControllerRegistry.controller()
     private val eventController: EventController by ControllerRegistry.controller()
 
