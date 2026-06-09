@@ -1,10 +1,13 @@
 package xyz.devcmb.tumblers.controllers.player
 
 import org.bukkit.Material
+import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityTargetLivingEntityEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
@@ -46,6 +49,14 @@ class SpectatorController : ControllerBase() {
         player.inventory.clear()
         player.allowFlight = true
         player.isFlying = true
+        player.world.entities
+            .filterIsInstance<Mob>()
+            .forEach { mob ->
+                if (mob.target == player) {
+                    mob.target = null
+                }
+            }
+
         playerController.updateNametagVisibility(player)
 
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
@@ -70,9 +81,26 @@ class SpectatorController : ControllerBase() {
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
-    fun damageEvent(event: EntityDamageEvent) {
+    fun spectatorDamageEvent(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
         if(player in spectators) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun spectatorTargetEvent(event: EntityTargetLivingEntityEvent) {
+        val player = event.target as? Player ?: return
+        if(player in spectators.keys) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun spectatorInteractEvent(event: PlayerInteractEvent) {
+        if(event.player in spectators.keys) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun spectatorAttackEvent(event: EntityDamageEvent) {
+        val player = event.damageSource.causingEntity as? Player ?: return
+        if(player in spectators.keys) event.isCancelled = true
     }
 
     @EventHandler
