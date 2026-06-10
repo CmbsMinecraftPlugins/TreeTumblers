@@ -30,6 +30,7 @@ import org.bukkit.event.entity.EntityPotionEffectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerExpChangeEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
@@ -113,6 +114,8 @@ class PlayerController : ControllerBase() {
         player.isFlying = false
         player.isGlowing = false
         player.allowFlight = false
+        player.level = 0
+        player.exp = 1f
         player.clearActivePotionEffects()
 
         runTaskLater(40) {
@@ -188,6 +191,11 @@ class PlayerController : ControllerBase() {
         Bukkit.broadcast(Format.mm("<white>(<red>-</red>)</white> <player:${tumblingPlayer.uuid}>"))
 
         tumblingPlayer.bukkitPlayer = null
+    }
+
+    @EventHandler
+    fun playerEarnXPEvent(event: PlayerExpChangeEvent) {
+        event.amount = 0
     }
 
     @EventHandler
