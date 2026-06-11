@@ -30,7 +30,7 @@ repositories {
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.15.1")
+    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.15.2")
     compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
     compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
 
@@ -64,7 +64,7 @@ tasks {
             modrinth("axiom-paper-plugin", "5.0.4+26.1")
             modrinth("noxesium-paper-api", "3.1.0")
             // The modrinth release shares the version tag for paper and spigot, and the spigot version crashes
-            github("IntellectualSites", "FastAsyncWorldEdit", "2.15.1", "FastAsyncWorldEdit-Paper-2.15.1.jar")
+            github("IntellectualSites", "FastAsyncWorldEdit", "2.15.2", "FastAsyncWorldEdit-Paper-2.15.2.jar")
             github("libraryaddict", "LibsDisguises", "v11.0.18", "LibsDisguises-11.0.18-Github.jar")
         }
         minecraftVersion("26.1.2")

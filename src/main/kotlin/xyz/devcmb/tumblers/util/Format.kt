@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.util
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.MiniMessage
 import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -36,15 +37,13 @@ object Format {
                     return@resolver Tag.inserting(Component.empty())
                 }
 
-                repeat(length) {
+                repeat(length * 2) {
                     component = component.append(
-                        Component.text("—")
-                            .append(
-                                Component.text("\uF000")
-                                    .font(UserInterfaceUtility.SPACES)
-                            )
+                        Component.text(" ")
                     )
                 }
+
+                component = component.decoration(TextDecoration.STRIKETHROUGH, true)
 
                 Tag.inserting(component)
             })
