@@ -78,6 +78,7 @@ import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.formatToMSS
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.randomBetween
+import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.tp
@@ -1107,9 +1108,20 @@ class SnifferCaretakerController : GameBase(
     @EventHandler
     fun playerInteractEvent(event: PlayerInteractEvent) {
         // infinite bone meal
-        if (event.action == Action.RIGHT_CLICK_BLOCK && event.item?.type == Material.BONE_MEAL && event.clickedBlock?.blockData is Ageable) {
-            event.isCancelled = true
-            event.clickedBlock?.applyBoneMeal(event.blockFace)
+        val player = event.player
+        if (event.item?.type == Material.BONE_MEAL) {
+            runTask {
+                val main = player.inventory.itemInMainHand
+                val off = player.inventory.itemInOffHand
+
+                if (main.type == Material.BONE_MEAL) {
+                    main.amount = 64
+                }
+
+                if (off.type == Material.BONE_MEAL) {
+                    off.amount = 64
+                }
+            }
         }
 
         if(
