@@ -1,5 +1,8 @@
 package xyz.devcmb.tumblers.ui.inventory.event
 
+import com.noxcrew.interfaces.drawable.Drawable.Companion.drawable
+import com.noxcrew.interfaces.element.StaticElement
+import com.noxcrew.interfaces.interfaces.buildChestInterface
 import com.noxcrew.noxesium.api.util.Unit
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
@@ -7,58 +10,44 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
-import xyz.devcmb.invcontrol.chest.ChestInventoryPage
-import xyz.devcmb.invcontrol.chest.ChestInventoryUI
-import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
-import xyz.devcmb.tumblers.ui.inventory.components.ConfirmationButton
+import xyz.devcmb.tumblers.ui.inventory.components.ConfirmationButtonType
+import xyz.devcmb.tumblers.ui.inventory.components.confirmationButton
 
-class ReadyCheckInventory(
-    val player: Player
-) : HandledInventory {
+object ReadyCheckInventory : HandledInventory {
     override val id: String = "readyCheckInventory"
 
-    override val inventory: ChestInventoryUI = ChestInventoryUI(
-        player,
-        UserInterfaceUtility.negativeSpace(8)
-            .append(Component.text("\uE000", NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "containers")))
-            .append(UserInterfaceUtility.negativeSpace(UserInterfaceUtility.FULL_INVENTORY_NEGATIVE_ADVANCE))
-            .append(Component.text("Are you ready?", NamedTextColor.WHITE).font(NamespacedKey("minecraft", "default"))),
-        1
-    ).apply {
-        val page = ChestInventoryPage()
-        addPage("main", page, true)
+    override val inventory = buildChestInterface {
+        titleSupplier = {
+            UserInterfaceUtility.customInventoryTitle(
+                Component.text("\uE000", NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "containers")),
+                Component.text("Are you ready?", NamedTextColor.WHITE)
+            )
+        }
+        rows = 1
 
-        val yesConfirmation = ConfirmationButton(ConfirmationButton.ConfirmationButtonType.YES, 2) { page, item ->
-            page.ui.close()
-            EventController.markReady(player)
+        confirmationButton(0, 2, ConfirmationButtonType.YES) {
+            it.view.close(TreeTumblers.pluginScope)
+            EventController.markReady(it.view.player)
         }
 
-        val noConfirmation = ConfirmationButton(ConfirmationButton.ConfirmationButtonType.NO, 6) { page, item ->
-            page.ui.close()
-            EventController.markNotReady(player)
+        confirmationButton(0, 6, ConfirmationButtonType.NO) {
+            it.view.close(TreeTumblers.pluginScope)
+            EventController.markNotReady(it.view.player)
         }
 
-        (yesConfirmation.items() + noConfirmation.items()).forEach {
-            page.addItem(it)
-        }
-
-        page.addItem(InventoryItem(
-            getItemStack = { page, item ->
-                ItemStack.of(Material.ECHO_SHARD).apply {
-                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
-                    itemMeta = itemMeta.also {
-                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "timer")
-                        it.isHideTooltip = true
-                    }
+        withTransform { pane, view ->
+            pane[0,4] = StaticElement(drawable(ItemStack.of(Material.ECHO_SHARD).apply {
+                setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
+                itemMeta = itemMeta.also {
+                    it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "timer")
+                    it.isHideTooltip = true
                 }
-            },
-            slot = 4
-        ))
+            }))
+        }
     }
 }

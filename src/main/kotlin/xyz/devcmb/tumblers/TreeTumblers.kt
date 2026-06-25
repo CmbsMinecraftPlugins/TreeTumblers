@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers
 
+import com.noxcrew.interfaces.InterfacesListeners
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -10,7 +11,6 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import org.bukkit.plugin.java.JavaPlugin
-import xyz.devcmb.invcontrol.InvControlManager
 import java.util.logging.Logger
 
 class TreeTumblers : JavaPlugin() {
@@ -34,7 +34,7 @@ class TreeTumblers : JavaPlugin() {
         plugin = this
         pluginLogger = logger
 
-        InvControlManager.setPlugin(this)
+        InterfacesListeners.install(this)
         ControllerRegistry.init()
     }
 

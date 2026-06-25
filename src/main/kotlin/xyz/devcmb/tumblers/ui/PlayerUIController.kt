@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.ui
 
+import com.noxcrew.interfaces.view.InterfaceView
+import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
@@ -9,13 +11,9 @@ import org.bukkit.scheduler.BukkitTask
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Team
 import xyz.devcmb.tumblers.Constants
-import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.event.BadgeController
-import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.ui.bossbar.CountdownBossbar
-import xyz.devcmb.tumblers.ui.bossbar.DebugBossbar
-import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
+import xyz.devcmb.tumblers.ui.bossbar.*
 import xyz.devcmb.tumblers.ui.bossbar.games.breach.ScoreBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.CrumbleBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
@@ -24,15 +22,10 @@ import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
 import xyz.devcmb.tumblers.ui.inventory.global.SpectateInventory
 import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
-import xyz.devcmb.tumblers.ui.inventory.hub.BadgeCollectionInventory
-import xyz.devcmb.tumblers.ui.inventory.hub.HubNavigationInventory
+import xyz.devcmb.tumblers.ui.inventory.hub.*
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.IntermissionScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.games.BreachScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.games.CrumbleScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.games.DeathrunScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.games.PartyScoreboard
-import xyz.devcmb.tumblers.ui.scoreboard.games.SnifferCaretakerScoreboard
+import xyz.devcmb.tumblers.ui.scoreboard.*
+import xyz.devcmb.tumblers.ui.scoreboard.games.*
 import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
@@ -52,6 +45,8 @@ class PlayerUIController(val player: Player) {
 
     val playerTeam: Team
     val otherTeams: HashMap<xyz.devcmb.tumblers.data.Team, Team> = HashMap()
+
+    var currentInventory: Pair<InterfaceView, String>? = null
 
     init {
         registerInventories()
@@ -112,12 +107,12 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerInventories() {
-        registerInventory(CrumbleKitSelector(player))
-        registerInventory(BreachKitSelector(player))
-        registerInventory(ReadyCheckInventory(player))
-        registerInventory(SpectateInventory(player))
-        registerInventory(HubNavigationInventory(player))
-        registerInventory(BadgeCollectionInventory(player))
+        registerInventory(CrumbleKitSelector)
+        registerInventory(BreachKitSelector)
+        registerInventory(ReadyCheckInventory)
+        registerInventory(SpectateInventory)
+        registerInventory(HubNavigationInventory)
+        registerInventory(BadgeCollectionInventory)
     }
 
     fun registerBossBars() {
@@ -166,7 +161,10 @@ class PlayerUIController(val player: Player) {
         val handledInventory = inventories.find { it.id == id }
         if(handledInventory == null) throw IllegalArgumentException("Inventory with an id of $id does not exist")
 
-        handledInventory.inventory.show()
+        TreeTumblers.pluginScope.launch {
+            val pane = handledInventory.inventory.open(player)
+            currentInventory = Pair(pane, id)
+        }
     }
 
     fun enableBossBar(id: String) {

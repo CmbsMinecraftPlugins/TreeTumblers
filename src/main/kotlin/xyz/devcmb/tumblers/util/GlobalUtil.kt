@@ -31,7 +31,6 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingConfigKeyMissingException
 import xyz.devcmb.tumblers.TumblingConfigTypeMismatchException
@@ -515,4 +514,14 @@ inline fun <reified T> configurable(path: String): T {
     }
 
     return value as T
+}
+
+fun forEachInGridIndexed(rows: Int, columns: Int, action: (index: Int, row: Int, col: Int) -> Unit) {
+    var index = 0
+    for(row in 0 until rows) {
+        for(column in 0 until columns) {
+            action(index, row, column)
+            index++
+        }
+    }
 }

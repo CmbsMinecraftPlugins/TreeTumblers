@@ -1,8 +1,8 @@
 package xyz.devcmb.tumblers.ui.inventory
 
-import xyz.devcmb.invcontrol.chest.ChestInventoryUI
+import com.noxcrew.interfaces.interfaces.ChestInterface
 
 interface HandledInventory {
     val id: String
-    val inventory: ChestInventoryUI
+    val inventory: ChestInterface
 }

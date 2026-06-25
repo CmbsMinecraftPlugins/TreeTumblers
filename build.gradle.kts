@@ -20,7 +20,6 @@ repositories {
         name = "papermc-repo"
     }
     maven("https://repo.panda-lang.org/releases")
-    maven("https://jitpack.io")
     maven("https://maven.enginehub.org/repo/")
     maven("https://mvn.lib.co.nz/public")
     maven("https://repo.codemc.io/repository/maven-releases/")
@@ -38,12 +37,12 @@ dependencies {
     // lucydotp (roughly): it has changed from `paper` to `paper-platform`
     // thank you lucy
     compileOnly("com.noxcrew.noxesium:paper-platform:3.1.0")
+    implementation("com.noxcrew.interfaces:interfaces:2.0.0")
 
     implementation("org.reflections:reflections:0.10.2")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
     implementation("dev.rollczi:litecommands-bukkit:3.10.9")
     implementation("dev.rollczi:litecommands-adventure:3.10.2")
-    implementation("com.github.29cmb.InvControl:invcontrol-core:v0.2.6")
     implementation("commons-io:commons-io:2.14.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 

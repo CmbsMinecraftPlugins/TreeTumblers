@@ -1,11 +1,14 @@
 package xyz.devcmb.tumblers.ui
 
+import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
+import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerRegistry
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
@@ -139,10 +142,10 @@ object UserInterfaceUtility {
     }
 
     fun refreshAll(id: String) {
-        PlayerController.playerUIControllers.forEach { (player, controller) ->
-            val inv = controller.inventories.find { it.id == id }
-            require(inv != null) { "Inventory with an id of $id was not found for ${player.name}" }
-            inv.inventory.reload()
+        PlayerController.playerUIControllers.forEach { (_, controller) ->
+            if(controller.currentInventory != null && controller.currentInventory!!.second == id) {
+                controller.currentInventory!!.first.redrawComplete()
+            }
         }
     }
 
@@ -222,5 +225,22 @@ object UserInterfaceUtility {
             Placeholder.component("name", player.formattedName),
             Placeholder.parsed("score", (activeGame.playerScores[tumblingPlayer] ?: 0).toString())
         )
+    }
+
+    fun empty(): ItemStack {
+        return  ItemStack.of(Material.ECHO_SHARD).apply {
+            setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
+            itemMeta = itemMeta.also {
+                it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "empty")
+            }
+        }
+    }
+
+    fun customInventoryTitle(overlay: Component, title: Component): Component {
+        return Component.empty()
+            .append(negativeSpace(8))
+            .append(overlay)
+            .append(negativeSpace(FULL_INVENTORY_NEGATIVE_ADVANCE))
+            .append(title)
     }
 }

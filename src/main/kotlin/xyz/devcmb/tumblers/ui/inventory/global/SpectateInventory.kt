@@ -1,149 +1,108 @@
 package xyz.devcmb.tumblers.ui.inventory.global
 
+import com.noxcrew.interfaces.drawable.Drawable.Companion.drawable
+import com.noxcrew.interfaces.element.StaticElement
+import com.noxcrew.interfaces.grid.GridPoint
+import com.noxcrew.interfaces.interfaces.buildChestInterface
+import com.noxcrew.interfaces.properties.interfaceProperty
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
-import xyz.devcmb.invcontrol.chest.ChestInventoryPage
-import xyz.devcmb.invcontrol.chest.ChestInventoryUI
-import xyz.devcmb.invcontrol.chest.InventoryItem
-import xyz.devcmb.invcontrol.chest.map.InventoryItemMap
-import xyz.devcmb.invcontrol.chest.map.InventoryMappedItem
-import xyz.devcmb.tumblers.ControllerRegistry
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
-class SpectateInventory(
-    val player: Player
-) : HandledInventory {
+object SpectateInventory : HandledInventory {
     override val id: String = "spectateInventory"
 
-    // TODO: Replace with custom inv instead of using glass panes
-    override val inventory: ChestInventoryUI = ChestInventoryUI(player, Format.mm("<white>Spectate</white>"), 5).apply {
-        val page = ChestInventoryPage()
-        addPage("main", page, true)
+    override val inventory = buildChestInterface {
+        titleSupplier = { Component.text("Spectate", NamedTextColor.WHITE) }
+        rows = 5
 
-        val itemMap = InventoryItemMap(
-            getInventoryItems = { page, map ->
-                val players: Set<Player> =
-                    GameController.activeGame?.gameParticipants?.filter { it != player }?.toSet() ?: Team.entries
-                        .filter { it.playingTeam }
-                        .flatMap { it.getOnlinePlayers() }
-                        .filter { it != player && it !in SpectatorController.spectators }
-                        .toSet()
+        val pageProperty = interfaceProperty(1)
+        var page by pageProperty
 
-                val items: ArrayList<InventoryMappedItem> = ArrayList()
-                players.forEach { plr ->
-                    items.add(
-                        InventoryMappedItem(
-                        getItemStack = { page, item ->
-                            ItemStack.of(Material.PLAYER_HEAD).apply {
-                                setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
-                                itemMeta = itemMeta.also {
-                                    it.itemName(Format.formatPlayerName(plr))
-                                    it.itemModel = UserInterfaceUtility.FLAT_SKULL
-                                    (it as SkullMeta).owningPlayer = plr
+        withTransform(pageProperty) { pane, view ->
+            val player = view.player
+            val players: List<Player> =
+                GameController.activeGame?.gameParticipants?.filter { it != player } ?: Team.entries
+                    .filter { it.playingTeam }
+                    .flatMap { it.getOnlinePlayers() }
+                    .filter { it != player && it !in SpectatorController.spectators }
 
-                                    it.lore(
-                                        listOf(
-                                            plr.tumblingPlayer.team.formattedName
-                                        ).map { line -> line.decoration(TextDecoration.ITALIC, false) })
-                                }
-                            }
-                        },
-                        onClick = { page, item ->
-                            if (!SpectatorController.spectators.contains(player)) return@InventoryMappedItem
+            val startIndex = (page - 1) * 27
+            val pagePlayers = players.subList(startIndex, minOf(startIndex + 27, players.size))
+            val maxPage = (players.size / 27) + 1
 
-                            if (SpectatorController.spectators.contains(plr)) {
-                                player.sendMessage(Format.warning("This player can't be spectated right now."))
-                                return@InventoryMappedItem
-                            }
+            pagePlayers.forEachIndexed { index, plr ->
+                pane[GridPoint.fromBukkitChestSlot(index)!!] = StaticElement(drawable(ItemStack.of(Material.PLAYER_HEAD).apply {
+                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
+                    itemMeta = itemMeta.also {
+                        it.itemName(Format.formatPlayerName(plr))
+                        it.itemModel = UserInterfaceUtility.FLAT_SKULL
+                        (it as SkullMeta).owningPlayer = plr
 
-                            player.tp(plr.location)
-                            page.ui.close()
-                        }
-                    ))
+                        it.lore(
+                            listOf(
+                                plr.tumblingPlayer.team.formattedName
+                            ).map { line -> line.decoration(TextDecoration.ITALIC, false) })
+                    }
+                })) {
+                    if (!SpectatorController.spectators.contains(plr)) return@StaticElement
+
+                    if (SpectatorController.spectators.contains(plr)) {
+                        plr.sendMessage(Format.warning("This player can't be spectated right now."))
+                        return@StaticElement
+                    }
+
+                    player.tp(plr.location)
+                    view.close(TreeTumblers.pluginScope)
                 }
-                items
-            },
-            startSlot = 0,
-            maxItems = 27,
-            itemPage = 1
-        )
-        page.addItemMap(itemMap)
+            }
 
-        (27..35).forEach {
-            page.addItem(
-                InventoryItem(
-                    getItemStack = { page, item ->
-                        ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
-                            setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
-                            itemMeta = itemMeta.also { meta ->
-                                meta.isHideTooltip = true
-                            }
-                        }
-                    },
-                    it
-                )
-            )
-        }
+            (27..35).forEach {
+                pane[GridPoint.fromBukkitChestSlot(it)!!] = StaticElement(drawable(ItemStack.of(Material.GRAY_STAINED_GLASS_PANE).apply {
+                    editMeta { meta ->
+                        meta.isHideTooltip = true
+                    }
+                }))
+            }
 
-        page.addItem(
-            InventoryItem(
-            getItemStack = { page, item ->
-                ItemStack.of(Material.ARROW).apply {
+            if(page != 1) {
+                pane[4, 0] = StaticElement(drawable(ItemStack.of(Material.ARROW).apply {
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Previous Page</yellow>"))
-                        it.lore(
-                            listOf(
-                                Format.mm("<white>Page ${itemMap.itemPage}</white>")
-                                    .decoration(TextDecoration.ITALIC, false)
-                            )
-                        )
+                        it.lore(listOf(Component.text("Page $page", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)))
                     }
+                })) {
+                    page--
                 }
-            },
-            slot = 36,
-            onClick = { page, item ->
-                player.buttonClickSound()
-                itemMap.pageBack()
-                page.reload()
             }
-        ))
 
-        page.addItem(
-            InventoryItem(
-            getItemStack = { page, item ->
-                ItemStack.of(Material.ARROW).apply {
+            if(page != maxPage) {
+                pane[4,8] = StaticElement(drawable(ItemStack.of(Material.ARROW).apply {
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
                         it.itemName(Format.mm("<yellow>Next Page</yellow>"))
-                        it.lore(
-                            listOf(
-                                Format.mm("<white>Page ${itemMap.itemPage}</white>")
-                                    .decoration(TextDecoration.ITALIC, false)
-                            )
-                        )
+                        it.lore(listOf(Component.text("Page $page", NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)))
                     }
+                })) {
+                    page++
                 }
-            },
-            slot = 44,
-            onClick = { page, item ->
-                player.buttonClickSound()
-                itemMap.pageForward()
-                page.reload()
             }
-        ))
+        }
     }
 }

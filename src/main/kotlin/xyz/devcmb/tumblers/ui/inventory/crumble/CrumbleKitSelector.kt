@@ -1,5 +1,9 @@
 package xyz.devcmb.tumblers.ui.inventory.crumble
 
+import com.noxcrew.interfaces.drawable.Drawable.Companion.drawable
+import com.noxcrew.interfaces.element.StaticElement
+import com.noxcrew.interfaces.grid.GridPoint
+import com.noxcrew.interfaces.interfaces.buildChestInterface
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
@@ -9,12 +13,11 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
-import xyz.devcmb.invcontrol.chest.ChestInventoryPage
-import xyz.devcmb.invcontrol.chest.ChestInventoryUI
-import xyz.devcmb.invcontrol.chest.InventoryItem
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.TumblingUIException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
+import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
@@ -22,109 +25,100 @@ import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.wrapComponent
 
-class CrumbleKitSelector(
-    val player: Player
-) : HandledInventory {
+object CrumbleKitSelector : HandledInventory {
     override val id: String = "crumbleKitSelector"
 
-    // https://septicuss.notion.site/Fonts-ce8c8c12c313463ea01ac9b16d7e6bbb
-    override val inventory = ChestInventoryUI(
-        player,
-        UserInterfaceUtility.negativeSpace(8)
-            .append(Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font))
-            .append(UserInterfaceUtility.negativeSpace(UserInterfaceUtility.FULL_INVENTORY_NEGATIVE_ADVANCE))
-            .append(Component.text("Kit Selector", NamedTextColor.WHITE).font(NamespacedKey("minecraft", "default"))),
-        4
-    ).apply {
-        val page = ChestInventoryPage()
-        addPage("main", page, true)
+    override val inventory = buildChestInterface {
+        titleSupplier = {
+            UserInterfaceUtility.customInventoryTitle(
+                Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font),
+                Component.text("Kit Selector", NamedTextColor.WHITE)
+            )
+        }
+        rows = 4
 
-        val slots = listOf(2, 5, 11, 14, 20, 23, 29, 32)
-        val onClick: ((index: Int) -> Unit) = onClick@{ index ->
-            val crumble = GameController.activeGame as? CrumbleController ?: return@onClick
-            val (id, kit) = crumble.kitTemplates.toList().getOrNull(index) ?: return@onClick
+        val onSelect: (player: Player, kit: Kit) -> Unit = onSelect@{ player, kit ->
+            val crumble = GameController.activeGame as? CrumbleController ?:
+                throw TumblingUIException("Attempted to open the crumble kit selector while crumble was not active.")
 
-            if(crumble.playerKits.filter { item -> item.value.id == id }.size >= CrumbleController.maxPlayersPerKit) {
+            if(crumble.playerKits.filter { item -> item.value.id == kit.id }.size >= CrumbleController.maxPlayersPerKit) {
                 player.sendMessage(Format.error("This kit has too many players!"))
-                return@onClick
+                return@onSelect
             }
 
-            if(crumble.playerKits[player.tumblingPlayer]?.id == id) {
+            if(crumble.playerKits[player.tumblingPlayer]?.id == kit.id) {
                 player.sendMessage(Format.error("You've already selected this kit!"))
-                return@onClick
+                return@onSelect
             }
 
-            crumble.selectKit(player, id)
+            crumble.selectKit(player, kit.id)
             player.buttonClickSound()
             UserInterfaceUtility.refreshAll(this@CrumbleKitSelector.id)
         }
 
-        slots.forEachIndexed { index, slot ->
-            page.addItem(InventoryItem(
-                getItemStack = { page, item ->
-                    val crumbleController = GameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
-                    val (id, kit) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem ItemStack.empty()
+        val slots = listOf(2, 5, 11, 14, 20, 23, 29, 32)
+        withTransform { pane, view ->
+            val crumble = GameController.activeGame as? CrumbleController ?:
+                throw TumblingUIException("Attempted to open the crumble kit selector while crumble was not active.")
 
-                    ItemStack.of(Material.ECHO_SHARD).apply {
-                        editMeta { meta ->
-                            meta.itemName(Format.mm("<white>${kit.name}</white>"))
-                            meta.itemModel = kit.inventoryModel
-                            meta.lore(listOf(
-                                Component.text("Ability: ${kit.abilityName}", NamedTextColor.AQUA),
-                                *wrapComponent(
-                                    Component.text(kit.abilityDescription, NamedTextColor.WHITE),
-                                    40
-                                ).toTypedArray(),
-                                Component.empty(),
-                                Component.text("Kill Power: ${kit.killPowerName}", NamedTextColor.YELLOW),
-                                *wrapComponent(
-                                    Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
-                                    40
-                                ).toTypedArray(),
-                            ).map { entry -> entry.decoration(TextDecoration.ITALIC, false) })
-                        }
+            slots.forEachIndexed { index, slot ->
+                val (id, kit) = crumble.kitTemplates.toList().getOrNull(index) ?: return@forEachIndexed
+                val item = ItemStack.of(Material.ECHO_SHARD).apply {
+                    editMeta { meta ->
+                        meta.itemName(Format.mm("<white>${kit.name}</white>"))
+                        meta.itemModel = kit.inventoryModel
+                        meta.lore(listOf(
+                            Component.text("Ability: ${kit.abilityName}", NamedTextColor.AQUA),
+                            *wrapComponent(
+                                Component.text(kit.abilityDescription, NamedTextColor.WHITE),
+                                40
+                            ).toTypedArray(),
+                            Component.empty(),
+                            Component.text("Kill Power: ${kit.killPowerName}", NamedTextColor.YELLOW),
+                            *wrapComponent(
+                                Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
+                                40
+                            ).toTypedArray(),
+                        ).map { entry -> entry.decoration(TextDecoration.ITALIC, false) })
                     }
-                },
-                onClick = { page, item ->
-                    onClick(index)
-                },
-                slot = slot
-            ))
+                }
 
-            repeat(CrumbleController.maxPlayersPerKit) { pIndex ->
-                page.addItem(InventoryItem(
-                    getItemStack = { page, item ->
-                        val crumbleController = GameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
-                        val (id, _) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem ItemStack.empty()
+                pane[GridPoint.fromBukkitChestSlot(slot)!!] = StaticElement(drawable(item)) {
+                    val player = it.player
+                    onSelect(player, kit)
+                }
 
-                        val selectedPlayers = crumbleController.playerKits
-                            .filter {
-                                it.key.team == player.tumblingPlayer.team
-                                && it.value.id == id
-                            }
-                            .toList()
-
-                        val (player, _) = selectedPlayers.getOrNull(pIndex) ?: return@InventoryItem ItemStack.of(Material.ECHO_SHARD).apply {
-                            editMeta { meta ->
-                                meta.itemName(Format.mm("<green>Select this kit!</green>"))
-                                meta.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "empty")
-                            }
+                repeat(CrumbleController.maxPlayersPerKit) {
+                    val selectedPlayers = crumble.playerKits
+                        .filter { entry ->
+                            entry.key.team == view.player.tumblingPlayer.team && entry.value.id == id
                         }
+                        .toList()
 
-                        ItemStack.of(Material.PLAYER_HEAD).apply {
-                            editMeta { meta ->
-                                meta.itemModel = UserInterfaceUtility.FLAT_SKULL
-                                (meta as SkullMeta).owningPlayer = Bukkit.getOfflinePlayer(player.uuid)
-                                meta.itemName(Format.mm("<player:${player.uuid}>"))
+                    val selectedPlayer = selectedPlayers.getOrNull(it)
+                    val item =
+                        if(selectedPlayer == null)
+                            ItemStack.of(Material.ECHO_SHARD).apply {
+                                editMeta { meta ->
+                                    meta.itemName(Format.mm("<green>Select this kit!</green>"))
+                                    meta.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "empty")
+                                }
                             }
-                        }
-                    },
-                    slot = slot + (pIndex + 1),
-                    onClick = { page, item ->
-                        onClick(index)
-                    },
-                ))
+                        else
+                            ItemStack.of(Material.PLAYER_HEAD).apply {
+                                editMeta { meta ->
+                                    meta.itemModel = UserInterfaceUtility.FLAT_SKULL
+                                    (meta as SkullMeta).owningPlayer = Bukkit.getOfflinePlayer(selectedPlayer.first.uuid)
+                                    meta.itemName(Format.mm("<player:${selectedPlayer.first.uuid}>"))
+                                }
+                            }
+
+                    pane[GridPoint.fromBukkitChestSlot(slot + it + 1)!!] = StaticElement(drawable(item)) { context ->
+                        onSelect(context.player, kit)
+                    }
+                }
             }
+
         }
     }
 }
