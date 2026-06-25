@@ -1153,6 +1153,13 @@ class SnifferCaretakerController : GameBase(
 
     @EventHandler
     fun playerBucketEmptyEvent(event: PlayerBucketEmptyEvent) {
+        if(event.block.type == Material.WATER) {
+            val data = event.block.blockData as Levelled
+            // only allow depositing at water sources so nothing changes nearby
+            if(data.level == 0) {
+                return
+            }
+        }
         event.isCancelled = true // prevents you from spilling water everywhere and being evil which is bad and evil
     }
 
