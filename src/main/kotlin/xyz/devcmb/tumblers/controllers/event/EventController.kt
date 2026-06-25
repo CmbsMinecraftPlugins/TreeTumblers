@@ -34,7 +34,6 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.IController
-import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.server.WorldController
@@ -42,6 +41,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -853,10 +853,12 @@ object EventController : IController {
                 )
                 textDisplays.add(it)
 
-                it.text(
-                    Format.mm(
-                    "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGameTeamScores!![placement.first] ?: 0}</gold>",
-                    Placeholder.component("team", placement.first.formattedName)
+                it.text(Format.mm(
+                    if(!scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
+                        else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
+                    Placeholder.parsed("placement", "<b>${placement.second}</b>"),
+                    Placeholder.component("team", placement.first.formattedName),
+                    Placeholder.unparsed("score", (lastGameTeamScores!![placement.first] ?: 0).toString())
                 ))
             }
         }
@@ -890,10 +892,12 @@ object EventController : IController {
                 val pos = startPos.clone().add(0.0, 0.3 * (playingTeams - (i + 1)), 0.0)
                 hub.spawn(pos, TextDisplay::class.java) {
                     textDisplays.add(it)
-                    it.text(
-                        Format.mm(
-                        "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${lastGamePlayerScores!![placement.first] ?: 0}</gold>",
-                        Placeholder.component("team", placement.first.formattedName)
+                    it.text(Format.mm(
+                        if(!scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT_NO_HEAD
+                            else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_NO_HEAD,
+                        Placeholder.parsed("placement", "<b>${placement.second}</b>"),
+                        Placeholder.component("player", placement.first.formattedName),
+                        Placeholder.unparsed("score", (lastGamePlayerScores!![placement.first] ?: 0).toString())
                     ))
                 }
             }
@@ -922,10 +926,12 @@ object EventController : IController {
                     true
                 )
                 textDisplays.add(it)
-                it.text(
-                    Format.mm(
-                    "<white><b>${placement.second}.</b></white> <team> <white>-</white> <gold>${teamScores[placement.first] ?: 0}</gold>",
-                    Placeholder.component("team", placement.first.formattedName)
+                it.text(Format.mm(
+                        if(!scoresHidden) MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT
+                        else MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT,
+                    Placeholder.parsed("placement", "<b>${placement.second}</b>"),
+                    Placeholder.component("team", placement.first.formattedName),
+                    Placeholder.unparsed("score", (teamScores[placement.first] ?: 0).toString())
                 ))
             }
         }
@@ -1020,7 +1026,7 @@ object EventController : IController {
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
-                it.text(Format.mm("<white><gold>${placement.first.score}</gold> score</white>"))
+                it.text(Format.mm("<white><gold>${if(scoresHidden) "????" else placement.first.score}</gold> score</white>"))
             })
 
             offset += 0.3

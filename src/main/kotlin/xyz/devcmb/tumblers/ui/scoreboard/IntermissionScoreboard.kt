@@ -49,7 +49,7 @@ class IntermissionScoreboard(
             teamComponent.add(
                 Format.mm(
                     MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
-                    Placeholder.unparsed("placement", teamPlacement.second.toString()),
+                    Placeholder.unparsed("placement", if(EventController.scoresHidden) "?" else teamPlacement.second.toString()),
                     Placeholder.component("team", player.tumblingPlayer.team.boldedName),
                     Placeholder.unparsed("score", if(EventController.scoresHidden) "??????" else (EventController.teamScores[team] ?: 0).toString())
                 )
