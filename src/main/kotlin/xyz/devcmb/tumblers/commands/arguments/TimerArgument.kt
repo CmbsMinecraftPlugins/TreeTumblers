@@ -13,15 +13,13 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.Format
 
 class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
-    val timerController: TimerController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<Timer>,
         argument: String
     ): ParseResult<Timer> {
         val timer =
-            timerController.timers[argument] ?: return ParseResult.failure(Format.error("Timer does not exist!"))
+            TimerController.timers[argument] ?: return ParseResult.failure(Format.error("Timer does not exist!"))
 
         return ParseResult.success(timer)
     }
@@ -31,6 +29,6 @@ class TimerArgument: ArgumentResolver<CommandSender, Timer>() {
         argument: Argument<Timer>,
         context: SuggestionContext
     ): SuggestionResult {
-        return timerController.timers.keys.stream().collect(SuggestionResult.collector())
+        return TimerController.timers.keys.stream().collect(SuggestionResult.collector())
     }
 }

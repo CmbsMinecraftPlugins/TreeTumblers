@@ -46,9 +46,6 @@ class PlayerUIController(val player: Player) {
 
     val activeBossBars: HashMap<String, BossBar> = HashMap()
     val paddingBossBars: HashMap<String, ArrayList<BossBar>> = HashMap()
-    val gameController = ControllerRegistry.getController<GameController>()
-    val eventController = ControllerRegistry.getController<EventController>()
-    val badgeController = ControllerRegistry.getController<BadgeController>()
 
     val playerScoreboard = Bukkit.getScoreboardManager().newScoreboard
     val updateTask: BukkitTask
@@ -115,19 +112,19 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerInventories() {
-        registerInventory(CrumbleKitSelector(player, gameController))
-        registerInventory(BreachKitSelector(player, gameController))
-        registerInventory(ReadyCheckInventory(player, eventController))
-        registerInventory(SpectateInventory(player, gameController))
+        registerInventory(CrumbleKitSelector(player))
+        registerInventory(BreachKitSelector(player))
+        registerInventory(ReadyCheckInventory(player))
+        registerInventory(SpectateInventory(player))
         registerInventory(HubNavigationInventory(player))
-        registerInventory(BadgeCollectionInventory(player, badgeController, gameController))
+        registerInventory(BadgeCollectionInventory(player))
     }
 
     fun registerBossBars() {
-        registerBossBar(CrumbleBossbar(player, gameController))
-        registerBossBar(CountdownBossbar(gameController))
-        registerBossBar(CooldownBossbar(player, gameController))
-        registerBossBar(ScoreBossbar(gameController))
+        registerBossBar(CrumbleBossbar(player))
+        registerBossBar(CountdownBossbar())
+        registerBossBar(CooldownBossbar(player))
+        registerBossBar(ScoreBossbar())
         registerBossBar(DebugBossbar())
 
         if(Constants.IS_DEVELOPMENT) {
@@ -136,15 +133,15 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerScoreboards() {
-        registerScoreboard(CrumbleScoreboard(gameController, player))
-        registerScoreboard(SnifferCaretakerScoreboard(gameController, player))
-        registerScoreboard(DeathrunScoreboard(gameController, player))
-        registerScoreboard(PartyScoreboard(gameController, player))
-        registerScoreboard(BreachScoreboard(gameController, player))
+        registerScoreboard(CrumbleScoreboard(player))
+        registerScoreboard(SnifferCaretakerScoreboard(player))
+        registerScoreboard(DeathrunScoreboard(player))
+        registerScoreboard(PartyScoreboard(player))
+        registerScoreboard(BreachScoreboard(player))
 
-        registerScoreboard(IntermissionScoreboard(eventController, player))
+        registerScoreboard(IntermissionScoreboard(player))
 
-        if(gameController.activeGame == null) {
+        if(GameController.activeGame == null) {
             activateScoreboard("intermissionScoreboard")
         }
     }

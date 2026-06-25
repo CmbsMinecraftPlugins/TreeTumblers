@@ -17,10 +17,8 @@ class LoadedMap(
     val world: World,
     val data: ConfigurationSection
 ) {
-    val worldController: WorldController by ControllerRegistry.controller()
-
     /** Cleans up the loaded map */
     suspend fun cleanup() {
-        worldController.cleanupWorld(world)
+        WorldController.cleanupWorld(world)
     }
 }

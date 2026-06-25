@@ -10,38 +10,38 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class IntermissionScoreboard(
-    val eventController: EventController,
     val player: Player,
-    override val id: String = "intermissionScoreboard",
-    override val displayName: String = MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val id: String = "intermissionScoreboard"
+    override val displayName: String = MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE
+
     override fun getLines(): ArrayList<Component> {
         val timer: Component = Component.empty()
             .append(UserInterfaceUtility.CLOCK)
             .append(when {
-                eventController.readyCheckTimer != null ->
+                EventController.readyCheckTimer != null ->
                     Format.mm(
                         " <white>Ready Check: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
-                        Placeholder.component("timer", eventController.readyCheckTimer!!.format())
+                        Placeholder.component("timer", EventController.readyCheckTimer!!.format())
                     )
-                eventController.eventTimer != null ->
+                EventController.eventTimer != null ->
                     Format.mm(
-                        " <white>${eventController.eventTimerTitle ?: "Timer"}: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
-                        Placeholder.component("timer", eventController.eventTimer!!.format())
+                        " <white>${EventController.eventTimerTitle ?: "Timer"}: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
+                        Placeholder.component("timer", EventController.eventTimer!!.format())
                     )
-                eventController.state == EventController.State.EVENT_INACTIVE ->
+                EventController.state == EventController.State.EVENT_INACTIVE ->
                     Format.mm(" <white>Event: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>Inactive</color></white>")
                 else -> Component.empty()
             })
 
         val gameComponent = Format.mm(
             MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_GAME,
-            Placeholder.unparsed("current", eventController.game.toString()),
-            Placeholder.unparsed("max", eventController.totalGames.toString())
+            Placeholder.unparsed("current", EventController.game.toString()),
+            Placeholder.unparsed("max", EventController.totalGames.toString())
         )
 
         val teamComponent: ArrayList<Component> = ArrayList()
-        val eventPlacements = eventController.getEventTeamPlacements()
+        val eventPlacements = EventController.getEventTeamPlacements()
         val team = player.tumblingPlayer.team
         val teamPlacement = eventPlacements.find { it.first == team }
 
@@ -51,16 +51,16 @@ class IntermissionScoreboard(
                     MiniMessagePlaceholders.Game.TEAM_SCOREBOARD_PLACEMENT,
                     Placeholder.unparsed("placement", teamPlacement.second.toString()),
                     Placeholder.component("team", player.tumblingPlayer.team.boldedName),
-                    Placeholder.unparsed("score", if(eventController.scoresHidden) "??????" else (eventController.teamScores[team] ?: 0).toString())
+                    Placeholder.unparsed("score", if(EventController.scoresHidden) "??????" else (EventController.teamScores[team] ?: 0).toString())
                 )
             )
 
-            val playerPlacements = eventController.getEventPlayerPlacements()
+            val playerPlacements = EventController.getEventPlayerPlacements()
             val teamPlayers = playerPlacements.filter { it.first.team == team }
 
             teamPlayers.forEach {
                 teamComponent.add(Format.mm(
-                    "  " + if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
+                    "  " + if(!EventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
                     else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT,
                     Placeholder.unparsed("placement", it.second.toString()),
                     Placeholder.parsed("head", "<head:${it.first.uuid}>"),

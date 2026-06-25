@@ -6,10 +6,10 @@ import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 
 @Controller(Controller.Priority.MEDIUM)
-class MusicController : ControllerBase() {
+object MusicController : IController {
     var currentMusic: Music? = null
     val loopingTasks: HashMap<Player, BukkitRunnable> = hashMapOf()
 

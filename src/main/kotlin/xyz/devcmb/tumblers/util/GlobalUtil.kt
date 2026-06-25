@@ -46,16 +46,14 @@ import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
 
-private val playerController: PlayerController by ControllerRegistry.controller()
-
 val Player.tumblingPlayer: TumblingPlayer
     get() {
-        return playerController.players.find { it.uuid == this.uniqueId }!!
+        return PlayerController.players.find { it.uuid == this.uniqueId }!!
     }
 
 val Player.uiController: PlayerUIController
     get() {
-        return playerController.playerUIControllers[this]!!
+        return PlayerController.playerUIControllers[this]!!
     }
 
 val Player.formattedName: Component
@@ -64,25 +62,25 @@ val Player.formattedName: Component
     }
 
 fun Player.openHandledInventory(id: String) {
-    playerController.playerUIControllers[this]!!.openInventory(id)
+    PlayerController.playerUIControllers[this]!!.openInventory(id)
 }
 
 fun Player.enableBossBar(id: String) {
-    playerController.playerUIControllers[this]!!.enableBossBar(id)
+    PlayerController.playerUIControllers[this]!!.enableBossBar(id)
 }
 
 fun Player.disableBossBar(id: String) {
-    playerController.playerUIControllers[this]!!.disableBossBar(id)
+    PlayerController.playerUIControllers[this]!!.disableBossBar(id)
 }
 
 fun Player.activateScoreboard(id: String) {
     DebugUtil.info("Activating score board $id for $name")
-    playerController.playerUIControllers[this]!!.activateScoreboard(id)
+    PlayerController.playerUIControllers[this]!!.activateScoreboard(id)
 }
 
 fun Player.deactivateScoreboard(id: String) {
     DebugUtil.info("Deactivating score board $id for $name")
-    playerController.playerUIControllers[this]!!.deactivateScoreboard(id)
+    PlayerController.playerUIControllers[this]!!.deactivateScoreboard(id)
 }
 
 
@@ -101,9 +99,9 @@ fun Player.tp(location: Location) {
         return
     }
 
-    playerController.removeNametag(this)
+    PlayerController.removeNametag(this)
     this.teleport(location)
-    playerController.reloadNametag(this)
+    PlayerController.reloadNametag(this)
 }
 
 val teleportingPlayers: ArrayList<Player> = ArrayList()
@@ -253,7 +251,7 @@ fun Player.sound(sound: String) {
 }
 
 fun Player.hideToAll() {
-    playerController.hiddenPlayers.add(this)
+    PlayerController.hiddenPlayers.add(this)
     Bukkit.getOnlinePlayers().forEach {
         if(it !== this) {
             it.hidePlayer(TreeTumblers.plugin, this)
@@ -262,7 +260,7 @@ fun Player.hideToAll() {
 }
 
 fun Player.showToAll() {
-    playerController.hiddenPlayers.remove(this)
+    PlayerController.hiddenPlayers.remove(this)
     Bukkit.getOnlinePlayers().forEach {
         if(it !== this) {
             it.showPlayer(TreeTumblers.plugin, this)

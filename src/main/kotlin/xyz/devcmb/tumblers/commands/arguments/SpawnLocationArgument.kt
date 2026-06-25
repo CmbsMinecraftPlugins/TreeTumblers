@@ -13,8 +13,6 @@ import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.Format
 
 class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
-    val gameController: GameController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<SpawnLocation>,
@@ -47,7 +45,7 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
 
     fun getSpawns(invocation: Invocation<CommandSender>): GameController.RegisteredGame? {
         val gameArgument = invocation.arguments().asList()[2] ?: return null
-        val game = gameController.games.find { it.name.equals(gameArgument, true) }
+        val game = GameController.games.find { it.name.equals(gameArgument, true) }
         return game
     }
 }

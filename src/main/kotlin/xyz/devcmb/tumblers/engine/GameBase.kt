@@ -119,12 +119,6 @@ abstract class GameBase(
 
     open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
 
-    private val eventController: EventController by ControllerRegistry.controller()
-    private val playerController: PlayerController by ControllerRegistry.controller()
-    private val spectatorController: SpectatorController by ControllerRegistry.controller()
-    private val hubController: HubController by ControllerRegistry.controller()
-    private val badgeController: BadgeController by ControllerRegistry.controller()
-
     open val debugToolkit: DebugToolkit? = null
 
     val countdownTime: Int
@@ -223,14 +217,14 @@ abstract class GameBase(
      */
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
-        playerController.muteChat()
+        PlayerController.muteChat()
 
         currentCutscene = Cutscene(cutsceneSteps)
         currentCutscene!!.run(gamePlayers, loadedMaps.first(), this)
         currentCutscene = null
 
         suspendSync {
-            playerController.reloadNametags()
+            PlayerController.reloadNametags()
         }
     }
 
@@ -239,7 +233,7 @@ abstract class GameBase(
      */
     suspend fun pregame() {
         currentState = State.PREGAME
-        playerController.unmuteChat()
+        PlayerController.unmuteChat()
 
         suspendSync {
             gamePlayers
@@ -263,10 +257,9 @@ abstract class GameBase(
             }
 
             if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
-                playerController.currentNametagMode = PlayerController.NametagMode.TEAM
+                PlayerController.currentNametagMode = PlayerController.NametagMode.TEAM
             }
         }
-
 
         gamePregame()
     }
@@ -348,20 +341,20 @@ abstract class GameBase(
      * This should be expanded upon if the game has any listeners registered not in the main class.
      */
     open suspend fun cleanup() {
-        eventController.lastGameTeamPlacements = getTeamPlacements()
-        eventController.lastGamePlayerPlacements = getIndividualPlacements()
+        EventController.lastGameTeamPlacements = getTeamPlacements()
+        EventController.lastGamePlayerPlacements = getIndividualPlacements()
 
-        eventController.lastGameTeamScores = teamScores
-        eventController.lastGamePlayerScores = playerScores
+        EventController.lastGameTeamScores = teamScores
+        EventController.lastGamePlayerScores = playerScores
 
         suspendSync {
-            playerController.currentNametagMode = PlayerController.NametagMode.ALL
-            eventController.refreshLeaderboards()
+            PlayerController.currentNametagMode = PlayerController.NametagMode.ALL
+            EventController.refreshLeaderboards()
             gameSpectators.toList().forEach(this::unSpectate)
 
             Bukkit.getOnlinePlayers().forEach {
                 it.inventory.clear()
-                hubController.spawnHub(it)
+                HubController.spawnHub(it)
                 it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                 it.foodLevel = 20
 
@@ -391,7 +384,7 @@ abstract class GameBase(
             it.cleanup()
         }
 
-        eventController.replicateScores()
+        EventController.replicateScores()
     }
 
     private var countdownCancelled: Boolean = false
@@ -459,7 +452,7 @@ abstract class GameBase(
             player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
 
         DebugUtil.info("Granting $amount score to ${player.name} with source $source")
-        eventController.grantScore(player, amount)
+        EventController.grantScore(player, amount)
     }
 
     /**
@@ -532,7 +525,7 @@ abstract class GameBase(
      * Announce the team standings for this game
      */
     suspend fun announceTeamScores() {
-        if(eventController.scoresHidden) return
+        if(EventController.scoresHidden) return
 
         var teamScoresComponent = Component.empty()
             .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
@@ -558,7 +551,7 @@ abstract class GameBase(
      * Announce the individual standings for this game
      */
     suspend fun announceIndivScores() {
-        if(eventController.scoresHidden) return
+        if(EventController.scoresHidden) return
 
         var individualScoresComponent = Component.empty()
             .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
@@ -585,7 +578,7 @@ abstract class GameBase(
      * Announce the event team scores
      */
     suspend fun announceOverallTeamScores() {
-        if(eventController.scoresHidden) {
+        if(EventController.scoresHidden) {
             Bukkit.broadcast(Format.info("Team standings will be revealed soon!"))
             delay(5000)
             return
@@ -595,7 +588,7 @@ abstract class GameBase(
             .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
             .appendNewline()
 
-        val eventPlacements = eventController.getEventTeamPlacements()
+        val eventPlacements = EventController.getEventTeamPlacements()
         eventPlacements.forEach {
             eventPlacementsComponent = eventPlacementsComponent.append(
                 Component.empty()
@@ -603,7 +596,7 @@ abstract class GameBase(
                     .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
                     .append(it.first.formattedName)
                     .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(eventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+                    .append(Component.text(EventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
             )
         }
 
@@ -626,7 +619,7 @@ abstract class GameBase(
     fun makeSpectator(player: Player, sendActionBar: Boolean = true, participating: Boolean = true) {
         if(participating) participatingSpectators.add(player)
         gameSpectators.add(player)
-        spectatorController.makeSpectator(player, sendActionBar)
+        SpectatorController.makeSpectator(player, sendActionBar)
     }
 
     /**
@@ -637,7 +630,7 @@ abstract class GameBase(
     fun unSpectate(player: Player) {
         participatingSpectators.remove(player)
         gameSpectators.remove(player)
-        spectatorController.unSpectate(player)
+        SpectatorController.unSpectate(player)
     }
 
     /**
@@ -664,7 +657,7 @@ abstract class GameBase(
      * @param player The player to award the badge to
      * @param badge The badge to award
      */
-    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = badgeController.grantBadge(player, badge)
+    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = BadgeController.grantBadge(player, badge)
 
     @EventHandler(priority = EventPriority.HIGHEST)
     fun playerJoinEvent(event: PlayerJoinEvent) {

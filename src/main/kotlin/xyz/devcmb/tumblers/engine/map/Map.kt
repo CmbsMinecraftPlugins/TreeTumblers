@@ -33,8 +33,6 @@ import kotlin.io.path.Path
 class Map(
     val id: String,
 ) {
-    val worldController: WorldController by ControllerRegistry.controller()
-
     lateinit var game: GameBase
 
     /**
@@ -60,7 +58,7 @@ class Map(
         val worldName = config.getString("${game.configRoot}.maps.$id.world")
             ?: throw MapSetupException("Map world name could not be found")
 
-        val world = worldController.loadTemplate(
+        val world = WorldController.loadTemplate(
             Path(WorldController.worldRoot, gameWorlds, worldName),
             "${game.id}_${id}-$index"
         )

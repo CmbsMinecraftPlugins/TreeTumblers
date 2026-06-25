@@ -18,11 +18,10 @@ import org.bukkit.event.EventPriority
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingNoxesiumException
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
-import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.controllers.IController
 
 @Controller(Controller.Priority.MEDIUM)
-class NoxesiumController : ControllerBase() {
+object NoxesiumController : IController {
     override fun init() {
         QibType.entries.forEach {
             it.register()

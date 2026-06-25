@@ -21,10 +21,6 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "score")
 @Permission("tumbling.organizer")
 class ScoreCommand {
-    private val eventController: EventController by ControllerRegistry.controller()
-    private val playerController: PlayerController by ControllerRegistry.controller()
-    private val databaseController: DatabaseController by ControllerRegistry.controller()
-
     @Execute(name = "player view")
     fun playerView(@Context sender: CommandSender, @Arg("player") player: TumblingPlayer) {
         sender.sendMessage(Format.info(Format.mm(
@@ -88,15 +84,15 @@ class ScoreCommand {
             return
         }
 
-        eventController.teamScores.replaceAll { _, _ -> 0 }
-        playerController.players.forEach {
+        EventController.teamScores.replaceAll { _, _ -> 0 }
+        PlayerController.players.forEach {
             it.score = 0
         }
 
         TreeTumblers.pluginScope.launch {
-            databaseController.replicateTeamData(eventController.teamScores)
-            playerController.players.forEach {
-                databaseController.replicatePlayerData(it)
+            DatabaseController.replicateTeamData(EventController.teamScores)
+            PlayerController.players.forEach {
+                DatabaseController.replicatePlayerData(it)
             }
         }
 
@@ -110,12 +106,12 @@ class ScoreCommand {
             return
         }
 
-        playerController.players.forEach {
+        PlayerController.players.forEach {
             it.score = (500..8000).random()
         }
 
-        eventController.teamScores.forEach { score ->
-            eventController.teamScores[score.key] = playerController.players
+        EventController.teamScores.forEach { score ->
+            EventController.teamScores[score.key] = PlayerController.players
                 .filter { it.team == score.key }
                 .sumOf { it.score }
         }
@@ -125,13 +121,13 @@ class ScoreCommand {
 
     @Execute(name = "hide")
     fun hideScores(@Context sender: CommandSender) {
-        eventController.scoresHidden = true
+        EventController.scoresHidden = true
         sender.sendMessage(Format.success("Scores have been hidden successfully!"))
     }
 
     @Execute(name = "show")
     fun showScores(@Context sender: CommandSender) {
-        eventController.scoresHidden = false
+        EventController.scoresHidden = false
         sender.sendMessage(Format.success("Scores have been shown successfully!"))
     }
 
@@ -139,9 +135,9 @@ class ScoreCommand {
     fun replicateScores(@Context sender: CommandSender) {
         sender.sendMessage(Format.info("Starting replication job..."))
         TreeTumblers.pluginScope.launch {
-            databaseController.replicateTeamData(eventController.teamScores)
-            playerController.players.forEach {
-                databaseController.replicatePlayerData(it)
+            DatabaseController.replicateTeamData(EventController.teamScores)
+            PlayerController.players.forEach {
+                DatabaseController.replicatePlayerData(it)
             }
             sender.sendMessage(Format.success("Replicated scores successfully!"))
         }

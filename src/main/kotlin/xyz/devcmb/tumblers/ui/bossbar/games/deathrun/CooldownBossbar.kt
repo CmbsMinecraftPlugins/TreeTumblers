@@ -11,13 +11,13 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
 class CooldownBossbar(
-    val player: Player,
-    val gameController: GameController,
-    override val id: String = "deathrunCooldownBossbar",
-    override val padding: Int = 0
+    val player: Player
 ) : HandledBossbar {
+    override val id: String = "deathrunCooldownBossbar"
+    override val padding: Int = 0
+
     override fun getComponent(): Component {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame == null || activeGame !is DeathrunController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
 
         val currentTrap = activeGame.currentTraps[player] ?: return Component.text(DebugUtil.DebugLogLevel.ERROR.icon)

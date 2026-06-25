@@ -13,14 +13,12 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 
 class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() {
-    val playerController: PlayerController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<TumblingPlayer>,
         argument: String
     ): ParseResult<TumblingPlayer> {
-        val players = playerController.players
+        val players = PlayerController.players
         val player = players.find { it.name.equals(argument, ignoreCase = true) }
 
         if(player == null) {
@@ -35,6 +33,6 @@ class TumblingPlayerArgument: ArgumentResolver<CommandSender, TumblingPlayer>() 
         argument: Argument<TumblingPlayer?>?,
         context: SuggestionContext?
     ): SuggestionResult? {
-        return playerController.players.map { it.name }.stream().collect(SuggestionResult.collector())
+        return PlayerController.players.map { it.name }.stream().collect(SuggestionResult.collector())
     }
 }

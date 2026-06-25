@@ -222,7 +222,6 @@ class BreachController: GameBase(
         }
 
     lateinit var playingTeams: Pair<Team, Team>
-    val eventController: EventController by ControllerRegistry.controller()
 
     var team1score: Int = 0
     var team2score: Int = 0
@@ -309,7 +308,7 @@ class BreachController: GameBase(
             kills[it] = 0
         }
 
-        val placements = eventController.getEventTeamPlacements()
+        val placements = EventController.getEventTeamPlacements()
 
         val team1 = placements.find { it.second == 1 }?.first ?: throw GameControllerException("No first place team found!")
         val team2 = placements.find {
@@ -757,8 +756,7 @@ class BreachController: GameBase(
         player.removePotionEffect(PotionEffectType.SLOWNESS)
 
         player.getAttribute(Attribute.JUMP_STRENGTH)?.baseValue =
-            player.getAttribute(Attribute.JUMP_STRENGTH)?.defaultValue
-            ?: 0.42
+            Attribute.JUMP_STRENGTH.defaultValue
 
         player.isGlowing = false
         player.showToAll()
@@ -965,9 +963,9 @@ class BreachController: GameBase(
         playingTeams.toList().forEachIndexed { index, team ->
             component = component
                 .append(Format.mm(
-                    "<br><white>#${index + 1}</white> <team:${team.name}:name><shift>${" ".repeat(60)}<gold>${eventController.teamScores[team]!!}</gold> <br><players><br>",
+                    "<br><white>#${index + 1}</white> <team:${team.name}:name><shift>${" ".repeat(60)}<gold>${EventController.teamScores[team]!!}</gold> <br><players><br>",
                     Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(team.teamName) + 11)),
-                    Placeholder.component("players", eventController.getTeamPlayersComponent(team))
+                    Placeholder.component("players", EventController.getTeamPlayersComponent(team))
                 ))
         }
 

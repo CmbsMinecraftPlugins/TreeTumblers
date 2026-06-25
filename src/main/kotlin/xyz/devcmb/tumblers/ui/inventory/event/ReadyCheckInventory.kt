@@ -19,10 +19,10 @@ import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.components.ConfirmationButton
 
 class ReadyCheckInventory(
-    val player: Player,
-    val eventController: EventController,
-    override val id: String = "readyCheckInventory",
+    val player: Player
 ) : HandledInventory {
+    override val id: String = "readyCheckInventory"
+
     override val inventory: ChestInventoryUI = ChestInventoryUI(
         player,
         UserInterfaceUtility.negativeSpace(8)
@@ -36,12 +36,12 @@ class ReadyCheckInventory(
 
         val yesConfirmation = ConfirmationButton(ConfirmationButton.ConfirmationButtonType.YES, 2) { page, item ->
             page.ui.close()
-            eventController.markReady(player)
+            EventController.markReady(player)
         }
 
         val noConfirmation = ConfirmationButton(ConfirmationButton.ConfirmationButtonType.NO, 6) { page, item ->
             page.ui.close()
-            eventController.markNotReady(player)
+            EventController.markNotReady(player)
         }
 
         (yesConfirmation.items() + noConfirmation.items()).forEach {

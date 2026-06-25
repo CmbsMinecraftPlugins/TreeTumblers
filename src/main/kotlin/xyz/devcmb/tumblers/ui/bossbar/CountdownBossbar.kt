@@ -9,14 +9,12 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formatToMSS
 
-class CountdownBossbar(
-    val gameController: GameController,
-    override val id: String = "countdownBossbar",
+class CountdownBossbar : HandledBossbar {
+    override val id: String = "countdownBossbar"
     override val padding: Int = 0
-) : HandledBossbar {
 
     override fun getComponent(): Component {
-        val currentGame = gameController.activeGame ?: return Component.text("0:00")
+        val currentGame = GameController.activeGame ?: return Component.text("0:00")
 
         if(currentGame.currentTimer?.paused == true) {
             return UserInterfaceUtility.backgroundTextCenter(

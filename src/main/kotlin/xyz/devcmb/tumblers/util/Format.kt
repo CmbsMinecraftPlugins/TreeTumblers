@@ -21,9 +21,6 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import java.util.UUID
 
 object Format {
-    val gameController: GameController by ControllerRegistry.controller()
-    val playerController: PlayerController by ControllerRegistry.controller()
-
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
             .resolver(StandardTags.defaults())
@@ -63,7 +60,7 @@ object Format {
             })
             .resolver(TagResolver.resolver("player") { args, context ->
                 val player = args.popOr { "Player argument must be a valid specified player UUID!" }.value()
-                val tumblingPlayer = playerController.players.find { it.uuid == UUID.fromString(player) }
+                val tumblingPlayer = PlayerController.players.find { it.uuid == UUID.fromString(player) }
                 if(tumblingPlayer == null) {
                     throw IllegalStateException("Player argument must be a valid specified player UUID!")
                 }
@@ -208,7 +205,7 @@ object Format {
             override fun formatMessage(message: Component): Component {
                 return mm(
                     "<yellow>(<white><icon></white><yellow>)</yellow> <white><message></white>",
-                    Placeholder.component("icon", gameController.activeGame?.icon ?: Component.empty()),
+                    Placeholder.component("icon", GameController.activeGame?.icon ?: Component.empty()),
                     Placeholder.component("message", message)
                 )
             }

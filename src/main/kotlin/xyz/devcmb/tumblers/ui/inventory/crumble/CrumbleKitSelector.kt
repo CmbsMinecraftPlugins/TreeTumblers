@@ -23,10 +23,10 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.wrapComponent
 
 class CrumbleKitSelector(
-    val player: Player,
-    val gameController: GameController,
-    override val id: String = "crumbleKitSelector"
+    val player: Player
 ) : HandledInventory {
+    override val id: String = "crumbleKitSelector"
+
     // https://septicuss.notion.site/Fonts-ce8c8c12c313463ea01ac9b16d7e6bbb
     override val inventory = ChestInventoryUI(
         player,
@@ -41,7 +41,7 @@ class CrumbleKitSelector(
 
         val slots = listOf(2, 5, 11, 14, 20, 23, 29, 32)
         val onClick: ((index: Int) -> Unit) = onClick@{ index ->
-            val crumble = gameController.activeGame as? CrumbleController ?: return@onClick
+            val crumble = GameController.activeGame as? CrumbleController ?: return@onClick
             val (id, kit) = crumble.kitTemplates.toList().getOrNull(index) ?: return@onClick
 
             if(crumble.playerKits.filter { item -> item.value.id == id }.size >= CrumbleController.maxPlayersPerKit) {
@@ -62,7 +62,7 @@ class CrumbleKitSelector(
         slots.forEachIndexed { index, slot ->
             page.addItem(InventoryItem(
                 getItemStack = { page, item ->
-                    val crumbleController = gameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
+                    val crumbleController = GameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
                     val (id, kit) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem ItemStack.empty()
 
                     ItemStack.of(Material.ECHO_SHARD).apply {
@@ -94,7 +94,7 @@ class CrumbleKitSelector(
             repeat(CrumbleController.maxPlayersPerKit) { pIndex ->
                 page.addItem(InventoryItem(
                     getItemStack = { page, item ->
-                        val crumbleController = gameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
+                        val crumbleController = GameController.activeGame as? CrumbleController ?: return@InventoryItem ItemStack.empty()
                         val (id, _) = crumbleController.kitTemplates.toList().getOrNull(index) ?: return@InventoryItem ItemStack.empty()
 
                         val selectedPlayers = crumbleController.playerKits

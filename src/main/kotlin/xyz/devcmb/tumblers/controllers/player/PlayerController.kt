@@ -48,7 +48,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.event.HubController
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
@@ -63,7 +63,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 @Controller(Controller.Priority.MEDIUM)
-class PlayerController : ControllerBase() {
+object PlayerController : IController {
     val playerUIControllers: HashMap<Player, PlayerUIController> = HashMap()
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
@@ -77,14 +77,9 @@ class PlayerController : ControllerBase() {
 
     val nameTags: HashMap<Player, TextDisplay> = HashMap()
 
-    private val databaseController: DatabaseController by controller()
-    private val gameController: GameController by controller()
-    private val spectatorController: SpectatorController by controller()
-    private val hubController: HubController by controller()
-
     override fun init() {
         TreeTumblers.pluginScope.launch {
-            players = databaseController.getAllPlayerData()
+            players = DatabaseController.getAllPlayerData()
         }
     }
 
@@ -134,7 +129,7 @@ class PlayerController : ControllerBase() {
         }
 
         runTask {
-            hubController.spawnHub(player)
+            HubController.spawnHub(player)
             reloadNametag(player)
             nameTags.forEach { (otherPlr, tag) ->
                 if (canSeeNametag(player, otherPlr)) {
@@ -218,7 +213,7 @@ class PlayerController : ControllerBase() {
         val killed = event.player
         val killer = killed.killer ?: return
 
-        val currentGame = gameController.activeGame
+        val currentGame = GameController.activeGame
         val score = currentGame?.getScoreSource(CommonScoreSource.KILL)
 
         killer.tumblingPlayer.showKill(killed.tumblingPlayer, if (score != null && score > 0) score else null)
@@ -260,7 +255,7 @@ class PlayerController : ControllerBase() {
         if(connection !is PlayerLoginConnection) return
 
         val uuid = connection.authenticatedProfile?.id
-        if(!databaseController.isConnected()) {
+        if(!DatabaseController.isConnected()) {
             event.kickMessage(Format.mm("<red><st>${" ".repeat(60)}</st><br><br>" +
                     "Database initialization failed<br><br>" +
                     "<st>${" ".repeat(60)}</st></red>"))
@@ -321,7 +316,7 @@ class PlayerController : ControllerBase() {
 
     fun canSeeNametag(viewer: Player, taggedPlayer: Player): Boolean {
         return currentNametagMode.canSee(viewer, taggedPlayer)
-                && !spectatorController.spectators.contains(taggedPlayer)
+                && !SpectatorController.spectators.contains(taggedPlayer)
                 && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
                 && !hiddenPlayers.contains(taggedPlayer)
                 && taggedPlayer != viewer

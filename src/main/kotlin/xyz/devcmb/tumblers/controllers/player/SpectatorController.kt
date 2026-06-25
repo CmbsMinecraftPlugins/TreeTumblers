@@ -12,7 +12,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -20,11 +20,9 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.showToAll
 
 @Controller(Controller.Priority.MEDIUM)
-class SpectatorController : ControllerBase() {
+object SpectatorController : IController {
     val spectators: HashMap<Player, Boolean> = HashMap()
     private var spectatorTask: BukkitRunnable? = null
-
-    val playerController: PlayerController by controller()
 
     override fun init() {
         spectatorTask = object : BukkitRunnable() {
@@ -57,7 +55,7 @@ class SpectatorController : ControllerBase() {
                 }
             }
 
-        playerController.updateNametagVisibility(player)
+        PlayerController.updateNametagVisibility(player)
 
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
             name(Format.mm("<green>Spectate menu</green>"))
@@ -77,7 +75,7 @@ class SpectatorController : ControllerBase() {
         player.inventory.remove(Material.COMPASS)
         player.isFlying = false
         player.allowFlight = false
-        playerController.updateNametagVisibility(player)
+        PlayerController.updateNametagVisibility(player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)

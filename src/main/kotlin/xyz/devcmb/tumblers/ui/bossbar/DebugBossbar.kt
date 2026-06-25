@@ -8,7 +8,10 @@ import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
-class DebugBossbar(override val id: String = "debugBossbar", override val padding: Int = 0) : HandledBossbar {
+class DebugBossbar : HandledBossbar {
+    override val id: String = "debugBossbar"
+    override val padding: Int = 0
+
     override fun getComponent(): Component {
         val text = "TreeTumblers | ${Constants.BRANCH} (${Constants.VERSION})"
 

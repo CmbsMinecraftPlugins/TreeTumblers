@@ -13,8 +13,6 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 
 class BadgeArgument : ArgumentResolver<CommandSender, BadgeController.Badge>() {
-    val gameController: GameController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<BadgeController.Badge>,
@@ -41,6 +39,6 @@ class BadgeArgument : ArgumentResolver<CommandSender, BadgeController.Badge>() {
     }
 
     fun getBadges(): List<BadgeController.Badge> {
-        return gameController.games.flatMap { it.badges.orEmpty() }
+        return GameController.games.flatMap { it.badges.orEmpty() }
     }
 }

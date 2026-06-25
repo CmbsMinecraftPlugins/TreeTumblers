@@ -36,7 +36,7 @@ import xyz.devcmb.tumblers.commands.misc.ChatCommand
 import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
 import xyz.devcmb.tumblers.commands.organizer.TeamCommand
 import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -52,7 +52,7 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
 @Controller(Controller.Priority.LOWEST)
-class CommandController : ControllerBase() {
+object CommandController : IController {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {
         liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.plugin)

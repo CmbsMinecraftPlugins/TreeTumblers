@@ -17,8 +17,7 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.RegisteredGam
         context: Argument<GameController.RegisteredGame>,
         argument: String
     ): ParseResult<GameController.RegisteredGame> {
-        val gameController = ControllerRegistry.getController<GameController>()
-        val game = gameController.games.find { it.id == argument }
+        val game = GameController.games.find { it.id == argument }
 
         if(game == null) {
             return ParseResult.failure(Format.error("That isn't a valid game"))
@@ -32,8 +31,7 @@ class GameArgument: ArgumentResolver<CommandSender, GameController.RegisteredGam
         argument: Argument<GameController.RegisteredGame>,
         context: SuggestionContext
     ): SuggestionResult? {
-        val gameController = ControllerRegistry.getController<GameController>()
-        return gameController.games
+        return GameController.games
             .stream()
             .map { it.id }
             .collect(SuggestionResult.collector())

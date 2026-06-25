@@ -24,12 +24,11 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SpectateInventory(
-    val player: Player,
-    val gameController: GameController,
-    override val id: String = "spectateInventory",
+    val player: Player
 ) : HandledInventory {
-    private val spectateController: SpectatorController by ControllerRegistry.controller()
+    override val id: String = "spectateInventory"
 
+    // TODO: Replace with custom inv instead of using glass panes
     override val inventory: ChestInventoryUI = ChestInventoryUI(player, Format.mm("<white>Spectate</white>"), 5).apply {
         val page = ChestInventoryPage()
         addPage("main", page, true)
@@ -37,10 +36,10 @@ class SpectateInventory(
         val itemMap = InventoryItemMap(
             getInventoryItems = { page, map ->
                 val players: Set<Player> =
-                    gameController.activeGame?.gameParticipants?.filter { it != player }?.toSet() ?: Team.entries
+                    GameController.activeGame?.gameParticipants?.filter { it != player }?.toSet() ?: Team.entries
                         .filter { it.playingTeam }
                         .flatMap { it.getOnlinePlayers() }
-                        .filter { it != player && it !in spectateController.spectators }
+                        .filter { it != player && it !in SpectatorController.spectators }
                         .toSet()
 
                 val items: ArrayList<InventoryMappedItem> = ArrayList()
@@ -63,9 +62,9 @@ class SpectateInventory(
                             }
                         },
                         onClick = { page, item ->
-                            if (!spectateController.spectators.contains(player)) return@InventoryMappedItem
+                            if (!SpectatorController.spectators.contains(player)) return@InventoryMappedItem
 
-                            if (spectateController.spectators.contains(plr)) {
+                            if (SpectatorController.spectators.contains(plr)) {
                                 player.sendMessage(Format.warning("This player can't be spectated right now."))
                                 return@InventoryMappedItem
                             }

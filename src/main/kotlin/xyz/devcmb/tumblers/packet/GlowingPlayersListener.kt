@@ -15,16 +15,14 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class GlowingPlayersListener : PacketListener {
-    val gameController: GameController by ControllerRegistry.controller()
-
     // https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata#Entity_Metadata_Format
     // https://minecraft.wiki/w/Java_Edition_protocol/Packets#Set_Entity_Metadata
     override fun onPacketSend(event: PacketSendEvent) {
         if (
             event.packetType != PacketType.Play.Server.ENTITY_METADATA
-            || gameController.activeGame == null
-            || gameController.activeGame!!.currentState != GameBase.State.GAME_ON
-            || gameController.activeGame!!.flags.contains(Flag.DISABLE_TEAM_GLOW)
+            || GameController.activeGame == null
+            || GameController.activeGame!!.currentState != GameBase.State.GAME_ON
+            || GameController.activeGame!!.flags.contains(Flag.DISABLE_TEAM_GLOW)
         ) return
 
         val receiver = event.getPlayer<Player>()

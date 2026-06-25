@@ -9,7 +9,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
@@ -20,7 +20,7 @@ import java.sql.Timestamp
 import java.util.Date
 
 @Controller(Controller.Priority.MEDIUM)
-class BadgeController : ControllerBase() {
+object BadgeController : IController {
     val collectionItem = AdvancedItemStack(Material.ECHO_SHARD) {
         name(Format.mm("<yellow>Badge Collection</yellow>"))
         lore(

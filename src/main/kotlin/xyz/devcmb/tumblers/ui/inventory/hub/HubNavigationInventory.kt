@@ -20,8 +20,9 @@ import xyz.devcmb.tumblers.util.validateLocation
 
 class HubNavigationInventory(
     val player: Player,
-    override val id: String = "hubNavigationInventory",
 ) : HandledInventory {
+    override val id: String = "hubNavigationInventory"
+
     val lodgeNavigationPosition: List<Int> = configurable("lobby.navigator.lodge")
     val practiceCoursesNavigationPosition: List<Int> = configurable("lobby.navigator.practice_courses")
 

@@ -19,12 +19,9 @@ import java.text.SimpleDateFormat
 @Command(name = "event")
 @Permission("tumbling.event")
 class EventCommand {
-    val eventController: EventController by ControllerRegistry.controller()
-    val databaseController: DatabaseController by ControllerRegistry.controller()
-
     @Execute(name = "start")
     fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean, @Flag("--skip-intro") skipIntro: Boolean) {
-        if(eventController.state != EventController.State.EVENT_INACTIVE) {
+        if(EventController.state != EventController.State.EVENT_INACTIVE) {
             sender.sendMessage(Format.error("The event is already active!"))
             return
         }
@@ -44,8 +41,7 @@ class EventCommand {
             }
         }
 
-
-        eventController.startEvent(finale, skipIntro)
+        EventController.startEvent(finale, skipIntro)
         sender.sendMessage(Format.success("Start signal sent successfully!"))
     }
 
@@ -53,54 +49,54 @@ class EventCommand {
     fun executeReadyCheck(@Context sender: CommandSender) {
         TreeTumblers.pluginScope.launch {
             sender.sendMessage(Format.success("Ready check sent successfully!"))
-            val success = eventController.readyCheck()
+            val success = EventController.readyCheck()
             sender.sendMessage(Format.success(Format.mm("Ready check ended with status <b>${if(success) "<green>Success</green>" else "<red>Failure</red>"}</b>")))
         }
     }
 
     @Execute(name = "timer pause")
     fun executeTimerPause(@Context sender: CommandSender) {
-        if(eventController.eventTimer == null) {
+        if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
         }
 
-        eventController.eventTimer!!.paused = true
+        EventController.eventTimer!!.paused = true
         sender.sendMessage(Format.success("Event timer paused successfully!"))
     }
 
     @Execute(name = "timer unpause")
     fun executeTimerUnpause(@Context sender: CommandSender) {
-        if(eventController.eventTimer == null) {
+        if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
         }
 
-        eventController.eventTimer!!.paused = false
+        EventController.eventTimer!!.paused = false
         sender.sendMessage(Format.success("Event timer unpaused successfully!"))
     }
 
     @Execute(name = "timer set")
     fun executeTimerSet(@Context sender: CommandSender, @Arg time: Int) {
-        if(eventController.eventTimer == null) {
+        if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
         }
 
-        eventController.eventTimer!!.currentTime = time
+        EventController.eventTimer!!.currentTime = time
         sender.sendMessage(Format.success("Event timer set successfully!"))
     }
 
     @Execute(name = "podiums refresh")
     fun executePodiumsRefresh(@Context sender: CommandSender) {
-        eventController.refreshLeaderboards()
+        EventController.refreshLeaderboards()
         sender.sendMessage(Format.success("Podiums refreshed successfully!"))
     }
 
     @Execute(name = "recovery list")
     fun executeRecover(@Context sender: CommandSender) {
         var component = Format.mm("<green>Here's a list of recovery states for the event:</green>")
-        databaseController.recoveryStates.forEachIndexed { index, state ->
+        DatabaseController.recoveryStates.forEachIndexed { index, state ->
             component = component.append(Format.mm("<br><white><yellow><click:run_command:/event recovery state ${state.id}>[${state.id}]</click></yellow> - ${SimpleDateFormat("hh:mm:ss EEE MMM d").format(state.timestamp.time)}${if(index == 0) " <gold>(latest)</gold>" else ""}</white>"))
         }
 
@@ -131,6 +127,6 @@ class EventCommand {
         }
 
         sender.sendMessage(Format.info("Starting restore job"))
-        eventController.recover(state)
+        EventController.recover(state)
     }
 }

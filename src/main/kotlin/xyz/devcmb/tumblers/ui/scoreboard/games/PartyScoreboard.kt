@@ -10,13 +10,13 @@ import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 
 class PartyScoreboard(
-    val gameController: GameController,
     val player: Player,
-    override val displayName: String = "<aqua>Party</aqua> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
-    override val id: String = "partyScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val displayName: String = "<aqua>Party</aqua> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+    override val id: String = "partyScoreboard"
+
     override fun getLines(): ArrayList<Component> {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame !is PartyController) return arrayListOf()
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)

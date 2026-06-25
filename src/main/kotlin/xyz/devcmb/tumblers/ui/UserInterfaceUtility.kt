@@ -92,9 +92,6 @@ object UserInterfaceUtility {
 
     const val FULL_INVENTORY_NEGATIVE_ADVANCE = 170
 
-    val playerController: PlayerController by ControllerRegistry.controller()
-    val eventController: EventController by ControllerRegistry.controller()
-
     fun negativeSpace(targetPixels: Int): Component {
         var remaining = targetPixels
         val result = StringBuilder()
@@ -142,7 +139,7 @@ object UserInterfaceUtility {
     }
 
     fun refreshAll(id: String) {
-        playerController.playerUIControllers.forEach { (player, controller) ->
+        PlayerController.playerUIControllers.forEach { (player, controller) ->
             val inv = controller.inventories.find { it.id == id }
             require(inv != null) { "Inventory with an id of $id was not found for ${player.name}" }
             inv.inventory.reload()
@@ -151,7 +148,7 @@ object UserInterfaceUtility {
 
     fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {
         val leaderboard: ArrayList<Component> = arrayListOf()
-        if(eventController.scoresHidden) {
+        if(EventController.scoresHidden) {
             repeat(4) {
                 leaderboard.add(Format.mm(MiniMessagePlaceholders.Game.HIDDEN_TEAM_SCOREBOARD_PLACEMENT))
             }
@@ -218,7 +215,7 @@ object UserInterfaceUtility {
             ?: Pair(tumblingPlayer,activeGame.getIndividualPlacements().size + 1)
 
         return Format.mm(
-            if(!eventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
+            if(!EventController.scoresHidden) MiniMessagePlaceholders.Game.INDIVIDUAL_SCOREBOARD_PLACEMENT
                 else MiniMessagePlaceholders.Game.HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_WITH_SCORE,
             Placeholder.unparsed("placement", playerPlacement.second.toString()),
             Placeholder.parsed("head", "<head:${player.uniqueId}>"),

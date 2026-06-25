@@ -33,7 +33,7 @@ import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
@@ -58,15 +58,8 @@ import java.util.UUID
 import kotlin.math.min
 
 @Controller(Controller.Priority.MEDIUM)
-class EventController : ControllerBase() {
+object EventController : IController {
     lateinit var teamScores: HashMap<Team, Int>
-
-    private val databaseController: DatabaseController by controller()
-    private val gameController: GameController by controller()
-    private val playerController: PlayerController by controller()
-    private val musicController: MusicController by controller()
-    private val spectatorController: SpectatorController by controller()
-    private val votingController: VotingController by controller()
 
     lateinit var topbarRunnable: BukkitRunnable
     var state: State = State.EVENT_INACTIVE
@@ -81,7 +74,7 @@ class EventController : ControllerBase() {
     var game: Int = 0
     val totalGames: Int
         get() {
-            return min(gameController.games.filter { it.votable }.size, 8)
+            return min(GameController.games.filter { it.votable }.size, 8)
         }
     val playedGames: ArrayList<String> = ArrayList()
 
@@ -96,9 +89,7 @@ class EventController : ControllerBase() {
     var lastGameTeamScores: HashMap<Team, Int>? = null
     var lastGamePlayerScores: HashMap<TumblingPlayer, Int>? = null
 
-    companion object {
-        val eventMode: Boolean = configurable("event.event_mode")
-    }
+    val eventMode: Boolean = configurable("event.event_mode")
 
     val overrideMotd: Boolean = configurable("event.override_motd")
     val skipIntermission: Boolean = configurable("event.intermission.skip")
@@ -121,12 +112,12 @@ class EventController : ControllerBase() {
 
     override fun init() {
         TreeTumblers.pluginScope.launch {
-            teamScores = databaseController.getTeamScores()
+            teamScores = DatabaseController.getTeamScores()
         }
 
         topbarRunnable = object : BukkitRunnable() {
             override fun run() {
-                if(gameController.activeGame != null) {
+                if(GameController.activeGame != null) {
                     sendGameTopbar()
                 } else {
                     sendDefaultTopbar()
@@ -231,16 +222,16 @@ class EventController : ControllerBase() {
                 "Let's meet our <aqua>teams!</aqua><br><br>" +
                 "<green><line:30></green></white>"
         ))
-        playerController.muteChat()
+        PlayerController.muteChat()
         delay(2500)
-        votingController.announceTeamPlayers()
+        VotingController.announceTeamPlayers()
         delay(1000)
         Bukkit.broadcast(Format.mm("<white><green><line:30></green><br><br>" +
                 "And now that everyone has been introduced, let's get this show on the road!<br><br>" +
                 "<green><line:30></green></white>"
         ))
         delay(1000)
-        playerController.unmuteChat()
+        PlayerController.unmuteChat()
     }
 
     fun cleanupEvent() {
@@ -254,7 +245,7 @@ class EventController : ControllerBase() {
     suspend fun eventLoop() {
         if(game >= totalGames) return
         // TODO: Something else for handling finale recovery
-        databaseController.saveEventState()
+        DatabaseController.saveEventState()
         game++
 
         if(game != 1 && !skipIntermission) {
@@ -273,11 +264,11 @@ class EventController : ControllerBase() {
         }
 
         state = State.VOTING
-        val nextGame = votingController.startVoting()
+        val nextGame = VotingController.startVoting()
 
-        musicController.stopMusic()
+        MusicController.stopMusic()
         state = State.NORMAL_GAME
-        gameController.startGame(nextGame)
+        GameController.startGame(nextGame)
         playedGames.add(nextGame)
     }
 
@@ -289,7 +280,7 @@ class EventController : ControllerBase() {
         eventTimerTitle = "Score breakdown"
         eventTimer!!.start()
 
-        playerController.muteChat()
+        PlayerController.muteChat()
         Bukkit.broadcast(
             Format.mm("<aqua><line:30></aqua><br>" +
                 "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
@@ -399,7 +390,7 @@ class EventController : ControllerBase() {
         ))
 
 
-        playerController.unmuteChat()
+        PlayerController.unmuteChat()
         eventTimer = Timer(60) {
             id = "event_finale_countdown"
             joined = true
@@ -408,7 +399,7 @@ class EventController : ControllerBase() {
         eventTimer!!.start()
 
         state = State.FINAL_GAME
-        gameController.startGame("breach")
+        GameController.startGame("breach")
     }
 
     suspend fun announceNonFinaleParticipants() {
@@ -644,7 +635,7 @@ class EventController : ControllerBase() {
     }
 
     fun sendGameTopbar() {
-        val game = gameController.activeGame ?: return
+        val game = GameController.activeGame ?: return
         val component = game.overrideTabList() ?: getTopbarPlayersComponent(game)
 
         Bukkit.getOnlinePlayers().forEach {
@@ -726,7 +717,7 @@ class EventController : ControllerBase() {
 
     fun getTeamPlayersComponent(team: Team): Component {
         var playersComponent = Component.empty()
-        playerController.players.filter { entry -> entry.team == team }.forEachIndexed { index, player ->
+        PlayerController.players.filter { entry -> entry.team == team }.forEachIndexed { index, player ->
             val uuid = player.uuid
             val onlinePlayer = Bukkit.getPlayer(uuid)
             var name = Component.empty()
@@ -764,7 +755,7 @@ class EventController : ControllerBase() {
 
     fun getEventPlayerPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
-        playerController.players.filter { it.team.playingTeam }.forEach {
+        PlayerController.players.filter { it.team.playingTeam }.forEach {
             playerScores[it] = it.score
         }
 
@@ -779,9 +770,9 @@ class EventController : ControllerBase() {
 
         TreeTumblers.pluginScope.launch {
             DebugUtil.info("Replicating event data...")
-            databaseController.replicateTeamData(teamScores)
-            playerController.players.forEach {
-                databaseController.replicatePlayerData(it)
+            DatabaseController.replicateTeamData(teamScores)
+            PlayerController.players.forEach {
+                DatabaseController.replicatePlayerData(it)
             }
             DebugUtil.success("Data replication successful!")
         }
@@ -1104,7 +1095,7 @@ class EventController : ControllerBase() {
         event.motd(
             Format.mm(
             "<b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</gold></b><br>" +
-                    "<aqua>${gameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>development (${Constants.BRANCH})</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
+                    "<aqua>${GameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>development (${Constants.BRANCH})</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
         ))
     }
 
@@ -1179,17 +1170,17 @@ class EventController : ControllerBase() {
         playedGames.addAll(eventState.playedGames)
         teamScores.clear()
         teamScores.putAll(eventState.teamScores)
-        playerController.players.forEach { plr -> eventState.playerScores[plr.uuid.toString()]?.let { plr.score = it } }
+        PlayerController.players.forEach { plr -> eventState.playerScores[plr.uuid.toString()]?.let { plr.score = it } }
         lastGameTeamScores = eventState.lastGameTeamScores
         lastGameTeamPlacements = eventState.lastGameTeamPlacements?.let { ArrayList(it) }
 
         lastGamePlayerScores = eventState.lastGamePlayerScores?.let { HashMap(it.mapNotNull { entry ->
-            val player = playerController.players.find { plr -> plr.uuid == UUID.fromString(entry.key) }
+            val player = PlayerController.players.find { plr -> plr.uuid == UUID.fromString(entry.key) }
             player?.let { player to entry.value }
         }.toMap()) }
 
         lastGamePlayerPlacements = eventState.lastGamePlayerPlacements?.let { ArrayList(it.mapNotNull { entry ->
-            val player = playerController.players.find { plr -> plr.uuid == UUID.fromString(entry.first) }
+            val player = PlayerController.players.find { plr -> plr.uuid == UUID.fromString(entry.first) }
             player?.let { player to entry.second }
         }) }
 
@@ -1197,7 +1188,7 @@ class EventController : ControllerBase() {
 
         runBlocking {
             eventState.votingQuadrantGames.forEach {
-                votingController.placeGame(it.key, gameController.games.find { game -> game.id == it.value }!!, null)
+                VotingController.placeGame(it.key, GameController.games.find { game -> game.id == it.value }!!, null)
             }
 
             Bukkit.broadcast(Format.success("Game state has been rolled back successfully!"))

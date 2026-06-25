@@ -246,7 +246,6 @@ class CrumbleController : GameBase(
         }
     }.build()
 
-    val eventController: EventController by ControllerRegistry.controller()
     val killModel = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {

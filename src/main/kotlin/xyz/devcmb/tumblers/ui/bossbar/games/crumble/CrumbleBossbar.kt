@@ -14,13 +14,13 @@ import xyz.devcmb.tumblers.util.formatToMSS
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleBossbar(
-    val player: Player,
-    val gameController: GameController,
-    override val id: String = "crumbleBossbar",
-    override val padding: Int = 0
+    val player: Player
 ) : HandledBossbar {
+    override val id: String = "crumbleBossbar"
+    override val padding: Int = 0
+
     override fun getComponent(): Component {
-        val crumble = gameController.activeGame
+        val crumble = GameController.activeGame
             as? CrumbleController
             ?: return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
 

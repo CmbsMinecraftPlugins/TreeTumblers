@@ -32,7 +32,7 @@ import org.joml.Vector3f
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingEventException
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.controllers.server.WorldController
@@ -58,7 +58,7 @@ import kotlin.collections.take
 import kotlin.collections.takeLast
 
 @Controller(Controller.Priority.LOWEST)
-class VotingController : ControllerBase() {
+object VotingController : IController {
     val inactiveQuadrantMaterial: Material = configurable("event.voting.inactive_quadrant_material")
     val voteCenter: List<Int> = configurable("event.voting.center")
     val quadrantSeparator: Material = configurable("event.voting.quadrant_separator")
@@ -70,10 +70,6 @@ class VotingController : ControllerBase() {
         get() {
             return field.replace("&", TreeTumblers.plugin.dataFolder.toString())
         }
-
-    val eventController: EventController by controller()
-    val musicController: MusicController by controller()
-    val gameController: GameController by controller()
 
     val votingQuadrants: ArrayList<ArrayList<Location>> = ArrayList()
     val quadrantGames: HashMap<Int, GameController.RegisteredGame> = HashMap()
@@ -118,7 +114,7 @@ class VotingController : ControllerBase() {
 
     val votingOn: Boolean
         get() {
-            return eventController.state == EventController.State.VOTING
+            return EventController.state == EventController.State.VOTING
         }
 
     val votingTextColors: ArrayList<TextColor> = arrayListOf(
@@ -265,7 +261,7 @@ class VotingController : ControllerBase() {
     }
 
     suspend fun startVoting(): String {
-        musicController.playMusic(MusicController.Music.VOTING)
+        MusicController.playMusic(MusicController.Music.VOTING)
 
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {
@@ -278,7 +274,7 @@ class VotingController : ControllerBase() {
         }
 
         val originalBlocks: HashMap<Location, Material> = HashMap()
-        eventController.eventTimer = Timer(20) {
+        EventController.eventTimer = Timer(20) {
             id = "event_voting"
             joined = true
 
@@ -308,7 +304,7 @@ class VotingController : ControllerBase() {
             }
         }
 
-        eventController.eventTimerTitle = "Voting"
+        EventController.eventTimerTitle = "Voting"
         summonGames()
         delay(2000)
 
@@ -319,7 +315,7 @@ class VotingController : ControllerBase() {
                 Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
             ))
 
-        eventController.eventTimer!!.start()
+        EventController.eventTimer!!.start()
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
@@ -386,7 +382,7 @@ class VotingController : ControllerBase() {
         if(quadrantGames.size > 2) return
 
         repeat(4 - quadrantGames.size) {
-            val games = gameController.games.filter { game -> !eventController.playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
+            val games = GameController.games.filter { game -> !EventController.playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
             if(games.isEmpty()) return@repeat
 
             val index = (0..3).first { num -> num !in quadrantGames.keys }

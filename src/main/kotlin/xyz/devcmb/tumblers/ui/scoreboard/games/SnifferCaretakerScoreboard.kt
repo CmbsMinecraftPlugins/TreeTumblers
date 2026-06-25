@@ -12,13 +12,13 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SnifferCaretakerScoreboard(
-    val gameController: GameController,
     val player: Player,
-    override val displayName: String = "<red>Sniffer Caretaker</red> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
-    override val id: String = "snifferCaretakerScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val displayName: String = "<red>Sniffer Caretaker</red> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+    override val id: String = "snifferCaretakerScoreboard"
+
     override fun getLines(): ArrayList<Component> {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame !is SnifferCaretakerController) return arrayListOf()
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)

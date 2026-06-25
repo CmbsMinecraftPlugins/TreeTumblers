@@ -12,13 +12,13 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 
 class DeathrunScoreboard(
-    val gameController: GameController,
     val player: Player,
-    override val displayName: String = "<yellow>Deathrun</yellow> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
-    override val id: String = "deathrunScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val displayName: String = "<yellow>Deathrun</yellow> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+    override val id: String = "deathrunScoreboard"
+
     override fun getLines(): ArrayList<Component> {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame !is DeathrunController) return arrayListOf()
 
         val rounds = arrayListOf<Component>()

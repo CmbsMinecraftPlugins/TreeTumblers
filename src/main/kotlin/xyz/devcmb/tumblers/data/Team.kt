@@ -125,15 +125,12 @@ enum class Team(
             return Audience.audience(getOnlinePlayers())
         }
 
-    private val playerController: PlayerController by ControllerRegistry.controller()
-    private val eventController: EventController by ControllerRegistry.controller()
-
     var score: Int
         get() {
-            return eventController.teamScores[this] ?: 0
+            return EventController.teamScores[this] ?: 0
         }
         set(value) {
-            eventController.teamScores.put(this, value)
+            EventController.teamScores.put(this, value)
         }
 
     fun getOnlinePlayers(): Set<Player> {
@@ -143,6 +140,6 @@ enum class Team(
     }
 
     fun getAllPlayers(): Set<TumblingPlayer> {
-        return playerController.players.filter { it.team == this }.toSet()
+        return PlayerController.players.filter { it.team == this }.toSet()
     }
 }

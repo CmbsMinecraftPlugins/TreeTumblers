@@ -37,12 +37,10 @@ import kotlin.jvm.optionals.getOrNull
 @Command(name = "world")
 @Permission("tumbling.dev")
 class WorldCommand {
-    val worldController: WorldController by ControllerRegistry.controller()
-
     @Execute(name = "create void")
     fun executeWorld(@Context executor: CommandSender, @Arg("world name") worldName: String, @Flag("--teleport","-t") teleport: Boolean) {
         try {
-            val world = worldController.createVoidWorld(worldName)
+            val world = WorldController.createVoidWorld(worldName)
             executor.sendMessage(Format.success("Created void world $worldName successfully!"))
 
             if(teleport) {
@@ -68,14 +66,14 @@ class WorldCommand {
         @Flag("--confirm","-c") confirm: Boolean
     ) {
         try {
-            if(worldController.worldFileExists(game, name.getOrElse { world.name }) && !confirm) {
+            if(WorldController.worldFileExists(game, name.getOrElse { world.name }) && !confirm) {
                 executor.sendMessage(Format.warning("A world with this name already exists! Re-run the command with the --confirm flag to override the existing world!"))
                 return
             }
 
             executor.sendMessage(Format.info("Starting save job..."))
             TreeTumblers.pluginScope.launch {
-                worldController.saveWorld(world, game, name.getOrNull())
+                WorldController.saveWorld(world, game, name.getOrNull())
                 executor.sendMessage(Format.success("World saved successfully!"))
             }
         } catch(e: Exception) {
@@ -100,7 +98,7 @@ class WorldCommand {
         try {
             executor.sendMessage(Format.info("Starting save job..."))
             TreeTumblers.pluginScope.launch {
-                worldController.saveWorld(
+                WorldController.saveWorld(
                     world,
                     File(WorldController.worldRoot, WorldController.lobbyWorld),
                     true
@@ -130,7 +128,7 @@ class WorldCommand {
             try {
                 executor.sendMessage(Format.info("Loading template..."))
 
-                val world = worldController.loadTemplate(Path(template.file.path), name)
+                val world = WorldController.loadTemplate(Path(template.file.path), name)
                 executor.sendMessage(Format.success("Loaded template world $name successfully!"))
 
                 if(!teleport) return@launch
@@ -194,9 +192,9 @@ class WorldCommand {
 
                 withContext(Dispatchers.IO) {
                     val isVoid = Files.exists(Path(world.file.toString(), "void.txt"))
-                    worldController.deleteDir(world.file)
+                    WorldController.deleteDir(world.file)
                     delay(5000)
-                    val from = File(worldController.getDimensions(), world.file.name)
+                    val from = File(WorldController.getDimensions(), world.file.name)
                     val idFile = File(from, "data/paper/metadata.dat")
                     if (idFile.exists()) {
                         idFile.delete()
@@ -204,7 +202,7 @@ class WorldCommand {
 
                     FileUtils.copyDirectory(from, world.file)
                     delay(3000)
-                    worldController.deleteDir(from)
+                    WorldController.deleteDir(from)
                     if(isVoid) {
                         Files.write(
                             File(world.file, "void.txt").toPath(),

@@ -20,11 +20,9 @@ import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class BreachKitSelector(
-    val player: Player,
-    val gameController: GameController,
-    override val id: String = "breachKitSelector"
+    val player: Player
 ) : HandledInventory {
-
+    override val id: String = "breachKitSelector"
 
     override val inventory = ChestInventoryUI(
         player,
@@ -55,12 +53,12 @@ class BreachKitSelector(
                 },
 
                 onClick = { page, item ->
-                    if(gameController.activeGame?.id != "breach") {
+                    if(GameController.activeGame !is BreachController) {
                         DebugUtil.severe("Attempted to use items in the BreachKitSelector while the game is not active")
                         return@InventoryItem
                     }
 
-                    val breach = gameController.activeGame as BreachController
+                    val breach = GameController.activeGame as BreachController
 
                     breach.giveKit(player, kit)
                     player.buttonClickSound()
@@ -72,12 +70,12 @@ class BreachKitSelector(
 
         page.addItem(InventoryItem(
             getItemStack = { page, item ->
-                if(gameController.activeGame?.id != "breach") {
+                if(GameController.activeGame !is BreachController) {
                     DebugUtil.severe("Attempted to load BreachKitSelector while the game is not active")
                     return@InventoryItem ItemStack.of(Material.AIR)
                 }
 
-                val breach = gameController.activeGame as BreachController
+                val breach = GameController.activeGame as BreachController
                 val team = player.tumblingPlayer.team
 
                 var itemHolder: Player? = null
@@ -118,12 +116,12 @@ class BreachKitSelector(
             },
 
             onClick = { page, item ->
-                if(gameController.activeGame?.id != "breach") {
+                if(GameController.activeGame !is BreachController) {
                     DebugUtil.severe("Attempted to use items in the BreachKitSelector while the game is not active")
                     return@InventoryItem
                 }
 
-                val breach = gameController.activeGame as BreachController
+                val breach = GameController.activeGame as BreachController
                 breach.takeItem(player)
 
                 player.buttonClickSound()

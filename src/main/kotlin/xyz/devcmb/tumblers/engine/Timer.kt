@@ -21,8 +21,6 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var isRunning: Boolean = false
     var game: GameBase? = null
 
-    private val timerController: TimerController by ControllerRegistry.controller()
-
     // DSL Fields
     var id: String = "timer_${UUID.randomUUID().toString().take(8)}"
     var onComplete: (suspend (interrupted: Boolean) -> Unit)? = null
@@ -80,7 +78,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     suspend fun start() {
         require(job == null) { "Timer has already been started." }
 
-        timerController.register(this)
+        TimerController.register(this)
         isRunning = true
         game?.gameTimers?.add(this)
         job = TreeTumblers.pluginScope.launch {
@@ -127,7 +125,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
             isRunning = false
             onComplete?.invoke(false)
             game?.gameTimers?.remove(this@Timer)
-            timerController.unregister(this@Timer)
+            TimerController.unregister(this@Timer)
         }
         if(joined) job!!.join()
     }
@@ -145,7 +143,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         onComplete?.invoke(true)
         isRunning = false
         game?.gameTimers?.remove(this)
-        timerController.unregister(this)
+        TimerController.unregister(this)
         job = null
     }
 }

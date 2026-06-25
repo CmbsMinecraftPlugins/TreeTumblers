@@ -13,18 +13,16 @@ import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.util.Format
 
 class DebuggingEventArgument: ArgumentResolver<CommandSender, DebugToolkit.DebuggingEvent>() {
-    val gameController: GameController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<DebugToolkit.DebuggingEvent>,
         argument: String
     ): ParseResult<DebugToolkit.DebuggingEvent> {
-        val events = gameController.activeGame?.debugToolkit?.events?.keys
+        val events = GameController.activeGame?.debugToolkit?.events?.keys
             ?: return ParseResult.failure(Format.error("Cannot parse a debug event without an active game with a debug toolkit!"))
 
         if(!events.contains(argument)) {
-            return ParseResult.failure(Format.error("That's not a valid event for ${gameController.activeGame!!.id}!"))
+            return ParseResult.failure(Format.error("That's not a valid event for ${GameController.activeGame!!.id}!"))
         }
 
         return ParseResult.success(DebugToolkit.DebuggingEvent(argument))
@@ -35,7 +33,7 @@ class DebuggingEventArgument: ArgumentResolver<CommandSender, DebugToolkit.Debug
         argument: Argument<DebugToolkit.DebuggingEvent>,
         context: SuggestionContext
     ): SuggestionResult {
-        val keys = gameController.activeGame?.debugToolkit?.events?.keys ?: emptySet()
+        val keys = GameController.activeGame?.debugToolkit?.events?.keys ?: emptySet()
         return keys.stream().collect(SuggestionResult.collector())
     }
 }

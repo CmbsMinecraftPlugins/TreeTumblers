@@ -32,8 +32,7 @@ data class TumblingPlayer(
             return Format.formatPlayerName(this)
         }
 
-    private val playerEventController: PlayerEventController by ControllerRegistry.controller()
     fun showKill(player: TumblingPlayer, score: Int?) {
-        playerEventController.addEvent(this, PlayerEventController.Event.KillEvent(this, player, score))
+        PlayerEventController.addEvent(this, PlayerEventController.Event.KillEvent(this, player, score))
     }
 }

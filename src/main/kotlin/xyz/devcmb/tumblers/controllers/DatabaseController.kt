@@ -45,7 +45,7 @@ import kotlin.toString
  */
 
 @Controller(Controller.Priority.HIGHEST)
-class DatabaseController : ControllerBase() {
+object DatabaseController : IController {
     val host: String = configurable("database.host")
     val port: Int = configurable("database.port")
     val username: String = configurable("database.username")
@@ -54,11 +54,6 @@ class DatabaseController : ControllerBase() {
 
     lateinit var connection: Connection
         private set
-
-    private val eventController: EventController by controller()
-    private val playerController: PlayerController by controller()
-    private val gameController: GameController by controller()
-    private val votingController: VotingController by controller()
 
     override fun init() {
         val url = "jdbc:mysql://$host:$port/$database?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
@@ -173,7 +168,7 @@ class DatabaseController : ControllerBase() {
         val score = scoreStatement.executeQuery()
         if(!score.next()) throw TumblingDatabaseException("Score not found in database directly after update")
 
-        playerController.registerTumblingPlayer(profile.id!!, profile.name!!, team, score.getInt("score"))
+        PlayerController.registerTumblingPlayer(profile.id!!, profile.name!!, team, score.getInt("score"))
     }
 
     suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
@@ -189,7 +184,7 @@ class DatabaseController : ControllerBase() {
 
         statement.setString(1, profile.id.toString())
 
-        playerController.unregisterTumblingPlayer(profile.id!!)
+        PlayerController.unregisterTumblingPlayer(profile.id!!)
         statement.executeUpdate()
     }
 
@@ -227,7 +222,7 @@ class DatabaseController : ControllerBase() {
         }
     }
 
-    fun isWhitelisted(uuid: String): Boolean = playerController.players.any { it.uuid == UUID.fromString(uuid) }
+    fun isWhitelisted(uuid: String): Boolean = PlayerController.players.any { it.uuid == UUID.fromString(uuid) }
 
     suspend fun getAllPlayerData(): ArrayList<TumblingPlayer> = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
@@ -262,7 +257,7 @@ class DatabaseController : ControllerBase() {
                 val game = result.getString("game")
                 val timestamp = result.getTimestamp("achieved")
 
-                val registeredGame = gameController.games.find { it.id == game }
+                val registeredGame = GameController.games.find { it.id == game }
                     ?: throw TumblingDatabaseStateException("Could not find a game with id $game")
 
                 // don't need to throw here because badges could technically get removed (shouldn't, but can)
@@ -319,16 +314,16 @@ class DatabaseController : ControllerBase() {
     val recoveryStates: ArrayList<EventRecoveryState> = ArrayList()
     suspend fun saveEventState() = withContext(Dispatchers.IO) {
         val state = EventController.EventState(
-            eventController.state != EventController.State.EVENT_INACTIVE,
-            eventController.game,
-            HashMap(votingController.quadrantGames.map { it.key to it.value.id }.toMap()),
-            eventController.playedGames,
-            eventController.lastGameTeamPlacements,
-            eventController.lastGamePlayerPlacements?.map { it.first.uuid.toString() to it.second },
-            eventController.lastGameTeamScores,
-            eventController.lastGamePlayerScores?.let { HashMap(it.map { entry -> entry.key.uuid.toString() to entry.value }.toMap()) },
-            eventController.teamScores,
-            HashMap(playerController.players.associate { it.uuid.toString() to it.score })
+            EventController.state != EventController.State.EVENT_INACTIVE,
+            EventController.game,
+            HashMap(VotingController.quadrantGames.map { it.key to it.value.id }.toMap()),
+            EventController.playedGames,
+            EventController.lastGameTeamPlacements,
+            EventController.lastGamePlayerPlacements?.map { it.first.uuid.toString() to it.second },
+            EventController.lastGameTeamScores,
+            EventController.lastGamePlayerScores?.let { HashMap(it.map { entry -> entry.key.uuid.toString() to entry.value }.toMap()) },
+            EventController.teamScores,
+            HashMap(PlayerController.players.associate { it.uuid.toString() to it.score })
         )
 
         val id = UUID.randomUUID().toString().replace("-", "").take(12)
@@ -366,9 +361,9 @@ class DatabaseController : ControllerBase() {
     @EventHandler(priority = EventPriority.LOWEST)
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
-        if(playerController.players.any { it.uuid == player.uniqueId }) return
+        if(PlayerController.players.any { it.uuid == player.uniqueId }) return
 
         val team = Team.entries.filter { it.playingTeam }.random()
-        playerController.registerTumblingPlayer(player.uniqueId, player.name, team, 0)
+        PlayerController.registerTumblingPlayer(player.uniqueId, player.name, team, 0)
     }
 }

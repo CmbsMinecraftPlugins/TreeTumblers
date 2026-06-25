@@ -14,7 +14,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.util.Format
@@ -27,19 +27,15 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
 
 @Controller(Controller.Priority.MEDIUM)
-class HubController : ControllerBase() {
-    val gameController: GameController by controller()
-    val eventController: EventController by controller()
-    val badgeController: BadgeController by controller()
-
+object HubController : IController {
     val isHub: Boolean
         get() {
-            return gameController.activeGame == null
+            return GameController.activeGame == null
         }
 
     val isVoting: Boolean
         get() {
-            return eventController.state == EventController.State.VOTING
+            return EventController.state == EventController.State.VOTING
         }
 
     val lobbySpawnStart: List<Int> = configurable("lobby.spawn.start")
@@ -68,7 +64,7 @@ class HubController : ControllerBase() {
     fun spawnHub(player: Player, teleport: Boolean = true) {
         if(teleport) player.tp(getLobbyPosition())
         player.inventory.addItem(compass.build())
-        badgeController.giveCollection(player)
+        BadgeController.giveCollection(player)
     }
 
     fun getLobbyPosition(): Location {

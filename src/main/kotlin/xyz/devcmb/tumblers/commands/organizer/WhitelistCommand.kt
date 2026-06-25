@@ -20,8 +20,6 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "whitelist")
 @Permission("tumbling.organizer")
 class WhitelistCommand {
-    val databaseController: DatabaseController by ControllerRegistry.controller()
-
     @Execute(name = "add")
     fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {
         if(!team.playingTeam && !confirm) {
@@ -40,12 +38,12 @@ class WhitelistCommand {
         TreeTumblers.pluginScope.launch {
             val profile = Bukkit.createProfile(name)
             if (profile.complete(false)) {
-                if(databaseController.isWhitelisted(profile.id.toString())) {
+                if(DatabaseController.isWhitelisted(profile.id.toString())) {
                     executor.sendMessage(Format.warning("Nothing changed. Player is already whitelisted."))
                     return@launch
                 }
 
-                databaseController.whitelistPlayer(profile, team)
+                DatabaseController.whitelistPlayer(profile, team)
 
                 executor.sendMessage(Format.success(Format.mm("Whitelisted <player:${profile.id}> successfully!")))
             } else {
@@ -67,12 +65,12 @@ class WhitelistCommand {
             val profile = Bukkit.createProfile(name)
             if (profile.complete(false)) {
                 try {
-                    if(!databaseController.isWhitelisted(profile.id.toString())) {
+                    if(!DatabaseController.isWhitelisted(profile.id.toString())) {
                         executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
                         return@launch
                     }
 
-                    databaseController.unwhitelistPlayer(profile)
+                    DatabaseController.unwhitelistPlayer(profile)
                     executor.sendMessage(Format.success("Unwhitelisted $name successfully!"))
                 } catch (e: Exception) {
                     executor.sendMessage(Format.error("An error occurred while attempting to un-whitelist!"))

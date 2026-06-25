@@ -26,16 +26,14 @@ sealed interface HandledScoreboard {
         val lastLines: ArrayList<Component> = ArrayList()
         val scores: ArrayList<Score> = ArrayList()
 
-        private val eventController: EventController by ControllerRegistry.controller()
-
         override fun enable(scoreboard: Scoreboard) {
             objective = scoreboard.registerNewObjective(
                 id,
                 Criteria.DUMMY,
                 Format.mm(
                     displayName,
-                    Placeholder.unparsed("game", eventController.game.toString()),
-                    Placeholder.unparsed("total", eventController.totalGames.toString())
+                    Placeholder.unparsed("game", EventController.game.toString()),
+                    Placeholder.unparsed("total", EventController.totalGames.toString())
                 )
             )
 

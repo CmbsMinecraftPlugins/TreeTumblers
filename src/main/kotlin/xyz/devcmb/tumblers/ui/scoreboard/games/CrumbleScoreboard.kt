@@ -12,13 +12,13 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleScoreboard(
-    val gameController: GameController,
-    val player: Player,
-    override val displayName: String = "<green>Crumble</green> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>",
-    override val id: String = "crumbleScoreboard"
+    val player: Player
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val displayName: String = "<green>Crumble</green> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+    override val id: String = "crumbleScoreboard"
+
     override fun getLines(): ArrayList<Component> {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame !is CrumbleController) return arrayListOf()
 
         var rounds = Format.mm("<aqua>Rounds: </aqua>")

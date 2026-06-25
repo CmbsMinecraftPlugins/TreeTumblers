@@ -27,11 +27,10 @@ import xyz.devcmb.tumblers.util.wrapComponent
 import java.text.SimpleDateFormat
 
 class BadgeCollectionInventory(
-    val player: Player,
-    val badgeController: BadgeController,
-    val gameController: GameController,
-    override val id: String = "badgeCollectionInventory",
+    val player: Player
 ) : HandledInventory {
+    override val id: String = "badgeCollectionInventory"
+
     @Suppress("UnstableApiUsage")
     override val inventory: ChestInventoryUI = ChestInventoryUI(
         player,
@@ -50,7 +49,7 @@ class BadgeCollectionInventory(
         // Game Selection
         val gameSelectionMap = InventoryItemMap(
             getInventoryItems = { page, map ->
-                ArrayList(gameController.games.mapIndexed { index, game ->
+                ArrayList(GameController.games.mapIndexed { index, game ->
                     InventoryMappedItem(
                         getItemStack = { page, item ->
                             ItemStack.of(Material.ECHO_SHARD).apply {

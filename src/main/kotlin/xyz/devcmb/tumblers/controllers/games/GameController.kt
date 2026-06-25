@@ -16,7 +16,7 @@ import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -24,7 +24,7 @@ import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
-class GameController : ControllerBase() {
+object GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: GameBase? = null
     var activeGameJob: Job? = null
@@ -39,8 +39,7 @@ class GameController : ControllerBase() {
         val spawns: List<SpawnLocation>?
     ) {
         fun getTemplate(): GameBase {
-            val gameController = ControllerRegistry.getController<GameController>()
-            val gameType = gameController.games.find { it.id == id }?.game
+            val gameType = games.find { it.id == id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")
 
             return gameType.getDeclaredConstructor().newInstance()

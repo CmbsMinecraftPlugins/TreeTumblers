@@ -8,11 +8,11 @@ import org.bukkit.plugin.PluginManager
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.util.DebugUtil
 
 object ControllerRegistry : Listener {
-    val controllers: HashMap<ControllerBase, Controller.Priority> = HashMap()
+    private val controllers: HashMap<IController, Controller.Priority> = HashMap()
 
     /** Initialize all controllers **/
     @Suppress("UNCHECKED_CAST")
@@ -25,21 +25,21 @@ object ControllerRegistry : Listener {
         )
 
         reflections.getTypesAnnotatedWith(Controller::class.java)
-            .filter { ControllerBase::class.java.isAssignableFrom(it) }
+            .filter { IController::class.java.isAssignableFrom(it) }
             .sortedByDescending { it.getAnnotation(Controller::class.java).priority.value }
             .forEach { clazz ->
-                val controllerClass = clazz as Class<out ControllerBase>
+                val controllerClass = clazz as Class<out IController>
                 val annotation = controllerClass.getAnnotation(Controller::class.java)
 
-                val instance: ControllerBase =
-                    controllerClass.getDeclaredConstructor().newInstance()
+                val instance: IController =
+                    controllerClass.kotlin.objectInstance as IController
 
                 register(instance, annotation)
             }
     }
 
     /** Register a single controller **/
-    fun register(controller: ControllerBase, annotation: Controller) {
+    fun register(controller: IController, annotation: Controller) {
         val manager: PluginManager = Bukkit.getServer().pluginManager
         manager.registerEvents(controller, TreeTumblers.plugin)
 
@@ -48,20 +48,9 @@ object ControllerRegistry : Listener {
         DebugUtil.success("Registered controller ${controller::class.java.simpleName} successfully")
     }
 
-    /** Gets a controller by its type **/
-    inline fun <reified T> getController(): T {
-        val controller: T? = controllers.keys.find { it is T } as T?
-        if(controller == null) throw IllegalArgumentException("Controller with the class ${T::class.java.simpleName} was not found")
-
-        return controller
-    }
-
-    /** Lazily gets a controller to prevent race conditions with loading */
-    inline fun <reified T> controller() : Lazy<T> = lazy { getController<T>() }
-
     /** Clean up all the controllers **/
     fun cleanup() {
-        controllers.keys.forEach(ControllerBase::cleanup)
+        controllers.keys.forEach(IController::cleanup)
     }
 
     @EventHandler

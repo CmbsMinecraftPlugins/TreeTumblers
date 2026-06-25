@@ -12,14 +12,12 @@ import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.util.Format
 
 class RecoveryStateArgument : ArgumentResolver<CommandSender, DatabaseController.EventRecoveryState>() {
-    val databaseController: DatabaseController by ControllerRegistry.controller()
-
     override fun parse(
         invocation: Invocation<CommandSender>,
         context: Argument<DatabaseController.EventRecoveryState>,
         argument: String
     ): ParseResult<DatabaseController.EventRecoveryState> {
-        val recoveryStates = databaseController.recoveryStates
+        val recoveryStates = DatabaseController.recoveryStates
         val state = recoveryStates.find { it.id == argument }
         if(state == null) {
             return ParseResult.failure(Format.error("Couldn't find a recovery state with id $argument!"))
@@ -33,6 +31,6 @@ class RecoveryStateArgument : ArgumentResolver<CommandSender, DatabaseController
         argument: Argument<DatabaseController.EventRecoveryState>,
         context: SuggestionContext
     ): SuggestionResult {
-        return databaseController.recoveryStates.map { it.id }.stream().collect(SuggestionResult.collector())
+        return DatabaseController.recoveryStates.map { it.id }.stream().collect(SuggestionResult.collector())
     }
 }

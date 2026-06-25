@@ -15,15 +15,13 @@ import kotlin.jvm.optionals.getOrNull
 @Command(name = "nametag")
 @Permission("tumbling.dev")
 class NametagCommand {
-    val playerController: PlayerController by ControllerRegistry.controller()
-
     @Execute(name = "reload")
     fun executeNametag(@Context executor: CommandSender, @Arg player: Optional<Player>) {
         val player = player.getOrNull()
         if(player == null) {
-            playerController.reloadNametags()
+            PlayerController.reloadNametags()
         } else {
-            playerController.reloadNametag(player)
+            PlayerController.reloadNametag(player)
         }
 
         executor.sendMessage(Format.success("Nametags have been reloaded successfully!"))
@@ -31,20 +29,20 @@ class NametagCommand {
 
     @Execute(name = "mode")
     fun executeMode(@Context executor: CommandSender, @Arg("mode") mode: PlayerController.NametagMode) {
-        playerController.currentNametagMode = mode
+        PlayerController.currentNametagMode = mode
         executor.sendMessage(Format.success("Nametag mode has been updated successfully!"))
     }
 
     @Execute(name = "remove")
     fun executeRemove(@Context executor: CommandSender, @Arg("player") player: Player) {
-        val tag = playerController.nameTags[player]
+        val tag = PlayerController.nameTags[player]
         if(tag == null) {
             executor.sendMessage(Format.warning("Nothing to remove, player does not have a nametag."))
             return
         }
 
         tag.remove()
-        playerController.nameTags.remove(player)
+        PlayerController.nameTags.remove(player)
         executor.sendMessage(Format.success("Nametag has been removed successfully!"))
     }
 }

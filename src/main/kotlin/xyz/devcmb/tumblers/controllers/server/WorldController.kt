@@ -16,7 +16,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingWorldException
 import xyz.devcmb.tumblers.WorldCreationException
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -30,19 +30,15 @@ import java.nio.file.Files
 import java.nio.file.Path
 
 @Controller(Controller.Priority.HIGH)
-class WorldController : ControllerBase() {
-    companion object {
-        val worldRoot: String = configurable("templates.world_root")
-            get() {
-                return field
-                    .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
-            }
+object WorldController : IController {
+    val worldRoot: String = configurable("templates.world_root")
+        get() {
+            return field
+                .replace("&", TreeTumblers.plugin.dataFolder.path.toString())
+        }
 
-        val lobbyWorld: String = configurable("lobby.world")
-        val temporaryEntityKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "temp_entity")
-    }
-
-    val hubController: HubController by controller()
+    val lobbyWorld: String = configurable("lobby.world")
+    val temporaryEntityKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "temp_entity")
 
     override fun init() {
         // do it both on cleanup and start so it cleans up regardless of if the server gracefully shut down
@@ -53,9 +49,7 @@ class WorldController : ControllerBase() {
 
     fun cleanupTempWorlds() {
         getDimensions().listFiles().forEach { file ->
-            DebugUtil.info("cleanup temporary world ${file.absolutePath}")
             if(file.isDirectory && (file.name.contains("temp_") || file.name == lobbyWorld)) {
-                DebugUtil.info("Cleaning up ${file.absolutePath}")
                 if(Bukkit.getWorld(file.name) !== null) {
                     Bukkit.unloadWorld(file.name, false)
                 }
@@ -131,7 +125,7 @@ class WorldController : ControllerBase() {
                 val location = if (world.name == lobbyWorld || hub == null) {
                     Location(Bukkit.getWorld("world")!!, 0.0, 127.0, 0.0)
                 } else {
-                    hubController.getLobbyPosition()
+                    HubController.getLobbyPosition()
                 }
 
                 it.tp(location)

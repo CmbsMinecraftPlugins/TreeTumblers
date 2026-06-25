@@ -11,15 +11,14 @@ import org.bukkit.entity.Trident
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.controllers.ControllerBase
+import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.runTaskTimer
 
-@Controller(priority = Controller.Priority.LOW)
-class PlayerEventController : ControllerBase() {
+@Controller(Controller.Priority.LOW)
+object PlayerEventController : IController {
     val queuedEvents: HashMap<TumblingPlayer, ArrayList<Event>> = HashMap()
-    val playerController: PlayerController by controller()
 
     override fun init() {
         runTaskTimer(0, 5) {

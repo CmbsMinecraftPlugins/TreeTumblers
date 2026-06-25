@@ -18,8 +18,6 @@ import xyz.devcmb.tumblers.util.Format
 @Command(name = "team")
 @Permission("tumbling.organizer")
 class TeamCommand {
-    val databaseController: DatabaseController by ControllerRegistry.controller()
-
     @Execute(name = "set")
     fun executeTeamSet(
         @Context executor: CommandSender,

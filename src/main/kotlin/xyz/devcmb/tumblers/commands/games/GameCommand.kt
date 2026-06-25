@@ -27,17 +27,15 @@ import kotlin.jvm.optionals.getOrNull
 @Command(name = "game")
 @Permission("tumbling.games")
 class GameCommand {
-    val gameController: GameController by ControllerRegistry.controller()
-
     @Execute(name = "start")
     fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.RegisteredGame) {
-        if(gameController.activeGame != null) {
+        if(GameController.activeGame != null) {
             sender.sendMessage(Format.error("A game is already active!"))
             return
         }
 
         try {
-            gameController.startGameAsync(game.id)
+            GameController.startGameAsync(game.id)
             sender.sendMessage(Format.success("Started game successfully!"))
         } catch(e: GameOperatorException) {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))
@@ -52,23 +50,23 @@ class GameCommand {
             return
         }
 
-        if(gameController.activeGame == null) {
+        if(GameController.activeGame == null) {
             sender.sendMessage(Format.error("A game is not active!"))
             return
         }
 
-        if(gameController.activeGameJob == null) {
+        if(GameController.activeGameJob == null) {
             sender.sendMessage(Format.error("The game can only be ended after it has started!"))
             return
         }
 
-        gameController.activeGameJob!!.cancel()
+        GameController.activeGameJob!!.cancel()
         sender.sendMessage(Format.success("Sent signal for game end!"))
     }
 
     @Execute(name = "event")
     fun executeGameEvent(@Context sender: CommandSender, @Arg("event") event: DebugToolkit.DebuggingEvent) {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Events can only be executed when a game is active!"))
             return
@@ -91,7 +89,7 @@ class GameCommand {
 
     @Execute(name = "timer")
     fun executeGameTimer(@Context sender: CommandSender, @Arg("value") value: Optional<Int>) {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Timers can only be retrieved or set when a game is active!"))
             return
@@ -115,7 +113,7 @@ class GameCommand {
 
     @Execute(name = "message")
     fun executeMessage(@Context sender: CommandSender, @Join("message") msg: String) {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Game messages can only be sent if a game is active!"))
             return

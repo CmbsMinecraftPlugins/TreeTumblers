@@ -10,13 +10,13 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class BreachScoreboard(
-    val gameController: GameController,
     val player: Player,
-    override val displayName: String = "<color:${Team.ORANGE.color.asHexString()}>Breach</color> <dark_gray>|</dark_gray> <white>Finale</white>",
-    override val id: String = "breachScoreboard"
 ) : HandledScoreboard.SidebarScoreboard() {
+    override val displayName: String = "<color:${Team.ORANGE.color.asHexString()}>Breach</color> <dark_gray>|</dark_gray> <white>Finale</white>"
+    override val id: String = "breachScoreboard"
+
     override fun getLines(): ArrayList<Component> {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame !is BreachController) return arrayListOf()
 
         val team = player.tumblingPlayer.team

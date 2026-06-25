@@ -8,13 +8,12 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.util.DebugUtil
 
-class ScoreBossbar(
-    val gameController: GameController,
-    override val id: String = "breachScoreBossbar",
+class ScoreBossbar : HandledBossbar {
+    override val id: String = "breachScoreBossbar"
     override val padding: Int = 0
-) : HandledBossbar {
+
     override fun getComponent(): Component {
-        val activeGame = gameController.activeGame
+        val activeGame = GameController.activeGame
         if(activeGame == null || activeGame !is BreachController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
 
         var component = Component.text(activeGame.playingTeams.first.icon).font(UserInterfaceUtility.ICONS)

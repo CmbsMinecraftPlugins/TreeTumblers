@@ -12,12 +12,9 @@ import xyz.devcmb.tumblers.util.Format
 
 @Command(name = "badge")
 class BadgeCommand {
-    val badgeController: BadgeController by ControllerRegistry.controller()
-
     @Execute(name = "grant")
     fun executeBadge(@Context executor: CommandSender, @Arg player: TumblingPlayer, @Arg badge: BadgeController.Badge) {
-        badgeController.grantBadge(player, badge)
+        BadgeController.grantBadge(player, badge)
         executor.sendMessage(Format.success(Format.mm("Granted the ${badge.name.lowercase()} badge to <player:${player.uuid}> successfully!")))
     }
-
 }

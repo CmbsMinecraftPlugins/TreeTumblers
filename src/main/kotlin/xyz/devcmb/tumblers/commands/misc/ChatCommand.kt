@@ -12,11 +12,9 @@ import xyz.devcmb.tumblers.util.Format
 
 @Command(name = "chat")
 class ChatCommand {
-    val playerController: PlayerController by ControllerRegistry.controller()
-
     @Execute
     fun executeChat(@Context executor: Player, @Arg channel: PlayerController.ChatChannel) {
-        playerController.channels[executor] = channel
+        PlayerController.channels[executor] = channel
         executor.sendMessage(Format.info(Format.mm(
             "You are now in the <channel> channel.",
             Placeholder.parsed("channel", "<color:${channel.color.asHexString()}>${channel.channelName}</color>")
