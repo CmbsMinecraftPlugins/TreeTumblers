@@ -1051,7 +1051,7 @@ object EventController : IController {
                     playerSpecificMannequinNameTags[player]!!.add(it)
                 }
 
-                it.text(Format.mm("<bold>#${placement.second}</bold>"))
+                it.text(Format.mm("<bold>#${if(scoresHidden) "?" else placement.second}</bold>"))
             })
             offset += 0.3
         }
@@ -1139,6 +1139,14 @@ object EventController : IController {
         if(player in debounces) return
         if(event.rightClicked in scoreMannequins) {
             debounces.add(player)
+            if(scoresHidden) {
+                player.sendMessage(Format.warning("Scores are currently hidden!"))
+                runTaskLater(20) {
+                    debounces.remove(player)
+                }
+                return
+            }
+
             var message = Component.empty().append(Format.mm("<green><line:30></green>"))
             val placements = getEventPlayerPlacements()
             placements.forEach {
