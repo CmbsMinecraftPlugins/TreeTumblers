@@ -15,9 +15,10 @@ import org.bukkit.inventory.meta.FireworkMeta
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 
 class HunterKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController,
 ) : Kit {
     override val id: String = "hunter"
@@ -42,8 +43,9 @@ class HunterKit(
     override val kitDisplayTextLength: Double = 46.5
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        player.inventory.addItem(ItemStack(Material.FIREWORK_ROCKET).apply {
+        player.bukkitPlayer!!.inventory.addItem(ItemStack(Material.FIREWORK_ROCKET).apply {
             itemMeta = (itemMeta as FireworkMeta).also { meta ->
                 meta.addEffect(
                     FireworkEffect.builder()
@@ -59,7 +61,7 @@ class HunterKit(
     var abilityActive = false
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        val bow = player.inventory.first { it.type == Material.CROSSBOW }!!
+        val bow = player.bukkitPlayer!!.inventory.first { it.type == Material.CROSSBOW }!!
         bow.addEnchantment(Enchantment.MULTISHOT, 1)
         bow.itemMeta = (bow.itemMeta as CrossbowMeta).apply {
             if(hasChargedProjectiles()) {
@@ -82,11 +84,12 @@ class HunterKit(
         val shooter = entity.shooter
         if(
             shooter !is Player
-            || player != shooter
+            || player?.isOnline != true
+            || player.bukkitPlayer != shooter
             || !abilityActive
         ) return
 
-        val bow = player.inventory.first { it.type == Material.CROSSBOW } ?: return
+        val bow = player.bukkitPlayer!!.inventory.first { it.type == Material.CROSSBOW } ?: return
         bow.removeEnchantments()
         abilityActive = false
     }

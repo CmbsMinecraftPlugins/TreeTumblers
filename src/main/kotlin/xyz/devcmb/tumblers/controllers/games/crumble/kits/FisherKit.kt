@@ -16,6 +16,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
@@ -23,7 +24,7 @@ import xyz.devcmb.tumblers.util.intToRoman
 import java.util.UUID
 
 class FisherKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController
 ) : Kit {
     val tridentLoyaltyLevel: Int = configurable("games.crumble.kits.fisher.trident_loyalty_level")
@@ -82,8 +83,9 @@ class FisherKit(
     var knockbackLevel: Int = 1
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        val fish = killed.inventory.first { it.type == Material.COD }
+        val fish = player.bukkitPlayer!!.inventory.first { it.type == Material.COD }
         if(fish == null) {
             DebugUtil.severe("Player ${player.name} lacks a knockback fish!")
             return
@@ -92,12 +94,14 @@ class FisherKit(
         knockbackLevel += 1
         fish.removeEnchantments()
         fish.addUnsafeEnchantment(Enchantment.KNOCKBACK, knockbackLevel)
-        player.sendMessage(Format.success("Knockback fish upgraded to knockback level ${intToRoman(knockbackLevel)}!"))
+        player.bukkitPlayer!!.sendMessage(Format.success("Knockback fish upgraded to knockback level ${intToRoman(knockbackLevel)}!"))
     }
 
     var abilityActive: Boolean = false
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
         abilityActive = true
     }
 
@@ -114,7 +118,8 @@ class FisherKit(
         val player = trident.shooter
         if (
             player !is Player
-            || player != this.player
+            || this.player?.isOnline != true
+            || player != this.player.bukkitPlayer
             || !abilityActive
         ) return
 

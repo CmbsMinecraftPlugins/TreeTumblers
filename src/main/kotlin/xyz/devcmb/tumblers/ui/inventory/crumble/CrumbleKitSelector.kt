@@ -51,7 +51,7 @@ object CrumbleKitSelector : HandledInventory {
                 return@onSelect
             }
 
-            crumble.selectKit(player, kit.id)
+            crumble.selectKit(player.tumblingPlayer, kit.id)
             player.buttonClickSound()
             UserInterfaceUtility.refreshAll(this@CrumbleKitSelector.id)
         }

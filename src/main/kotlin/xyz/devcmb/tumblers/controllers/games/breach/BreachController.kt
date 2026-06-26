@@ -49,6 +49,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -239,8 +240,8 @@ class BreachController: GameBase(
     var deathLocations: HashMap<Player, Location> = hashMapOf()
     var starPickupTimes: HashMap<Player, Int> = hashMapOf()
 
-    val kills: HashMap<Player, Int> = hashMapOf()
-    val deaths: HashMap<Player, Int> = hashMapOf()
+    val kills: HashMap<TumblingPlayer, Int> = hashMapOf()
+    val deaths: HashMap<TumblingPlayer, Int> = hashMapOf()
 
     val kitSelector: ItemStack = AdvancedItemStack(Material.COMPASS) {
         name(Component.text("Kit Selector", NamedTextColor.YELLOW))
@@ -356,10 +357,10 @@ class BreachController: GameBase(
                 }
             }
 
-            gamePlayers.forEach {
-                if (it.tumblingPlayer.team != playingTeams.first && it.tumblingPlayer.team != playingTeams.second) {
-                    makeSpectator(it, sendActionBar = true, participating = false)
-                    it.tp(spectatorSpawn)
+            gamePlayers.filter { it.isOnline }.forEach {
+                if (it.team != playingTeams.first && it.team != playingTeams.second) {
+                    makeSpectator(it.bukkitPlayer!!, sendActionBar = true, participating = false)
+                    it.bukkitPlayer!!.tp(spectatorSpawn)
                 }
             }
         }
@@ -412,11 +413,12 @@ class BreachController: GameBase(
         gameState = GameState.GAME_OVER
 
         suspendSync {
-            gameParticipants.forEach {
-                it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-                it.health = 20.0
-                it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
+            gamePlayers.forEach {
                 it.disableBossBar("countdownBossbar")
+            }
+
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
                 it.inventory.clear()
                 // #crunch maxxing
                 cleanupPlayer(it)
@@ -455,7 +457,7 @@ class BreachController: GameBase(
 
         fireworkTask.runTaskTimer(TreeTumblers.plugin, 0, 4)
 
-        gameParticipants.forEach {
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
             it.showTitle(Title.title(
                 winner.formattedName,
                 Component.text("ARE VICTORIOUS!").decorate(TextDecoration.BOLD),
@@ -478,9 +480,6 @@ class BreachController: GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossbar")
-        player.enableBossBar("breachScoreBossbar")
-
         val team = player.tumblingPlayer.team
         val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Team 1 spawn not found")
@@ -539,6 +538,15 @@ class BreachController: GameBase(
         }
     }
 
+    override suspend fun cleanup() {
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+            it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+            it.health = 20.0
+        }
+
+        super.cleanup()
+    }
+
     suspend fun preRound() {
         chosenKits.clear()
         deadPlayers.clear()
@@ -592,7 +600,7 @@ class BreachController: GameBase(
         gameState = GameState.PRE_ROUND
         asyncCountdown(8, "pre_round")
         delay(3000)
-        titleCountdown(Audience.audience(gamePlayers), Format.mm("Round starts in"), 5)
+        titleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), Format.mm("Round starts in"), 5)
         gameState = GameState.GAME_ON
     }
 
@@ -794,7 +802,7 @@ class BreachController: GameBase(
 
         val block = pickBlock()
 
-        gameParticipants.forEach {
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
             it.sendBlockDamage(block.location, 0.5f, (0..1000000).random())
         }
 
@@ -1058,14 +1066,14 @@ class BreachController: GameBase(
 
         if (event.cause == EntityDamageEvent.DamageCause.ENTITY_ATTACK && attacker.inventory.itemInMainHand.type == Material.TRIDENT) {
             event.damage = 10000.0 // death
-            kills[attacker] = kills.getOrDefault(attacker, 0) + 1
+            kills[attacker.tumblingPlayer] = kills.getOrDefault(attacker.tumblingPlayer, 0) + 1
 
             return
         }
 
         if (event.cause == EntityDamageEvent.DamageCause.PROJECTILE) {
             event.damage = 10000.0 // death
-            kills[attacker] = kills.getOrDefault(attacker, 0) + 1
+            kills[attacker.tumblingPlayer] = kills.getOrDefault(attacker.tumblingPlayer, 0) + 1
 
             return
         }
@@ -1080,7 +1088,7 @@ class BreachController: GameBase(
         event.player.inventory.clear()
 
         if (deadPlayers[event.player] != true) {
-            deaths[event.player] = deaths.getOrDefault(event.player, 0) + 1
+            deaths[event.player.tumblingPlayer] = deaths.getOrDefault(event.player.tumblingPlayer, 0) + 1
         }
 
         deadPlayers[event.player] = true

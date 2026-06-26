@@ -91,6 +91,9 @@ class PlayerUIController(val player: Player) {
                 scoreboard.update(playerScoreboard)
             }
         }
+
+        player.tumblingPlayer.currentScoreboards.forEach(this::activateScoreboard)
+        player.tumblingPlayer.currentBossbars.forEach(this::enableBossBar)
     }
 
     fun playerJoin(plr: Player) {

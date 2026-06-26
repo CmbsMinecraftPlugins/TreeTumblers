@@ -1101,7 +1101,7 @@ object EventController : IController {
         event.motd(
             Format.mm(
             "<b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</gold></b><br>" +
-                    "<aqua>${GameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>development (${Constants.BRANCH})</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
+                    "<aqua>${GameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>${Constants.BRANCH}</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
         ))
     }
 
@@ -1139,7 +1139,7 @@ object EventController : IController {
         if(player in debounces) return
         if(event.rightClicked in scoreMannequins) {
             debounces.add(player)
-            var message = Format.mm("<aqua><line:30></aqua>")
+            var message = Component.empty().append(Format.mm("<green><line:30></green>"))
             val placements = getEventPlayerPlacements()
             placements.forEach {
                 val plr = it.first
@@ -1149,13 +1149,13 @@ object EventController : IController {
                     Placeholder.component("player", plr.formattedName)
                 ))
             }
-            message = message.append(Format.mm("<br><aqua><line:30></aqua>"))
+            message = message.append(Format.mm("<br><green><line:30></green>"))
 
             val playerPlacement = placements.find { it.first == player.tumblingPlayer }
             if(playerPlacement != null) {
                 message = message.append(
                     Format.mm(
-                    "<br><white><b>${playerPlacement.second}.</b></white> <player> <white>-</white> <gold>${player.tumblingPlayer.score}</gold><br><aqua><line:30></aqua>",
+                    "<br><white><b>${playerPlacement.second}.</b></white> <player> <white>-</white> <gold>${player.tumblingPlayer.score}</gold><br><green><line:30></green>",
                     Placeholder.component("player", player.formattedName)
                 ))
             }

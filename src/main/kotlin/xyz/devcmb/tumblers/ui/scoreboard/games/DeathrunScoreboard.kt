@@ -10,6 +10,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class DeathrunScoreboard(
     val player: Player,
@@ -27,7 +28,7 @@ class DeathrunScoreboard(
 
             repeat(minOf(4, activeGame.rounds - (set * 4))) { setRound ->
                 val roundIndex = (set * 4) + setRound
-                val result = activeGame.placements[roundIndex][player]
+                val result = activeGame.placements[roundIndex][player.tumblingPlayer]
 
                 component = component.append(when (result) {
                     null -> {

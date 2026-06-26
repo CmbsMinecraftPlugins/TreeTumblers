@@ -42,6 +42,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
@@ -194,14 +195,14 @@ class DeathrunController : GameBase(
             return playingTeams[roundIndex]
         }
 
-    val attackingPlayers: Set<Player>
+    val attackingPlayers: Set<TumblingPlayer>
         get() {
-            return gameParticipants.filter { it.tumblingPlayer.team == currentTeam }.toSet()
+            return gameParticipants.filter { it.team == currentTeam }.toSet()
         }
 
-    val runningPlayers: Set<Player>
+    val runningPlayers: Set<TumblingPlayer>
         get() {
-            return gameParticipants.filter { it.tumblingPlayer.team != currentTeam }.toSet()
+            return gameParticipants.filter { it.team != currentTeam }.toSet()
         }
 
     override val scoreMessages: HashMap<ScoreSource, (Int) -> Component> = hashMapOf(
@@ -232,10 +233,10 @@ class DeathrunController : GameBase(
 
     val alivePlayers: MutableSet<Player> = HashSet()
 
-    val placements: ArrayList<HashMap<Player, Int>> = ArrayList()
+    val placements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
     var ticksElapsed: Int = 0
-    val completionTimes: HashMap<Player, Int> = HashMap()
+    val completionTimes: HashMap<TumblingPlayer, Int> = HashMap()
     lateinit var timerActionBarTask: BukkitRunnable
 
     var endDisplay: TextDisplay? = null
@@ -317,8 +318,8 @@ class DeathrunController : GameBase(
     override suspend fun gamePregame() {
         val runnable = object : BukkitRunnable() {
             override fun run() {
-                gameParticipants.forEach {
-                    val time = completionTimes.getOrElse(it) { ticksElapsed }
+                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                    val time = completionTimes.getOrElse(it.tumblingPlayer) { ticksElapsed }
                     val text = formatMsTime(time * 50L)
 
                     it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
@@ -348,7 +349,7 @@ class DeathrunController : GameBase(
         if(cycle != SpawnCycle.PRE_ROUND) return
 
         suspendSync {
-            gamePlayers.forEach {
+            gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
                 if(it.tumblingPlayer.team == currentTeam) {
                     spawnAttacker(it)
                 } else {
@@ -372,9 +373,9 @@ class DeathrunController : GameBase(
             ?: throw GameControllerException("Spawn set not found")
 
         player.tp(attackerSpawn)
-        player.enableBossBar("deathrunCooldownBossbar")
+        player.tumblingPlayer.enableBossBar("deathrunCooldownBossbar")
 
-        placements[roundIndex][player] = -2
+        placements[roundIndex][player.tumblingPlayer] = -2
         giveTrapItem(player, player.location)
         player.addPotionEffect(PotionEffect(PotionEffectType.SPEED, PotionEffect.INFINITE_DURATION, 1))
     }
@@ -397,7 +398,7 @@ class DeathrunController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        Bukkit.getOnlinePlayers().forEach {
+        gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }
 
@@ -428,7 +429,7 @@ class DeathrunController : GameBase(
 
     suspend fun preRound() {
         preRound = true
-        alivePlayers.addAll(runningPlayers)
+        alivePlayers.addAll(runningPlayers.mapNotNull { it.bukkitPlayer })
         alivePlayers.forEach {
             it.health = lives.toDouble() * 2
             it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = lives.toDouble() * 2
@@ -467,7 +468,7 @@ class DeathrunController : GameBase(
         mapCheckpoints.addAll(checkpoints)
 
         delay(1000)
-        val audience = Audience.audience(gamePlayers)
+        val audience = Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer })
         audience.sendMessage(gameMessage(
             Format.mm("Round $currentRound: <team:${currentTeam.name}:name> are up!")
         ))
@@ -487,9 +488,9 @@ class DeathrunController : GameBase(
         }
 
         suspendSync {
-            gameParticipants.forEach { plr ->
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
                 if(plr.tumblingPlayer.team == currentTeam) return@forEach
-                gameParticipants.forEach { other ->
+                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { other ->
                     if(other == plr || !alivePlayers.contains(other)) return@forEach
                     plr.hidePlayer(TreeTumblers.plugin, other)
                 }
@@ -512,9 +513,11 @@ class DeathrunController : GameBase(
         suspendSync {
             gameParticipants.forEach { plr ->
                 plr.disableBossBar("deathrunCooldownBossbar")
-                gameParticipants.forEach { other ->
-                    if(other == plr || !gameParticipants.contains(other)) return@forEach
-                    plr.showPlayer(TreeTumblers.plugin, other)
+                if(plr.isOnline) {
+                    gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { other ->
+                        if(other == plr || !gameParticipants.contains(other.tumblingPlayer)) return@forEach
+                        plr.bukkitPlayer!!.showPlayer(TreeTumblers.plugin, other)
+                    }
                 }
             }
         }
@@ -530,12 +533,12 @@ class DeathrunController : GameBase(
             endDisplay!!.remove()
             endDisplay = null
 
-            gameParticipants.forEach {
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 it.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
                 it.heal(20.0)
             }
 
-            attackingPlayers.forEach {
+            attackingPlayers.mapNotNull { it.bukkitPlayer }.forEach {
                 it.removePotionEffect(PotionEffectType.SPEED)
                 it.inventory.clear()
             }
@@ -552,7 +555,7 @@ class DeathrunController : GameBase(
         endDisplayUpdateTask = null
 
         val placements = getTeamPlacements()
-        gameParticipants.forEach { plr ->
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
 
             val color = when(teamPlacement) {
@@ -578,7 +581,7 @@ class DeathrunController : GameBase(
 
     override suspend fun cleanup() {
         suspendSync {
-            Bukkit.getOnlinePlayers().forEach {
+            gamePlayers.forEach {
                 it.disableBossBar("countdownBossbar")
             }
         }
@@ -589,7 +592,6 @@ class DeathrunController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossbar")
         if(player.tumblingPlayer.team == currentTeam) {
             spawnAttacker(player)
         } else {
@@ -741,8 +743,8 @@ class DeathrunController : GameBase(
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
 
-        completionTimes[player] = ticksElapsed
-        placements[roundIndex][player] = completionTimes.size
+        completionTimes[player.tumblingPlayer] = ticksElapsed
+        placements[roundIndex][player.tumblingPlayer] = completionTimes.size
 
         spawnFirework(
             player, FireworkEffect.builder()
@@ -778,7 +780,7 @@ class DeathrunController : GameBase(
                 Placeholder.component("player", Format.formatPlayerName(player.tumblingPlayer))
             ))
         )
-        placements[roundIndex][player] = -1
+        placements[roundIndex][player.tumblingPlayer] = -1
 
         player.showTitle(Title.title(
             Component.empty(),
@@ -790,8 +792,8 @@ class DeathrunController : GameBase(
 
     suspend fun roundEnd() {
         suspendSync {
-            gameParticipants.forEach {
-                if(!placements[roundIndex].containsKey(it)) {
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                if(!placements[roundIndex].containsKey(it.tumblingPlayer)) {
                     failRun(it)
                 }
 

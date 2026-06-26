@@ -37,7 +37,11 @@ object SpectateInventory : HandledInventory {
         withTransform(pageProperty) { pane, view ->
             val player = view.player
             val players: List<Player> =
-                GameController.activeGame?.gameParticipants?.filter { it != player } ?: Team.entries
+                GameController.activeGame
+                    ?.gameParticipants
+                    ?.mapNotNull { it.bukkitPlayer }
+                    ?.filter { it != player.tumblingPlayer }
+                ?: Team.entries
                     .filter { it.playingTeam }
                     .flatMap { it.getOnlinePlayers() }
                     .filter { it != player && it !in SpectatorController.spectators }

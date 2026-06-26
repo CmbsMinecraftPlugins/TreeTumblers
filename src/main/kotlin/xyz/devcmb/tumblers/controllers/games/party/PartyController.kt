@@ -44,6 +44,7 @@ import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardAxeDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardBowDuels
 import xyz.devcmb.tumblers.controllers.games.party.games.shared.StandardSwordDuels
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.Timer
@@ -242,7 +243,7 @@ class PartyController : GameBase(
     val lastIndividualMatchups: HashMap<Player, Player> = HashMap()
     val lastTeamMatchups: HashMap<Team, Team> = HashMap()
 
-    val gameOutcomes: HashMap<Player, ArrayList<PartyGameResult>> = HashMap()
+    val gameOutcomes: HashMap<TumblingPlayer, ArrayList<PartyGameResult>> = HashMap()
 
     val frozenPlayers: MutableSet<Player> = HashSet()
 
@@ -277,7 +278,7 @@ class PartyController : GameBase(
             override fun run() {
                 if(currentState != State.GAME_ON) return
 
-                gameParticipants.forEach { player ->
+                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { player ->
                     val message: Component? = if(currentGameType == PartyGameType.GAME_OVER) {
                         Format.mm("<red>Game Over!</red>")
                     } else if(player in disabledGameWaitingPlayers) {
@@ -306,8 +307,11 @@ class PartyController : GameBase(
         if(cycle != SpawnCycle.PREGAME) return
 
         suspendSync {
-            gameParticipants.forEach {
+            gamePlayers.forEach {
                 it.enableBossBar("countdownBossbar")
+            }
+
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 spawnPlayer(it, true)
             }
         }
@@ -356,7 +360,7 @@ class PartyController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        gameParticipants.shuffled().forEach {
+        gameParticipants.mapNotNull { it.bukkitPlayer }.shuffled().forEach {
             addWaitingPlayer(it)
         }
 
@@ -393,7 +397,7 @@ class PartyController : GameBase(
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        gameParticipants.forEach {
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
             it.inventory.clear()
         }
 
@@ -402,7 +406,7 @@ class PartyController : GameBase(
         }
 
         val placements = getTeamPlacements()
-        gameParticipants.forEach { plr ->
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
 
             val color = when(teamPlacement) {
@@ -429,13 +433,7 @@ class PartyController : GameBase(
     override suspend fun cleanup() {
         actionBarRunnable?.cancel()
         Bukkit.getOnlinePlayers().forEach {
-            it.disableBossBar("countdownBossbar")
-        }
-
-        suspendSync {
-            gameParticipants.forEach {
-                unSpectate(it)
-            }
+            it.tumblingPlayer.disableBossBar("countdownBossbar")
         }
 
         super.cleanup()
@@ -445,8 +443,6 @@ class PartyController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossbar")
-
         val tumbling = player.tumblingPlayer
         if(!tumbling.team.playingTeam) {
             // do true for pregame here because otherwise it'd just put a spectating player back into spectating again
@@ -647,7 +643,7 @@ class PartyController : GameBase(
     fun endGame(game: PartyGame, winningSide: PartyGame.MatchupSide?) = TreeTumblers.pluginScope.launch {
         when(game.matchup) {
             is PartyMatchup.IndividualMatchup -> {
-                gameOutcomes[game.matchup.player1]?.add(
+                gameOutcomes[game.matchup.player1?.tumblingPlayer]?.add(
                     when (winningSide) {
                         PartyGame.MatchupSide.FIRST -> PartyGameResult.WIN
                         PartyGame.MatchupSide.SECOND -> PartyGameResult.LOSS
@@ -655,7 +651,7 @@ class PartyController : GameBase(
                     }
                 )
 
-                gameOutcomes[game.matchup.player2]?.add(
+                gameOutcomes[game.matchup.player2?.tumblingPlayer]?.add(
                     when (winningSide) {
                         PartyGame.MatchupSide.FIRST -> PartyGameResult.LOSS
                         PartyGame.MatchupSide.SECOND -> PartyGameResult.WIN
@@ -665,7 +661,7 @@ class PartyController : GameBase(
             }
             is PartyMatchup.TeamMatchup -> {
                 game.matchup.players.forEach {
-                    gameOutcomes[it]?.add(
+                    gameOutcomes[it.tumblingPlayer]?.add(
                         when (winningSide) {
                             PartyGame.MatchupSide.FIRST -> (if(it.tumblingPlayer.team == game.matchup.team1) PartyGameResult.WIN else PartyGameResult.LOSS)
                             PartyGame.MatchupSide.SECOND -> (if(it.tumblingPlayer.team == game.matchup.team1) PartyGameResult.LOSS else PartyGameResult.WIN)

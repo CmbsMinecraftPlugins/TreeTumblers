@@ -12,6 +12,7 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -22,6 +23,11 @@ import xyz.devcmb.tumblers.util.Format
 class WhitelistCommand {
     @Execute(name = "add")
     fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {
+        if(GameController.activeGame != null) {
+            executor.sendMessage(Format.error("Cannot add to whitelist while a game is active."))
+            return
+        }
+
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
                 Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
@@ -55,6 +61,11 @@ class WhitelistCommand {
     @Execute(name = "remove")
     fun executeWhitelistRemove(@Context executor: CommandSender, @Arg whitelistedPlayer: TumblingPlayer) {
         val name = whitelistedPlayer.name
+
+        if(GameController.activeGame != null) {
+            executor.sendMessage(Format.error("Cannot remove from whitelist while a game is active."))
+            return
+        }
 
         if(name.length > 16) {
             executor.sendMessage(Format.error("Player does not exist!"))

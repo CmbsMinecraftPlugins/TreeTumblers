@@ -527,7 +527,7 @@ class SnifferCaretakerController : GameBase(
 
         delay(5000)
 
-        titleCountdown(Audience.audience(gamePlayers), Format.mm("Game starts in"), 10)
+        titleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), Format.mm("Game starts in"), 10)
     }
 
     /**
@@ -540,7 +540,7 @@ class SnifferCaretakerController : GameBase(
     override suspend fun spawn(cycle: SpawnCycle) {
         if (cycle != SpawnCycle.PRE_ROUND) return
         suspendSync {
-            gamePlayers.forEach(this::spawnPlayer)
+            gamePlayers.mapNotNull { it.bukkitPlayer }.forEach(this::spawnPlayer)
         }
     }
 
@@ -674,7 +674,7 @@ class SnifferCaretakerController : GameBase(
 
         val placements = getTeamPlacements()
 
-        gameParticipants.forEach { plr ->
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
 
             val color = when(teamPlacement) {
@@ -700,7 +700,7 @@ class SnifferCaretakerController : GameBase(
 
     override suspend fun cleanup() {
         Bukkit.getOnlinePlayers().forEach {
-            it.disableBossBar("countdownBossbar")
+            it.tumblingPlayer.disableBossBar("countdownBossbar")
         }
         super.cleanup()
     }
@@ -709,7 +709,6 @@ class SnifferCaretakerController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("countdownBossbar")
         spawnPlayer(player)
     }
 

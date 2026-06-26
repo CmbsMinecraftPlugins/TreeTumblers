@@ -88,7 +88,7 @@ object GameController : IController {
         activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
-        game.load()
+        game.load(true)
         game.finishLoading()
         game.runCutscene()
         game.pregame()

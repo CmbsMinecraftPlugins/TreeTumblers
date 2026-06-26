@@ -19,13 +19,14 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class WorkerKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController
 ) : Kit {
     val megaMineDuration: Long = configurable("games.crumble.kits.worker.megamine_duration")
@@ -78,8 +79,9 @@ class WorkerKit(
     var abilityActive = false
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        val pick = player.inventory.first { it.type == items[2].type }
+        val pick = player.bukkitPlayer!!.inventory.first { it.type == items[2].type }
         pick.itemMeta = pick.itemMeta.also {
             it.setEnchantmentGlintOverride(true)
             it.lore(arrayListOf(
@@ -145,8 +147,8 @@ class WorkerKit(
         val player = event.entity as? Player ?: return
         val lastPosition = lastPlayerStandingBlocks[player] ?: return
 
-        if(lastPosition in brokenBlocks && player != this.player) {
-            crumble.grantBadge(this.player!!.tumblingPlayer, CrumbleBadge.BATTLE_WORKER)
+        if(lastPosition in brokenBlocks && player != this.player?.bukkitPlayer) {
+            crumble.grantBadge(this.player!!, CrumbleBadge.BATTLE_WORKER)
         }
     }
 
@@ -154,5 +156,6 @@ class WorkerKit(
         abilityActive = false
         kills = 0
         lastPlayerStandingBlocks.clear()
+        brokenBlocks.clear()
     }
 }

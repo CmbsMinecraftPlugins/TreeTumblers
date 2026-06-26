@@ -48,6 +48,7 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
+import xyz.devcmb.tumblers.util.getOnlineTumblingPlayers
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tp
@@ -55,6 +56,7 @@ import xyz.devcmb.tumblers.util.uiController
 
 /**
  * Base class for all games
+ *
  * @param id The unique identifier of the game
  * @param name The name of the game for public-facing events (voting, etc.)
  * @param votable Whether this game is available for voting during the voting stage
@@ -109,8 +111,9 @@ abstract class GameBase(
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
     val configRoot = "games.$id"
 
-    val gamePlayers: MutableSet<Player> = HashSet()
-    val gameParticipants: MutableSet<Player> = HashSet()
+    val gamePlayers: MutableSet<TumblingPlayer> = HashSet()
+    val gameParticipants: MutableSet<TumblingPlayer> = HashSet()
+
     val participatingSpectators: MutableSet<Player> = HashSet()
     val gameSpectators: MutableSet<Player> = HashSet()
 
@@ -135,17 +138,23 @@ abstract class GameBase(
     /**
      * The internal load stage called by the [GameController]
      */
-    suspend fun load() {
+    suspend fun load(includeOfflinePlayers: Boolean) {
+        val players =
+            if(includeOfflinePlayers) PlayerController.players
+            else Bukkit.getOnlinePlayers().map { it.tumblingPlayer }
         currentState = State.LOADING
 
         suspendSync {
-            Bukkit.getOnlinePlayers().forEach { it.deactivateScoreboard("intermissionScoreboard") }
+            PlayerController.players.forEach { it.deactivateScoreboard("intermissionScoreboard") }
         }
-        gamePlayers.addAll(Bukkit.getOnlinePlayers())
-        gameParticipants.addAll(Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam })
+
+        gamePlayers.addAll(players)
+        gameParticipants.addAll(players.filter { it.team.playingTeam })
+
         gameParticipants.forEach {
-            playerScores[it.tumblingPlayer] = 0
+            playerScores[it] = 0
         }
+
         Team.entries.filter { it.playingTeam }.forEach {
             teamScores[it] = 0
         }
@@ -220,7 +229,13 @@ abstract class GameBase(
         PlayerController.muteChat()
 
         currentCutscene = Cutscene(cutsceneSteps)
-        currentCutscene!!.run(gamePlayers, loadedMaps.first(), this)
+        currentCutscene!!.run(
+            gamePlayers.filter { it.isOnline }
+                .map { it.bukkitPlayer!! }
+                .toSet(),
+            loadedMaps.first(),
+            this
+        )
         currentCutscene = null
 
         suspendSync {
@@ -237,14 +252,14 @@ abstract class GameBase(
 
         suspendSync {
             gamePlayers
-                .filter { !it.tumblingPlayer.team.playingTeam }
-                .forEach { makeSpectator(it, participating = false) }
+                .filter { it.isOnline && !it.team.playingTeam }
+                .forEach { makeSpectator(it.bukkitPlayer!!, participating = false) }
         }
 
         if(flags.contains(Flag.SURVIVAL_MODE)) {
             suspendSync {
-                gameParticipants.forEach {
-                    it.gameMode = GameMode.SURVIVAL
+                gameParticipants.filter { it.isOnline }.forEach {
+                    it.bukkitPlayer!!.gameMode = GameMode.SURVIVAL
                 }
             }
         }
@@ -352,30 +367,32 @@ abstract class GameBase(
             EventController.refreshLeaderboards()
             gameSpectators.toList().forEach(this::unSpectate)
 
-            Bukkit.getOnlinePlayers().forEach {
-                it.inventory.clear()
-                HubController.spawnHub(it)
-                it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
-                it.foodLevel = 20
+            gamePlayers.forEach { tumblingPlayer ->
+                tumblingPlayer.deactivateScoreboard(scoreboard)
+                tumblingPlayer.activateScoreboard("intermissionScoreboard")
 
-                it.deactivateScoreboard(scoreboard)
-                it.activateScoreboard("intermissionScoreboard")
+                tumblingPlayer.bukkitPlayer?.let {
+                    it.inventory.clear()
+                    HubController.spawnHub(it)
+                    it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                    it.foodLevel = 20
 
-                it.uiController.otherTeams.forEach { (_, team) ->
-                    team.setOption(
-                        org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                        org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
-                    )
-                }
+                    it.uiController.otherTeams.forEach { (_, team) ->
+                        team.setOption(
+                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                            org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
+                        )
+                    }
 
-                if(it.gameMode != GameMode.CREATIVE) {
-                    it.gameMode = GameMode.ADVENTURE
-                    it.isFlying = false
-                    it.allowFlight = false
-                }
+                    if(it.gameMode != GameMode.CREATIVE) {
+                        it.gameMode = GameMode.ADVENTURE
+                        it.isFlying = false
+                        it.allowFlight = false
+                    }
 
-                if(!it.hasPotionEffect(PotionEffectType.HUNGER)) {
-                    it.hunger()
+                    if(!it.hasPotionEffect(PotionEffectType.HUNGER)) {
+                        it.hunger()
+                    }
                 }
             }
         }
@@ -663,12 +680,7 @@ abstract class GameBase(
     fun playerJoinEvent(event: PlayerJoinEvent) {
         val player = event.player
 
-        gamePlayers.add(player)
-        player.activateScoreboard(scoreboard)
-
-        if(player.tumblingPlayer.team.playingTeam) {
-            gameParticipants.add(player)
-        } else {
+        if(!player.tumblingPlayer.team.playingTeam) {
             makeSpectator(player, participating = false)
         }
 
@@ -696,8 +708,6 @@ abstract class GameBase(
     fun playerLeaveEvent(event: PlayerQuitEvent) {
         val player = event.player
 
-        gamePlayers.remove(player)
-        gameParticipants.remove(player)
         unSpectate(player)
 
         when(currentState) {

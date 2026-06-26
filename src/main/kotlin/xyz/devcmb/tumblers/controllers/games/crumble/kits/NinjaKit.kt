@@ -25,6 +25,7 @@ import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
@@ -32,7 +33,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.random.Random
 
 class NinjaKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController
 ) : Kit {
     val invisibilityDuration: Int = configurable("games.crumble.kits.ninja.invisibility_duration")
@@ -63,7 +64,9 @@ class NinjaKit(
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        player.inventory.addItem(ItemStack.of(Material.FIRE_CHARGE).apply {
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
+        player.bukkitPlayer!!.inventory.addItem(ItemStack.of(Material.FIRE_CHARGE).apply {
             itemMeta = itemMeta.also {
                 it.itemName(Component.text("Smoke Bomb", NamedTextColor.GOLD))
                 it.persistentDataContainer.set(
@@ -78,10 +81,11 @@ class NinjaKit(
     var abilityZombie: Zombie? = null
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        DisguiseAPI.disguiseNextEntity(PlayerDisguise(player).setNameVisible(false))
+        DisguiseAPI.disguiseNextEntity(PlayerDisguise(player.bukkitPlayer!!).setNameVisible(false))
 
-        val zombie = player.world.spawn(player.location, Zombie::class.java)
+        val zombie = player.bukkitPlayer!!.world.spawn(player.bukkitPlayer!!.location, Zombie::class.java)
         zombie.setCanBreakDoors(false)
         zombie.setShouldBurnInDay(false)
         zombie.addPotionEffect(PotionEffect(PotionEffectType.SPEED, -1, 2, false, false, false))
@@ -90,7 +94,7 @@ class NinjaKit(
         dataContainer.set(
             ninjaOwnerKey,
             PersistentDataType.STRING,
-            player.uniqueId.toString()
+            player.uuid.toString()
         )
 
         val equipment = zombie.equipment
@@ -103,12 +107,12 @@ class NinjaKit(
         equipment.setItemInMainHand(ItemStack(Material.WOODEN_SWORD))
         equipment.setHelmet(ItemStack(Material.LEATHER_HELMET).apply {
             itemMeta = (itemMeta as LeatherArmorMeta).also {
-                it.setColor(Color.fromRGB(player.tumblingPlayer.team.color.value()))
+                it.setColor(Color.fromRGB(player.team.color.value()))
             }
         })
         abilityZombie = zombie
 
-        player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, invisibilityDuration, 0))
+        player.bukkitPlayer!!.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, invisibilityDuration, 0))
         runTaskLater(invisibilityDuration.toLong()) {
             abilityZombie?.remove()
         }
@@ -117,6 +121,7 @@ class NinjaKit(
     override fun cleanup() {
         abilityZombie?.remove()
         abilityZombie = null
+        smokeBombs.clear()
     }
 
     @EventHandler
@@ -128,13 +133,16 @@ class NinjaKit(
         if(entity.uniqueId != abilityZombie?.uniqueId) return
 
         val targetTeam = target.tumblingPlayer.team
-        if(targetTeam == player!!.tumblingPlayer.team) event.isCancelled = true
+        if(targetTeam == player?.team) event.isCancelled = true
     }
 
     @EventHandler
     fun onSmokeBombThrow(event: PlayerInteractEvent) {
         val player = event.player
-        if(player !== this.player) return
+        if(
+            this.player?.isOnline != true
+            || player !== this.player.bukkitPlayer!!
+        ) return
 
         val item = event.item ?: return
         val container = item.persistentDataContainer

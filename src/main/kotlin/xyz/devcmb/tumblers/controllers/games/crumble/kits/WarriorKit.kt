@@ -15,11 +15,12 @@ import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tickSeconds
 
 class WarriorKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController
 ) : Kit {
     val blindnessTicks: Long = configurable("games.crumble.kits.warrior.blindness_ticks")
@@ -43,15 +44,18 @@ class WarriorKit(
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        val sword = player.inventory.first { it.type == items[0].type }
+        val sword = player.bukkitPlayer!!.inventory.first { it.type == items[0].type }
         sword.addEnchantment(Enchantment.SHARPNESS, 1)
     }
 
     var abilityActive = false
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        val sword = player.inventory.first { it.type == items[0].type }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
+        val sword = player.bukkitPlayer!!.inventory.first { it.type == items[0].type }
         sword.itemMeta = sword.itemMeta.also {
             it.setEnchantmentGlintOverride(true)
             it.lore(arrayListOf(
@@ -69,7 +73,8 @@ class WarriorKit(
         if(
             damager !is Player
             || damaged !is Player
-            || damager != player
+            || player?.isOnline != true
+            || damager != player.bukkitPlayer!!
         ) return
 
         val sword = damager.inventory.itemInMainHand

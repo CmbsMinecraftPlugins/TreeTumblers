@@ -24,8 +24,8 @@ class BreachScoreboard(
 
         val ingameSection = if (playing) arrayListOf(
             Component.empty(),
-            Format.mm(" <white>Kills: <green>${activeGame.kills.getOrDefault(player, 0)}</green></white>"),
-            Format.mm(" <white>Deaths: <red>${activeGame.deaths.getOrDefault(player, 0)}</red></white>")
+            Format.mm(" <white>Kills: <green>${activeGame.kills.getOrDefault(player.tumblingPlayer, 0)}</green></white>"),
+            Format.mm(" <white>Deaths: <red>${activeGame.deaths.getOrDefault(player.tumblingPlayer, 0)}</red></white>")
         ) else arrayListOf()
 
         return arrayListOf(

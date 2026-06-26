@@ -64,24 +64,35 @@ fun Player.openHandledInventory(id: String) {
     PlayerController.playerUIControllers[this]!!.openInventory(id)
 }
 
-fun Player.enableBossBar(id: String) {
-    PlayerController.playerUIControllers[this]!!.enableBossBar(id)
+fun TumblingPlayer.enableBossBar(id: String) {
+    this.currentBossbars.add(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.enableBossBar(id)
+    }
 }
 
-fun Player.disableBossBar(id: String) {
-    PlayerController.playerUIControllers[this]!!.disableBossBar(id)
+fun TumblingPlayer.disableBossBar(id: String) {
+    this.currentBossbars.remove(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.disableBossBar(id)
+    }
 }
 
-fun Player.activateScoreboard(id: String) {
-    DebugUtil.info("Activating score board $id for $name")
-    PlayerController.playerUIControllers[this]!!.activateScoreboard(id)
+fun TumblingPlayer.activateScoreboard(id: String) {
+    this.currentScoreboards.add(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.activateScoreboard(id)
+    }
 }
 
-fun Player.deactivateScoreboard(id: String) {
-    DebugUtil.info("Deactivating score board $id for $name")
-    PlayerController.playerUIControllers[this]!!.deactivateScoreboard(id)
+fun TumblingPlayer.deactivateScoreboard(id: String) {
+    this.currentScoreboards.remove(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.deactivateScoreboard(id)
+    }
 }
 
+fun getOnlineTumblingPlayers() = Bukkit.getOnlinePlayers().map { it.tumblingPlayer }
 
 fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 0, true, false, false))

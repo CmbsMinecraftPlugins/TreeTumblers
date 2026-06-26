@@ -17,13 +17,14 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 class BomberKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController,
 ) : Kit {
     val nukePower: Float = configurable("games.crumble.kits.bomber.nuke_radius")
@@ -68,12 +69,16 @@ class BomberKit(
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        player.inventory.addItem(ItemStack(Material.CREEPER_SPAWN_EGG))
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
+        player.bukkitPlayer!!.inventory.addItem(ItemStack(Material.CREEPER_SPAWN_EGG))
     }
 
     var nukeId: UUID? = null
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
         val item = ItemStack.of(Material.TNT).apply {
             itemMeta = itemMeta.also {
                 it.itemName(Component.text("Nuke", NamedTextColor.RED))
@@ -99,7 +104,7 @@ class BomberKit(
                 )
             }
         }
-        player.inventory.addItem(item)
+        player.bukkitPlayer!!.inventory.addItem(item)
     }
 
     @EventHandler
@@ -141,10 +146,10 @@ class BomberKit(
             hitPlayers.putIfAbsent(tnt.uniqueId, arrayListOf())
             hitPlayers[tnt.uniqueId]!!.add(player)
 
-            if(player.health - event.damage <= 0 && player != this.player) {
+            if(player.health - event.damage <= 0 && player != this.player?.bukkitPlayer) {
                 nukeKills++
                 if(nukeKills >= 2) {
-                    crumble.grantBadge(this.player!!.tumblingPlayer, CrumbleBadge.DOUBLE_BOOM)
+                    crumble.grantBadge(this.player!!, CrumbleBadge.DOUBLE_BOOM)
                 }
             }
         }

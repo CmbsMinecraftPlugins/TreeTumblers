@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class PartyScoreboard(
     val player: Player,
@@ -39,9 +40,9 @@ class PartyScoreboard(
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty(),
-            Format.mm(" <white>Wins: <green>${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.WIN }?.size ?: 0}</green></white>"),
-            Format.mm(" <white>Losses: <red>${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.LOSS }?.size ?: 0}</red></white>"),
-            Format.mm(" <white>Draws: <yellow>${activeGame.gameOutcomes[player]?.filter { it == PartyController.PartyGameResult.DRAW }?.size ?: 0}</yellow></white>"),
+            Format.mm(" <white>Wins: <green>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.WIN }?.size ?: 0}</green></white>"),
+            Format.mm(" <white>Losses: <red>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.LOSS }?.size ?: 0}</red></white>"),
+            Format.mm(" <white>Draws: <yellow>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.DRAW }?.size ?: 0}</yellow></white>"),
             Component.empty()
         )
     }

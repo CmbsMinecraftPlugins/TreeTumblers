@@ -23,6 +23,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
+import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.EventHandler
@@ -343,25 +344,7 @@ class CrumbleController : GameBase(
 
         for(i in 1..rounds) {
             val map = maps.random()
-            val loadedMap = loadMap(map, i)
-
-            val arenaCenters: List<Location> = (1..4).map { arena ->
-                val list = loadedMap.data.getList("centers.arena$arena")
-                    ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
-                    ?: throw GameControllerException("Map does not have a center specified for $arena")
-                list.unpackCoordinates(loadedMap.world)
-            }
-
-            suspendSync {
-                arenaCenters.forEach {
-                    for(x in -1..1)
-                    for(z in -1..1) {
-                        val chunk = it.world.getChunkAt(it.chunk.x + x, it.chunk.z + z)
-                        chunk.isForceLoaded = true
-                        chunk.load()
-                    }
-                }
-            }
+            loadMap(map, i)
         }
     }
 
@@ -377,7 +360,7 @@ class CrumbleController : GameBase(
     }
 
     fun registerKit(id: String, kit: Class<out Kit>) {
-        kitTemplates[id] = kit.getConstructor(Player::class.java, CrumbleController::class.java).newInstance(null, this)
+        kitTemplates[id] = kit.getConstructor(TumblingPlayer::class.java, CrumbleController::class.java).newInstance(null, this)
         registeredKits[id] = kit
     }
 
@@ -385,7 +368,7 @@ class CrumbleController : GameBase(
         when(cycle) {
             SpawnCycle.PREGAME -> {
                 suspendSync {
-                    gamePlayers.forEach {
+                    gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
                         spawnPlayerPregame(it)
                     }
                 }
@@ -470,6 +453,9 @@ class CrumbleController : GameBase(
     }
 
     fun pregamePlayer(player: Player) {
+        player.tumblingPlayer.enableBossBar("countdownBossbar")
+        if(!player.tumblingPlayer.team.playingTeam) return
+
         player.inventory.addItem(kitSelector.clone())
         val task = object : BukkitRunnable() {
             override fun run() {
@@ -490,29 +476,55 @@ class CrumbleController : GameBase(
         }
         task.runTaskTimer(TreeTumblers.plugin, 0, 5)
         actionBarTasks.add(task)
-
-        player.enableBossBar("countdownBossbar")
     }
 
     override suspend fun gamePregame() {
-        gameParticipants.forEach(this::pregamePlayer)
+        // FIXME: This doesn't load the chunks properly and doesn't allow the game to start
+        // It complain that it cant find arena_3_set_1 spawns, although they definitely do exist
+        loadedMaps.forEach { loadedMap ->
+            val arenaCenters: List<Location> = (1..4).map { arena ->
+                val list = loadedMap.data.getList("centers.arena$arena")
+                    ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
+                    ?: throw GameControllerException("Map does not have a center specified for $arena")
+                list.unpackCoordinates(loadedMap.world)
+            }
+
+            suspendSync {
+                arenaCenters.forEach { center ->
+                    for(x in -2..2) {
+                        for(z in -2..2) {
+                            val chunk = center.world.getChunkAt(center.chunk.x + x, center.chunk.z + z)
+                            chunk.load(true)
+                            center.world.setChunkForceLoaded(chunk.x, chunk.z, true)
+                        }
+                    }
+                }
+            }
+        }
+
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach(this::pregamePlayer)
 
         countdown(20, "crumble_kit_selection_timer")
 
         suspendSync {
-            gameParticipants.forEach {
+            gamePlayers.forEach {
                 it.disableBossBar("countdownBossbar")
-                if(!playerKits.containsKey(it.tumblingPlayer)) {
+            }
+
+            gameParticipants.forEach {
+                if(!playerKits.containsKey(it)) {
                     selectKit(
                         it,
                         registeredKits.keys.filter { registeredKit ->
-                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == it.tumblingPlayer.team }.size < maxPlayersPerKit
+                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == it.team }.size < maxPlayersPerKit
                         }.random()
                     )
                 }
 
-                it.closeInventory()
-                it.inventory.clear()
+                it.bukkitPlayer?.let { plr ->
+                    plr.closeInventory()
+                    plr.inventory.clear()
+                }
             }
         }
     }
@@ -567,7 +579,8 @@ class CrumbleController : GameBase(
         borderEvent?.cancel()
 
         val placements = getTeamPlacements()
-        gameParticipants.forEach { plr ->
+        // TODO: Show something to the spectators
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
 
             val color = when(teamPlacement) {
@@ -604,7 +617,7 @@ class CrumbleController : GameBase(
             }
         }
         Bukkit.getOnlinePlayers().forEach {
-            it.disableBossBar("crumbleBossbar")
+            it.tumblingPlayer.disableBossBar("crumbleBossbar")
         }
         super.cleanup()
     }
@@ -613,7 +626,7 @@ class CrumbleController : GameBase(
      * The method that gets called when a player joins the game during the [State.GAME_ON] state
      */
     override fun playerJoin(player: Player) {
-        player.enableBossBar("crumbleBossbar")
+        player.tumblingPlayer.enableBossBar("crumbleBossbar")
 
         if(!player.tumblingPlayer.team.playingTeam) {
             val arena1Center: Location = currentMap.data
@@ -636,15 +649,6 @@ class CrumbleController : GameBase(
                 }
             }
             State.GAME_ON -> {
-                if(!playerKits.containsKey(player.tumblingPlayer)) {
-                    selectKit(
-                        player,
-                        registeredKits.keys.filter { registeredKit ->
-                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == player.tumblingPlayer.team }.size < maxPlayersPerKit
-                        }.random()
-                    )
-                }
-
                 spawnPlayerPreRound(player)
                 if(!preRound) {
                     makeSpectator(player, false)
@@ -802,7 +806,7 @@ class CrumbleController : GameBase(
 
         gameTimeoutEnd = false
         delay(1000)
-        gamePlayers.forEach {
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
             it.showTitle(Title.title(
                 Component.text("Round Over", NamedTextColor.RED).decoration(TextDecoration.BOLD, true),
                 Component.empty(),
@@ -1032,22 +1036,23 @@ class CrumbleController : GameBase(
         }
     }
 
-    fun selectKit(player: Player, id: String) {
+    fun selectKit(player: TumblingPlayer, id: String) {
         deselectKit(player)
         require(registeredKits[id] != null) { "Kit with id $id does not exist" }
 
         val kit = registeredKits[id]!!
-            .getDeclaredConstructor(Player::class.java, CrumbleController::class.java)
+            .getDeclaredConstructor(TumblingPlayer::class.java, CrumbleController::class.java)
             .newInstance(player, this)
-        playerKits[player.tumblingPlayer] = kit
+
+        playerKits[player] = kit
         givePlayerKit(player, true)
         Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
     }
 
-    fun deselectKit(player: Player) {
-        if(!playerKits.containsKey(player.tumblingPlayer)) return
-        HandlerList.unregisterAll(playerKits[player.tumblingPlayer]!!)
-        playerKits.remove(player.tumblingPlayer)
+    fun deselectKit(player: TumblingPlayer) {
+        if(!playerKits.containsKey(player)) return
+        HandlerList.unregisterAll(playerKits[player]!!)
+        playerKits.remove(player)
     }
 
     fun useAbility(player: Player) {

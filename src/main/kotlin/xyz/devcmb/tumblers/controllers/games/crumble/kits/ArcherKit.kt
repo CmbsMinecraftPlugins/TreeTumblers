@@ -13,12 +13,13 @@ import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.intToRoman
 import xyz.devcmb.tumblers.util.tickSeconds
 
 class ArcherKit(
-    override val player: Player?,
+    override val player: TumblingPlayer?,
     override val crumble: CrumbleController,
 ) : Kit {
     val powerLevel: Int = configurable("games.crumble.kits.archer.power_level")
@@ -55,7 +56,9 @@ class ArcherKit(
 
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        player.addPotionEffect(PotionEffect(
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
+        player.bukkitPlayer!!.addPotionEffect(PotionEffect(
             PotionEffectType.SPEED,
             swiftnessTicks.toInt(),
             1,
@@ -66,7 +69,9 @@ class ArcherKit(
 
     override fun onAbility() {
         require(player != null) { "Cannot invoke methods on the kit template" }
-        val bow = player.inventory.first { it.type == Material.BOW }!!
+        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
+
+        val bow = player.bukkitPlayer!!.inventory.first { it.type == Material.BOW }!!
         bow.addEnchantments(mutableMapOf(
             Enchantment.PUNCH to punchLevel,
             Enchantment.POWER to powerLevel
@@ -82,11 +87,12 @@ class ArcherKit(
         val shooter = entity.shooter
         if(
             shooter !is Player
-            || player != shooter
+            || player?.isOnline != true
+            || player.bukkitPlayer != shooter
             || !abilityActive
         ) return
 
-        val bow = player.inventory.first { it.type == Material.BOW } ?: return
+        val bow = player.bukkitPlayer!!.inventory.first { it.type == Material.BOW } ?: return
         bow.removeEnchantments()
         abilityActive = false
     }
