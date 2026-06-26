@@ -318,6 +318,8 @@ class DeathrunController : GameBase(
     override suspend fun gamePregame() {
         val runnable = object : BukkitRunnable() {
             override fun run() {
+                if(playerCheckActive) return
+
                 gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                     val time = completionTimes.getOrElse(it.tumblingPlayer) { ticksElapsed }
                     val text = formatMsTime(time * 50L)
@@ -466,6 +468,8 @@ class DeathrunController : GameBase(
             Triple(start, end, respawn)
         } ?: throw GameControllerException("Checkpoints list not found in map config")
         mapCheckpoints.addAll(checkpoints)
+
+        playerCheck()
 
         delay(1000)
         val audience = Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer })

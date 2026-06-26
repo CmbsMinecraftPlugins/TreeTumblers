@@ -520,6 +520,8 @@ class SnifferCaretakerController : GameBase(
     override suspend fun gamePregame() {
         spawn(SpawnCycle.PRE_ROUND)
 
+        playerCheck()
+
         gamePlayers.forEach {
             it.enableBossBar("countdownBossbar")
         }

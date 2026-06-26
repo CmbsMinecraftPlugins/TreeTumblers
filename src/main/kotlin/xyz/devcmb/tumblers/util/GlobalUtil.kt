@@ -34,6 +34,7 @@ import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingConfigKeyMissingException
 import xyz.devcmb.tumblers.TumblingConfigTypeMismatchException
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.PlayerUIController
@@ -535,4 +536,8 @@ fun forEachInGridIndexed(rows: Int, columns: Int, action: (index: Int, row: Int,
             index++
         }
     }
+}
+
+fun canReplaceActionBar(): Boolean {
+    return GameController.activeGame?.playerCheckActive != true
 }

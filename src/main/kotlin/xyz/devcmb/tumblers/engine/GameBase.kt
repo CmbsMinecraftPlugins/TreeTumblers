@@ -24,7 +24,6 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
@@ -48,7 +47,6 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
-import xyz.devcmb.tumblers.util.getOnlineTumblingPlayers
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tp
@@ -675,6 +673,27 @@ abstract class GameBase(
      * @param badge The badge to award
      */
     fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = BadgeController.grantBadge(player, badge)
+
+    /**
+     * Pauses the game until all gameParticipants are connected, or until it is skipped
+     */
+    var playerCheckActive: Boolean = false
+        private set
+    var playerCheckSkipped: Boolean = false
+    var playerCheckPersistentSkipped: Boolean = false
+    suspend fun playerCheck() {
+        if(!gameParticipants.all { it.isOnline }) {
+            playerCheckActive = true
+            while(!gameParticipants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
+                delay(500)
+                gamePlayers.forEach {
+                    it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${gameParticipants.filter { entry -> entry.isOnline }.size}/${gameParticipants.size}</gray>"))
+                }
+            }
+            playerCheckSkipped = false
+            playerCheckActive = false
+        }
+    }
 
     @EventHandler(priority = EventPriority.HIGHEST)
     fun playerJoinEvent(event: PlayerJoinEvent) {

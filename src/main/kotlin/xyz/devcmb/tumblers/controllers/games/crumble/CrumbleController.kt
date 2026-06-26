@@ -23,7 +23,6 @@ import org.bukkit.NamespacedKey
 import org.bukkit.Particle
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.EntityType
-import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.entity.TNTPrimed
 import org.bukkit.event.EventHandler
@@ -44,12 +43,10 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
-import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -64,6 +61,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
@@ -384,10 +382,10 @@ class CrumbleController : GameBase(
                         spawnPlayers(currentMap, matchup.first.getOnlinePlayers().toSet(), spawnSet1)
                         spawnPlayers(currentMap, matchup.second.getOnlinePlayers().toSet(), spawnSet2)
                     }
-                }
 
-                Team.entries.filter { !it.playingTeam }.forEach {
-                    it.getOnlinePlayers().forEach(this::spawnSpectator)
+                    Team.entries.filter { !it.playingTeam }.forEach {
+                        it.getOnlinePlayers().forEach(this::spawnSpectator)
+                    }
                 }
             }
         }
@@ -459,6 +457,8 @@ class CrumbleController : GameBase(
         player.inventory.addItem(kitSelector.clone())
         val task = object : BukkitRunnable() {
             override fun run() {
+                if(!canReplaceActionBar()) return
+
                 var component = Component.empty()
                 val kit = playerKits[player.tumblingPlayer]
                 if(kit != null) {
@@ -479,29 +479,6 @@ class CrumbleController : GameBase(
     }
 
     override suspend fun gamePregame() {
-        // FIXME: This doesn't load the chunks properly and doesn't allow the game to start
-        // It complain that it cant find arena_3_set_1 spawns, although they definitely do exist
-        loadedMaps.forEach { loadedMap ->
-            val arenaCenters: List<Location> = (1..4).map { arena ->
-                val list = loadedMap.data.getList("centers.arena$arena")
-                    ?.map { it as? Double ?: throw GameControllerException("Center for arena $arena must be doubles") }
-                    ?: throw GameControllerException("Map does not have a center specified for $arena")
-                list.unpackCoordinates(loadedMap.world)
-            }
-
-            suspendSync {
-                arenaCenters.forEach { center ->
-                    for(x in -2..2) {
-                        for(z in -2..2) {
-                            val chunk = center.world.getChunkAt(center.chunk.x + x, center.chunk.z + z)
-                            chunk.load(true)
-                            center.world.setChunkForceLoaded(chunk.x, chunk.z, true)
-                        }
-                    }
-                }
-            }
-        }
-
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach(this::pregamePlayer)
 
         countdown(20, "crumble_kit_selection_timer")
@@ -579,7 +556,6 @@ class CrumbleController : GameBase(
         borderEvent?.cancel()
 
         val placements = getTeamPlacements()
-        // TODO: Show something to the spectators
         gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
             val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
 
@@ -593,6 +569,15 @@ class CrumbleController : GameBase(
             plr.showTitle(Title.title(
                 Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
                 Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        gamePlayers.filter { !it.team.playingTeam }.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.empty(),
                 Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
             ))
             plr.sendMessage(gameMessage(Component.text("Game Over!")))
@@ -684,6 +669,7 @@ class CrumbleController : GameBase(
             it.enableBossBar("crumbleBossbar")
         }
         abilitiesUsed.clear()
+        playerCheck()
     }
 
     fun setupCrumble() {
@@ -835,11 +821,17 @@ class CrumbleController : GameBase(
             audience.showTitle(title)
         }
 
+        gamePlayers.filter { !it.team.playingTeam }.mapNotNull { it.bukkitPlayer }.forEach {
+            it.showTitle(Title.title(
+                Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
+                Component.empty(),
+                Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
+            ))
+        }
+
         delay(4000)
         repeat(3) {
-            roundMatchup.forEach { matchup ->
-                val audience = Audience.audience(matchup.first.audience, matchup.second.audience)
-
+            gamePlayers.mapNotNull { entry -> entry.bukkitPlayer }.forEach { plr ->
                 val color = when(it) {
                     0 -> NamedTextColor.GREEN
                     1 -> NamedTextColor.YELLOW
@@ -853,8 +845,7 @@ class CrumbleController : GameBase(
                     Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
                 )
 
-
-                audience.showTitle(title)
+                plr.showTitle(title)
             }
             delay(1000)
         }

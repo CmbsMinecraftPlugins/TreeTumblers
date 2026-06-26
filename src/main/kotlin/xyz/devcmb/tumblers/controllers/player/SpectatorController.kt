@@ -14,6 +14,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -27,6 +28,7 @@ object SpectatorController : IController {
     override fun init() {
         spectatorTask = object : BukkitRunnable() {
             override fun run() {
+                if(!canReplaceActionBar()) return
                 spectators.forEach { (player, bar) ->
                     if(bar) player.sendActionBar(Format.mm("<gray>Spectating</gray>"))
                 }

@@ -329,6 +329,8 @@ class PartyController : GameBase(
     }
 
     override suspend fun gamePregame() {
+        playerCheck()
+
         asyncCountdown(10, "party_pregame")
         delay(3000)
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(

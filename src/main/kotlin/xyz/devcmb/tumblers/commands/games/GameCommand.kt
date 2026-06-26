@@ -12,7 +12,6 @@ import org.bukkit.command.CommandSender
 import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -131,5 +130,46 @@ class GameCommand {
         }
 
         player.sendMessage(Format.success(Format.mm("Summoned spawn <white>${location.name}</white> successfully!")))
+    }
+
+    @Execute(name = "playercheck skip")
+    fun playerCheckSkip(@Context sender: CommandSender) {
+        val activeGame = GameController.activeGame
+        if(activeGame == null) {
+            sender.sendMessage(Format.error("No game is currently active!"))
+            return
+        }
+
+        if(!activeGame.playerCheckActive) {
+            sender.sendMessage(Format.error("A player check is not active!"))
+            return
+        }
+
+        activeGame.playerCheckSkipped = true
+        sender.sendMessage(Format.success("Skipped the player check successfully!"))
+    }
+
+    @Execute(name = "playercheck permaskip")
+    fun playerCheckPermaSkip(@Context sender: CommandSender) {
+        val activeGame = GameController.activeGame
+        if(activeGame == null) {
+            sender.sendMessage(Format.error("No game is currently active!"))
+            return
+        }
+
+        activeGame.playerCheckPersistentSkipped = true
+        sender.sendMessage(Format.success("Persistently skipped the player check successfully!"))
+    }
+
+    @Execute(name = "playercheck unpermaskip")
+    fun playerCheckUnPermaSkip(@Context sender: CommandSender) {
+        val activeGame = GameController.activeGame
+        if(activeGame == null) {
+            sender.sendMessage(Format.error("No game is currently active!"))
+            return
+        }
+
+        activeGame.playerCheckPersistentSkipped = false
+        sender.sendMessage(Format.success("Un-persistently skipped the player check successfully!"))
     }
 }

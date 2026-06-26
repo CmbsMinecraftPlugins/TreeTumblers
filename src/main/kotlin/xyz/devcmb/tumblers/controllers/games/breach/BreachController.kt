@@ -43,7 +43,6 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -457,7 +456,7 @@ class BreachController: GameBase(
 
         fireworkTask.runTaskTimer(TreeTumblers.plugin, 0, 4)
 
-        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
             it.showTitle(Title.title(
                 winner.formattedName,
                 Component.text("ARE VICTORIOUS!").decorate(TextDecoration.BOLD),
@@ -469,7 +468,7 @@ class BreachController: GameBase(
 
         fireworkTask.cancel()
 
-        gameParticipants.forEach {
+        gamePlayers.forEach {
             it.disableBossBar("breachScoreBossbar")
         }
 
@@ -570,6 +569,7 @@ class BreachController: GameBase(
         }
 
         spawn(SpawnCycle.PRE_ROUND)
+        playerCheck()
         countdown(15, "kit_selection")
 
         if (team1holder == null && playingTeams.first.getOnlinePlayers().isNotEmpty()) team1holder = playingTeams.first.getOnlinePlayers().random()
@@ -752,6 +752,14 @@ class BreachController: GameBase(
             it.showTitle(Title.title(
                 Format.mm("<b><red>Round Lost</red></b>"),
                 Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+            ))
+        }
+
+        gamePlayers.mapNotNull { it.bukkitPlayer }.filter { it !in loser.getOnlinePlayers() && it !in winner.getOnlinePlayers() }.forEach {
+            it.showTitle(Title.title(
+                Format.mm("<b><red>Round Over</red></b>"),
+                Format.mm("<white><team> win!</white>", Placeholder.component("team", winner.formattedName)),
                 Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
             ))
         }
