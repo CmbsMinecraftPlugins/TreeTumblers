@@ -7,7 +7,6 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.util.Format
@@ -22,7 +21,7 @@ class DebuggingEventArgument: ArgumentResolver<CommandSender, DebugToolkit.Debug
             ?: return ParseResult.failure(Format.error("Cannot parse a debug event without an active game with a debug toolkit!"))
 
         if(!events.contains(argument)) {
-            return ParseResult.failure(Format.error("That's not a valid event for ${GameController.activeGame!!.id}!"))
+            return ParseResult.failure(Format.error("That's not a valid event for ${GameController.activeGame!!.data.id}!"))
         }
 
         return ParseResult.success(DebugToolkit.DebuggingEvent(argument))

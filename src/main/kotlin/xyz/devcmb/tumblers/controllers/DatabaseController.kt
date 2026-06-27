@@ -257,12 +257,12 @@ object DatabaseController : IController {
                 val game = result.getString("game")
                 val timestamp = result.getTimestamp("achieved")
 
-                val registeredGame = GameController.games.find { it.id == game }
+                val registeredGame = GameController.games.find { it.data.id == game }
                     ?: throw TumblingDatabaseStateException("Could not find a game with id $game")
 
                 // don't need to throw here because badges could technically get removed (shouldn't, but can)
                 // if a game gets fully removed and had badges we have bigger fish to fry
-                val badge = registeredGame.badges?.find { it.name.lowercase() == id } ?: continue
+                val badge = registeredGame.data.badges?.find { it.name.lowercase() == id } ?: continue
 
                 badges[badge] = timestamp
             }
@@ -316,7 +316,7 @@ object DatabaseController : IController {
         val state = EventController.EventState(
             EventController.state != EventController.State.EVENT_INACTIVE,
             EventController.game,
-            HashMap(VotingController.quadrantGames.map { it.key to it.value.id }.toMap()),
+            HashMap(VotingController.quadrantGames.map { it.key to it.value.data.id }.toMap()),
             EventController.playedGames,
             EventController.lastGameTeamPlacements,
             EventController.lastGamePlayerPlacements?.map { it.first.uuid.toString() to it.second },

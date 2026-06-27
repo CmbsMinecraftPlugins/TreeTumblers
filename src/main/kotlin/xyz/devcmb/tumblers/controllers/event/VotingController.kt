@@ -339,7 +339,7 @@ object VotingController : IController {
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
-                winningGame.first.logo,
+                winningGame.first.data.logo,
                 Component.text("And the game is..."),
                 Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             )
@@ -350,7 +350,7 @@ object VotingController : IController {
             votesComponent = votesComponent.append(
                 Format.mm(
                     "<white><br><game> - ${votes[i]}</white>",
-                    Placeholder.component("game", Component.text(it.name, votingTextColors[i]))
+                    Placeholder.component("game", Component.text(it.data.name, votingTextColors[i]))
                 )
             )
         }
@@ -371,7 +371,7 @@ object VotingController : IController {
         }
 
         votes.clear()
-        val nextGame = winningGame.first.id
+        val nextGame = winningGame.first.data.id
         delay(7000)
 
         return nextGame
@@ -381,21 +381,21 @@ object VotingController : IController {
         if(quadrantGames.size > 2) return
 
         repeat(4 - quadrantGames.size) {
-            val games = GameController.games.filter { game -> !EventController.playedGames.contains(game.id) && !quadrantGames.containsValue(game) && game.votable }
+            val games = GameController.games.filter { game -> !EventController.playedGames.contains(game.data.id) && !quadrantGames.containsValue(game) && game.data.votable }
             if(games.isEmpty()) return@repeat
 
             val index = (0..3).first { num -> num !in quadrantGames.keys }
             val game = games.random()
             quadrantGames[index] = game
 
-            val diorama = loadDiorama(game.id, index)
+            val diorama = loadDiorama(game.data.id, index)
             blinkQuadrant(it, votingConcretes[index], 3, 200, true)
 
             placeGame(it, game, diorama)
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                 Title.title(
-                    Component.text(game.name, votingTextColors[index]),
+                    Component.text(game.data.name, votingTextColors[index]),
                     Component.empty(),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
@@ -408,7 +408,7 @@ object VotingController : IController {
         // this just makes it turn on regardless of state, good for the recovery system because with the animation that takes time, this doesn't
         blinkQuadrant(quadrantIndex, votingConcretes[quadrantIndex], 0, 0, true)
 
-        val diorama = dioramaSession ?: loadDiorama(game.id, quadrantIndex)
+        val diorama = dioramaSession ?: loadDiorama(game.data.id, quadrantIndex)
 
         val lobby = Bukkit.getWorld(WorldController.lobbyWorld)!!
         quadrantGames[quadrantIndex] = game
@@ -424,7 +424,7 @@ object VotingController : IController {
                     quadrantDioramaEditSessions[quadrantIndex] = session
                 } catch(e: Exception) {
                     session.close()
-                    DebugUtil.severe("Failed to load game diorama for ${game.id}: ${e.message}")
+                    DebugUtil.severe("Failed to load game diorama for ${game.data.id}: ${e.message}")
                 }
             }
         } else {
@@ -433,7 +433,7 @@ object VotingController : IController {
 
         suspendSync {
             val logoDisplay = lobby.spawn(logoLocations[quadrantIndex], TextDisplay::class.java) { display ->
-                display.text(game.logo)
+                display.text(game.data.logo)
                 display.transformation = Transformation(
                     Vector3f(),
                     logoQuaternions[quadrantIndex],

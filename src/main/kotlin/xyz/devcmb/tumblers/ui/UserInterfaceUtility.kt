@@ -12,7 +12,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -149,7 +149,7 @@ object UserInterfaceUtility {
         }
     }
 
-    fun getTeamScoresComponent(player: Player, activeGame: GameBase): ArrayList<Component> {
+    fun getTeamScoresComponent(player: Player, activeGame: AbstractGame): ArrayList<Component> {
         val leaderboard: ArrayList<Component> = arrayListOf()
         if(EventController.scoresHidden) {
             repeat(4) {
@@ -212,7 +212,7 @@ object UserInterfaceUtility {
         return leaderboard
     }
 
-    fun getIndividualScoreComponent(player: Player, activeGame: GameBase): Component {
+    fun getIndividualScoreComponent(player: Player, activeGame: AbstractGame): Component {
         val tumblingPlayer = player.tumblingPlayer
         val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }
             ?: Pair(tumblingPlayer,activeGame.getIndividualPlacements().size + 1)

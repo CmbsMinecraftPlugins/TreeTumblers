@@ -6,8 +6,6 @@ import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.ensureActive
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
@@ -52,10 +50,8 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
-import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -83,95 +79,10 @@ import kotlin.math.sqrt
 import kotlin.random.Random
 
 @EventGame
-class CrumbleController : GameBase(
-    id = "crumble",
-    name = "Crumble",
-    votable = true,
-    maps = setOf(
-        Map("warfare")
-    ),
-    cutsceneSteps = arrayListOf(
-        CutsceneStep(
-            Component.empty()
-                .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")))
-                .append(Component.text(" Crumble")),
-            "cutscene.start"
-        ) { map ->
-            delay(5000)
-        },
-        CutsceneStep(
-            Format.mm("In this game, as time goes on, the map will <yellow>crumble away</yellow> in a circle"),
-            "cutscene.crumble_demonstration"
-        ) { map ->
-            val center = getLocation("centers.cutscene")
-            val currentMapSize = map.data.getInt("map_size")
-            var currentCrumbleRadius = ((currentMapSize * sqrt(2.0) * 0.5) + 1)
-
-            // maybe extract this duplicate code
-            val runnable = object : BukkitRunnable() {
-                override fun run() {
-                    val radiusSquared = currentCrumbleRadius * currentCrumbleRadius
-
-                    val halfMap = currentMapSize / 2
-                    val xStart = (center.x - halfMap).toInt()
-                    val xEnd = (center.x + halfMap).toInt()
-                    val zStart = (center.z - halfMap).toInt()
-                    val zEnd = (center.z + halfMap).toInt()
-                    val yStart = (center.y - 50).toInt()
-                    val yEnd = (center.y + 10).toInt()
-
-                    for (x in xStart..xEnd) {
-                        val dx = x + 0.5 - center.x
-                        for (z in zStart..zEnd) {
-                            val dz = z + 0.5 - center.z
-                            val distSq = dx*dx + dz*dz
-                            if (distSq < radiusSquared) continue
-
-                            for (y in yStart..yEnd) {
-                                val block = center.world.getBlockAt(x, y, z)
-                                if (!block.type.isAir) {
-                                    block.type = Material.AIR
-                                }
-                            }
-                        }
-                    }
-
-                    currentCrumbleRadius -= 0.2
-                }
-            }
-            runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
-
-            delay(4000)
-            runnable.cancel()
-        },
-        CutsceneStep(
-            Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><color:#ff701e><u>GDCob</u></color></click>!"),
-            "cutscene.credit"
-        ) { map ->
-            delay(4000)
-        },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
-    ),
-    flags = setOf(
-        Flag.SURVIVAL_MODE,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,
-        Flag.DISABLE_NATURAL_REGENERATION
-    ),
-    scores = hashMapOf(
-        CommonScoreSource.KILL to 45,
-        CommonScoreSource.TEAM_ROUND_WIN to 480,
-        CommonScoreSource.TEAM_ROUND_DRAW to 240,
-        CommonScoreSource.TEAM_ROUND_LOSE to 120,
-    ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
-        .shadowColor(ShadowColor.none()),
-    scoreboard = "crumbleScoreboard",
-    badges = CrumbleBadge.entries,
-    spawns = CrumbleSpawns.entries
+class CrumbleController : RoundedGame(
+    CrumbleData,
+    rounds = Team.entries.filter { it.playingTeam }.size - 1,
+    roundLength = configurable<Int>("games.crumble.round_length")
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")
@@ -181,7 +92,6 @@ class CrumbleController : GameBase(
 
     val tntDetonationTime: Int = configurable("games.crumble.tnt_detonation_time")
     val crumbleSpeed: Double = configurable("games.crumble.crumble_speed")
-    val roundLength: Int = configurable("games.crumble.round_length")
     val killOfflinePlayers: Boolean = configurable("games.crumble.kill_offline_players")
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
@@ -205,18 +115,11 @@ class CrumbleController : GameBase(
         }
     )
 
-    val rounds = Team.entries.filter { it.playingTeam }.size - 1
-    var currentRound = 0
-    val roundIndex: Int
-        get() { return currentRound - 1 }
-
     val currentMap: LoadedMap
         get() {
             return loadedMaps.getOrElse(roundIndex) { loadedMaps.first() }
         }
 
-    var roundActive = false
-    var preRound = false
     var preRoundFreeze = false
 
     val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
@@ -311,10 +214,6 @@ class CrumbleController : GameBase(
                 // maybe change the `killed` field to be optional
                 kit.onKill(sender)
                 sender.sendMessage(Format.success("Kill event sent successfully!"))
-            },
-            "end_round" to { sender ->
-                gameTimeoutEnd = true
-                sender.sendMessage(Format.success("Ended round successfully!"))
             }
         )
     }
@@ -341,7 +240,7 @@ class CrumbleController : GameBase(
         }
 
         for(i in 1..rounds) {
-            val map = maps.random()
+            val map = data.maps.random()
             loadMap(map, i)
         }
     }
@@ -387,6 +286,11 @@ class CrumbleController : GameBase(
                         it.getOnlinePlayers().forEach(this::spawnSpectator)
                     }
                 }
+
+                suspendSync(this::giveKits)
+                preRoundFreeze = true
+                delay(500)
+                preRoundFreeze = false
             }
         }
     }
@@ -506,51 +410,6 @@ class CrumbleController : GameBase(
         }
     }
 
-    var gameTimeoutEnd = false
-    override suspend fun gameOn() {
-        repeat(rounds) {
-            TreeTumblers.pluginScope.ensureActive()
-
-            currentRound++
-            gameTimeoutEnd = false
-            suspendSync {
-                participatingSpectators.toList().forEach(this::unSpectate)
-            }
-            preRound()
-            suspendSync(this::giveKits)
-            preRoundFreeze = true
-            delay(500)
-            preRoundFreeze = false
-            asyncCountdown(7, "crumble_pregame_timer") {
-                dropWalls()
-            }
-            setupCrumble()
-            setupBorder()
-            announceMatchup()
-            preRound = false
-
-            if(killOfflinePlayers) {
-                // this is so if you fight an empty team, the team gets the points for it while also immediately ending the round
-                suspendSync {
-                    alivePlayers.forEach { aliveEntry ->
-                        aliveEntry.value.toList().forEach { player ->
-                            if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) {
-                                playerDeath(player, null)
-                            }
-                        }
-                    }
-                }
-            }
-
-            roundActive = true
-            asyncCountdown(roundLength, "crumble_round_timer") { early ->
-                if(!early) gameTimeoutEnd = true
-            }
-            awaitEnd()
-            endRound()
-        }
-    }
-
     override suspend fun postGame() {
         crumbleEvent?.cancel()
         borderEvent?.cancel()
@@ -658,9 +517,20 @@ class CrumbleController : GameBase(
         }
     }
 
-    suspend fun preRound() {
-        preRound = true
-        spawn(SpawnCycle.PRE_ROUND)
+    override fun getRoundAnnouncementSubtitle(player: Player): Component {
+        val matchup = getCurrentMatchup(player) ?: return Component.empty()
+        return Format.mm(
+            "<white><team1> vs. <team2></white>",
+            Placeholder.component("team1", matchup.first.formattedName),
+            Placeholder.component("team2", matchup.second.formattedName)
+        )
+    }
+
+    override suspend fun preRound() {
+        suspendSync {
+            participatingSpectators.toList().forEach(this::unSpectate)
+        }
+
         alivePlayers.values.forEach { it.clear() }
         Team.entries.filter { it.playingTeam }.forEach {
             alivePlayers[it] = ArrayList(it.getAllPlayers())
@@ -669,7 +539,30 @@ class CrumbleController : GameBase(
             it.enableBossBar("crumbleBossbar")
         }
         abilitiesUsed.clear()
-        playerCheck()
+
+        super.preRound()
+    }
+
+    override suspend fun startRound() {
+        setupBorder()
+        setupCrumble()
+
+        dropWalls()
+        if(killOfflinePlayers) {
+            // this is so if you fight an empty team, the team gets the points for it while also immediately ending the round
+            suspendSync {
+                alivePlayers
+                    .toList()
+                    .fold(arrayListOf<TumblingPlayer>()) { acc, pair -> acc.apply { addAll(pair.second) } }
+                    .forEach { player ->
+                        if(player.bukkitPlayer == null || !player.bukkitPlayer!!.isOnline) {
+                            playerDeath(player, null)
+                        }
+                    }
+            }
+        }
+
+        awaitEnd()
     }
 
     fun setupCrumble() {
@@ -763,26 +656,17 @@ class CrumbleController : GameBase(
     suspend fun awaitEnd() {
         while(true) {
             val currentAlivePlayers = alivePlayers.values.sumOf { it.size }
-            if(currentAlivePlayers == 0 || gameTimeoutEnd) break
-            delay(200)
+            if(currentAlivePlayers == 0 || !roundActive) break
+            delay(500)
         }
-        cancelCountdown()
+        if(roundActive) endRound()
     }
 
-    suspend fun endRound() {
-        roundActive = false
+    override suspend fun postRound() {
         crumbleEvent!!.cancel()
         crumbleEvent = null
         borderEvent!!.cancel()
         borderEvent = null
-        if(gameTimeoutEnd) {
-            Team.entries.filter { it.playingTeam }.forEach {
-                val result = matchResults[roundIndex][it]
-                if(result == null) {
-                    roundDraw(it)
-                }
-            }
-        }
 
         Team.entries.filter { it.playingTeam }.forEach {
             if(matchResults[roundIndex][it] == null) {
@@ -790,65 +674,7 @@ class CrumbleController : GameBase(
             }
         }
 
-        gameTimeoutEnd = false
-        delay(1000)
-        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
-            it.showTitle(Title.title(
-                Component.text("Round Over", NamedTextColor.RED).decoration(TextDecoration.BOLD, true),
-                Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(0))
-            ))
-        }
-        delay(2500)
-    }
-
-    suspend fun announceMatchup() {
-        val roundMatchup = matchups[roundIndex]
-        roundMatchup.forEach { matchup ->
-            val audience = Audience.audience(matchup.first.audience, matchup.second.audience)
-
-            val subtitle = Component.empty()
-                .append(matchup.first.formattedName)
-                .append(Component.text(" vs ", NamedTextColor.WHITE))
-                .append(matchup.second.formattedName)
-            val title = Title.title(
-                Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                subtitle,
-                Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
-            )
-
-            audience.sendMessage(gameMessage(Component.text("Round $currentRound: ", NamedTextColor.WHITE).append(subtitle)))
-            audience.showTitle(title)
-        }
-
-        gamePlayers.filter { !it.team.playingTeam }.mapNotNull { it.bukkitPlayer }.forEach {
-            it.showTitle(Title.title(
-                Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                Component.empty(),
-                Title.Times.times(Tick.of(3), Tick.of(80), Tick.of(3))
-            ))
-        }
-
-        delay(4000)
-        repeat(3) {
-            gamePlayers.mapNotNull { entry -> entry.bukkitPlayer }.forEach { plr ->
-                val color = when(it) {
-                    0 -> NamedTextColor.GREEN
-                    1 -> NamedTextColor.YELLOW
-                    2 -> NamedTextColor.RED
-                    else -> NamedTextColor.WHITE
-                }
-
-                val title = Title.title(
-                    Component.text("Round $currentRound", NamedTextColor.YELLOW).decorate(TextDecoration.BOLD),
-                    Component.text("> ${3 - it} <", color).decoration(TextDecoration.BOLD, true),
-                    Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
-                )
-
-                plr.showTitle(title)
-            }
-            delay(1000)
-        }
+        super.postRound()
     }
 
     suspend fun dropWalls() {
@@ -1165,7 +991,7 @@ class CrumbleController : GameBase(
             return
         }
 
-        if(flags.contains(Flag.DISABLE_TNT_AUTO_EXPLODE)) return
+        if(data.flags.contains(Flag.DISABLE_TNT_AUTO_EXPLODE)) return
 
         val player = event.player
         val block = event.block

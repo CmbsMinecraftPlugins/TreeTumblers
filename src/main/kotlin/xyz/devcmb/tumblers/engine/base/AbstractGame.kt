@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.engine
+package xyz.devcmb.tumblers.engine.base
 
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
@@ -28,76 +28,50 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
-import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Flag
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.util.DebugUtil
-import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.data.Team
-import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.engine.cutscene.Cutscene
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
 import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.uiController
+import kotlin.collections.forEach
+import kotlin.time.Duration
 
 /**
  * Base class for all games
  *
- * @param id The unique identifier of the game
- * @param name The name of the game for public-facing events (voting, etc.)
- * @param votable Whether this game is available for voting during the voting stage
- * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
- * @param cutsceneSteps An [ArrayList] containing all the [CutsceneStep] instances
- * @param flags A [Set] of [Flag] enums to determine certain shared behaviors
- * @param scores A [HashMap] of [xyz.devcmb.tumblers.engine.score.CommonScoreSource]s to the amount of score they give
- * @param icon The component icon of the game
- * @param logo The component logo of the game
- * @param tabLogo The larger version of the [logo] to be put into the lab list
- * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
- * @param badges The list of badges a game has that are displayed in the collection
- *
  * @property currentState The current [State] of the individual game
- * @property loadedMaps An [ArrayList] containing all the [LoadedMap] instances
+ * @property loadedMaps An [ArrayList] containing all the [xyz.devcmb.tumblers.engine.map.LoadedMap] instances
  * @property configRoot The root path for the games configuration
  * @property gamePlayers A [MutableSet] with all the players that were online when the game was started
- * @property gameParticipants a [MutableSet] with all the players that were online when the game was started that are on a team labeled [Team.playingTeam]
+ * @property gameParticipants a [MutableSet] with all the players that were online when the game was started that are on a team labeled [xyz.devcmb.tumblers.data.Team.playingTeam]
  * @property participatingSpectators A [MutableSet] with all the players that are in the [gameParticipants] set that are currently spectating
- * @property gameSpectators A [MutableSet] with all the players that are currently in spectator mode, defined by the [SpectatorController]
- * @property debugToolkit An optional instance of a [DebugToolkit] for certain developer commands (you really should fill this out, but you can be lazy if you really don't want to)
+ * @property gameSpectators A [MutableSet] with all the players that are currently in spectator mode, defined by the [xyz.devcmb.tumblers.controllers.player.SpectatorController]
+ * @property debugToolkit An optional instance of a [xyz.devcmb.tumblers.engine.DebugToolkit] for certain developer commands (you really should fill this out, but you can be lazy if you really don't want to)
  */
-abstract class GameBase(
-    val id: String,
-    val name: String,
-    val votable: Boolean,
-    val maps: Set<Map>,
-    val cutsceneSteps: ArrayList<CutsceneStep>,
-    val flags: Set<Flag>,
-    val scores: HashMap<ScoreSource, Int>,
-    val icon: Component,
-    val logo: Component,
-    val tabLogo: Component,
-    val scoreboard: String,
-    val badges: List<BadgeController.Badge>? = null,
-    val spawns: List<SpawnLocation>? = null
+abstract class AbstractGame(
+    open val data: GameData
 ): Listener {
-    init {
-        maps.forEach {
-            it.init(this)
-        }
-    }
-
     var currentState = State.UNLOADED
         set(value) {
             DebugUtil.info("Transitioning to GameState ${value.name}")
@@ -107,7 +81,8 @@ abstract class GameBase(
     var currentCutscene: Cutscene? = null
 
     val loadedMaps: ArrayList<LoadedMap> = ArrayList()
-    val configRoot = "games.$id"
+    val configRoot
+        get() = "games.${data.id}"
 
     val gamePlayers: MutableSet<TumblingPlayer> = HashSet()
     val gameParticipants: MutableSet<TumblingPlayer> = HashSet()
@@ -134,9 +109,13 @@ abstract class GameBase(
     }
 
     /**
-     * The internal load stage called by the [GameController]
+     * The internal load stage called by the [xyz.devcmb.tumblers.controllers.games.GameController]
      */
     suspend fun load(includeOfflinePlayers: Boolean) {
+        data.maps.forEach {
+            it.init(this)
+        }
+
         val players =
             if(includeOfflinePlayers) PlayerController.players
             else Bukkit.getOnlinePlayers().map { it.tumblingPlayer }
@@ -169,7 +148,7 @@ abstract class GameBase(
             it.saturation = 0f
             it.inventory.clear()
 
-            if(flags.contains(Flag.ENABLE_HUNGER)) {
+            if(data.flags.contains(Flag.ENABLE_HUNGER)) {
                 it.removePotionEffect(PotionEffectType.HUNGER)
             }
 
@@ -226,7 +205,7 @@ abstract class GameBase(
         currentState = State.CUTSCENE
         PlayerController.muteChat()
 
-        currentCutscene = Cutscene(cutsceneSteps)
+        currentCutscene = Cutscene(data.cutsceneSteps)
         currentCutscene!!.run(
             gamePlayers.filter { it.isOnline }
                 .map { it.bukkitPlayer!! }
@@ -242,7 +221,7 @@ abstract class GameBase(
     }
 
     /**
-     * The internal method for pre-pregame invoked by the [GameController]
+     * The internal method for pre-pregame invoked by the [xyz.devcmb.tumblers.controllers.games.GameController]
      */
     suspend fun pregame() {
         currentState = State.PREGAME
@@ -254,7 +233,7 @@ abstract class GameBase(
                 .forEach { makeSpectator(it.bukkitPlayer!!, participating = false) }
         }
 
-        if(flags.contains(Flag.SURVIVAL_MODE)) {
+        if(data.flags.contains(Flag.SURVIVAL_MODE)) {
             suspendSync {
                 gameParticipants.filter { it.isOnline }.forEach {
                     it.bukkitPlayer!!.gameMode = GameMode.SURVIVAL
@@ -266,10 +245,10 @@ abstract class GameBase(
 
         suspendSync {
             gamePlayers.forEach {
-                it.activateScoreboard(scoreboard)
+                it.activateScoreboard(data.scoreboard)
             }
 
-            if(flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+            if (data.flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
                 PlayerController.currentNametagMode = PlayerController.NametagMode.TEAM
             }
         }
@@ -370,7 +349,7 @@ abstract class GameBase(
             gameSpectators.toList().forEach(this::unSpectate)
 
             gamePlayers.forEach { tumblingPlayer ->
-                tumblingPlayer.deactivateScoreboard(scoreboard)
+                tumblingPlayer.deactivateScoreboard(data.scoreboard)
                 tumblingPlayer.activateScoreboard("intermissionScoreboard")
 
                 tumblingPlayer.bukkitPlayer?.let {
@@ -386,13 +365,13 @@ abstract class GameBase(
                         )
                     }
 
-                    if(it.gameMode != GameMode.CREATIVE) {
+                    if (it.gameMode != GameMode.CREATIVE) {
                         it.gameMode = GameMode.ADVENTURE
                         it.isFlying = false
                         it.allowFlight = false
                     }
 
-                    if(!it.hasPotionEffect(PotionEffectType.HUNGER)) {
+                    if (!it.hasPotionEffect(PotionEffectType.HUNGER)) {
                         it.hunger()
                     }
                 }
@@ -416,7 +395,7 @@ abstract class GameBase(
     suspend fun countdown(time: Int, id: String? = null) {
         currentTimer = Timer(time) {
             id?.let { this.id = id }
-            game = this@GameBase
+            game = this@AbstractGame
             joined = true
         }
         currentTimer!!.start()
@@ -431,11 +410,14 @@ abstract class GameBase(
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         currentTimer = Timer(time) {
             id?.let { this.id = it }
-            game = this@GameBase
+            game = this@AbstractGame
             this.onComplete = onComplete
         }
         currentTimer!!.start()
     }
+
+    fun asyncCountdown(duration: Duration, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null)
+        = asyncCountdown(duration.inWholeSeconds.toInt(), id, onComplete)
 
     /**
      * Runs a [Timer] constructed externally
@@ -456,12 +438,12 @@ abstract class GameBase(
     }
 
     /**
-     * Gets a score amount from the provided [scores] table
+     * Gets a score amount from [ScoreSource]s provided in the [data] object
      * @param source The source to get
      * @return The amount of score a source gives (or 0 if not specified)
      */
     fun getScoreSource(source: ScoreSource): Int {
-        return scores[source] ?: 0
+        return data.scores[source] ?: 0
     }
 
     /**
@@ -545,7 +527,7 @@ abstract class GameBase(
     fun getIndividualPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
         val sorted = playerScores.entries
             .sortedWith(compareBy({ -it.value }, { it.key.team.priority }))
-        
+
         return calculatePlacements(sorted)
     }
 
@@ -639,7 +621,7 @@ abstract class GameBase(
     }
 
     /**
-     * Calls the respective method in the [SpectatorController]
+     * Calls the respective method in the [xyz.devcmb.tumblers.controllers.player.SpectatorController]
      *
      * @param player The player to enable spectator for
      * @param sendActionBar Whether there should be a "Spectating" actionbar when the player is in spectator
@@ -718,19 +700,21 @@ abstract class GameBase(
 
         // The normal `playerJoinEvent` runs events after 1 tick, so after 2 everything is done
         runTaskLater(2) {
-            when(currentState) {
+            when (currentState) {
                 State.CUTSCENE -> {
                     currentCutscene!!.addObserver(player, true)
                 }
+
                 State.PREGAME,
                 State.GAME_ON -> {
                     // this might be problematic in the future, but idk
-                    if(flags.contains(Flag.SURVIVAL_MODE)) {
+                    if (data.flags.contains(Flag.SURVIVAL_MODE)) {
                         player.gameMode = GameMode.SURVIVAL
                     }
 
                     playerJoin(player)
                 }
+
                 else -> return@runTaskLater
             }
         }
@@ -757,7 +741,7 @@ abstract class GameBase(
 
     @EventHandler
     fun playerDeathEvent(event: PlayerDeathEvent){
-        if(flags.contains(Flag.ENABLE_ITEM_DROPS) || event.isCancelled) return
+        if(data.flags.contains(Flag.ENABLE_ITEM_DROPS) || event.isCancelled) return
         event.drops.clear()
     }
 
@@ -768,14 +752,14 @@ abstract class GameBase(
 
         if(attacker !is Player || attacked !is Player) return
 
-        if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || flags.contains(Flag.DISABLE_PVP)) {
+        if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || data.flags.contains(Flag.DISABLE_PVP)) {
             event.isCancelled = true
         }
     }
 
     @EventHandler
     fun blockBreakEvent(event: BlockBreakEvent) {
-        if(flags.contains(Flag.DISABLE_BLOCK_BREAKING))
+        if(data.flags.contains(Flag.DISABLE_BLOCK_BREAKING))
             event.isCancelled = true
     }
 
@@ -784,16 +768,16 @@ abstract class GameBase(
         if(
             event.entity !is Player
             || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM
-            || !flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
+            || !data.flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
         ) return
         event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.LOW)
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
-        if(flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
+        if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
             event.isCancelled = true
-            makeSpectator(event.player, !flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
+            makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
         }
     }
 

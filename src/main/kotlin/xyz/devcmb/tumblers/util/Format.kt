@@ -10,7 +10,6 @@ import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
@@ -205,7 +204,7 @@ object Format {
             override fun formatMessage(message: Component): Component {
                 return mm(
                     "<yellow>(<white><icon></white><yellow>)</yellow> <white><message></white>",
-                    Placeholder.component("icon", GameController.activeGame?.icon ?: Component.empty()),
+                    Placeholder.component("icon", GameController.activeGame?.data?.icon ?: Component.empty()),
                     Placeholder.component("message", message)
                 )
             }

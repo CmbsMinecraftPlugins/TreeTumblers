@@ -3,12 +3,11 @@ package xyz.devcmb.tumblers.engine.map
 import org.bukkit.GameRules
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.suspendSync
 import kotlin.io.path.Path
 
@@ -33,13 +32,13 @@ import kotlin.io.path.Path
 class Map(
     val id: String,
 ) {
-    lateinit var game: GameBase
+    lateinit var game: AbstractGame
 
     /**
      * Initializes the map with an attached GameBase
      * @param game The game the map is a part of
      */
-    fun init(game: GameBase) {
+    fun init(game: AbstractGame) {
         this.game = game
     }
 
@@ -60,20 +59,21 @@ class Map(
 
         val world = WorldController.loadTemplate(
             Path(WorldController.worldRoot, gameWorlds, worldName),
-            "${game.id}_${id}-$index"
+            "${game.data.id}_${id}-$index"
         )
 
+        val flags = game.data.flags
         suspendSync {
             world.setGameRule(GameRules.SPAWN_MOBS, false)
             world.setGameRule(GameRules.ADVANCE_TIME, false)
             world.setGameRule(GameRules.ADVANCE_WEATHER, false)
 
-            world.setGameRule(GameRules.FALL_DAMAGE, !game.flags.contains(Flag.DISABLE_FALL_DAMAGE))
-            world.setGameRule(GameRules.PVP, !game.flags.contains(Flag.DISABLE_PVP))
-            world.setGameRule(GameRules.LOCATOR_BAR, game.flags.contains(Flag.ENABLE_LOCATOR_BAR))
+            world.setGameRule(GameRules.FALL_DAMAGE, !flags.contains(Flag.DISABLE_FALL_DAMAGE))
+            world.setGameRule(GameRules.PVP, !flags.contains(Flag.DISABLE_PVP))
+            world.setGameRule(GameRules.LOCATOR_BAR, flags.contains(Flag.ENABLE_LOCATOR_BAR))
             world.setGameRule(
                 GameRules.FIRE_SPREAD_RADIUS_AROUND_PLAYER,
-                if(game.flags.contains(Flag.ENABLE_FIRE_SPREAD)) 128 else 0
+                if(flags.contains(Flag.ENABLE_FIRE_SPREAD)) 128 else 0
             )
         }
 

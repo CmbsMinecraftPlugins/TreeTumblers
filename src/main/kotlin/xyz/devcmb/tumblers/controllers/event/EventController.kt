@@ -39,7 +39,7 @@ import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -73,7 +73,7 @@ object EventController : IController {
     var game: Int = 0
     val totalGames: Int
         get() {
-            return min(GameController.games.filter { it.votable }.size, 8)
+            return min(GameController.games.filter { it.data.votable }.size, 8)
         }
     val playedGames: ArrayList<String> = ArrayList()
 
@@ -640,7 +640,7 @@ object EventController : IController {
             it.sendPlayerListHeader(
                 Component.empty()
                     .appendNewline()
-                    .append(game.tabLogo)
+                    .append(game.data.tabLogo)
                     .appendNewline()
                     .appendNewline()
                     .appendNewline()
@@ -661,7 +661,7 @@ object EventController : IController {
         }
     }
 
-    fun getTopbarPlayersComponent(game: GameBase? = null): Component {
+    fun getTopbarPlayersComponent(game: AbstractGame? = null): Component {
         var teamComponent = Component.empty()
 
         val placements = game?.getTeamPlacements() ?: getEventTeamPlacements()
@@ -1099,7 +1099,7 @@ object EventController : IController {
         event.motd(
             Format.mm(
             "<b><green>Tree Tumblers</green> <white>•</white> <gold>Event Server</gold></b><br>" +
-                    "<aqua>${GameController.games.filter { it.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>${Constants.BRANCH}</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
+                    "<aqua>${GameController.games.filter { it.data.votable }.size} games</aqua> <dark_gray>|</dark_gray> ${if(Constants.IS_DEVELOPMENT) "<gold>${Constants.BRANCH}</gold>" else "<green>production</green>"} <dark_gray>|</dark_gray> <gray>v${TreeTumblers.plugin.pluginMeta.version} (${Constants.VERSION})</gray>",
         ))
     }
 
@@ -1200,7 +1200,7 @@ object EventController : IController {
 
         runBlocking {
             eventState.votingQuadrantGames.forEach {
-                VotingController.placeGame(it.key, GameController.games.find { game -> game.id == it.value }!!, null)
+                VotingController.placeGame(it.key, GameController.games.find { game -> game.data.id == it.value }!!, null)
             }
 
             Bukkit.broadcast(Format.success("Game state has been rolled back successfully!"))

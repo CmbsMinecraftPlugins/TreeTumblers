@@ -11,7 +11,7 @@ import org.bukkit.event.HandlerList
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.suspendSync
@@ -39,9 +39,9 @@ class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = fal
      *
      * @param observers The players who are viewing the cutscene as it begins. See [addObserver] and [removeObserver] for adding or removing mid-cutscene
      * @param map The [LoadedMap] to perform the cutscene on
-     * @param game The optional [GameBase] to associate the cutscene with
+     * @param game The optional [AbstractGame] to associate the cutscene with
      */
-    suspend fun run(observers: Set<Player>, map: LoadedMap, game: GameBase?) {
+    suspend fun run(observers: Set<Player>, map: LoadedMap, game: AbstractGame?) {
         this.observers.addAll(observers)
 
         context = CutsceneContext(this, observers, map, game)
