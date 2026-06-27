@@ -1,13 +1,21 @@
 package xyz.devcmb.tumblers.controllers.games.flood_escape
 
+import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
+import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.tp
 
 @EventGame
 class FloodEscapeController : GameBase(
@@ -15,19 +23,38 @@ class FloodEscapeController : GameBase(
     name = "Flood Escape",
     votable = true,
     maps = setOf(Map("sewer")),
-    cutsceneSteps = arrayListOf(),
-    flags = setOf(),
+    cutsceneSteps = arrayListOf(
+        CutsceneStep(
+            Component.empty()
+                .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
+                .append(Component.text("\uEA00").font(font))
+                .append(Component.text(" Flood Escape")),
+            "cutscene.start"
+        ) {
+            delay(5000)
+        }
+    ),
+    flags = setOf(
+        Flag.DISABLE_FALL_DAMAGE,
+        Flag.DISABLE_PVP,
+    ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font)
         .shadowColor(ShadowColor.none()),
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
     scores = hashMapOf(),
-    scoreboard = "floodEscapeScoreboard"
+    scoreboard = "floodEscapeScoreboard",
+    spawns = FloodEscapeSpawns.entries
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/flood_escape")
     }
+
+    val rounds: Int = configurable("$configRoot.rounds")
+    var currentRound: Int = 0
+    val roundIndex
+        get() = currentRound - 1
 
     /**
      * The load sequence that each individual game should do
@@ -37,7 +64,9 @@ class FloodEscapeController : GameBase(
      * Anything that needs to be executed before players can access the game should be done here
      */
     override suspend fun gameLoad() {
-        TODO("Not yet implemented")
+        repeat(rounds) {
+            loadMap(maps.random(), it)
+        }
     }
 
     /**
@@ -48,7 +77,22 @@ class FloodEscapeController : GameBase(
      * @param cycle The stage where the players are spawned
      */
     override suspend fun spawn(cycle: SpawnCycle) {
-        TODO("Not yet implemented")
+        if(cycle != SpawnCycle.PRE_ROUND) return
+
+        suspendSync {
+            gamePlayers.filter { it.isOnline && !it.team.playingTeam }.forEach {
+                makeSpectator(it.bukkitPlayer!!, sendActionBar = true, participating = false)
+            }
+
+            spawnPlayers(
+                loadedMaps[roundIndex],
+                gamePlayers.mapNotNull { it.bukkitPlayer }.toSet(),
+                FloodEscapeSpawns.SPAWN
+            )
+        }
+    }
+
+    override suspend fun gamePregame() {
     }
 
     /**
@@ -57,7 +101,12 @@ class FloodEscapeController : GameBase(
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        TODO("Not yet implemented")
+        repeat(rounds) {
+            currentRound++
+            spawn(SpawnCycle.PRE_ROUND)
+
+            delay(10000)
+        }
     }
 
     /**

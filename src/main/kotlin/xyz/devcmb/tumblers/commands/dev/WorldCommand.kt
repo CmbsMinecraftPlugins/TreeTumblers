@@ -79,6 +79,7 @@ class WorldCommand {
         } catch(e: Exception) {
             executor.sendMessage(Format.error("An error occurred while trying to save the world."))
             DebugUtil.severe("Failed to save world: ${e.message ?: "Unknown Error"}")
+            e.printStackTrace()
         }
     }
 

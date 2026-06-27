@@ -502,7 +502,10 @@ games:
             [[0, 72, 48], [-37, 65, 11]]
   flood_escape:
     worlds_folder: "flood_escape"
+    rounds: 3
     maps:
       sewer:
         world: "sewer"
         data:
+          cutscene:
+            start: [-5.0,70.0,3.0,-120.0,20.0]

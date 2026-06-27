@@ -36,15 +36,9 @@ object GameController : IController {
         val game: Class<out GameBase>,
         val logo: Component,
         val badges: List<BadgeController.Badge>?,
-        val spawns: List<SpawnLocation>?
-    ) {
-        fun getTemplate(): GameBase {
-            val gameType = games.find { it.id == id }?.game
-                ?: throw GameOperatorException("Cannot get a nonexistent game")
-
-            return gameType.getDeclaredConstructor().newInstance()
-        }
-    }
+        val spawns: List<SpawnLocation>?,
+        val configRoot: String,
+    )
 
     @Suppress("UNCHECKED_CAST")
     override fun init() {
@@ -66,7 +60,8 @@ object GameController : IController {
                     gameClass,
                     templateInstance.logo,
                     templateInstance.badges,
-                    templateInstance.spawns
+                    templateInstance.spawns,
+                    templateInstance.configRoot
                 ))
             }
     }

@@ -106,7 +106,6 @@ object WorldController : IController {
 
     suspend fun saveWorld(world: World, game: GameController.RegisteredGame, name: String? = null) {
         val name = name ?: world.name
-        val game = game.getTemplate()
 
         val worldsFolder = Path.of(
             worldRoot,
@@ -156,7 +155,6 @@ object WorldController : IController {
     }
 
     fun worldFileExists(game: GameController.RegisteredGame, name: String): Boolean {
-        val game = game.getTemplate()
         val worldsFolder = File(
             worldRoot,
             TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!

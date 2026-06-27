@@ -310,7 +310,10 @@ abstract class GameBase(
             .filterIsInstance<Interaction>()
             .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
 
-        if(markers.isEmpty()) throw GameControllerException("Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id}")
+        if(markers.isEmpty())
+            throw GameControllerException(
+                "Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id} (Are the chunks force loaded?)"
+            )
 
         players.forEachIndexed { index, player ->
             player.tp(markers[index % markers.size].location)
