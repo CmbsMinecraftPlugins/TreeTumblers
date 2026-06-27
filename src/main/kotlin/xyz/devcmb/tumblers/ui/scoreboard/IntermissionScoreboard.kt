@@ -26,7 +26,7 @@ class IntermissionScoreboard(
                     )
                 EventController.eventTimer != null ->
                     Format.mm(
-                        " <white>${EventController.eventTimerTitle ?: "Timer"}: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
+                        " <white>${EventController.eventTimer?.title ?: "Timer"}: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><timer></color></white>",
                         Placeholder.component("timer", EventController.eventTimer!!.format())
                     )
                 EventController.state == EventController.State.EVENT_INACTIVE ->

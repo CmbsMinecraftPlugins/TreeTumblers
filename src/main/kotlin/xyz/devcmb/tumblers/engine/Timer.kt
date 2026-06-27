@@ -6,7 +6,6 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.misc.TimerController
 import xyz.devcmb.tumblers.util.Format
@@ -29,6 +28,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
         Component.text(formatToMSS(currentTime))
     }
     var joined: Boolean = false
+    var title: String = "Timer"
 
     private val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
     private val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()

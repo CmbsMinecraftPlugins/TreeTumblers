@@ -438,6 +438,15 @@ abstract class GameBase(
     }
 
     /**
+     * Runs a [Timer] constructed externally
+     * @param timer The timer instance to start
+     */
+    suspend fun timer(timer: Timer) {
+        currentTimer = timer
+        currentTimer!!.start()
+    }
+
+    /**
      * Cancel a countdown if one is active
      */
     suspend fun cancelCountdown() {

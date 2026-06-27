@@ -1,7 +1,6 @@
 package xyz.devcmb.tumblers.ui.scoreboard.games
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController
@@ -17,6 +16,10 @@ class FloodEscapeScoreboard : HandledScoreboard.SidebarScoreboard() {
         val activeGame = GameController.activeGame as? FloodEscapeController ?: return arrayListOf()
         return arrayListOf(
             Component.empty(),
+            Format.mm(
+                "<white><aqua>${activeGame.currentTimer?.title ?: "Timer"}:</aqua> <timer></white>",
+                Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("0:00"))
+            ),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),

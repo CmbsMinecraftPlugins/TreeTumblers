@@ -7,20 +7,27 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.title.Title
+import org.bukkit.Location
 import org.bukkit.NamespacedKey
+import org.bukkit.block.data.type.Gate
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.player.PlayerInteractEvent
+import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.subtitleCountdown
 import xyz.devcmb.tumblers.util.suspendSync
-import xyz.devcmb.tumblers.util.tp
+import xyz.devcmb.tumblers.util.validateLocation
 
 @EventGame
 class FloodEscapeController : GameBase(
@@ -60,6 +67,10 @@ class FloodEscapeController : GameBase(
     var currentRound: Int = 0
     val roundIndex
         get() = currentRound - 1
+    val currentMap
+        get() = loadedMaps.getOrNull(roundIndex) ?: loadedMaps.first()
+
+    val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
 
     /**
      * The load sequence that each individual game should do
@@ -105,15 +116,36 @@ class FloodEscapeController : GameBase(
      *
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
+    var roundEnded = false
+    var roundActive = false
     override suspend fun gameOn() {
         repeat(rounds) {
             currentRound++
             preRound()
+            suspendSync { startRound() }
+            timer(Timer(360) {
+                id = "flood_escape_round_active"
+                title = "Round Over"
+                onComplete { early ->
+                    if(!early) roundEnded = true
+                }
+            })
+            roundActive = true
+
+            while(!roundEnded) {
+                delay(500)
+            }
+            roundActive = false
         }
     }
 
     suspend fun preRound() {
         spawn(SpawnCycle.PRE_ROUND)
+        timer(Timer(10) {
+            id = "flood_escape_pre_round"
+            title = "${if(currentRound == 1) "Game" else "Round"} Starts"
+        })
+
         delay(2000)
 
         val title = Format.mm("<yellow><b>Round $currentRound</b></yellow>")
@@ -128,6 +160,24 @@ class FloodEscapeController : GameBase(
         delay(3000)
 
         subtitleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), title, 5)
+        alivePlayers.addAll(gameParticipants)
+    }
+
+    fun startRound() {
+        val gateStart: Location = currentMap.data.getList("gate_start")
+            ?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Gate start not found")
+
+        val gateEnd: Location = currentMap.data.getList("gate_end")
+            ?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Gate end not found")
+
+        gateStart.forEachRegion(gateEnd) {
+            if(it.blockData !is Gate) return@forEachRegion
+            it.blockData = (it.blockData as Gate).also { gate ->
+                gate.isOpen = true
+            }
+        }
     }
 
     /**
@@ -149,5 +199,14 @@ class FloodEscapeController : GameBase(
      */
     override fun playerLeave(player: Player) {
         TODO("Not yet implemented")
+    }
+
+    @EventHandler
+    fun openGateEvent(event: PlayerInteractEvent) {
+        val block = event.clickedBlock ?: return
+
+        if(block.blockData is Gate) {
+            event.isCancelled = true
+        }
     }
 }

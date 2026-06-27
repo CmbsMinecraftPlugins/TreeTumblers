@@ -65,7 +65,6 @@ object EventController : IController {
     var state: State = State.EVENT_INACTIVE
 
     var eventTimer: Timer? = null
-    var eventTimerTitle: String? = null
 
     val readyCheckWaiting: ArrayList<Player> = ArrayList()
     var readyCheckAborted: Boolean = false
@@ -138,8 +137,8 @@ object EventController : IController {
                 state = State.PRE_EVENT
                 eventTimer = Timer(64) {
                     id = "pre_event_timer"
+                    title = "Event Start"
                 }
-                eventTimerTitle = "Event Start"
                 eventTimer!!.start()
 
                 delay(3000)
@@ -239,7 +238,6 @@ object EventController : IController {
         playedGames.clear()
         game = 0
         eventTimer = null
-        eventTimerTitle = null
     }
 
     suspend fun eventLoop() {
@@ -253,8 +251,8 @@ object EventController : IController {
             eventTimer = Timer(intermissionLength) {
                 id = "event_intermission_timer"
                 joined = true
+                title = "Intermission"
             }
-            eventTimerTitle = "Intermission"
             eventTimer!!.start()
         }
 
@@ -276,8 +274,8 @@ object EventController : IController {
         eventTimer = Timer(5) {
             id = "score_breakdown_timer"
             joined = true
+            title = "Score breakdown"
         }
-        eventTimerTitle = "Score breakdown"
         eventTimer!!.start()
 
         PlayerController.muteChat()
@@ -394,8 +392,8 @@ object EventController : IController {
         eventTimer = Timer(60) {
             id = "event_finale_countdown"
             joined = true
+            title = "Finale"
         }
-        eventTimerTitle = "Finale"
         eventTimer!!.start()
 
         state = State.FINAL_GAME
@@ -1211,8 +1209,8 @@ object EventController : IController {
                 id = "recovery_timer"
                 paused = true
                 joined = true
+                title = "Recovery"
             }
-            eventTimerTitle = "Recovery"
             eventTimer!!.start()
 
             startEventLoop()

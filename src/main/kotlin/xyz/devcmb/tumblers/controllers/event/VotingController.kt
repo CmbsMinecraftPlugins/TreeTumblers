@@ -276,6 +276,7 @@ object VotingController : IController {
         val originalBlocks: HashMap<Location, Material> = HashMap()
         EventController.eventTimer = Timer(20) {
             id = "event_voting"
+            title = "Voting"
             joined = true
 
             timeExecution(2) {
@@ -303,8 +304,6 @@ object VotingController : IController {
                 }
             }
         }
-
-        EventController.eventTimerTitle = "Voting"
         summonGames()
         delay(2000)
 
