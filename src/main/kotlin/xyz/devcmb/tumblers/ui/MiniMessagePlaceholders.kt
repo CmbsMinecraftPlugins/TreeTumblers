@@ -56,7 +56,7 @@ object MiniMessagePlaceholders {
          *
          * total - The total amount of rounds
          */
-        const val SCOREBOARD_CURRENT_ROUND = "<aqua>Round <white><current>/<total></white></aqua>"
+        const val SCOREBOARD_CURRENT_ROUND = "<color:${Event.EVENT_COLOR}><white>Round </white><current>/<total></color>"
 
         /**
          * player - The player who died

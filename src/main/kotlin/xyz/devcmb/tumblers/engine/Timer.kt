@@ -36,6 +36,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
     var title: String = "Timer"
 
     private val intervalBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, ((time: Int) -> Unit)?>> = HashMap()
+    private val intervalExecutions: HashMap<Int, suspend Timer.() -> Unit> = HashMap()
     private val timeBroadcasts: HashMap<Int, Triple<String, Format.MessageFormatter, (() -> Unit)?>> = HashMap()
     private val timeExecutions: HashMap<Int, suspend Timer.() -> Unit> = HashMap()
 
@@ -58,6 +59,10 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
      */
     fun intervalBroadcast(interval: Int, message: String, formatter: Format.MessageFormatter = Format.MessageFormatter.DEFAULT, onBroadcast: ((time: Int) -> Unit)? = null) {
         intervalBroadcasts[interval] = Triple(message, formatter, onBroadcast)
+    }
+
+    fun intervalExecution(interval: Int, method: suspend Timer.() -> Unit) {
+        intervalExecutions[interval] = method
     }
 
     /**
@@ -96,7 +101,7 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
 
                 if(currentTime <= 0) break
 
-                val intervalMessages = intervalBroadcasts.filter { currentTime % it.key == 0 }
+                val intervalMessages = intervalBroadcasts.filter { (time - currentTime) % it.key == 0 }
                 intervalMessages.forEach {
                     it.value.third?.invoke(currentTime)
                     Bukkit.broadcast(it.value.second.formatMessage(Format.mm(
@@ -106,6 +111,13 @@ class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
                         Placeholder.unparsed("timeSeconds", (currentTime % 60).toString()),
                         Placeholder.component("time", format())
                     )))
+                }
+
+                val intervalFunctions = intervalExecutions.filter { (time - currentTime) % it.key == 0 }
+                intervalFunctions.forEach { func ->
+                    TreeTumblers.pluginScope.launch {
+                        func.value.invoke(this@Timer)
+                    }
                 }
 
                 if(timeBroadcasts.containsKey(currentTime)) {

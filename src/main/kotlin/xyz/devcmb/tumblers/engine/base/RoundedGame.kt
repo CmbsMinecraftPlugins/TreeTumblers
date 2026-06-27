@@ -5,13 +5,18 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.subtitleCountdown
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -49,11 +54,11 @@ abstract class RoundedGame(
     open suspend fun preRound() {
         spawn(SpawnCycle.PRE_ROUND)
         preRound = true
-        playerCheck()
         timer(Timer(10) {
             id = "${data.id}_round_start_timer"
             title = "${if(currentRound == 1) "Game" else "Round"} Starts"
         })
+        playerCheck()
 
         delay(2000)
 
@@ -122,5 +127,40 @@ abstract class RoundedGame(
     suspend fun endRound() {
         cancelCountdown()
         roundActive = false
+    }
+
+    override suspend fun postGame() {
+        val placements = getTeamPlacements()
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        gamePlayers.filter { !it.team.playingTeam }.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Component.empty(),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        delay(5000)
+        announceTeamScores()
+        announceIndivScores()
+        announceOverallTeamScores()
     }
 }

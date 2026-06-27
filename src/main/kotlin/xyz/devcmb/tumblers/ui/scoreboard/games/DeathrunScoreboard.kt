@@ -32,12 +32,12 @@ class DeathrunScoreboard(
 
                 component = component.append(when (result) {
                     null -> {
-                        if(roundIndex < activeGame.roundIndex) Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
-                        else Format.mm("${if (setRound != 0) " " else ""}<white>[ ]</white>")
+                        if(roundIndex < activeGame.roundIndex) Format.mm("${if(setRound != 0) " " else ""}<gray>[<yellow>DNF</yellow>]</gray>")
+                        else Format.mm("${if (setRound != 0) " " else ""}<gray>[ ]</gray>")
                     }
-                    -1 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<yellow>DNF</yellow>]</white>")
-                    -2 -> Format.mm("${if(setRound != 0) " " else ""}<white>[<red>\uD83D\uDDE1</red>]</white>")
-                    else -> Format.mm("${if (setRound != 0) " " else ""}<white>[<green>$result${getOrdinalSuffix(result)}</green>]</white>")
+                    -1 -> Format.mm("${if(setRound != 0) " " else ""}<gray>[<yellow>DNF</yellow>]</gray>")
+                    -2 -> Format.mm("${if(setRound != 0) " " else ""}<gray>[<red>\uD83D\uDDE1</red>]</gray>")
+                    else -> Format.mm("${if (setRound != 0) " " else ""}<gray>[<green>$result${getOrdinalSuffix(result)}</green>]</gray>")
                 })
             }
 

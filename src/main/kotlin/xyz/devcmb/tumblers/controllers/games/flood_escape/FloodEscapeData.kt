@@ -29,6 +29,8 @@ object FloodEscapeData : GameData(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM,
+        Flag.DISABLE_NATURAL_REGENERATION
     ),
     icon = Component.text("\uEA00").font(font),
     logo = Component.text("\uEA01").font(font)

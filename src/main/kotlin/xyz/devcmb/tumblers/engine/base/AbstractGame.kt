@@ -679,11 +679,21 @@ abstract class AbstractGame(
     suspend fun playerCheck() {
         if(!gameParticipants.all { it.isOnline }) {
             playerCheckActive = true
+            var pausedByPlayerCheck = false
+            if(currentTimer != null && !currentTimer!!.paused) {
+                currentTimer!!.paused = true
+                pausedByPlayerCheck = true
+            }
+
             while(!gameParticipants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
                 delay(500)
                 gamePlayers.forEach {
                     it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${gameParticipants.filter { entry -> entry.isOnline }.size}/${gameParticipants.size}</gray>"))
                 }
+            }
+
+            if(pausedByPlayerCheck && currentTimer != null) {
+                currentTimer!!.paused = false
             }
             playerCheckSkipped = false
             playerCheckActive = false
@@ -777,6 +787,12 @@ abstract class AbstractGame(
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
         if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
             event.isCancelled = true
+            event.player.showTitle(Title.title(
+                Format.mm("<red><b>You died!</b></red>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+            ))
+
             makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
         }
     }

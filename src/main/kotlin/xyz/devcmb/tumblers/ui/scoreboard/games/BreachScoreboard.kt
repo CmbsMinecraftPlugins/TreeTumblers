@@ -5,6 +5,7 @@ import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -30,7 +31,7 @@ class BreachScoreboard(
 
         return arrayListOf(
             Component.empty(),
-            Format.mm("<aqua>Round </aqua><white>${activeGame.currentRound}</white>"),
+            Format.mm("<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Round</white> ${activeGame.currentRound}</color>"),
             Component.empty(),
             activeGame.playingTeams.first.formattedName.append(Format.mm(" <dark_gray>-</dark_gray> <gray>${activeGame.team1score}/${BreachController.bestOf}")),
             activeGame.playingTeams.second.formattedName.append(Format.mm(" <dark_gray>-</dark_gray> <gray>${activeGame.team2score}/${BreachController.bestOf}")),
