@@ -500,3 +500,9 @@ games:
           # The range of blocks in the map can break once the map starts to deteriorate
           bounds:
             [[0, 72, 48], [-37, 65, 11]]
+  flood_escape:
+    worlds_folder: "flood_escape"
+    maps:
+      sewer:
+        world: "sewer"
+        data:
