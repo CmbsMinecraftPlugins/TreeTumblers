@@ -28,7 +28,7 @@ object GameController : IController {
 
     data class RegisteredGame(
         val game: Class<out AbstractGame>,
-        val data: GameData
+        val data: GameData,
     ) {
         fun getTemplate(): AbstractGame {
             val gameType = games.find { it.data.id == data.id }?.game

@@ -12,8 +12,12 @@ import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formatToMSS
 import java.util.UUID
+import kotlin.time.Duration
 
 class Timer(val time: Int, val init: Timer.() -> Unit = {}) {
+    constructor(time: Duration, init: Timer.() -> Unit = {})
+        : this(time.inWholeSeconds.toInt(), init)
+
     var currentTime = time
     var job: Job? = null
     var endedEarly: Boolean? = null

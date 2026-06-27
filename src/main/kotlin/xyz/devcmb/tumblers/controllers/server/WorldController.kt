@@ -19,7 +19,6 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.VoidGenerator
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
@@ -109,7 +108,7 @@ object WorldController : IController {
 
         val worldsFolder = Path.of(
             worldRoot,
-            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")
+            TreeTumblers.plugin.config.getString("games.${game.data.id}.worlds_folder")
         )
 
         saveWorld(world, File(worldsFolder.toString(), name))
@@ -157,7 +156,7 @@ object WorldController : IController {
     fun worldFileExists(game: GameController.RegisteredGame, name: String): Boolean {
         val worldsFolder = File(
             worldRoot,
-            TreeTumblers.plugin.config.getString("${game.configRoot}.worlds_folder")!!
+            TreeTumblers.plugin.config.getString("games.${game.data.id}.worlds_folder")!!
         )
 
         return File(worldsFolder, name).exists()

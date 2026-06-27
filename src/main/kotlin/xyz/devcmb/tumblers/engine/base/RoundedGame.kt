@@ -9,6 +9,7 @@ import net.kyori.adventure.title.Title
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.subtitleCountdown
 import kotlin.time.Duration
@@ -49,8 +50,10 @@ abstract class RoundedGame(
         spawn(SpawnCycle.PRE_ROUND)
         preRound = true
         playerCheck()
-        // TODO: Replace with the `timer` syntax on the other branch
-        asyncCountdown(10) {}
+        timer(Timer(10) {
+            id = "${data.id}_round_start_timer"
+            title = "${if(currentRound == 1) "Game" else "Round"} Starts"
+        })
 
         delay(2000)
 
@@ -96,12 +99,16 @@ abstract class RoundedGame(
             currentRound++
             preRound()
             roundActive = true
-            asyncCountdown(roundLength) { isEarly ->
-                if(!isEarly) {
-                    onRoundTimeout()
-                    roundActive = false
+            timer(Timer(roundLength) {
+                id = "${data.id}_round_on_timer"
+                title = "${if(currentRound == rounds) "Game" else "Round"} Over"
+                onComplete { isEarly ->
+                    if(!isEarly) {
+                        onRoundTimeout()
+                        roundActive = false
+                    }
                 }
-            }
+            })
             startRound()
 
             while(roundActive) {

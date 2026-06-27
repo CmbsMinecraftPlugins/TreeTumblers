@@ -1,12 +1,5 @@
 package xyz.devcmb.tumblers.controllers.games.flood_escape
 
-import io.papermc.paper.util.Tick
-import kotlinx.coroutines.delay
-import net.kyori.adventure.audience.Audience
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
-import net.kyori.adventure.title.Title
 import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.block.data.type.Gate
@@ -17,56 +10,22 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.engine.Timer
-import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
-import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
-import xyz.devcmb.tumblers.util.subtitleCountdown
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.validateLocation
 
 @EventGame
-class FloodEscapeController : GameBase(
-    id = "flood_escape",
-    name = "Flood Escape",
-    votable = true,
-    maps = setOf(Map("sewer")),
-    cutsceneSteps = arrayListOf(
-        CutsceneStep(
-            Component.empty()
-                .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(font))
-                .append(Component.text(" Flood Escape")),
-            "cutscene.start"
-        ) {
-            delay(5000)
-        }
-    ),
-    flags = setOf(
-        Flag.DISABLE_FALL_DAMAGE,
-        Flag.DISABLE_PVP,
-    ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
-        .shadowColor(ShadowColor.none()),
-    scores = hashMapOf(),
-    scoreboard = "floodEscapeScoreboard",
-    spawns = FloodEscapeSpawns.entries
+class FloodEscapeController : RoundedGame(
+    FloodEscapeData,
+    configurable("games.flood_escape.rounds"),
+    360
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/flood_escape")
     }
 
-    val rounds: Int = configurable("$configRoot.rounds")
-    var currentRound: Int = 0
-    val roundIndex
-        get() = currentRound - 1
     val currentMap
         get() = loadedMaps.getOrNull(roundIndex) ?: loadedMaps.first()
 
@@ -81,7 +40,7 @@ class FloodEscapeController : GameBase(
      */
     override suspend fun gameLoad() {
         repeat(rounds) {
-            loadMap(maps.random(), it)
+            loadMap(data.maps.random(), it)
         }
     }
 
@@ -116,54 +75,12 @@ class FloodEscapeController : GameBase(
      *
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
-    var roundEnded = false
-    var roundActive = false
-    override suspend fun gameOn() {
-        repeat(rounds) {
-            currentRound++
-            preRound()
-            suspendSync { startRound() }
-            timer(Timer(360) {
-                id = "flood_escape_round_active"
-                title = "Round Over"
-                onComplete { early ->
-                    if(!early) roundEnded = true
-                }
-            })
-            roundActive = true
-
-            while(!roundEnded) {
-                delay(500)
-            }
-            roundActive = false
-        }
-    }
-
-    suspend fun preRound() {
-        spawn(SpawnCycle.PRE_ROUND)
-        timer(Timer(10) {
-            id = "flood_escape_pre_round"
-            title = "${if(currentRound == 1) "Game" else "Round"} Starts"
-        })
-
-        delay(2000)
-
-        val title = Format.mm("<yellow><b>Round $currentRound</b></yellow>")
-        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
-            it.showTitle(Title.title(
-                title,
-                Component.empty(),
-                Title.Times.times(Tick.of(3), Tick.of(999), Tick.of(0))
-            ))
-        }
-
-        delay(3000)
-
-        subtitleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), title, 5)
+    override suspend fun preRound() {
         alivePlayers.addAll(gameParticipants)
+        super.preRound()
     }
 
-    fun startRound() {
+    override suspend fun startRound() {
         val gateStart: Location = currentMap.data.getList("gate_start")
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate start not found")
@@ -172,10 +89,12 @@ class FloodEscapeController : GameBase(
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Gate end not found")
 
-        gateStart.forEachRegion(gateEnd) {
-            if(it.blockData !is Gate) return@forEachRegion
-            it.blockData = (it.blockData as Gate).also { gate ->
-                gate.isOpen = true
+        suspendSync {
+            gateStart.forEachRegion(gateEnd) {
+                if(it.blockData !is Gate) return@forEachRegion
+                it.blockData = (it.blockData as Gate).also { gate ->
+                    gate.isOpen = true
+                }
             }
         }
     }
