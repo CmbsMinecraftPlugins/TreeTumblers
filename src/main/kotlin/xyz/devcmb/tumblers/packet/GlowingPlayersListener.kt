@@ -8,10 +8,9 @@ import com.github.retrooper.packetevents.protocol.packettype.PacketType
 import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class GlowingPlayersListener : PacketListener {
@@ -21,8 +20,8 @@ class GlowingPlayersListener : PacketListener {
         if (
             event.packetType != PacketType.Play.Server.ENTITY_METADATA
             || GameController.activeGame == null
-            || GameController.activeGame!!.currentState != GameBase.State.GAME_ON
-            || GameController.activeGame!!.flags.contains(Flag.DISABLE_TEAM_GLOW)
+            || GameController.activeGame!!.currentState != AbstractGame.State.GAME_ON
+            || GameController.activeGame!!.data.flags.contains(Flag.DISABLE_TEAM_GLOW)
         ) return
 
         val receiver = event.getPlayer<Player>()

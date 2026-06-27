@@ -48,9 +48,9 @@ object BadgeCollectionInventory : HandledInventory {
                         it.itemName(Component.empty())
                         it.lore(listOf(
                             Component.empty(),
-                            game.logo.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
+                            game.data.logo.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
                         ))
-                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "games/${game.id}")
+                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "games/${game.data.id}")
                     }
                 }
 
@@ -85,7 +85,7 @@ object BadgeCollectionInventory : HandledInventory {
             if(selectedGame.index != null && selectedGame.game != null) {
                 val playerBadges = view.player.tumblingPlayer.badges
                 forEachInGridIndexed(5, 4) { index, row, col ->
-                    val badge = selectedGame.game!!.badges?.getOrNull(index) ?: return@forEachInGridIndexed
+                    val badge = selectedGame.game!!.data.badges?.getOrNull(index) ?: return@forEachInGridIndexed
 
                     val item = if(badge !in playerBadges.keys) {
                         ItemStack.of(Material.ECHO_SHARD).apply {

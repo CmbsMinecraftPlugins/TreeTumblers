@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.controllers.games
 
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
-import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -11,35 +10,28 @@ import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.IController
-import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.engine.map.SpawnLocation
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
 object GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
-    var activeGame: GameBase? = null
+    var activeGame: AbstractGame? = null
     var activeGameJob: Job? = null
 
     data class RegisteredGame(
-        val id: String,
-        val name: String,
-        val votable: Boolean,
-        val game: Class<out GameBase>,
-        val logo: Component,
-        val badges: List<BadgeController.Badge>?,
-        val spawns: List<SpawnLocation>?
+        val game: Class<out AbstractGame>,
+        val data: GameData
     ) {
-        fun getTemplate(): GameBase {
-            val gameType = games.find { it.id == id }?.game
+        fun getTemplate(): AbstractGame {
+            val gameType = games.find { it.data.id == data.id }?.game
                 ?: throw GameOperatorException("Cannot get a nonexistent game")
 
             return gameType.getDeclaredConstructor().newInstance()
@@ -54,19 +46,14 @@ object GameController : IController {
         )
 
         reflections.getTypesAnnotatedWith(EventGame::class.java)
-            .filter { GameBase::class.java.isAssignableFrom(it) }
+            .filter { AbstractGame::class.java.isAssignableFrom(it) }
             .forEach { clazz ->
-                val gameClass = clazz as Class<out GameBase>
+                val gameClass = clazz as Class<out AbstractGame>
                 val templateInstance = gameClass.getDeclaredConstructor().newInstance()
 
                 games.add(RegisteredGame(
-                    templateInstance.id,
-                    templateInstance.name,
-                    templateInstance.votable,
                     gameClass,
-                    templateInstance.logo,
-                    templateInstance.badges,
-                    templateInstance.spawns
+                    templateInstance.data
                 ))
             }
     }
@@ -80,7 +67,7 @@ object GameController : IController {
     suspend fun startGame(id: String) {
         if(activeGame != null) throw GameOperatorException("Cannot start a game while one is currently active")
 
-        val gameClass = games.find { it.id == id }?.game
+        val gameClass = games.find { it.data.id == id }?.game
             ?: throw GameOperatorException("Cannot start a nonexistent game")
 
         val game = gameClass.getDeclaredConstructor().newInstance()
@@ -107,12 +94,12 @@ object GameController : IController {
 
     @EventHandler
     fun playerFoodEvent(event: FoodLevelChangeEvent) {
-        if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) event.isCancelled = true
+        if(activeGame == null || !activeGame!!.data.flags.contains(Flag.ENABLE_HUNGER)) event.isCancelled = true
     }
 
     @EventHandler(priority = EventPriority.HIGH)
     fun playerJoin(event: PlayerJoinEvent) {
-        if(activeGame == null || !activeGame!!.flags.contains(Flag.ENABLE_HUNGER)) {
+        if(activeGame == null || !activeGame!!.data.flags.contains(Flag.ENABLE_HUNGER)) {
             val player = event.player
             player.foodLevel = 20
             player.saturation = 0f

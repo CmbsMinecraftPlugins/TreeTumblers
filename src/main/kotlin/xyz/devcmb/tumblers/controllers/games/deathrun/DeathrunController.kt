@@ -19,7 +19,6 @@ import org.bukkit.block.data.type.Gate
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
-import org.bukkit.entity.ArmorStand
 import org.bukkit.entity.Fireball
 import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
@@ -29,8 +28,6 @@ import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ColorableArmorMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
@@ -44,11 +41,8 @@ import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
-import xyz.devcmb.tumblers.engine.Flag
-import xyz.devcmb.tumblers.engine.GameBase
-import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
-import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.*
@@ -57,121 +51,9 @@ import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import kotlin.collections.get
 import kotlin.math.max
 
+// TODO: Convert to a RoundedGame
 @EventGame
-class DeathrunController : GameBase(
-    id = "deathrun",
-    name = "Deathrun",
-    votable = false,
-    maps = setOf(
-        Map("forest")
-    ),
-    cutsceneSteps = arrayListOf(
-        CutsceneStep(Component.empty()
-            .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")))
-            .append(Component.text(" Deathrun"))
-        ) {
-            teleportConfig("cutscene.start")
-            delay(5000)
-        },
-        CutsceneStep(
-            Format.mm("In this game, 1 team at a time will be the <red>trappers</red>, while everyone else is a <aqua>runner</aqua>"),
-            "cutscene.trapper_showcase"
-        ) { map ->
-            val armorStands: ArrayList<ArmorStand> = ArrayList()
-            map.data.getList("cutscene.armor_stands")?.forEach {
-                if(it !is List<*>) throw GameControllerException("Cutscene armor stand location table is not a list")
-                val location = it.validateLocation(map.world) ?: throw GameControllerException("Cutscene armor stand locations are not valid")
-
-                suspendSync {
-                    map.world.spawn(location, ArmorStand::class.java) { stand ->
-                        stand.equipment.setHelmet(ItemStack.of(Material.LEATHER_HELMET).apply {
-                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
-                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
-                            }
-                        }, true)
-
-                        stand.equipment.setChestplate(ItemStack.of(Material.LEATHER_CHESTPLATE).apply {
-                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
-                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
-                            }
-                        }, true)
-
-                        stand.equipment.setLeggings(ItemStack.of(Material.LEATHER_LEGGINGS).apply {
-                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
-                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
-                            }
-                        }, true)
-
-                        stand.equipment.setBoots(ItemStack.of(Material.LEATHER_BOOTS).apply {
-                            itemMeta = (itemMeta as ColorableArmorMeta).also { meta ->
-                                meta.setColor(Color.fromRGB(Team.RED.color.value()))
-                            }
-                        }, true)
-
-                        armorStands.add(stand)
-                    }
-                }
-
-                delay(500)
-            }
-
-            delay(2500)
-            suspendSync {
-                armorStands.forEach(ArmorStand::remove)
-                armorStands.clear()
-            }
-        },
-        CutsceneStep(
-            Format.mm("<red>Trappers</red> can activate traps that make progressing harder.<newline><red>Trappers</red> get points when they <yellow>damage</yellow> and when they <red>kill</red> players.<newline><aqua>Runners</aqua> have $lives lives, losing 1 whenever they take damage."),
-            "cutscene.trap_showcase"
-        ) {
-            val trap = (game as DeathrunController).mapTraps[0]!![0]
-            delay(1000)
-            trap.activate()
-            delay(700)
-        },
-        CutsceneStep(
-            Format.mm("The amount of score <aqua>runners</aqua> get from completing a run is based on their <yellow>placement</yellow><newline>The faster they complete the course, the more <yellow>score</yellow> they'll get"),
-            "cutscene.runner_score_showcase"
-        ) {
-            val game = game as DeathrunController
-            suspendSync {
-                game.summonScoreDisplay()
-            }
-            delay(6000)
-            suspendSync {
-                game.endDisplay?.remove()
-                game.endDisplay = null
-            }
-        },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
-    ),
-    flags = setOf(
-        Flag.DISABLE_FALL_DAMAGE,
-        Flag.DISABLE_PVP,
-        Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM
-    ),
-    scores = hashMapOf(
-        // this * placement = awarded score
-        DeathrunScoreSource.RUN_COMPLETE to 8,
-        // constant value
-        DeathrunScoreSource.RUN_FAILED to 15,
-
-        // split across the whole team
-        DeathrunScoreSource.TRAP_KILL to 40,
-        DeathrunScoreSource.TRAP_DAMAGE to 20
-    ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
-        .shadowColor(ShadowColor.none()),
-    scoreboard = "deathrunScoreboard"
-) {
-
+class DeathrunController : AbstractGame(DeathrunData) {
     companion object {
         val lives: Int = configurable("games.deathrun.lives")
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")
@@ -265,7 +147,7 @@ class DeathrunController : GameBase(
         repeat(rounds) {
             placements.add(hashMapOf())
 
-            val map = loadMap(maps.random(), it + 1)
+            val map = loadMap(data.maps.random(), it + 1)
             val roundMapTraps: ArrayList<Trap> = ArrayList(map.data.getList("traps")?.map { trap ->
                 if(
                     trap !is HashMap<*,*>

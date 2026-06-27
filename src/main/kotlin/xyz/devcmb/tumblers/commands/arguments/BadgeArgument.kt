@@ -7,7 +7,6 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
@@ -39,6 +38,6 @@ class BadgeArgument : ArgumentResolver<CommandSender, BadgeController.Badge>() {
     }
 
     fun getBadges(): List<BadgeController.Badge> {
-        return GameController.games.flatMap { it.badges.orEmpty() }
+        return GameController.games.flatMap { it.data.badges.orEmpty() }
     }
 }

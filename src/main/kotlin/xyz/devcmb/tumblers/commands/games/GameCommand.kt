@@ -15,7 +15,7 @@ import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.DebugToolkit
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -34,7 +34,7 @@ class GameCommand {
         }
 
         try {
-            GameController.startGameAsync(game.id)
+            GameController.startGameAsync(game.data.id)
             sender.sendMessage(Format.success("Started game successfully!"))
         } catch(e: GameOperatorException) {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))
@@ -126,7 +126,7 @@ class GameCommand {
     fun executeSpawnSummon(@Context player: Player, @Arg("game") game: GameController.RegisteredGame, @Arg("spawn location") location: SpawnLocation) {
         val playerLocation = player.location.toCenterXZLocation()
         playerLocation.world.spawn(playerLocation, Interaction::class.java) {
-            it.persistentDataContainer.set(GameBase.spawnKey, PersistentDataType.STRING, location.name.lowercase())
+            it.persistentDataContainer.set(AbstractGame.spawnKey, PersistentDataType.STRING, location.name.lowercase())
         }
 
         player.sendMessage(Format.success(Format.mm("Summoned spawn <white>${location.name}</white> successfully!")))

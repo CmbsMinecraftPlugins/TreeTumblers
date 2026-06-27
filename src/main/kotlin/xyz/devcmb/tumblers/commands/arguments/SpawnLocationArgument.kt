@@ -7,7 +7,6 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.Format
@@ -19,9 +18,9 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
         argument: String
     ): ParseResult<SpawnLocation> {
         val game = getSpawns(invocation) ?: return ParseResult.failure(Format.error("Cannot get game from invocation!"))
-        if(game.spawns == null) return ParseResult.failure(Format.error("Game does not have any spawns!"))
+        if(game.data.spawns == null) return ParseResult.failure(Format.error("Game does not have any spawns!"))
 
-        val spawn = game.spawns.find { it.name.equals(argument, true) }
+        val spawn = game.data.spawns.find { it.name.equals(argument, true) }
         if(spawn == null) return ParseResult.failure(Format.error("Game does not have a spawn named $argument!"))
 
         return ParseResult.success(spawn)
@@ -35,9 +34,9 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
         val game: GameController.RegisteredGame = getSpawns(invocation)
             ?: return SuggestionResult.empty()
 
-        if(game.spawns == null) return SuggestionResult.empty()
+        if(game.data.spawns == null) return SuggestionResult.empty()
 
-        return game.spawns
+        return game.data.spawns
             .map { it.name }
             .stream()
             .collect(SuggestionResult.collector())
@@ -45,7 +44,7 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
 
     fun getSpawns(invocation: Invocation<CommandSender>): GameController.RegisteredGame? {
         val gameArgument = invocation.arguments().asList()[2] ?: return null
-        val game = GameController.games.find { it.name.equals(gameArgument, true) }
+        val game = GameController.games.find { it.data.id.equals(gameArgument, true) }
         return game
     }
 }

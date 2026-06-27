@@ -8,7 +8,7 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.vehicle.VehicleExitEvent
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.engine.GameBase
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
@@ -20,13 +20,13 @@ import xyz.devcmb.tumblers.util.validateLocation
  * @param cutscene The cutscene object
  * @param observers A set of [Player] instances that are viewing the cutscene at the time of its creation. See [Cutscene.addObserver] and [Cutscene.removeObserver] for modifying this while a cutscene is running.
  * @param map The [LoadedMap] where the cutscene is happening. Does not have to be associated with a game
- * @param game The optional [GameBase] instance that this is attached to. Optional and is only required to pass on to the game object to the [CutsceneStep] lambda
+ * @param game The optional [AbstractGame] instance that this is attached to. Optional and is only required to pass on to the game object to the [CutsceneStep] lambda
  */
 class CutsceneContext(
     val cutscene: Cutscene,
     val observers: Set<Player>,
     val map: LoadedMap,
-    val game: GameBase?,
+    val game: AbstractGame?,
 ): Listener {
     /**
      * Teleports a specified [player] or all observers to a certain location based on the result of [getLocation] with the specified [path]
