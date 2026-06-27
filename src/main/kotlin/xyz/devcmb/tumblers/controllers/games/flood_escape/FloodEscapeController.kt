@@ -1,9 +1,12 @@
 package xyz.devcmb.tumblers.controllers.games.flood_escape
 
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
+import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
+import net.kyori.adventure.title.Title
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
@@ -13,7 +16,9 @@ import xyz.devcmb.tumblers.engine.GameBase
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.subtitleCountdown
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 
@@ -103,10 +108,26 @@ class FloodEscapeController : GameBase(
     override suspend fun gameOn() {
         repeat(rounds) {
             currentRound++
-            spawn(SpawnCycle.PRE_ROUND)
-
-            delay(10000)
+            preRound()
         }
+    }
+
+    suspend fun preRound() {
+        spawn(SpawnCycle.PRE_ROUND)
+        delay(2000)
+
+        val title = Format.mm("<yellow><b>Round $currentRound</b></yellow>")
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+            it.showTitle(Title.title(
+                title,
+                Component.empty(),
+                Title.Times.times(Tick.of(3), Tick.of(999), Tick.of(0))
+            ))
+        }
+
+        delay(3000)
+
+        subtitleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), title, 5)
     }
 
     /**

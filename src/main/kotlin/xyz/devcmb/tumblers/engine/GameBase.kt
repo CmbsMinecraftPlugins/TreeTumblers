@@ -309,6 +309,7 @@ abstract class GameBase(
         val markers = world.entities
             .filterIsInstance<Interaction>()
             .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+            .shuffled()
 
         if(markers.isEmpty())
             throw GameControllerException(
