@@ -1,5 +1,14 @@
 package xyz.devcmb.tumblers.controllers.games.flood_escape
 
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
+import com.sk89q.worldedit.world.block.BlockType
+import com.sk89q.worldedit.world.block.BlockTypes
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.Location
@@ -20,15 +29,21 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
+import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.getPostPasteBounds
+import xyz.devcmb.tumblers.util.getPostPasteLocation
 import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import java.io.File
+import kotlin.io.path.Path
 import kotlin.math.roundToInt
 
 @EventGame
@@ -39,6 +54,10 @@ class FloodEscapeController : RoundedGame(
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/flood_escape")
+        val obstaclesDirectory: String = configurable("templates.flood_escape_obstacles")
+            get() {
+                return field.replace("&", TreeTumblers.plugin.dataPath.toString())
+            }
     }
 
     val currentMap
@@ -57,7 +76,8 @@ class FloodEscapeController : RoundedGame(
     override suspend fun gameLoad() {
         repeat(rounds) {
             playerPlacements.add(hashMapOf())
-            loadMap(data.maps.random(), it)
+            val map = loadMap(data.maps.random(), it)
+            generateObstacles(it, map)
         }
     }
 
@@ -82,6 +102,163 @@ class FloodEscapeController : RoundedGame(
                 FloodEscapeSpawns.SPAWN
             )
         }
+    }
+
+    val obstacles: ArrayList<ArrayList<LoadedObstacle>> = ArrayList()
+    val bridges: ArrayList<ArrayList<LoadedBridge>> = ArrayList()
+
+    private fun generateObstacles(roundIndex: Int, map: LoadedMap) {
+        val pivotStart = map.data.getList("pivot_start")
+            ?.validateLocation(map.world)
+            ?: throw GameControllerException("Map ${map.id} does not have a valid pivot start")
+
+        val obstacles: ArrayList<LoadedObstacle> = ArrayList()
+        val bridges: ArrayList<LoadedBridge> = ArrayList()
+
+        var parent: Location = pivotStart
+        repeat(30) {
+            val (obstacle, obstacleEnd) = generateObstacle(parent, it, map)
+            obstacles.add(obstacle)
+            val (bridge, loc) = generateBridge(obstacleEnd, it, map)
+            bridges.add(bridge)
+
+            parent = loc
+        }
+
+        this.obstacles.add(obstacles)
+        this.bridges.add(bridges)
+    }
+
+    fun generateObstacle(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Pair<LoadedObstacle, Location> {
+        val difficulty = Difficulty.entries.reversed().find { it.appearAfter >= obstacleIndex }
+            ?: throw GameControllerException("No difficulty could be found for obstacle $obstacleIndex")
+
+        val type = Type.entries.random()
+
+        val mapObstacles = File(obstaclesDirectory, map.id)
+        val obstaclePoolDir = File(Path(
+            mapObstacles.path,
+            difficulty.name.lowercase(),
+            type.name.lowercase()
+        ).toString())
+
+        if(!obstaclePoolDir.exists() || !obstaclePoolDir.isDirectory)
+            throw GameControllerException("Obstacle pool for ${map.id} (difficulty $difficulty and type $type) does not have a corresponding folder")
+
+        val selectedObstacleFile = obstaclePoolDir.listFiles().random()
+        val (clipboard, endPivotWorld) = loadSchematic(selectedObstacleFile, startLocation, map)
+
+        return LoadedObstacle(
+            obstacleIndex,
+            difficulty,
+            type,
+            clipboard.getPostPasteBounds(startLocation)
+        ) to endPivotWorld
+    }
+
+    fun generateBridge(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Pair<LoadedBridge, Location> {
+        val mapBridges = File(Path(obstaclesDirectory, map.id, "bridge").toString())
+        if(!mapBridges.exists() || !mapBridges.isDirectory) throw GameControllerException("Map ${map.id} does not have a valid bridges folder")
+
+        val selectedBridgeFile = mapBridges.listFiles().random()
+        val (clipboard, endPivotWorld) = loadSchematic(selectedBridgeFile, startLocation, map)
+
+        return LoadedBridge(
+            obstacleIndex,
+            clipboard.getPostPasteBounds(startLocation)
+        ) to endPivotWorld
+    }
+
+    fun loadSchematic(file: File, location: Location, map: LoadedMap): Pair<Clipboard, Location> {
+        val format = ClipboardFormats.findByFile(file)
+            ?: throw GameControllerException("Selected obstacle ${file.name} is not a valid schematic file")
+
+        val clipboard = format.getReader(file.inputStream()).use { reader ->
+            reader.read()
+        }
+
+        clipboard.origin = getPivot(clipboard, BlockTypes.REDSTONE_BLOCK!!)
+            ?: throw GameControllerException("A pivot line of 5 redstone blocks was not found in the schematic")
+
+        val endPivot = getPivot(clipboard, BlockTypes.DIAMOND_BLOCK!!)
+            ?: throw GameControllerException("A pivot line of 5 diamond blocks was not found in the schematic")
+
+        clipboard.region.forEach { pos ->
+            val block = clipboard.getBlock(pos)
+            if (block.blockType == BlockTypes.NETHERITE_BLOCK || block.blockType == BlockTypes.REDSTONE_BLOCK || block.blockType == BlockTypes.DIAMOND_BLOCK) {
+                clipboard.setBlock(pos.x(), pos.y(), pos.z(), BlockTypes.AIR!!.defaultState)
+            }
+        }
+
+        val holder = ClipboardHolder(clipboard)
+        val session = WorldEdit.getInstance()
+            .newEditSessionBuilder()
+            .world(BukkitAdapter.adapt(map.world))
+            .fastMode(true)
+            .build()
+
+        val operation = holder
+            .createPaste(session)
+            .to(location.toBlockVector3())
+            .ignoreAirBlocks(true)
+            .build()
+
+        Operations.complete(operation)
+        session.flushQueue()
+
+        return clipboard to clipboard.getPostPasteLocation(endPivot, location)
+    }
+
+    fun getPivot(clipboard: Clipboard, type: BlockType): BlockVector3? {
+        clipboard.region.forEach { origin ->
+            if (clipboard.getBlock(origin).blockType != type) return@forEach
+
+            fun check(dx: Int, dz: Int): BlockVector3? {
+                for (i in -2..2) {
+                    val pos = BlockVector3.at(
+                        origin.x() + dx * i,
+                        origin.y(),
+                        origin.z() + dz * i
+                    )
+
+                    if (!clipboard.region.contains(pos)) return null
+                    if (clipboard.getBlock(pos).blockType != type) return null
+                }
+                return origin
+            }
+
+            val xCheck = check(1,0)
+            val zCheck = check(0,1)
+
+            if(xCheck != null || zCheck != null) return xCheck ?: zCheck
+        }
+
+        return null
+    }
+
+    data class LoadedObstacle(
+        val index: Int,
+        val difficulty: Difficulty,
+        val type: Type,
+        val bounds: Pair<Location, Location>
+    )
+
+    data class LoadedBridge(
+        val index: Int,
+        val bounds: Pair<Location, Location>
+    )
+
+    enum class Difficulty(val appearAfter: Int) {
+        EASY(0),
+        MEDIUM(10),
+        HARD(20),
+        EXTREME(30)
+    }
+
+    enum class Type {
+        NORMAL,
+        ELYTRA,
+        TRIDENT
     }
 
     override suspend fun gamePregame() {

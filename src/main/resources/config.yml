@@ -87,6 +87,7 @@ templates:
   world_root: "&/templates/worlds"
   party_games: "&/templates/party"
   dioramas: "&/templates/dioramas"
+  flood_escape_obstacles: "&/templates/flood_escape"
 
 lobby:
   # The hub world
@@ -508,6 +509,7 @@ games:
       sewer:
         world: "sewer"
         data:
+          pivot_start: [8, 64, 8]
           gate_start: [16, 65, 6]
           gate_end: [0, 65, 6]
           water:

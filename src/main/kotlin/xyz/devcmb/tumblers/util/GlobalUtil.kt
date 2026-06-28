@@ -1,6 +1,8 @@
 package xyz.devcmb.tumblers.util
 
+import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -536,6 +538,62 @@ fun forEachInGridIndexed(rows: Int, columns: Int, action: (index: Int, row: Int,
             index++
         }
     }
+}
+
+fun Clipboard.getPostPasteLocation(
+    loc: BlockVector3,
+    pasteLocation: Location
+): Location {
+    val origin = this.origin
+
+    val offset = loc.subtract(origin)
+
+    return pasteLocation.clone().add(
+        offset.x().toDouble(),
+        offset.y().toDouble(),
+        offset.z().toDouble()
+    )
+}
+
+fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Location> {
+    val nonAirBlocks = region
+        .asSequence()
+        .filter { getBlock(it).blockType != BlockTypes.AIR }
+        .map { BlockVector3.at(it.x(), it.y(), it.z()) }
+        .toList()
+
+    val minRegion = BlockVector3.at(
+        nonAirBlocks.minOf { it.x() },
+        nonAirBlocks.minOf { it.y() },
+        nonAirBlocks.minOf { it.z() }
+    )
+
+    val maxRegion = BlockVector3.at(
+        nonAirBlocks.maxOf { it.x() },
+        nonAirBlocks.maxOf { it.y() },
+        nonAirBlocks.maxOf { it.z() }
+    )
+
+    val offset = BlockVector3.at(
+        loadPosition.blockX,
+        loadPosition.blockY,
+        loadPosition.blockZ
+    ).subtract(origin)
+
+    return Pair(
+        Location(
+            loadPosition.world,
+            (minRegion.x() + offset.x()).toDouble(),
+            (minRegion.y() + offset.y()).toDouble(),
+            (minRegion.z() + offset.z()).toDouble()
+        ),
+        Location(
+            loadPosition.world,
+            (maxRegion.x() + offset.x()).toDouble(),
+            (maxRegion.y() + offset.y()).toDouble(),
+            (maxRegion.z() + offset.z()).toDouble()
+        )
+    )
 }
 
 fun canReplaceActionBar(): Boolean {
