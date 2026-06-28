@@ -37,7 +37,10 @@ object FloodEscapeData : GameData(
         .shadowColor(ShadowColor.none()),
     tabLogo = Component.text("\uEA02").font(font)
         .shadowColor(ShadowColor.none()),
-    scores = hashMapOf(),
+    scores = hashMapOf(
+        FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 2,
+        FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25
+    ),
     scoreboard = "floodEscapeScoreboard",
     spawns = FloodEscapeSpawns.entries
 )

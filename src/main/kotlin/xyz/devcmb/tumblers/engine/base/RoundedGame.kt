@@ -8,7 +8,9 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameData
@@ -47,8 +49,8 @@ abstract class RoundedGame(
      * @param player The player the title is being rendered for
      * @return The component to display
      */
-    open fun getRoundAnnouncementSubtitle(player: Player): Component {
-        return Component.empty()
+    open fun getRoundAnnouncementSubtitle(player: Player): Component? {
+        return null
     }
 
     /** Displays a round start message */
@@ -69,11 +71,18 @@ abstract class RoundedGame(
 
         val title = Format.mm("<yellow><b>Round $currentRound</b></yellow>")
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+            val subtitle = getRoundAnnouncementSubtitle(it)
             it.showTitle(Title.title(
                 title,
-                getRoundAnnouncementSubtitle(it),
+                subtitle ?: Component.empty(),
                 Title.Times.times(Tick.of(3), Tick.of(999), Tick.of(0))
             ))
+
+            var message = gameMessage(Format.mm("Round $currentRound"))
+            if(subtitle != null)
+                message = message.append(Format.mm(": <subtitle>", Placeholder.component("subtitle", subtitle)))
+
+            it.sendMessage(message)
         }
 
         delay(3000)
@@ -91,6 +100,7 @@ abstract class RoundedGame(
                 Component.empty(),
                 Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(0))
             ))
+            it.sendMessage(gameMessage(Format.mm("Round Over!")))
         }
 
         delay(3000)

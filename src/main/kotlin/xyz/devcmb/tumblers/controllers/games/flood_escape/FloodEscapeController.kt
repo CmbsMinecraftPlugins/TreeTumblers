@@ -20,6 +20,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
@@ -244,7 +245,16 @@ class FloodEscapeController : RoundedGame(
     suspend fun eliminatePlayer(player: TumblingPlayer) {
         playerPlacements[roundIndex][player] = alivePlayers.size
         alivePlayers.remove(player)
-        Bukkit.broadcast(gameMessage(Format.mm("<red><player:${player.uuid}> was lost in the water!</red>")))
+
+        gameParticipants.forEach {
+            if(it in alivePlayers) grantScore(it, FloodEscapeScoreSource.OUTLAST_OPPONENT)
+        }
+
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+            it.sendMessage(gameMessage(Format.mm("<red><player:${player.uuid}> was lost in the water!</red>" +
+                if(it.tumblingPlayer in alivePlayers) " <gold>[+${getScoreSource(FloodEscapeScoreSource.OUTLAST_OPPONENT)}]</gold>" else ""
+            )))
+        }
 
         if(alivePlayers.size <= 1) {
             if(alivePlayers.size == 1) playerPlacements[roundIndex][alivePlayers.first()] = 1
@@ -303,5 +313,10 @@ class FloodEscapeController : RoundedGame(
         }, { origin, target ->
             origin.z - target.z
         })
+    }
+
+    enum class FloodEscapeScoreSource(override val id: String) : ScoreSource {
+        COMPLETE_OBSTACLE("flood_escape_complete_obstacle"),
+        OUTLAST_OPPONENT("flood_escape_outlast_opponent")
     }
 }
