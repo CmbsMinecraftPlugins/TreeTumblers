@@ -201,7 +201,7 @@ fun List<*>.validateLocation(world: World): Location? {
 fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
     return this.blockX >= min(bound1.blockX, bound2.blockX) && this.blockY >= min(bound1.blockY, bound2.blockY)
         && this.blockZ >= min(bound1.blockZ, bound2.blockZ) && this.blockX <= max(bound1.blockX, bound2.blockX)
-        && this.blockY <= max(bound1.blockY, bound2.blockY) && this.blockZ <= max(bound1.blockY, bound2.blockY)
+        && this.blockY <= max(bound1.blockY, bound2.blockY) && this.blockZ <= max(bound1.blockZ, bound2.blockZ)
 }
 
 fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
@@ -210,6 +210,12 @@ fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
     for(z in min(this.z, other.z).toInt()..max(this.z, other.z).toInt()) {
         execute(this.world.getBlockAt(x, y, z))
     }
+}
+
+fun Location.withY(y: Double): Location {
+    val loc = this.clone()
+    loc.y = y
+    return loc
 }
 
 fun Location.toBlockVector3(): BlockVector3 {

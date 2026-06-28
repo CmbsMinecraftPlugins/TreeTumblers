@@ -284,11 +284,7 @@ abstract class AbstractGame(
      * @param location The [SpawnLocation] to spawn players at
      */
     fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
-        val world = map.world
-        val markers = world.entities
-            .filterIsInstance<Interaction>()
-            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
-            .shuffled()
+        val markers = getSpawns(map, location)
 
         if(markers.isEmpty())
             throw GameControllerException(
@@ -298,6 +294,21 @@ abstract class AbstractGame(
         players.forEachIndexed { index, player ->
             player.tp(markers[index % markers.size].location)
         }
+    }
+
+    /**
+     * Gets the spawn interaction entities for a certain [SpawnLocation]
+     *
+     * @param map The [LoadedMap] to check
+     * @param location The [SpawnLocation] to use
+     * @return A list of all the interaction entities
+     */
+    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Interaction> {
+        val world = map.world
+        return world.entities
+            .filterIsInstance<Interaction>()
+            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+            .shuffled()
     }
 
     /**

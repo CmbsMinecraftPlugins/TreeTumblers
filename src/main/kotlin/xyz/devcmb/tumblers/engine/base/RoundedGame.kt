@@ -10,7 +10,6 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
-import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.engine.GameData
@@ -98,12 +97,12 @@ abstract class RoundedGame(
             it.showTitle(Title.title(
                 Format.mm("<red><b>Round Over!</b></red>"),
                 Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(50), Tick.of(0))
+                Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             ))
             it.sendMessage(gameMessage(Format.mm("Round Over!")))
         }
 
-        delay(3000)
+        delay(5000)
     }
 
     /**

@@ -9,17 +9,24 @@ import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
+import io.papermc.paper.util.Tick
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.block.data.type.Gate
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.BlockDisplay
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.Quaternionf
@@ -37,11 +44,15 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
+import xyz.devcmb.tumblers.util.isInRegion
+import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
+import xyz.devcmb.tumblers.util.toCenterXZLocation
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import xyz.devcmb.tumblers.util.withY
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.math.roundToInt
@@ -65,6 +76,7 @@ class FloodEscapeController : RoundedGame(
 
     val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
     val playerPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
+    val playerObstacles: HashMap<TumblingPlayer, Int> = HashMap()
 
     /**
      * The load sequence that each individual game should do
@@ -105,7 +117,6 @@ class FloodEscapeController : RoundedGame(
     }
 
     val obstacles: ArrayList<ArrayList<LoadedObstacle>> = ArrayList()
-    val bridges: ArrayList<ArrayList<LoadedBridge>> = ArrayList()
 
     private fun generateObstacles(roundIndex: Int, map: LoadedMap) {
         val pivotStart = map.data.getList("pivot_start")
@@ -113,24 +124,27 @@ class FloodEscapeController : RoundedGame(
             ?: throw GameControllerException("Map ${map.id} does not have a valid pivot start")
 
         val obstacles: ArrayList<LoadedObstacle> = ArrayList()
-        val bridges: ArrayList<LoadedBridge> = ArrayList()
 
         var parent: Location = pivotStart
-        repeat(30) {
-            val (obstacle, obstacleEnd) = generateObstacle(parent, it, map)
+        repeat(40) {
+            val (respawnLocation, bridgeBounds, bridgeEnd) = generateBridge(parent, it, map)
+            val (obstacle, loc) = generateObstacle(bridgeEnd, it, map, bridgeBounds, respawnLocation)
             obstacles.add(obstacle)
-            val (bridge, loc) = generateBridge(obstacleEnd, it, map)
-            bridges.add(bridge)
 
             parent = loc
         }
 
         this.obstacles.add(obstacles)
-        this.bridges.add(bridges)
     }
 
-    fun generateObstacle(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Pair<LoadedObstacle, Location> {
-        val difficulty = Difficulty.entries.reversed().find { it.appearAfter >= obstacleIndex }
+    fun generateObstacle(
+        startLocation: Location,
+        obstacleIndex: Int,
+        map: LoadedMap,
+        bridgeBounds: Pair<Location, Location>,
+        bridgeRespawn: Location,
+    ): Pair<LoadedObstacle, Location> {
+        val difficulty = Difficulty.entries.reversed().find { it.appearAfter <= obstacleIndex }
             ?: throw GameControllerException("No difficulty could be found for obstacle $obstacleIndex")
 
         val type = Type.entries.random()
@@ -152,21 +166,28 @@ class FloodEscapeController : RoundedGame(
             obstacleIndex,
             difficulty,
             type,
-            clipboard.getPostPasteBounds(startLocation)
+            bridgeBounds,
+            bridgeRespawn,
+            clipboard.getPostPasteBounds(startLocation),
         ) to endPivotWorld
     }
 
-    fun generateBridge(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Pair<LoadedBridge, Location> {
+    fun generateBridge(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Triple<Location, Pair<Location, Location>, Location> {
         val mapBridges = File(Path(obstaclesDirectory, map.id, "bridge").toString())
         if(!mapBridges.exists() || !mapBridges.isDirectory) throw GameControllerException("Map ${map.id} does not have a valid bridges folder")
 
         val selectedBridgeFile = mapBridges.listFiles().random()
         val (clipboard, endPivotWorld) = loadSchematic(selectedBridgeFile, startLocation, map)
 
-        return LoadedBridge(
-            obstacleIndex,
-            clipboard.getPostPasteBounds(startLocation)
-        ) to endPivotWorld
+        val regionSpawn = clipboard.region.first {
+            clipboard.getBlock(it.x(), it.y(), it.z()).blockType == BlockTypes.EMERALD_BLOCK
+        }
+        val respawnLocation = clipboard
+            .getPostPasteLocation(regionSpawn, startLocation)
+            .add(0.0, 2.0, 0.0)
+            .toCenterXZLocation()
+
+        return Triple(respawnLocation, clipboard.getPostPasteBounds(startLocation), endPivotWorld)
     }
 
     fun loadSchematic(file: File, location: Location, map: LoadedMap): Pair<Clipboard, Location> {
@@ -240,11 +261,8 @@ class FloodEscapeController : RoundedGame(
         val index: Int,
         val difficulty: Difficulty,
         val type: Type,
-        val bounds: Pair<Location, Location>
-    )
-
-    data class LoadedBridge(
-        val index: Int,
+        val bridgeBounds: Pair<Location, Location>,
+        val respawnPoint: Location,
         val bounds: Pair<Location, Location>
     )
 
@@ -255,10 +273,25 @@ class FloodEscapeController : RoundedGame(
         EXTREME(30)
     }
 
-    enum class Type {
-        NORMAL,
-        ELYTRA,
-        TRIDENT
+    enum class Type(val icon: Component?) {
+        NORMAL(null) {
+            override fun give(player: Player) {
+            }
+        },
+        ELYTRA(Format.mm("<white><sprite:items:item/elytra></white>")) {
+            override fun give(player: Player) {
+                player.inventory.setChestplate(ItemStack.of(Material.ELYTRA))
+            }
+        },
+        TRIDENT(Format.mm("<white><sprite:items:item/trident></white>")) {
+            override fun give(player: Player) {
+                player.inventory.addItem(ItemStack.of(Material.TRIDENT).apply {
+                    addEnchantment(Enchantment.RIPTIDE, 2)
+                })
+            }
+        };
+
+        abstract fun give(player: Player)
     }
 
     override suspend fun gamePregame() {
@@ -329,7 +362,7 @@ class FloodEscapeController : RoundedGame(
 
             suspendSync {
                 water = world.spawn(startingPosition, BlockDisplay::class.java) {
-                    it.block = Material.BLUE_CONCRETE.createBlockData()
+                    it.block = Material.BLUE_STAINED_GLASS.createBlockData()
                     it.transformation = Transformation(
                         Vector3f(),
                         Quaternionf(leftRotation[0], leftRotation[1], leftRotation[2], leftRotation[3]),
@@ -340,6 +373,7 @@ class FloodEscapeController : RoundedGame(
 
                 waterTask = object : BukkitRunnable() {
                     override fun run() {
+                        water!!.location.chunk.load()
                         water!!.teleport(currentWaterMovementDirection!!.increase(water!!.location, (waterSpeed / 20).toFloat()))
 
                         if(!canReplaceActionBar()) return
@@ -367,8 +401,8 @@ class FloodEscapeController : RoundedGame(
             Bukkit.broadcast(gameMessage(Format.mm("<aqua>The water has started moving!</aqua>")))
         }
 
-        currentTimer!!.intervalExecution(50) {
-            waterSpeed *= 1.75
+        currentTimer!!.intervalExecution(60) {
+            waterSpeed *= 1.5
             Bukkit.broadcast(gameMessage(Format.mm("<red>Water speed increased!</red>")))
         }
     }
@@ -377,6 +411,9 @@ class FloodEscapeController : RoundedGame(
         waterTask?.cancel()
         waterKillTask?.cancel()
         alivePlayers.clear()
+        waterSpeed = startingSpeed
+        playerDistances.clear()
+        playerObstacles.clear()
 
         super.postRound()
     }
@@ -454,6 +491,74 @@ class FloodEscapeController : RoundedGame(
 
         TreeTumblers.pluginScope.launch {
             eliminatePlayer(event.player.tumblingPlayer)
+        }
+    }
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        if(player.tumblingPlayer !in alivePlayers || !roundActive) return
+
+        val obstacle = obstacles[roundIndex].findLast {
+            event.to.isInRegion(
+                it.bounds.first.withY(-60.0),
+                it.bounds.second.withY(300.0)
+            ) || event.to.isInRegion(
+                it.bridgeBounds.first.withY(-60.0),
+                it.bridgeBounds.second.withY(300.0)
+            )
+        }
+
+        val voidHeight = currentMap.data.getInt("void_height")
+        if(event.to.y <= voidHeight) {
+            val respawnLocation = obstacle?.respawnPoint
+                ?: playerObstacles[player.tumblingPlayer]?.let { obstacles[roundIndex][it].respawnPoint }
+                ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawns.SPAWN).first().location
+
+            player.teleport(respawnLocation)
+            return
+        }
+
+        if(obstacle == null) return
+
+        val currentObstacleIndex = playerObstacles[player.tumblingPlayer]
+        if(currentObstacleIndex == null || (currentObstacleIndex < obstacle.index)) {
+            playerObstacles[player.tumblingPlayer] = obstacle.index
+
+            val currentObstacle = currentObstacleIndex?.let { obstacles[roundIndex][it] }
+            if(currentObstacle?.type != obstacle.type) {
+                player.inventory.clear()
+                obstacle.type.give(player)
+
+                var component = Component.empty()
+                if(currentObstacle?.type?.icon != null) {
+                    component = component.append(
+                        Format.mm("<red>[- <icon>]</red>", Placeholder.component("icon", currentObstacle.type.icon))
+                    )
+                }
+
+                if(obstacle.type.icon != null) {
+                    component = component.append(
+                        Format.mm("${if(currentObstacle?.type?.icon != null) " " else ""}<green>[+ <icon>]</green>", Placeholder.component("icon", obstacle.type.icon))
+                    )
+                }
+
+                player.showTitle(Title.title(
+                    Component.empty(),
+                    component,
+                    Title.Times.times(Tick.of(5), Tick.of(45), Tick.of(5))
+                ))
+            }
+
+            if(currentObstacle != null && currentObstacle.difficulty != obstacle.difficulty) {
+                runTaskLater(25) {
+                    player.showTitle(Title.title(
+                        Component.empty(),
+                        Format.error("Difficulty increasing!"),
+                        Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(5))
+                    ))
+                }
+            }
         }
     }
 
