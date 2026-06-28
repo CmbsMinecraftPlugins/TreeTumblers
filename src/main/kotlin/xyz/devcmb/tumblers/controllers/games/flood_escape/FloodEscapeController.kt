@@ -214,14 +214,31 @@ class FloodEscapeController : RoundedGame(
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
-        TODO("Not yet implemented")
+        spawnPlayers(
+            currentMap,
+            setOf(player),
+            FloodEscapeSpawns.SPAWN
+        )
+
+        if(!player.tumblingPlayer.team.playingTeam) return
+
+        if(!preRound) {
+            makeSpectator(player, false)
+            player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
     override fun playerLeave(player: Player) {
-        TODO("Not yet implemented")
+        if(!player.tumblingPlayer.team.playingTeam) return
+
+        TreeTumblers.pluginScope.launch {
+            if(roundActive) {
+                eliminatePlayer(player.tumblingPlayer)
+            }
+        }
     }
 
     suspend fun eliminatePlayer(player: TumblingPlayer) {

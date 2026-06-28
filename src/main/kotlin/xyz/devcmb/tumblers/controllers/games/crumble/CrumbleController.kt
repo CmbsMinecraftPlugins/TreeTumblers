@@ -487,10 +487,6 @@ class CrumbleController : RoundedGame(
     }
 
     override suspend fun preRound() {
-        suspendSync {
-            participatingSpectators.toList().forEach(this::unSpectate)
-        }
-
         alivePlayers.values.forEach { it.clear() }
         Team.entries.filter { it.playingTeam }.forEach {
             alivePlayers[it] = ArrayList(it.getAllPlayers())

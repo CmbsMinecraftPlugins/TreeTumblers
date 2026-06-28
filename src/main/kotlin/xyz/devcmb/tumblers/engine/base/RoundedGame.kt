@@ -16,6 +16,7 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.subtitleCountdown
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -52,11 +53,15 @@ abstract class RoundedGame(
 
     /** Displays a round start message */
     open suspend fun preRound() {
+        suspendSync {
+            participatingSpectators.toList().forEach(this::unSpectate)
+        }
+
         spawn(SpawnCycle.PRE_ROUND)
         preRound = true
         timer(Timer(10) {
             id = "${data.id}_round_start_timer"
-            title = "${if(currentRound == 1) "Game" else "Round"} Starts"
+            title = "${if(currentRound == 1) "Game" else "Round"} Start"
         })
         playerCheck()
 
@@ -116,6 +121,7 @@ abstract class RoundedGame(
             })
             startRound()
 
+            delay(500)
             while(roundActive) {
                 delay(500)
             }

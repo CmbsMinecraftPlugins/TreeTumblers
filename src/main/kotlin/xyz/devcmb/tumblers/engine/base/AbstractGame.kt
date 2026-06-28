@@ -432,7 +432,7 @@ abstract class AbstractGame(
      * Cancel a countdown if one is active
      */
     suspend fun cancelCountdown() {
-        if(currentTimer == null) return
+        if(currentTimer == null || !currentTimer!!.isRunning) return
 
         currentTimer!!.end()
     }
