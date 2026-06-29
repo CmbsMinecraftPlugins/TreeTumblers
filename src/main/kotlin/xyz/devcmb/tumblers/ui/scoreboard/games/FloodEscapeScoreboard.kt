@@ -9,7 +9,6 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.math.roundToInt
@@ -20,7 +19,7 @@ class FloodEscapeScoreboard(
     override val displayName: String = "<blue>Flood Escape</blue> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
     override val id: String = "floodEscapeScoreboard"
 
-    val placementTemplate: String = "<placement>. <player>"
+    val placementTemplate: String = "<placement>. <player> <gray>-</gray> <white><distance></white>"
 
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame as? FloodEscapeController ?: return arrayListOf()
@@ -51,7 +50,8 @@ class FloodEscapeScoreboard(
                     Placeholder.unparsed("placement", "1"),
                     Placeholder.component("player",
                         if(topPlayer.first !in activeGame.alivePlayers) topPlayer.first.eliminatedName else topPlayer.first.formattedName
-                    )
+                    ),
+                    Placeholder.unparsed("distance", topPlayer.second.roundToInt().toString())
                 ))
 
                 leaderboard.add(Component.empty())
@@ -77,7 +77,8 @@ class FloodEscapeScoreboard(
                         Placeholder.component("player",
                             if(plr !in activeGame.alivePlayers) plr.eliminatedName else plr.formattedName
                         ),
-                        Placeholder.unparsed("placement", (distances.indexOfFirst { d -> d.first == plr } + 1).toString())
+                        Placeholder.unparsed("placement", (distances.indexOfFirst { d -> d.first == plr } + 1).toString()),
+                        Placeholder.unparsed("distance", it.second.roundToInt().toString())
                     ))
                 }
             } else {
@@ -88,7 +89,8 @@ class FloodEscapeScoreboard(
                         Placeholder.component("player",
                             if(it.first !in activeGame.alivePlayers) it.first.eliminatedName else it.first.formattedName
                         ),
-                        Placeholder.unparsed("placement", (distances.indexOfFirst { d -> d.first == it.first } + 1).toString())
+                        Placeholder.unparsed("placement", (distances.indexOfFirst { d -> d.first == it.first } + 1).toString()),
+                        Placeholder.unparsed("distance", it.second.roundToInt().toString())
                     ))
                 }
             }

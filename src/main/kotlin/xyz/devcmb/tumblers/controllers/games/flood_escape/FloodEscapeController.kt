@@ -579,7 +579,7 @@ class FloodEscapeController : RoundedGame(
         val currentObstacleIndex = playerObstacles[player.tumblingPlayer]
         if(currentObstacleIndex == null || (currentObstacleIndex < obstacle.index)) {
             playerObstacles[player.tumblingPlayer] = obstacle.index
-            grantScore(player, FloodEscapeScoreSource.COMPLETE_OBSTACLE)
+            if(currentObstacleIndex != null) grantScore(player, FloodEscapeScoreSource.COMPLETE_OBSTACLE)
 
             val currentObstacle = currentObstacleIndex?.let { obstacles[roundIndex][it] }
             if(currentObstacle?.type != obstacle.type) {
