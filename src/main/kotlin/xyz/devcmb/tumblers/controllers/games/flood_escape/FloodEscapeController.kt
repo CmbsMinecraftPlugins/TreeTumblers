@@ -44,8 +44,10 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
+import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.showPlayerAndTag
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.toCenterXZLocation
@@ -332,8 +334,8 @@ class FloodEscapeController : RoundedGame(
         suspendSync {
             alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { plr ->
                 alivePlayers.filter { it != plr }.mapNotNull { it.bukkitPlayer }.forEach { other ->
-                    plr.hidePlayer(TreeTumblers.plugin, other)
-                    other.hidePlayer(TreeTumblers.plugin, plr)
+                    plr.hidePlayerAndTag(other)
+                    other.hidePlayerAndTag(plr)
                 }
             }
         }
@@ -439,14 +441,16 @@ class FloodEscapeController : RoundedGame(
         waterSpeed = startingSpeed
         playerObstacles.clear()
 
-        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
-            gameParticipants.mapNotNull { it.bukkitPlayer }.filter { it != plr }.forEach {
-                plr.showPlayer(TreeTumblers.plugin, it)
-                it.showPlayer(TreeTumblers.plugin, plr)
+        super.postRound()
+
+        suspendSync {
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+                gameParticipants.mapNotNull { it.bukkitPlayer }.filter { it != plr }.forEach {
+                    plr.showPlayerAndTag(it)
+                    it.showPlayerAndTag(plr)
+                }
             }
         }
-
-        super.postRound()
     }
 
     fun getWaterDistance(player: Player): Int {
@@ -474,8 +478,8 @@ class FloodEscapeController : RoundedGame(
         } else {
             if(countdownActive) {
                 alivePlayers.mapNotNull { it.bukkitPlayer }.filter { it != player }.forEach { other ->
-                    player.hidePlayer(TreeTumblers.plugin, other)
-                    other.hidePlayer(TreeTumblers.plugin, player)
+                    player.hidePlayerAndTag(other)
+                    other.hidePlayerAndTag(player)
                 }
             }
         }
@@ -510,7 +514,7 @@ class FloodEscapeController : RoundedGame(
 
         suspendSync {
             alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { other ->
-                player.bukkitPlayer?.showPlayer(TreeTumblers.plugin, other)
+                player.bukkitPlayer?.showPlayerAndTag(other)
             }
         }
 

@@ -67,6 +67,16 @@ fun Player.openHandledInventory(id: String) {
     PlayerController.playerUIControllers[this]!!.openInventory(id)
 }
 
+fun Player.hidePlayerAndTag(other: Player) {
+    this.hidePlayer(TreeTumblers.plugin, other)
+    PlayerController.nameTags[other]?.let { this.hideEntity(TreeTumblers.plugin, it) }
+}
+
+fun Player.showPlayerAndTag(other: Player) {
+    this.showPlayer(TreeTumblers.plugin, other)
+    PlayerController.nameTags[other]?.let { this.showEntity(TreeTumblers.plugin, it) }
+}
+
 fun TumblingPlayer.enableBossBar(id: String) {
     this.currentBossbars.add(id)
     this.bukkitPlayer?.let {
