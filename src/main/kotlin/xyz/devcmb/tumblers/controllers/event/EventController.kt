@@ -159,8 +159,8 @@ object EventController : IController {
 
     var actionBarTask: BukkitRunnable? = null
     val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
-        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <color:#ff9100>Game Design</color></white>"),
-        Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><light_purple>Composer</light_purple> • <red>Programmer</red> • <aqua>Builder</aqua></white>"),
+        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
+        Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><red>Programmer</red> • <light_purple>Composer</light_purple> • <aqua>Builder</aqua></white>"),
         Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
     )

@@ -504,7 +504,7 @@ games:
   flood_escape:
     worlds_folder: "flood_escape"
     rounds: 3
-    starting_speed: 2.5
+    starting_speed: 3.5
     maps:
       sewer:
         world: "sewer"
@@ -521,3 +521,6 @@ games:
             right_rotation: [-0.004, 0, 0, 1]
           cutscene:
             start: [-5.0,70.0,3.0,-120.0,20.0]
+            first: [8.5,67.0,-4.5,0.0,0.0]
+            second: [16.5,66.5,20.5,135.0,8.0]
+            third: [1.5, 69.0, 37.5, -45.0, 25.0]

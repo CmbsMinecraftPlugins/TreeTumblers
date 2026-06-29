@@ -152,10 +152,10 @@ class FloodEscapeController : RoundedGame(
         bridgeBounds: Pair<Location, Location>,
         bridgeRespawn: Location,
     ): Pair<LoadedObstacle, Location> {
-        val difficulty = Difficulty.entries.reversed().find { it.appearAfter <= obstacleIndex }
+        val difficulty = ObstacleDifficulty.entries.reversed().find { it.appearAfter <= obstacleIndex }
             ?: throw GameControllerException("No difficulty could be found for obstacle $obstacleIndex")
 
-        val type = Type.entries.random()
+        val type = ObstacleType.entries.random()
 
         val mapObstacles = File(obstaclesDirectory, map.id)
         val obstaclePoolDir = File(Path(
@@ -267,21 +267,21 @@ class FloodEscapeController : RoundedGame(
 
     data class LoadedObstacle(
         val index: Int,
-        val difficulty: Difficulty,
-        val type: Type,
+        val difficulty: ObstacleDifficulty,
+        val type: ObstacleType,
         val bridgeBounds: Pair<Location, Location>,
         val respawnPoint: Location,
         val bounds: Pair<Location, Location>
     )
 
-    enum class Difficulty(val appearAfter: Int) {
+    enum class ObstacleDifficulty(val appearAfter: Int) {
         EASY(0),
         MEDIUM(10),
         HARD(20),
         EXTREME(30)
     }
 
-    enum class Type(val icon: Component?) {
+    enum class ObstacleType(val icon: Component?) {
         NORMAL(null) {
             override fun give(player: Player) {
             }
@@ -362,36 +362,8 @@ class FloodEscapeController : RoundedGame(
         alivePlayers.filter { !it.isOnline }.sortedBy { it.team.priority }.toList().forEach { eliminatePlayer(it) }
 
         currentTimer!!.timeExecution(340) {
-            val world = currentMap.world
-            val startingPosition = currentMap.data.getList("water.start_position")
-                ?.validateLocation(world)
-                ?: throw GameControllerException("Water start position not found")
-
-            val leftRotation = currentMap.data.getList("water.left_rotation")
-                ?.validateList<Number>()
-                ?.map { it.toFloat() }
-                ?: throw GameControllerException("Water left rotation was not found")
-
-            val rightRotation = currentMap.data.getList("water.right_rotation")
-                ?.validateList<Number>()
-                ?.map { it.toFloat() }
-                ?: throw GameControllerException("Water right rotation was not found")
-
-            val scale = currentMap.data.getList("water.scale")
-                ?.validateList<Number>()
-                ?.map { it.toFloat() }
-                ?: throw GameControllerException("Water scale rotation was not found")
-
             suspendSync {
-                water = world.spawn(startingPosition, BlockDisplay::class.java) {
-                    it.block = Material.BLUE_STAINED_GLASS.createBlockData()
-                    it.transformation = Transformation(
-                        Vector3f(),
-                        Quaternionf(leftRotation[0], leftRotation[1], leftRotation[2], leftRotation[3]),
-                        Vector3f(scale[0], scale[1], scale[2]),
-                        Quaternionf(rightRotation[0], rightRotation[1], rightRotation[2], rightRotation[3]),
-                    )
-                }
+                water = spawnWater(currentMap)
 
                 waterTask = object : BukkitRunnable() {
                     override fun run() {
@@ -432,6 +404,38 @@ class FloodEscapeController : RoundedGame(
         currentTimer!!.intervalExecution(60) {
             waterSpeed *= 1.5
             Bukkit.broadcast(gameMessage(Format.mm("<red>Water speed increased!</red>")))
+        }
+    }
+
+    fun spawnWater(map: LoadedMap): BlockDisplay {
+        val world = currentMap.world
+        val startingPosition = currentMap.data.getList("water.start_position")
+            ?.validateLocation(world)
+            ?: throw GameControllerException("Water start position not found")
+
+        val leftRotation = currentMap.data.getList("water.left_rotation")
+            ?.validateList<Number>()
+            ?.map { it.toFloat() }
+            ?: throw GameControllerException("Water left rotation was not found")
+
+        val rightRotation = currentMap.data.getList("water.right_rotation")
+            ?.validateList<Number>()
+            ?.map { it.toFloat() }
+            ?: throw GameControllerException("Water right rotation was not found")
+
+        val scale = currentMap.data.getList("water.scale")
+            ?.validateList<Number>()
+            ?.map { it.toFloat() }
+            ?: throw GameControllerException("Water scale rotation was not found")
+
+        return world.spawn(startingPosition, BlockDisplay::class.java) {
+            it.block = Material.BLUE_STAINED_GLASS.createBlockData()
+            it.transformation = Transformation(
+                Vector3f(),
+                Quaternionf(leftRotation[0], leftRotation[1], leftRotation[2], leftRotation[3]),
+                Vector3f(scale[0], scale[1], scale[2]),
+                Quaternionf(rightRotation[0], rightRotation[1], rightRotation[2], rightRotation[3]),
+            )
         }
     }
 

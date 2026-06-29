@@ -58,7 +58,7 @@ object PartyData : GameData(
         ) {
             delay(5000)
         },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
+        CutsceneStep.GLHF
     ),
     scores = hashMapOf(
         PartyScoreSource.INDIVIDUAL_GAME_WIN to 80,
