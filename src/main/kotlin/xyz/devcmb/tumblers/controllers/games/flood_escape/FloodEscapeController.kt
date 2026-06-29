@@ -329,10 +329,12 @@ class FloodEscapeController : RoundedGame(
     }
 
     override suspend fun preCountdown() {
-        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { plr ->
-            alivePlayers.filter { it != plr }.mapNotNull { it.bukkitPlayer }.forEach { other ->
-                plr.hidePlayer(TreeTumblers.plugin, other)
-                other.hidePlayer(TreeTumblers.plugin, plr)
+        suspendSync {
+            alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+                alivePlayers.filter { it != plr }.mapNotNull { it.bukkitPlayer }.forEach { other ->
+                    plr.hidePlayer(TreeTumblers.plugin, other)
+                    other.hidePlayer(TreeTumblers.plugin, plr)
+                }
             }
         }
     }
@@ -506,8 +508,10 @@ class FloodEscapeController : RoundedGame(
             )))
         }
 
-        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { other ->
-            player.bukkitPlayer?.showPlayer(TreeTumblers.plugin, other)
+        suspendSync {
+            alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { other ->
+                player.bukkitPlayer?.showPlayer(TreeTumblers.plugin, other)
+            }
         }
 
         if(alivePlayers.size <= 1) {
