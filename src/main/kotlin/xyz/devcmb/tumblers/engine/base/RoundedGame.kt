@@ -90,7 +90,9 @@ abstract class RoundedGame(
         preRound = false
     }
 
+    var postRoundOn = false
     open suspend fun postRound() {
+        postRoundOn = true
         delay(1000)
 
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
@@ -103,6 +105,7 @@ abstract class RoundedGame(
         }
 
         delay(5000)
+        postRoundOn = false
     }
 
     /**

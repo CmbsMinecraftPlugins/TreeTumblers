@@ -78,6 +78,12 @@ class FloodEscapeController : RoundedGame(
     val playerPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
     val playerObstacles: HashMap<TumblingPlayer, Int> = HashMap()
 
+    override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+        FloodEscapeScoreSource.COMPLETE_OBSTACLE to {
+            gameMessage(Format.mm("<white>Completed obstacle</white> <gold>[+$it]</gold>"))
+        }
+    )
+
     /**
      * The load sequence that each individual game should do
      *
@@ -311,7 +317,14 @@ class FloodEscapeController : RoundedGame(
 
     override suspend fun preRound() {
         playerDistances.clear()
+        alivePlayers.clear()
         alivePlayers.addAll(gameParticipants)
+        playerDistances.putAll(alivePlayers.associateWith { -20.0 })
+
+        currentWaterMovementDirection = MovementDirection.entries
+            .find { it.identifier == (currentMap.data.getString("water.movement_direction") ?: throw GameControllerException("Water movement direction not found")) }
+            ?: throw GameControllerException("Water movement direction matching ${currentMap.data.getString("water.movement_direction")} could not be found")
+
         super.preRound()
     }
 
@@ -340,10 +353,6 @@ class FloodEscapeController : RoundedGame(
             val startingPosition = currentMap.data.getList("water.start_position")
                 ?.validateLocation(world)
                 ?: throw GameControllerException("Water start position not found")
-
-            currentWaterMovementDirection = MovementDirection.entries
-                .find { it.identifier == (currentMap.data.getString("water.movement_direction") ?: throw GameControllerException("Water movement direction not found")) }
-                ?: throw GameControllerException("Water movement direction matching ${currentMap.data.getString("water.movement_direction")} could not be found")
 
             val leftRotation = currentMap.data.getList("water.left_rotation")
                 ?.validateList<Number>()
@@ -374,12 +383,16 @@ class FloodEscapeController : RoundedGame(
                 waterTask = object : BukkitRunnable() {
                     override fun run() {
                         water!!.location.chunk.load()
-                        water!!.teleport(currentWaterMovementDirection!!.increase(water!!.location, (waterSpeed / 20).toFloat()))
+                        water!!.teleport(currentWaterMovementDirection!!.increase(
+                            water!!.location,
+                            (waterSpeed / 20).toFloat()
+                        ))
 
                         if(!canReplaceActionBar()) return
                         alivePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+                            val distance = currentWaterMovementDirection!!.axisDifference(water!!.location, it.location)
                             it.sendActionBar(Format.mm(
-                                "<white><aqua>Water Distance:</aqua> ${currentWaterMovementDirection!!.axisDifference(water!!.location, it.location).roundToInt()}</white>"
+                                "<white><aqua>Water Distance:</aqua> ${distance.roundToInt()}</white>"
                             ))
                         }
                     }
@@ -388,10 +401,12 @@ class FloodEscapeController : RoundedGame(
 
                 waterKillTask = object : BukkitRunnable() {
                     override fun run() {
-                        alivePlayers.toList().forEach {
+                        alivePlayers.mapNotNull { it.bukkitPlayer }.toList().forEach {
                             if(!it.isOnline) return@forEach
-                            if(currentWaterMovementDirection!!.axisDifference(water!!.location, it.bukkitPlayer!!.location) < 0) {
-                                it.bukkitPlayer!!.damage(4.0)
+
+                            val distance = currentWaterMovementDirection!!.axisDifference(water!!.location, it.location)
+                            if(distance < 0) {
+                                it.damage(4.0)
                             }
                         }
                     }
@@ -410,9 +425,7 @@ class FloodEscapeController : RoundedGame(
     override suspend fun postRound() {
         waterTask?.cancel()
         waterKillTask?.cancel()
-        alivePlayers.clear()
         waterSpeed = startingSpeed
-        playerDistances.clear()
         playerObstacles.clear()
 
         super.postRound()
@@ -497,7 +510,18 @@ class FloodEscapeController : RoundedGame(
     @EventHandler
     fun playerMoveEvent(event: PlayerMoveEvent) {
         val player = event.player
-        if(player.tumblingPlayer !in alivePlayers || !roundActive) return
+        if(player.tumblingPlayer !in alivePlayers || !(preRound || roundActive)) return
+
+        currentWaterMovementDirection?.let {
+            val startingWaterLocation = currentMap.data.getList("water.start_position")
+                ?.validateLocation(currentMap.world)
+                ?: throw GameControllerException("Water starting location was not found")
+
+            val difference = it.axisDifference(startingWaterLocation, event.to)
+            playerDistances[player.tumblingPlayer] = difference
+        }
+
+        if(!roundActive) return
 
         val obstacle = obstacles[roundIndex].findLast {
             event.to.isInRegion(
@@ -524,6 +548,7 @@ class FloodEscapeController : RoundedGame(
         val currentObstacleIndex = playerObstacles[player.tumblingPlayer]
         if(currentObstacleIndex == null || (currentObstacleIndex < obstacle.index)) {
             playerObstacles[player.tumblingPlayer] = obstacle.index
+            grantScore(player, FloodEscapeScoreSource.COMPLETE_OBSTACLE)
 
             val currentObstacle = currentObstacleIndex?.let { obstacles[roundIndex][it] }
             if(currentObstacle?.type != obstacle.type) {

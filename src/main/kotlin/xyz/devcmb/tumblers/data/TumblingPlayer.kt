@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.data
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.event.BadgeController
@@ -33,6 +34,14 @@ data class TumblingPlayer(
     val formattedName: Component
         get() {
             return Format.formatPlayerName(this)
+        }
+
+    val eliminatedName: Component
+        get() {
+            return Format.mm(
+                "<white><icon></white> <gray>${name}</gray>",
+                Placeholder.component("icon", team.formattedIcon)
+            )
         }
 
     fun showKill(player: TumblingPlayer, score: Int?) {
