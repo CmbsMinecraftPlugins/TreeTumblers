@@ -5,6 +5,7 @@ import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
@@ -93,12 +94,81 @@ object UserInterfaceUtility {
         -300 to "\uF03C"
     )
 
+    val POSITIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
+        -1 to "\uE000",
+        -5 to "\uE001",
+        -10 to "\uE002",
+        -15 to "\uE003",
+        -20 to "\uE004",
+        -25 to "\uE005",
+        -30 to "\uE006",
+        -35 to "\uE007",
+        -40 to "\uE008",
+        -45 to "\uE009",
+        -50 to "\uE00A",
+        -55 to "\uE00B",
+        -60 to "\uE00C",
+        -65 to "\uE00D",
+        -70 to "\uE00E",
+        -75 to "\uE00F",
+        -80 to "\uE010",
+        -85 to "\uE011",
+        -90 to "\uE012",
+        -95 to "\uE013",
+        -100 to "\uE014",
+        -105 to "\uE015",
+        -110 to "\uE016",
+        -115 to "\uE017",
+        -120 to "\uE018",
+        -125 to "\uE019",
+        -130 to "\uE01A",
+        -135 to "\uE01B",
+        -140 to "\uE01C",
+        -145 to "\uE01D",
+        -150 to "\uE01E",
+        -155 to "\uE01F",
+        -160 to "\uE020",
+        -165 to "\uE021",
+        -170 to "\uE022",
+        -175 to "\uE023",
+        -180 to "\uE024",
+        -185 to "\uE025",
+        -190 to "\uE026",
+        -195 to "\uE027",
+        -200 to "\uE028",
+        -205 to "\uE029",
+        -210 to "\uE02A",
+        -215 to "\uE02B",
+        -220 to "\uE02C",
+        -225 to "\uE02D",
+        -230 to "\uE02E",
+        -235 to "\uE02F",
+        -240 to "\uE030",
+        -245 to "\uE031",
+        -250 to "\uE032",
+        -255 to "\uE033",
+        -260 to "\uE034",
+        -265 to "\uE035",
+        -270 to "\uE036",
+        -275 to "\uE037",
+        -280 to "\uE038",
+        -285 to "\uE039",
+        -290 to "\uE03A",
+        -295 to "\uE03B",
+        -300 to "\uE03C"
+    )
+
     const val FULL_INVENTORY_NEGATIVE_ADVANCE = 170
 
-    fun negativeSpace(targetPixels: Int): Component {
-        var remaining = targetPixels
+    fun negativeSpace(targetPixels: Int): Component = space(targetPixels, NEGATIVE_ADVANCES)
+    fun positiveSpace(targetPixels: Int): Component = space(targetPixels, POSITIVE_ADVANCES)
+
+    private fun space(target: Int, glyphs: HashMap<Int, String>): Component {
+        if(target <= 0) return Component.empty()
+
+        var remaining = target
         val result = StringBuilder()
-        val sorted = NEGATIVE_ADVANCES.keys.sortedBy { it }
+        val sorted = glyphs.keys.sortedBy { it }
 
         while (remaining > 0) {
             var matched = false
@@ -106,7 +176,7 @@ object UserInterfaceUtility {
             for (value in sorted) {
                 val abs = -value
                 if (remaining >= abs) {
-                    result.append(NEGATIVE_ADVANCES[value])
+                    result.append(glyphs[value])
                     remaining -= abs
                     matched = true
                     break
@@ -114,7 +184,7 @@ object UserInterfaceUtility {
             }
 
             if (!matched) {
-                throw IllegalArgumentException("Cannot perfectly match spacing for $targetPixels px")
+                throw IllegalArgumentException("Cannot perfectly match spacing for $target px")
             }
         }
 
@@ -242,5 +312,34 @@ object UserInterfaceUtility {
             .append(overlay)
             .append(negativeSpace(FULL_INVENTORY_NEGATIVE_ADVANCE))
             .append(title)
+    }
+
+    // this kinda works?
+    // math is prob wrong though
+    fun doubleLinedText(
+        component1: Component,
+        component2: Component,
+        component1Offset: Int = 0,
+        component2Offset: Int = 0,
+    ): Component {
+        val (c1Text, c2Text) = (PlainTextComponentSerializer.plainText().serialize(component1) to PlainTextComponentSerializer.plainText().serialize(component2))
+        val (c1Length, c2Length) = (getPixelWidth(c1Text) + component1Offset) to (getPixelWidth(c2Text) + component2Offset)
+
+        var fullOffset: Component
+        var lowerTextOffset: Double
+
+        if(c1Length > c2Length) {
+            lowerTextOffset = c1Length + (c1Length - c2Length)/2.0
+            fullOffset = negativeSpace((c1Length - c2Length)/2)
+        } else {
+            lowerTextOffset = c2Length - (c2Length - c1Length)/2.0
+            fullOffset = positiveSpace((c2Length - c1Length)/2)
+        }
+
+        return Component.empty()
+            .append(fullOffset)
+            .append(component1)
+            .append(negativeSpace(lowerTextOffset.roundToInt()))
+            .append(component2.font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_-5")))
     }
 }
