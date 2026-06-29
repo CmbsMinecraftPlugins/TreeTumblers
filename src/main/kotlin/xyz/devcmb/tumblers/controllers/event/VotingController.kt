@@ -337,6 +337,7 @@ object VotingController : IController {
 
         delay(2000)
 
+        MusicController.stopMusic()
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
                 winningGame.first.data.logo,

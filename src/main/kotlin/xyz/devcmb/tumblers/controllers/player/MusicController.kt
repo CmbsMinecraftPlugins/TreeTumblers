@@ -35,7 +35,7 @@ object MusicController : IController {
     fun stopMusic() {
         if (currentMusic == null) return
         Bukkit.getOnlinePlayers().forEach {
-            it.stopSound(currentMusic!!.key)
+            it.stopSound(SoundCategory.RECORDS)
             loopingTasks[it]?.cancel()
             loopingTasks.remove(it)
         }

@@ -801,7 +801,7 @@ abstract class AbstractGame(
             event.player.showTitle(Title.title(
                 Format.mm("<red><b>You died!</b></red>"),
                 Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(25), Tick.of(0))
+                Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(0))
             ))
 
             makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))

@@ -34,7 +34,6 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.IController
-import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
@@ -263,8 +262,6 @@ object EventController : IController {
 
         state = State.VOTING
         val nextGame = VotingController.startVoting()
-
-        MusicController.stopMusic()
         state = State.NORMAL_GAME
         GameController.startGame(nextGame)
         playedGames.add(nextGame)
