@@ -52,6 +52,12 @@ abstract class RoundedGame(
         return null
     }
 
+    /**
+     * Runs right before the subtitle countdown
+     */
+    open suspend fun preCountdown() {}
+
+    var countdownActive = false
     /** Displays a round start message */
     open suspend fun preRound() {
         suspendSync {
@@ -86,7 +92,10 @@ abstract class RoundedGame(
 
         delay(3000)
 
+        preCountdown()
+        countdownActive = true
         subtitleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), title, 5)
+        countdownActive = false
         preRound = false
     }
 

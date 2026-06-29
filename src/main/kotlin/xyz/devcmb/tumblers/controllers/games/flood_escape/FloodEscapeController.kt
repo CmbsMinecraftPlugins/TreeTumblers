@@ -328,6 +328,15 @@ class FloodEscapeController : RoundedGame(
         super.preRound()
     }
 
+    override suspend fun preCountdown() {
+        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            alivePlayers.filter { it != plr }.mapNotNull { it.bukkitPlayer }.forEach { other ->
+                plr.hidePlayer(TreeTumblers.plugin, other)
+                other.hidePlayer(TreeTumblers.plugin, plr)
+            }
+        }
+    }
+
     override suspend fun startRound() {
         val gateStart: Location = currentMap.data.getList("gate_start")
             ?.validateLocation(currentMap.world)
@@ -428,6 +437,13 @@ class FloodEscapeController : RoundedGame(
         waterSpeed = startingSpeed
         playerObstacles.clear()
 
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            gameParticipants.mapNotNull { it.bukkitPlayer }.filter { it != plr }.forEach {
+                plr.showPlayer(TreeTumblers.plugin, it)
+                it.showPlayer(TreeTumblers.plugin, plr)
+            }
+        }
+
         super.postRound()
     }
 
@@ -453,6 +469,13 @@ class FloodEscapeController : RoundedGame(
         if(!preRound) {
             makeSpectator(player, false)
             player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+        } else {
+            if(countdownActive) {
+                alivePlayers.mapNotNull { it.bukkitPlayer }.filter { it != player }.forEach { other ->
+                    player.hidePlayer(TreeTumblers.plugin, other)
+                    other.hidePlayer(TreeTumblers.plugin, player)
+                }
+            }
         }
     }
 
@@ -473,14 +496,18 @@ class FloodEscapeController : RoundedGame(
         playerPlacements[roundIndex][player] = alivePlayers.size
         alivePlayers.remove(player)
 
-        gameParticipants.forEach {
-            if(it in alivePlayers) grantScore(it, FloodEscapeScoreSource.OUTLAST_OPPONENT)
+        gameParticipants.filter { it in alivePlayers }.forEach {
+            grantScore(it, FloodEscapeScoreSource.OUTLAST_OPPONENT)
         }
 
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
             it.sendMessage(gameMessage(Format.mm("<red><player:${player.uuid}> was lost in the water!</red>" +
                 if(it.tumblingPlayer in alivePlayers) " <gold>[+${getScoreSource(FloodEscapeScoreSource.OUTLAST_OPPONENT)}]</gold>" else ""
             )))
+        }
+
+        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach { other ->
+            player.bukkitPlayer?.showPlayer(TreeTumblers.plugin, other)
         }
 
         if(alivePlayers.size <= 1) {
