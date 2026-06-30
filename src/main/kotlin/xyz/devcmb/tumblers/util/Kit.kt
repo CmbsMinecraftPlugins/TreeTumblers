@@ -3,42 +3,72 @@ package xyz.devcmb.tumblers.util
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ColorableArmorMeta
+import org.bukkit.inventory.meta.LeatherArmorMeta
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.item.AdvancedItemStackContext
 
 object Kit {
     interface KitDefinition {
-        val items: ArrayList<ItemStack>
-        val allowItemDrops: Boolean
+        val items: ArrayList<KitItem>
+        val defaultDroppability: Boolean
             get() = false
-        val teamArmorSlot: EquipmentSlot?
     }
 
-    val leatherItems: HashMap<EquipmentSlot, AdvancedItemStack> = hashMapOf(
-        EquipmentSlot.HEAD to AdvancedItemStack(Material.LEATHER_HELMET) { droppable(false) },
-        EquipmentSlot.CHEST to AdvancedItemStack(Material.LEATHER_CHESTPLATE) { droppable(false) },
-        EquipmentSlot.LEGS to AdvancedItemStack(Material.LEATHER_LEGGINGS) { droppable(false) },
-        EquipmentSlot.FEET to AdvancedItemStack(Material.LEATHER_BOOTS) { droppable(false) }
-    )
+    sealed interface KitItem {
+        fun give(kit: KitDefinition, player: Player)
 
-    fun giveKit(player: Player, kit: KitDefinition) {
-        val items = kit.items.map {
-            AdvancedItemStack(it.clone()) {
-                if(!kit.allowItemDrops) droppable(false)
-            }.build()
+        class AdvancedItem(
+            material: Material,
+            val slot: Int? = null,
+            init: AdvancedItemStackContext.() -> Unit
+        ): AdvancedItemStack(material, init), KitItem {
+            override fun give(kit: KitDefinition, player: Player) {
+                if(!context.droppableChanged) context.droppable(kit.defaultDroppability)
+                val item = build()
+
+                if(slot != null) player.inventory.setItem(slot, item)
+                else player.inventory.addItem(item)
+            }
         }
 
-        player.inventory.clear()
-        player.inventory.addItem(*items.toTypedArray())
+        class StandardItem(
+            val itemStack: ItemStack,
+            val slot: Int? = null,
+        ): KitItem {
+            override fun give(kit: KitDefinition, player: Player) {
+                val item = AdvancedItemStack(itemStack.clone()) {
+                    droppable(kit.defaultDroppability)
+                }.build()
 
-        if(kit.teamArmorSlot != null) {
-            player.inventory.setItem(kit.teamArmorSlot!!, leatherItems[kit.teamArmorSlot]!!.build().clone().apply {
-                itemMeta = (itemMeta as ColorableArmorMeta).also {
-                    it.setColor(Color.fromRGB(player.tumblingPlayer.team.color.value()))
+                if(slot != null) player.inventory.setItem(slot, item)
+                else player.inventory.addItem(item)
+            }
+        }
+
+        class ArmorItem(val itemStack: ItemStack): KitItem {
+            override fun give(kit: KitDefinition, player: Player) {
+                val item = AdvancedItemStack(itemStack.clone()) {
+                    droppable(kit.defaultDroppability)
+                }.build()
+
+                if(item.type.name.contains("LEATHER")) {
+                    item.itemMeta = item.itemMeta.also { meta ->
+                        val meta = meta as LeatherArmorMeta
+                        val playerTeam = player.tumblingPlayer.team
+                        meta.setColor(Color.fromRGB(playerTeam.color.value()))
+                    }
                 }
-            })
+
+                player.inventory.setItem(item.type.equipmentSlot, item)
+            }
+        }
+    }
+
+    fun giveKit(player: Player, kit: KitDefinition) {
+        player.inventory.clear()
+        kit.items.forEach {
+            it.give(kit, player)
         }
     }
 

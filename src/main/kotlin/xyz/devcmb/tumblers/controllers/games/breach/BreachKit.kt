@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.breach
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
@@ -15,16 +14,16 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
             Format.mm("<white>Charge up as much as you wish."),
         ),
         object : Kit.KitDefinition {
-            override val items: ArrayList<ItemStack> = arrayListOf(
-                ItemStack(Material.BOW).apply {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.BOW).apply {
                     itemMeta = itemMeta.also {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
-                },
-                ItemStack(Material.ARROW, 1)
+                }),
+                Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
+                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.BOW
     ),
@@ -34,16 +33,16 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
             Format.mm("<white>Store a charge for later, fire instantly.")
         ),
         object : Kit.KitDefinition {
-            override val items: ArrayList<ItemStack> = arrayListOf(
-                ItemStack(Material.CROSSBOW).apply {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.CROSSBOW).apply {
                     itemMeta = itemMeta.also {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
-                },
-                ItemStack(Material.ARROW, 1)
+                }),
+                Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
+                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.CROSSBOW
     ),
@@ -53,15 +52,15 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
             Format.mm("<white>Works as both melee and ranged.")
         ),
         object : Kit.KitDefinition {
-            override val items: ArrayList<ItemStack> = arrayListOf(
-                ItemStack(Material.TRIDENT).apply {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.TRIDENT).apply {
                     itemMeta = itemMeta.also {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.LOYALTY, 1, true)
                     }
-                }
+                }),
+                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
             )
-            override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
         },
         Material.TRIDENT
     )

@@ -191,13 +191,14 @@ object DatabaseController : IController {
     suspend fun replicatePlayerData(player: TumblingPlayer) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement("""
             UPDATE tumbling_players
-            SET score = ?, team = ?
+            SET score = ?, team = ?, username = ?
             WHERE uuid = ?
         """.trimIndent())
 
         statement.setInt(1, player.score)
         statement.setString(2, player.team.name.lowercase())
-        statement.setString(3, player.uuid.toString())
+        statement.setString(3, player.name)
+        statement.setString(4, player.uuid.toString())
 
         statement.executeUpdate()
 

@@ -9,7 +9,6 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
-import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
@@ -62,7 +61,6 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
-import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.isArmor
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
@@ -410,44 +408,6 @@ class CrumbleController : RoundedGame(
         }
     }
 
-    override suspend fun postGame() {
-        crumbleEvent?.cancel()
-        borderEvent?.cancel()
-
-        val placements = getTeamPlacements()
-        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
-            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
-
-            val color = when(teamPlacement) {
-                1 -> NamedTextColor.GOLD
-                2 -> TextColor.fromHexString("#E0E0E0")
-                3 -> TextColor.fromHexString("#CE8946")
-                else -> NamedTextColor.AQUA
-            }
-
-            plr.showTitle(Title.title(
-                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
-                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
-            ))
-            plr.sendMessage(gameMessage(Component.text("Game Over!")))
-        }
-
-        gamePlayers.filter { !it.team.playingTeam }.mapNotNull { it.bukkitPlayer }.forEach { plr ->
-            plr.showTitle(Title.title(
-                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
-                Component.empty(),
-                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
-            ))
-            plr.sendMessage(gameMessage(Component.text("Game Over!")))
-        }
-
-        delay(5000)
-        announceTeamScores()
-        announceIndivScores()
-        announceOverallTeamScores()
-    }
-
     override suspend fun cleanup() {
         playerKits.forEach {
             HandlerList.unregisterAll(it.value)
@@ -527,10 +487,6 @@ class CrumbleController : RoundedGame(
     }
 
     override suspend fun preRound() {
-        suspendSync {
-            participatingSpectators.toList().forEach(this::unSpectate)
-        }
-
         alivePlayers.values.forEach { it.clear() }
         Team.entries.filter { it.playingTeam }.forEach {
             alivePlayers[it] = ArrayList(it.getAllPlayers())

@@ -5,6 +5,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -26,12 +27,12 @@ class PartyScoreboard(
             (
                 if(activeGame.teamGamesTimer?.isRunning ?: true)
                     Format.mm(
-                        "<white>Team games in: <aqua><time></aqua></white>",
+                        "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Team games in:</white> <time></color>",
                         Placeholder.component("time", activeGame.teamGamesTimer?.format() ?: Component.text("5:00"))
                     )
                 else
                     Format.mm(
-                        "<white>Game ends in: <aqua><time></aqua></white>",
+                        "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Game ends in:</white> <time></color>",
                         Placeholder.component("time", activeGame.currentTimer?.format() ?: Component.text("0:00"))
                     )
             ),

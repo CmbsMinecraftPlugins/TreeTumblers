@@ -17,7 +17,7 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
         context: Argument<SpawnLocation>,
         argument: String
     ): ParseResult<SpawnLocation> {
-        val game = getSpawns(invocation) ?: return ParseResult.failure(Format.error("Cannot get game from invocation!"))
+        val game = getGame(invocation) ?: return ParseResult.failure(Format.error("Cannot get game from invocation!"))
         if(game.data.spawns == null) return ParseResult.failure(Format.error("Game does not have any spawns!"))
 
         val spawn = game.data.spawns.find { it.name.equals(argument, true) }
@@ -31,7 +31,7 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
         argument: Argument<SpawnLocation>,
         context: SuggestionContext
     ): SuggestionResult {
-        val game: GameController.RegisteredGame = getSpawns(invocation)
+        val game: GameController.RegisteredGame = getGame(invocation)
             ?: return SuggestionResult.empty()
 
         if(game.data.spawns == null) return SuggestionResult.empty()
@@ -42,7 +42,7 @@ class SpawnLocationArgument : ArgumentResolver<CommandSender, SpawnLocation>() {
             .collect(SuggestionResult.collector())
     }
 
-    fun getSpawns(invocation: Invocation<CommandSender>): GameController.RegisteredGame? {
+    fun getGame(invocation: Invocation<CommandSender>): GameController.RegisteredGame? {
         val gameArgument = invocation.arguments().asList()[2] ?: return null
         val game = GameController.games.find { it.data.id.equals(gameArgument, true) }
         return game

@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.controllers.games.party.games.shared
 
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
-import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyGame
@@ -20,13 +19,16 @@ class StandardBowDuels(
 
     override val id: String = "shared_standard_bow_duels"
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
-        override val items: ArrayList<ItemStack> = arrayListOf(ItemStack.of(Material.CROSSBOW).apply {
-            itemMeta = itemMeta.also {
-                it.addEnchant(Enchantment.INFINITY, 1, true)
-                it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
-            }
-        }, ItemStack.of(Material.ARROW))
-        override val teamArmorSlot: EquipmentSlot = EquipmentSlot.FEET
+        override val items: ArrayList<Kit.KitItem> = arrayListOf(
+            Kit.KitItem.StandardItem(ItemStack.of(Material.CROSSBOW).apply {
+                itemMeta = itemMeta.also {
+                    it.addEnchant(Enchantment.INFINITY, 1, true)
+                    it.addEnchant(Enchantment.QUICK_CHARGE, 2, true)
+                }
+            }),
+            Kit.KitItem.StandardItem(ItemStack.of(Material.ARROW)),
+            Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
+        )
     }
 
     override val team: Boolean = true

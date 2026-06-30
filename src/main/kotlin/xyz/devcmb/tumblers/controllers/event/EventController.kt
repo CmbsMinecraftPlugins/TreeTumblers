@@ -34,7 +34,6 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.IController
-import xyz.devcmb.tumblers.controllers.player.MusicController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
@@ -65,7 +64,6 @@ object EventController : IController {
     var state: State = State.EVENT_INACTIVE
 
     var eventTimer: Timer? = null
-    var eventTimerTitle: String? = null
 
     val readyCheckWaiting: ArrayList<Player> = ArrayList()
     var readyCheckAborted: Boolean = false
@@ -138,8 +136,8 @@ object EventController : IController {
                 state = State.PRE_EVENT
                 eventTimer = Timer(64) {
                     id = "pre_event_timer"
+                    title = "Event Start"
                 }
-                eventTimerTitle = "Event Start"
                 eventTimer!!.start()
 
                 delay(3000)
@@ -161,8 +159,8 @@ object EventController : IController {
 
     var actionBarTask: BukkitRunnable? = null
     val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
-        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <color:#ff9100>Game Design</color></white>"),
-        Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><light_purple>Composer</light_purple> • <red>Programmer</red> • <aqua>Builder</aqua></white>"),
+        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
+        Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><red>Programmer</red> • <light_purple>Composer</light_purple> • <aqua>Builder</aqua></white>"),
         Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
     )
@@ -239,7 +237,6 @@ object EventController : IController {
         playedGames.clear()
         game = 0
         eventTimer = null
-        eventTimerTitle = null
     }
 
     suspend fun eventLoop() {
@@ -253,8 +250,8 @@ object EventController : IController {
             eventTimer = Timer(intermissionLength) {
                 id = "event_intermission_timer"
                 joined = true
+                title = "Intermission"
             }
-            eventTimerTitle = "Intermission"
             eventTimer!!.start()
         }
 
@@ -265,8 +262,6 @@ object EventController : IController {
 
         state = State.VOTING
         val nextGame = VotingController.startVoting()
-
-        MusicController.stopMusic()
         state = State.NORMAL_GAME
         GameController.startGame(nextGame)
         playedGames.add(nextGame)
@@ -276,8 +271,8 @@ object EventController : IController {
         eventTimer = Timer(5) {
             id = "score_breakdown_timer"
             joined = true
+            title = "Score breakdown"
         }
-        eventTimerTitle = "Score breakdown"
         eventTimer!!.start()
 
         PlayerController.muteChat()
@@ -394,8 +389,8 @@ object EventController : IController {
         eventTimer = Timer(60) {
             id = "event_finale_countdown"
             joined = true
+            title = "Finale"
         }
-        eventTimerTitle = "Finale"
         eventTimer!!.start()
 
         state = State.FINAL_GAME
@@ -1211,8 +1206,8 @@ object EventController : IController {
                 id = "recovery_timer"
                 paused = true
                 joined = true
+                title = "Recovery"
             }
-            eventTimerTitle = "Recovery"
             eventTimer!!.start()
 
             startEventLoop()

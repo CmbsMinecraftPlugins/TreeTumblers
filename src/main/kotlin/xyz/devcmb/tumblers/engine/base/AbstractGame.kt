@@ -284,16 +284,31 @@ abstract class AbstractGame(
      * @param location The [SpawnLocation] to spawn players at
      */
     fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
-        val world = map.world
-        val markers = world.entities
-            .filterIsInstance<Interaction>()
-            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+        val markers = getSpawns(map, location)
 
-        if(markers.isEmpty()) throw GameControllerException("Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id}")
+        if(markers.isEmpty())
+            throw GameControllerException(
+                "Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id} (Are the chunks force loaded?)"
+            )
 
         players.forEachIndexed { index, player ->
             player.tp(markers[index % markers.size].location)
         }
+    }
+
+    /**
+     * Gets the spawn interaction entities for a certain [SpawnLocation]
+     *
+     * @param map The [LoadedMap] to check
+     * @param location The [SpawnLocation] to use
+     * @return A list of all the interaction entities
+     */
+    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Interaction> {
+        val world = map.world
+        return world.entities
+            .filterIsInstance<Interaction>()
+            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+            .shuffled()
     }
 
     /**
@@ -416,10 +431,19 @@ abstract class AbstractGame(
         = asyncCountdown(duration.inWholeSeconds.toInt(), id, onComplete)
 
     /**
+     * Runs a [Timer] constructed externally
+     * @param timer The timer instance to start
+     */
+    suspend fun timer(timer: Timer) {
+        currentTimer = timer
+        currentTimer!!.start()
+    }
+
+    /**
      * Cancel a countdown if one is active
      */
     suspend fun cancelCountdown() {
-        if(currentTimer == null) return
+        if(currentTimer == null || !currentTimer!!.isRunning) return
 
         currentTimer!!.end()
     }
@@ -666,11 +690,21 @@ abstract class AbstractGame(
     suspend fun playerCheck() {
         if(!gameParticipants.all { it.isOnline }) {
             playerCheckActive = true
+            var pausedByPlayerCheck = false
+            if(currentTimer != null && !currentTimer!!.paused) {
+                currentTimer!!.paused = true
+                pausedByPlayerCheck = true
+            }
+
             while(!gameParticipants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
                 delay(500)
                 gamePlayers.forEach {
                     it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${gameParticipants.filter { entry -> entry.isOnline }.size}/${gameParticipants.size}</gray>"))
                 }
+            }
+
+            if(pausedByPlayerCheck && currentTimer != null) {
+                currentTimer!!.paused = false
             }
             playerCheckSkipped = false
             playerCheckActive = false
@@ -764,6 +798,12 @@ abstract class AbstractGame(
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
         if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
             event.isCancelled = true
+            event.player.showTitle(Title.title(
+                Format.mm("<red><b>You died!</b></red>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(0))
+            ))
+
             makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
         }
     }

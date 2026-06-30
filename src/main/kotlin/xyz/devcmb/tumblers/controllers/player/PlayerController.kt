@@ -164,6 +164,7 @@ object PlayerController : IController {
 
         val tumblingPlayer = players.find { it.uuid == player.uniqueId }!!
         tumblingPlayer.bukkitPlayer = player
+        tumblingPlayer.name = player.name
 
         player.displayName(Format.formatPlayerName(tumblingPlayer))
         Bukkit.broadcast(Format.mm("<white>(<green>+</green>)</white> <player:${tumblingPlayer.uuid}>"))

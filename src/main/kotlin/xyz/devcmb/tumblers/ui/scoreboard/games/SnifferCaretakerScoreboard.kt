@@ -6,6 +6,7 @@ import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController
 import xyz.devcmb.tumblers.engine.base.AbstractGame
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -26,9 +27,9 @@ class SnifferCaretakerScoreboard(
         return arrayListOf(
             Component.empty(),
             Format.mm(
-                "<white>${
+                "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${
                     if(activeGame.currentState == AbstractGame.State.PREGAME) "Game starts in"
-                    else "Game ends in"}: <aqua><timer></aqua></white>",
+                    else "Game ends in"}:</white> <timer></color>",
                 Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("10:00"))
             ),
             Component.empty(),

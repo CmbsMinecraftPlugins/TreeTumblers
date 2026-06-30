@@ -112,7 +112,7 @@ object DeathrunData : GameData(
                 game.endDisplay = null
             }
         },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
+        CutsceneStep.GLHF
     ),
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,

@@ -177,7 +177,7 @@ object SnifferCaretakerData : GameData(
         ) { map ->
             delay(4000)
         },
-        CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>")) {}
+        CutsceneStep.GLHF
     ),
     flags = setOf(Flag.SURVIVAL_MODE),
     scores = hashMapOf(
