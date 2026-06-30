@@ -137,6 +137,7 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(PartyScoreboard(player))
         registerScoreboard(BreachScoreboard(player))
         registerScoreboard(FloodEscapeScoreboard(player))
+        registerScoreboard(BrawlScoreboard())
 
         registerScoreboard(IntermissionScoreboard(player))
 
