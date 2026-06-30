@@ -2,6 +2,6 @@ package xyz.devcmb.tumblers
 
 object Constants {
     val IS_DEVELOPMENT = true
-    const val VERSION: String = "636"
-    const val BRANCH: String = "game/flood_escape"
+    const val VERSION: String = "0a0"
+    const val BRANCH: String = "master"
 }

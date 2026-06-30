@@ -522,10 +522,10 @@ class FloodEscapeController : RoundedGame(
             }
         }
 
-//        if(alivePlayers.size <= 1) {
-//            if(alivePlayers.size == 1) playerPlacements[roundIndex][alivePlayers.first()] = 1
-//            endRound()
-//        }
+        if(alivePlayers.size <= 1) {
+            if(alivePlayers.size == 1) playerPlacements[roundIndex][alivePlayers.first()] = 1
+            endRound()
+        }
     }
 
     @EventHandler
