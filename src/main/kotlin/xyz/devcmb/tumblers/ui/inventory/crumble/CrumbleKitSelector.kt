@@ -25,7 +25,7 @@ import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.wrapComponent
 
-object CrumbleKitSelector : HandledInventory {
+class CrumbleKitSelector : HandledInventory {
     override val id: String = "crumbleKitSelector"
 
     override val inventory = buildChestInterface {

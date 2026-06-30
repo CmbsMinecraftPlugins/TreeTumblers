@@ -24,7 +24,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.wrapComponent
 import java.text.SimpleDateFormat
 
-object BadgeCollectionInventory : HandledInventory {
+class BadgeCollectionInventory : HandledInventory {
     override val id: String = "badgeCollectionInventory"
 
     @Suppress("UnstableApiUsage")

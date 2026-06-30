@@ -110,12 +110,12 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerInventories() {
-        registerInventory(CrumbleKitSelector)
-        registerInventory(BreachKitSelector)
-        registerInventory(ReadyCheckInventory)
-        registerInventory(SpectateInventory)
-        registerInventory(HubNavigationInventory)
-        registerInventory(BadgeCollectionInventory)
+        registerInventory(CrumbleKitSelector())
+        registerInventory(BreachKitSelector())
+        registerInventory(ReadyCheckInventory())
+        registerInventory(SpectateInventory())
+        registerInventory(HubNavigationInventory())
+        registerInventory(BadgeCollectionInventory())
     }
 
     fun registerBossBars() {

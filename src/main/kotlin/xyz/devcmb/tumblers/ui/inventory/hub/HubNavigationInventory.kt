@@ -22,7 +22,7 @@ import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.toCenterXZLocation
 import xyz.devcmb.tumblers.util.validateLocation
 
-object HubNavigationInventory : HandledInventory {
+class HubNavigationInventory : HandledInventory {
     override val id: String = "hubNavigationInventory"
 
     val lodgeNavigationPosition: List<Int> = configurable("lobby.navigator.lodge")

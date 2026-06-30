@@ -491,7 +491,7 @@ object PlayerController : IController {
 
             override fun format(sender: Player, message: Component): Component {
                 return Format.mm(
-                    "<aqua><line:30></aqua><br><br><br><sender>: <message><br><br><br><aqua><line:30></aqua>",
+                    "<green><line:30></green><br><br><br><sender>: <message><br><br><br><green><line:30></green>",
                     Placeholder.component("sender", sender.formattedName),
                     Placeholder.component("message", message)
                 )

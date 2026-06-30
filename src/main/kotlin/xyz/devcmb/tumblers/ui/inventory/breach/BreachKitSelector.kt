@@ -23,7 +23,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
-object BreachKitSelector : HandledInventory {
+class BreachKitSelector : HandledInventory {
     override val id: String = "breachKitSelector"
 
     override val inventory: ChestInterface = buildChestInterface {

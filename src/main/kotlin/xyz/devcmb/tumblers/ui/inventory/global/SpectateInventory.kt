@@ -24,7 +24,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
-object SpectateInventory : HandledInventory {
+class SpectateInventory : HandledInventory {
     override val id: String = "spectateInventory"
 
     override val inventory = buildChestInterface {

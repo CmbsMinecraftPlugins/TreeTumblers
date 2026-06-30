@@ -18,7 +18,7 @@ import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.components.ConfirmationButtonType
 import xyz.devcmb.tumblers.ui.inventory.components.confirmationButton
 
-object ReadyCheckInventory : HandledInventory {
+class ReadyCheckInventory : HandledInventory {
     override val id: String = "readyCheckInventory"
 
     override val inventory = buildChestInterface {
