@@ -445,7 +445,7 @@ class BreachController: AbstractGame(BreachData) {
         }
 
         spawn(SpawnCycle.PRE_ROUND)
-        playerCheck()
+        playerCheck((playingTeams.first.getAllPlayers() + playingTeams.second.getAllPlayers()))
         countdown(15, "kit_selection")
 
         if (team1holder == null && playingTeams.first.getOnlinePlayers().isNotEmpty()) team1holder = playingTeams.first.getOnlinePlayers().random()

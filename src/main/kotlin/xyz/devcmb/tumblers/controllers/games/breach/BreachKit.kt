@@ -22,7 +22,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                     }
                 }),
                 Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
-                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
         },
         Material.BOW
@@ -41,7 +41,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                     }
                 }),
                 Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
-                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
         },
         Material.CROSSBOW
@@ -59,7 +59,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                         it.addEnchant(Enchantment.LOYALTY, 1, true)
                     }
                 }),
-                Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
         },
         Material.TRIDENT

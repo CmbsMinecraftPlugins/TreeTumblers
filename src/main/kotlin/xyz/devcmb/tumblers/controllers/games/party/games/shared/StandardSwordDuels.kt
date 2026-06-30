@@ -20,7 +20,7 @@ class StandardSwordDuels(
     override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
             Kit.KitItem.StandardItem(ItemStack.of(Material.STONE_SWORD)),
-            Kit.KitItem.StandardItem(ItemStack(Material.LEATHER_BOOTS))
+            Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
         )
     }
 

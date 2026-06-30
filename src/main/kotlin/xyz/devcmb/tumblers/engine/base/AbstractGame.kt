@@ -687,8 +687,8 @@ abstract class AbstractGame(
         private set
     var playerCheckSkipped: Boolean = false
     var playerCheckPersistentSkipped: Boolean = false
-    suspend fun playerCheck() {
-        if(!gameParticipants.all { it.isOnline }) {
+    suspend fun playerCheck(participants: Set<TumblingPlayer> = gameParticipants) {
+        if(!participants.all { it.isOnline }) {
             playerCheckActive = true
             var pausedByPlayerCheck = false
             if(currentTimer != null && !currentTimer!!.paused) {
@@ -696,10 +696,10 @@ abstract class AbstractGame(
                 pausedByPlayerCheck = true
             }
 
-            while(!gameParticipants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
+            while(!participants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
                 delay(500)
                 gamePlayers.forEach {
-                    it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${gameParticipants.filter { entry -> entry.isOnline }.size}/${gameParticipants.size}</gray>"))
+                    it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${participants.filter { entry -> entry.isOnline }.size}/${participants.size}</gray>"))
                 }
             }
 
