@@ -283,7 +283,7 @@ abstract class AbstractGame(
      * @param players The players to spawn
      * @param location The [SpawnLocation] to spawn players at
      */
-    fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
+    fun spawnPlayers(map: LoadedMap, players: Iterable<Player>, location: SpawnLocation) {
         val markers = getSpawns(map, location)
 
         if(markers.isEmpty())

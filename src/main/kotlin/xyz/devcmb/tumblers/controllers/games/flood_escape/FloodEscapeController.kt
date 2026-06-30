@@ -119,7 +119,7 @@ class FloodEscapeController : RoundedGame(
             spawnPlayers(
                 loadedMaps[roundIndex],
                 gamePlayers.mapNotNull { it.bukkitPlayer }.toSet(),
-                FloodEscapeSpawns.SPAWN
+                FloodEscapeSpawn.SPAWN
             )
         }
     }
@@ -471,7 +471,7 @@ class FloodEscapeController : RoundedGame(
         spawnPlayers(
             currentMap,
             setOf(player),
-            FloodEscapeSpawns.SPAWN
+            FloodEscapeSpawn.SPAWN
         )
 
         if(!player.tumblingPlayer.team.playingTeam) return
@@ -576,7 +576,7 @@ class FloodEscapeController : RoundedGame(
         if(event.to.y <= voidHeight) {
             val respawnLocation = obstacle?.respawnPoint
                 ?: playerObstacles[player.tumblingPlayer]?.let { obstacles[roundIndex][it].respawnPoint }
-                ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawns.SPAWN).first().location
+                ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawn.SPAWN).first().location
 
             player.teleport(respawnLocation)
             return

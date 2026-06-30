@@ -131,5 +131,5 @@ object FloodEscapeData : GameData(
         FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25
     ),
     scoreboard = "floodEscapeScoreboard",
-    spawns = FloodEscapeSpawns.entries
+    spawns = FloodEscapeSpawn.entries
 )

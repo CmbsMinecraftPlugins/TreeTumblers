@@ -273,8 +273,8 @@ class CrumbleController : RoundedGame(
                 suspendSync {
                     currentMatchups.forEachIndexed { index, matchup ->
                         val arena = index + 1
-                        val spawnSet1 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_1")
-                        val spawnSet2 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_2")
+                        val spawnSet1 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_1")
+                        val spawnSet2 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_2")
 
                         spawnPlayers(currentMap, matchup.first.getOnlinePlayers().toSet(), spawnSet1)
                         spawnPlayers(currentMap, matchup.second.getOnlinePlayers().toSet(), spawnSet2)

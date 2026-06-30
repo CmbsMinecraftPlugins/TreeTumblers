@@ -105,5 +105,5 @@ object CrumbleData : GameData(
         .shadowColor(ShadowColor.none()),
     scoreboard = "crumbleScoreboard",
     badges = CrumbleBadge.entries,
-    spawns = CrumbleSpawns.entries
+    spawns = CrumbleSpawn.entries
 )
