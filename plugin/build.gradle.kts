@@ -11,9 +11,6 @@ plugins {
     kotlin("plugin.serialization").version("2.2.20")
 }
 
-group = "xyz.devcmb"
-version = "1.0.0"
-
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/") {
