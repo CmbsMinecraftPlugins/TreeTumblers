@@ -3,12 +3,17 @@ package xyz.devcmb.tumblers.controllers.games.brawl
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -22,6 +27,42 @@ class BrawlController : RoundedGame(
 ) {
     companion object {
         val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/brawl")
+    }
+
+    val kitSelector = AdvancedItemStack(Material.COMPASS) {
+        name(Format.mm("<yellow>Kit Selector</yellow>"))
+        droppable = false
+        rightClick {
+            it.openHandledInventory("brawlKitSelector")
+        }
+    }.build()
+
+    override suspend fun preRound() {
+        suspendSync {
+            val spectators = Team.entries
+                .filter { !it.playingTeam }
+                .fold(arrayListOf<Player>()) { acc, entry -> acc.apply { addAll(entry.getOnlinePlayers()) } }
+            spectators.forEach { makeSpectator(it) }
+
+            spawnPlayers(
+                loadedMaps[roundIndex],
+                gamePlayers.mapNotNull { it.bukkitPlayer },
+                BrawlSpawn.PRE_ROUND
+            )
+
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                it.inventory.addItem(kitSelector)
+            }
+        }
+
+        timer(Timer(45) {
+            id = "brawl_kit_select"
+            title = "Kit Select"
+            joined = true
+        })
+
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { it.inventory.clear() }
+        super.preRound()
     }
 
     override suspend fun startRound() {
@@ -87,10 +128,10 @@ class BrawlController : RoundedGame(
             }
         }
 
+
         val spectators = Team.entries
             .filter { !it.playingTeam }
             .fold(arrayListOf<Player>()) { acc, entry -> acc.apply { addAll(entry.getOnlinePlayers()) } }
-        spectators.forEach { makeSpectator(it) }
         suspendSync {
             spawnPlayers(currentMap, spectators, BrawlSpawn.SPECTATORS)
         }
