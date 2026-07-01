@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.engine.map
 
 import org.bukkit.World
 import org.bukkit.configuration.ConfigurationSection
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.server.WorldController
 
 /**

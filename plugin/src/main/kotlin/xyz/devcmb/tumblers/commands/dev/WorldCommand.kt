@@ -17,7 +17,6 @@ import org.bukkit.World
 import org.bukkit.WorldCreator
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingWorldException
 import xyz.devcmb.tumblers.controllers.games.GameController

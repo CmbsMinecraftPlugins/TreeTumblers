@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.data
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.player.PlayerEventController
 import xyz.devcmb.tumblers.util.Format

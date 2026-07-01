@@ -23,7 +23,6 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
-import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class WorkerKit(
     override val player: TumblingPlayer?,

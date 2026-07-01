@@ -20,7 +20,6 @@ import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
-import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 class BomberKit(

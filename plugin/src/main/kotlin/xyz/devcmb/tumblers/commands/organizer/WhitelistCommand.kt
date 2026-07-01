@@ -9,7 +9,6 @@ import dev.rollczi.litecommands.annotations.permission.Permission
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController

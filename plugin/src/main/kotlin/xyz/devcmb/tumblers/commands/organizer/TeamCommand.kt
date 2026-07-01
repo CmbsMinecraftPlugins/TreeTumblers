@@ -9,8 +9,6 @@ import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.ControllerRegistry
-import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format

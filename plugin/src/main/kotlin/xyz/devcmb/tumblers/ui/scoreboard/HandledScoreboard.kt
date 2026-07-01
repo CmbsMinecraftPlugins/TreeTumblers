@@ -8,7 +8,6 @@ import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.RenderType
 import org.bukkit.scoreboard.Score
 import org.bukkit.scoreboard.Scoreboard
-import xyz.devcmb.tumblers.ControllerRegistry
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.addScoreboardObjectiveLines
