@@ -1,0 +1,48 @@
+[versions]
+ktor = "3.4.3"
+litecommands = "3.11.0"
+
+[plugins]
+shadow = { id = "com.gradleup.shadow", version = "8.3.0" }
+run-paper = { id = "xyz.jpenilla.run-paper", version = "3.0.2" }
+
+[libraries]
+paper-api = { group = "io.papermc.paper", name = "paper-api", version = "26.1.2.build.+" }
+
+# Plugins
+fawe = { group = "com.fastasyncworldedit", name = "FastAsyncWorldEdit-Bukkit", version = "2.15.2" }
+packetevents = { group = "com.github.retrooper", name = "packetevents-spigot", version = "2.12.1" }
+disguises = { group = "me.libraryaddict.disguises", name = "libsdisguises", version = "11.0.16" }
+noxesium = { group = "com.noxcrew.noxesium", name = "paper-platform", version = "3.1.0"}
+
+# Libraries
+kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8" }
+coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.2" }
+
+interfaces = { group = "com.noxcrew.interfaces", name = "interfaces", version = "2.0.0" }
+reflections = { group = "org.reflections", name = "reflections", version = "0.10.2" }
+commonsio = { group = "commons-io", name = "commons-io", version = "2.14.0" }
+
+litecommands-bukkit = { group = "dev.rollczi", name = "litecommands-bukkit", version.ref = "litecommands" }
+litecommands-adventure = { group = "dev.rollczi", name = "litecommands-adventure", version.ref = "litecommands" }
+
+ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
+ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
+
+[bundles]
+plugins = ["fawe", "packetevents", "disguises", "noxesium"]
+libraries = [
+    "kotlin",
+    "coroutines",
+    "interfaces",
+    "reflections",
+    "litecommands-bukkit",
+    "litecommands-adventure",
+    "commonsio",
+    "ktor-client-core",
+    "ktor-client-cio",
+    "ktor-client-content-negotiation",
+    "ktor-serialization-kotlinx-json"
+]

@@ -6,7 +6,7 @@
 *.ipr
 *.iws
 
-version.txt
+plugin/version.txt
 
 # IntelliJ
 out/
@@ -118,11 +118,11 @@ gradle-app.setting
 runs
 
 # AI because gitignore is very annoying
-run/**
-!run/plugins/
-!run/plugins/TreeTumblers/
-!run/plugins/TreeTumblers/templates/
-!run/plugins/TreeTumblers/templates/**
+plugin/run/**
+!plugin/run/plugins/
+!plugin/run/plugins/TreeTumblers/
+!plugin/run/plugins/TreeTumblers/templates/
+!plugin/run/plugins/TreeTumblers/templates/**
 
 # Avoid ignoring Gradle wrapper jar file (.jar files are usually ignored)
 !gradle-wrapper.jar

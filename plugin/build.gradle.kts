@@ -6,8 +6,8 @@ import java.nio.file.StandardOpenOption
 
 plugins {
     kotlin("jvm") version "2.3.20-RC"
-    id("com.gradleup.shadow") version "8.3.0"
-    id("xyz.jpenilla.run-paper") version "3.0.2"
+    alias(libs.plugins.shadow)
+    alias(libs.plugins.run.paper)
     kotlin("plugin.serialization").version("2.2.20")
 }
 
@@ -28,28 +28,9 @@ repositories {
 }
 
 dependencies {
-    compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
-    compileOnly("com.fastasyncworldedit:FastAsyncWorldEdit-Bukkit:2.15.2")
-    compileOnly("com.github.retrooper:packetevents-spigot:2.12.1")
-    compileOnly("me.libraryaddict.disguises:libsdisguises:11.0.16")
-
-    // https://discord.com/channels/707193125478596668/1134515300742733985/1502698083354673186
-    // lucydotp (roughly): it has changed from `paper` to `paper-platform`
-    // thank you lucy
-    compileOnly("com.noxcrew.noxesium:paper-platform:3.1.0")
-    implementation("com.noxcrew.interfaces:interfaces:2.0.0")
-
-    implementation("org.reflections:reflections:0.10.2")
-    implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("dev.rollczi:litecommands-bukkit:3.10.9")
-    implementation("dev.rollczi:litecommands-adventure:3.10.2")
-    implementation("commons-io:commons-io:2.14.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-
-    implementation("io.ktor:ktor-client-core:3.4.3")
-    implementation("io.ktor:ktor-client-cio:3.4.3")
-    implementation("io.ktor:ktor-client-content-negotiation:3.4.3")
-    implementation("io.ktor:ktor-serialization-kotlinx-json:3.4.3")
+    compileOnly(libs.paper.api)
+    compileOnly(libs.bundles.plugins)
+    implementation(libs.bundles.libraries)
     implementation(kotlin("reflect"))
 }
 
