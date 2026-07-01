@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.brawl
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -17,6 +16,7 @@ import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import kotlin.math.min
 import kotlin.time.Duration.Companion.minutes
 
 @EventGame
@@ -36,6 +36,8 @@ class BrawlController : RoundedGame(
             it.openHandledInventory("brawlKitSelector")
         }
     }.build()
+
+    val roundKits: ArrayList<ArrayList<BrawlKit>> = ArrayList()
 
     override suspend fun preRound() {
         suspendSync {
@@ -97,6 +99,16 @@ class BrawlController : RoundedGame(
      */
     override suspend fun gameLoad() {
         repeat(rounds) {
+            val kits: ArrayList<BrawlKit> = ArrayList()
+            val unchosenPool: ArrayList<BrawlKit> = ArrayList(BrawlKit.entries)
+            repeat(min(BrawlKit.entries.size, 4)) {
+                val chosen = unchosenPool.random()
+                unchosenPool.remove(chosen)
+                kits.add(chosen)
+            }
+
+            roundKits.add(kits)
+
             loadMap(data.maps.random(), it)
         }
     }
@@ -118,7 +130,7 @@ class BrawlController : RoundedGame(
         val teamSpawns: HashMap<Team, BrawlSpawn> = HashMap()
         Team.entries.filter { it.playingTeam }.forEach {
             teamSpawns[it] = BrawlSpawn.entries.filter { entry ->
-                entry.name != "SPECTATORS" && !teamSpawns.any { spawn -> entry.name == it.name }
+                entry.name.contains("SET_") && !teamSpawns.any { spawn -> entry.name == it.name }
             }.random()
         }
 

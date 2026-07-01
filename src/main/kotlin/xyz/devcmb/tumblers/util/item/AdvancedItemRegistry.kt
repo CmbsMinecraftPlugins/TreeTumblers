@@ -2,12 +2,14 @@ package xyz.devcmb.tumblers.util.item
 
 import org.bukkit.NamespacedKey
 import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.util.runTask
 
 object AdvancedItemRegistry {
     val items: HashMap<String, AdvancedItemStackContext> = HashMap()
@@ -48,6 +50,17 @@ object AdvancedItemRegistry {
         items.forEach {
             if(!it.movable) {
                 event.isCancelled = true
+            }
+        }
+    }
+
+    fun handleBlockPlace(event: BlockPlaceEvent) {
+        val stack = event.itemInHand
+        val item = getItem(stack) ?: return
+
+        if(item.returnOnPlace) {
+            runTask {
+                stack.amount += 1
             }
         }
     }

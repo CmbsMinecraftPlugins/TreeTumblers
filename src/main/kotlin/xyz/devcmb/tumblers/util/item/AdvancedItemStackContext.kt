@@ -30,6 +30,8 @@ class AdvancedItemStackContext(
 
     var movable: Boolean = true
 
+    var returnOnPlace: Boolean = false
+
     fun name(component: Component) {
         item.itemMeta = item.itemMeta.also {
             it.itemName(component)

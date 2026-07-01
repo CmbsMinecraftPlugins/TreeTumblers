@@ -25,6 +25,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityPotionEffectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -207,6 +208,11 @@ object PlayerController : IController {
     @EventHandler
     fun inventoryClickEvent(event: InventoryClickEvent) {
         AdvancedItemRegistry.handleInventoryClickEvent(event)
+    }
+
+    @EventHandler
+    fun blockPlaceEvent(event: BlockPlaceEvent) {
+        AdvancedItemRegistry.handleBlockPlace(event)
     }
 
     @EventHandler

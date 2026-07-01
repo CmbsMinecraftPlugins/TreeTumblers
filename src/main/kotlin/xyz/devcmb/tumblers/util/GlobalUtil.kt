@@ -29,6 +29,7 @@ import org.bukkit.generator.ChunkGenerator
 import org.bukkit.generator.WorldInfo
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.PotionMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.Objective
@@ -614,4 +615,13 @@ fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Locatio
 
 fun canReplaceActionBar(): Boolean {
     return GameController.activeGame?.playerCheckActive != true
+}
+
+fun PotionEffect.splashPotion(): ItemStack {
+    return ItemStack.of(Material.SPLASH_POTION).apply {
+        editMeta { meta ->
+            val meta = meta as PotionMeta
+            meta.addCustomEffect(this@splashPotion, true)
+        }
+    }
 }

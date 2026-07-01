@@ -21,10 +21,11 @@ object Kit {
         class AdvancedItem(
             material: Material,
             val slot: Int? = null,
-            init: AdvancedItemStackContext.() -> Unit
+            init: AdvancedItemStackContext.() -> Unit,
+            val droppableOverride: Boolean? = null
         ): AdvancedItemStack(material, init), KitItem {
             override fun give(kit: KitDefinition, player: Player) {
-                if(!context.droppableChanged) context.droppable(kit.defaultDroppability)
+                if(!context.droppableChanged) context.droppable(droppableOverride ?: kit.defaultDroppability)
                 val item = build()
 
                 if(slot != null) player.inventory.setItem(slot, item)
@@ -35,10 +36,11 @@ object Kit {
         class StandardItem(
             val itemStack: ItemStack,
             val slot: Int? = null,
+            val droppableOverride: Boolean? = null
         ): KitItem {
             override fun give(kit: KitDefinition, player: Player) {
                 val item = AdvancedItemStack(itemStack.clone()) {
-                    droppable(kit.defaultDroppability)
+                    droppable(droppableOverride ?: kit.defaultDroppability)
                 }.build()
 
                 if(slot != null) player.inventory.setItem(slot, item)
@@ -61,6 +63,17 @@ object Kit {
                 }
 
                 player.inventory.setItem(item.type.equipmentSlot, item)
+            }
+        }
+
+        class TeamConcreteItem(val droppableOverride: Boolean?) : KitItem {
+            override fun give(kit: KitDefinition, player: Player) {
+                val item = AdvancedItemStack(ItemStack.of(player.tumblingPlayer.team.concrete)) {
+                    returnOnPlace = true
+                    droppable(droppableOverride ?: kit.defaultDroppability)
+                    count(64)
+                }.build()
+                player.inventory.addItem(item)
             }
         }
     }
