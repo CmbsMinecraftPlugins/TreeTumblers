@@ -1,0 +1,826 @@
+package xyz.devcmb.tumblers.engine.base
+
+import io.papermc.paper.util.Tick
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.bukkit.NamespacedKey
+import org.bukkit.attribute.Attribute
+import org.bukkit.entity.Interaction
+import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityRegainHealthEvent
+import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.persistence.PersistentDataType
+import org.bukkit.potion.PotionEffectType
+import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.controllers.event.BadgeController
+import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
+import xyz.devcmb.tumblers.controllers.player.SpectatorController
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Flag
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.cutscene.Cutscene
+import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.engine.map.LoadedMap
+import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.map.SpawnLocation
+import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.activateScoreboard
+import xyz.devcmb.tumblers.util.calculatePlacements
+import xyz.devcmb.tumblers.util.deactivateScoreboard
+import xyz.devcmb.tumblers.util.hunger
+import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.tp
+import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.uiController
+import kotlin.collections.forEach
+import kotlin.time.Duration
+
+/**
+ * Base class for all games
+ *
+ * @property currentState The current [State] of the individual game
+ * @property loadedMaps An [ArrayList] containing all the [xyz.devcmb.tumblers.engine.map.LoadedMap] instances
+ * @property configRoot The root path for the games configuration
+ * @property gamePlayers A [MutableSet] with all the players that were online when the game was started
+ * @property gameParticipants a [MutableSet] with all the players that were online when the game was started that are on a team labeled [xyz.devcmb.tumblers.data.Team.playingTeam]
+ * @property participatingSpectators A [MutableSet] with all the players that are in the [gameParticipants] set that are currently spectating
+ * @property gameSpectators A [MutableSet] with all the players that are currently in spectator mode, defined by the [xyz.devcmb.tumblers.controllers.player.SpectatorController]
+ * @property debugToolkit An optional instance of a [xyz.devcmb.tumblers.engine.DebugToolkit] for certain developer commands (you really should fill this out, but you can be lazy if you really don't want to)
+ */
+abstract class AbstractGame(
+    open val data: GameData
+): Listener {
+    var currentState = State.UNLOADED
+        set(value) {
+            DebugUtil.info("Transitioning to GameState ${value.name}")
+            field = value
+        }
+
+    var currentCutscene: Cutscene? = null
+
+    val loadedMaps: ArrayList<LoadedMap> = ArrayList()
+    val configRoot
+        get() = "games.${data.id}"
+
+    val gamePlayers: MutableSet<TumblingPlayer> = HashSet()
+    val gameParticipants: MutableSet<TumblingPlayer> = HashSet()
+
+    val participatingSpectators: MutableSet<Player> = HashSet()
+    val gameSpectators: MutableSet<Player> = HashSet()
+
+    val teamScores: HashMap<Team, Int> = HashMap()
+    val playerScores: HashMap<TumblingPlayer, Int> = HashMap()
+
+    open val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = HashMap()
+
+    open val debugToolkit: DebugToolkit? = null
+
+    val countdownTime: Int
+        get() {
+            return currentTimer?.currentTime ?: 0
+        }
+    var currentTimer: Timer? = null
+    val gameTimers: ArrayList<Timer> = ArrayList()
+
+    companion object {
+        val spawnKey = NamespacedKey(TreeTumblers.NAMESPACE, "spawn_location")
+    }
+
+    /**
+     * The internal load stage called by the [xyz.devcmb.tumblers.controllers.games.GameController]
+     */
+    suspend fun load(includeOfflinePlayers: Boolean) {
+        data.maps.forEach {
+            it.init(this)
+        }
+
+        val players =
+            if(includeOfflinePlayers) PlayerController.players
+            else Bukkit.getOnlinePlayers().map { it.tumblingPlayer }
+        currentState = State.LOADING
+
+        suspendSync {
+            PlayerController.players.forEach { it.deactivateScoreboard("intermissionScoreboard") }
+        }
+
+        gamePlayers.addAll(players)
+        gameParticipants.addAll(players.filter { it.team.playingTeam })
+
+        gameParticipants.forEach {
+            playerScores[it] = 0
+        }
+
+        Team.entries.filter { it.playingTeam }.forEach {
+            teamScores[it] = 0
+        }
+
+        Bukkit.getOnlinePlayers().forEach {
+            val title = Title.title(
+                Format.mm("<glyph:hud/fade>"),
+                Component.text("Loading...", NamedTextColor.AQUA),
+                Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
+            )
+
+            it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+            it.foodLevel = 20
+            it.saturation = 0f
+            it.inventory.clear()
+
+            if(data.flags.contains(Flag.ENABLE_HUNGER)) {
+                it.removePotionEffect(PotionEffectType.HUNGER)
+            }
+
+            it.showTitle(title)
+        }
+
+        gameLoad()
+    }
+
+    /**
+     * The load sequence that each individual game should do
+     *
+     * This method is responsible for setting up maps, team arrangements, etc
+     *
+     * Anything that needs to be executed before players can access the game should be done here
+     */
+    abstract suspend fun gameLoad()
+
+    /**
+     * The method that is invoked once the coroutine stops yielding
+     *
+     * Can be overridden if necessary, but I doubt it's necessary
+     */
+    open suspend fun finishLoading() {
+        Bukkit.getOnlinePlayers().forEach {
+            val title = Title.title(
+                Format.mm("<glyph:hud/fade>"),
+                Component.text("Loading...", NamedTextColor.AQUA),
+                Title.Times.times(Tick.of(0), Tick.of(10), Tick.of(40))
+            )
+
+            it.showTitle(title)
+        }
+    }
+
+    /**
+     * A utility method for loading maps into the [loadedMaps] using [Map.load]
+     * @param map The map instance to load
+     * @param index The index of the map to be formated as `world_name-index`
+     * @return A [LoadedMap] created from the [map]
+     */
+    suspend fun loadMap(map: Map, index: Int): LoadedMap {
+        val loadedMap = map.load(index)
+        loadedMaps.add(loadedMap)
+
+        DebugUtil.success("Loaded ${loadedMap.world.name} successfully!")
+        return loadedMap
+    }
+
+    /**
+     * The sequence for running [CutsceneStep] instances
+     */
+    open suspend fun runCutscene() {
+        currentState = State.CUTSCENE
+        PlayerController.muteChat()
+
+        currentCutscene = Cutscene(data.cutsceneSteps)
+        currentCutscene!!.run(
+            gamePlayers.filter { it.isOnline }
+                .map { it.bukkitPlayer!! }
+                .toSet(),
+            loadedMaps.first(),
+            this
+        )
+        currentCutscene = null
+
+        suspendSync {
+            PlayerController.reloadNametags()
+        }
+    }
+
+    /**
+     * The internal method for pre-pregame invoked by the [xyz.devcmb.tumblers.controllers.games.GameController]
+     */
+    suspend fun pregame() {
+        currentState = State.PREGAME
+        PlayerController.unmuteChat()
+
+        suspendSync {
+            gamePlayers
+                .filter { it.isOnline && !it.team.playingTeam }
+                .forEach { makeSpectator(it.bukkitPlayer!!, participating = false) }
+        }
+
+        if(data.flags.contains(Flag.SURVIVAL_MODE)) {
+            suspendSync {
+                gameParticipants.filter { it.isOnline }.forEach {
+                    it.bukkitPlayer!!.gameMode = GameMode.SURVIVAL
+                }
+            }
+        }
+
+        spawn(SpawnCycle.PREGAME)
+
+        suspendSync {
+            gamePlayers.forEach {
+                it.activateScoreboard(data.scoreboard)
+            }
+
+            if (data.flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
+                PlayerController.currentNametagMode = PlayerController.NametagMode.TEAM
+            }
+        }
+
+        gamePregame()
+    }
+
+    /**
+     * The main method for the pregame state
+     *
+     * By default, all this does is wait 2 seconds and continue with execution
+     *
+     * This is where any player configurable things should be done (kit selection, settings, etc.)
+     */
+    open suspend fun gamePregame() {
+        delay(2000)
+    }
+
+    /**
+     * The abstract method for spawning players in
+     *
+     * There was going to be some kind of system to do this automatically, but doing it manually seems to be a more flexible option, at least for now.
+     *
+     * @param cycle The stage where the players are spawned
+     */
+    abstract suspend fun spawn(cycle: SpawnCycle)
+
+    /**
+     * Spawn a set of players at a set [SpawnLocation] set
+     *
+     * @param map The map to spawn the players at
+     * @param players The players to spawn
+     * @param location The [SpawnLocation] to spawn players at
+     */
+    fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
+        val markers = getSpawns(map, location)
+
+        if(markers.isEmpty())
+            throw GameControllerException(
+                "Spawn key ${location.name.lowercase()} does not have any spawn markers on map ${map.id} (Are the chunks force loaded?)"
+            )
+
+        players.forEachIndexed { index, player ->
+            player.tp(markers[index % markers.size].location)
+        }
+    }
+
+    /**
+     * Gets the spawn interaction entities for a certain [SpawnLocation]
+     *
+     * @param map The [LoadedMap] to check
+     * @param location The [SpawnLocation] to use
+     * @return A list of all the interaction entities
+     */
+    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Interaction> {
+        val world = map.world
+        return world.entities
+            .filterIsInstance<Interaction>()
+            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
+            .shuffled()
+    }
+
+    /**
+     * Internal function for starting the game
+     */
+    suspend fun gameMain() {
+        currentState = State.GAME_ON
+        gameOn()
+    }
+
+    /**
+     * The method for the main gameplay loop for an individual game
+     *
+     * This should contain any kind of game-specific logic, and round handling if applicable
+     */
+    abstract suspend fun gameOn()
+
+    suspend fun basePostGame() {
+        gameTimers.toList().forEach {
+            if(it.isRunning) {
+                it.end()
+            }
+        }
+        gameTimers.clear()
+
+        postGame()
+    }
+
+    /**
+     * The method to invoke after the game has ended
+     */
+    abstract suspend fun postGame()
+
+    /**
+     * The method for cleaning up anything created during the game
+     *
+     * This should be expanded upon if the game has any listeners registered not in the main class.
+     */
+    open suspend fun cleanup() {
+        EventController.lastGameTeamPlacements = getTeamPlacements()
+        EventController.lastGamePlayerPlacements = getIndividualPlacements()
+
+        EventController.lastGameTeamScores = teamScores
+        EventController.lastGamePlayerScores = playerScores
+
+        suspendSync {
+            PlayerController.currentNametagMode = PlayerController.NametagMode.ALL
+            EventController.refreshLeaderboards()
+            gameSpectators.toList().forEach(this::unSpectate)
+
+            gamePlayers.forEach { tumblingPlayer ->
+                tumblingPlayer.deactivateScoreboard(data.scoreboard)
+                tumblingPlayer.activateScoreboard("intermissionScoreboard")
+
+                tumblingPlayer.bukkitPlayer?.let {
+                    it.inventory.clear()
+                    HubController.spawnHub(it)
+                    it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                    it.foodLevel = 20
+
+                    it.uiController.otherTeams.forEach { (_, team) ->
+                        team.setOption(
+                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
+                            org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
+                        )
+                    }
+
+                    if (it.gameMode != GameMode.CREATIVE) {
+                        it.gameMode = GameMode.ADVENTURE
+                        it.isFlying = false
+                        it.allowFlight = false
+                    }
+
+                    if (!it.hasPotionEffect(PotionEffectType.HUNGER)) {
+                        it.hunger()
+                    }
+                }
+            }
+        }
+
+        loadedMaps.forEach {
+            it.cleanup()
+        }
+
+        EventController.replicateScores()
+    }
+
+    private var countdownCancelled: Boolean = false
+
+    /**
+     * Runs a [Timer] instance with [Timer.joined] set to true, running synchronously
+     * @param time How long to run the countdown for
+     * @param id An optional identifier for the /timer command
+     */
+    suspend fun countdown(time: Int, id: String? = null) {
+        currentTimer = Timer(time) {
+            id?.let { this.id = id }
+            game = this@AbstractGame
+            joined = true
+        }
+        currentTimer!!.start()
+    }
+
+    /**
+     * Runs a [Timer] instance without [Timer.joined] set to true
+     * @param time How long to run the countdown for
+     * @param id An optional identifier for the /timer command
+     * @param onComplete The function to invoke when the countdown finishes executing
+     */
+    fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
+        currentTimer = Timer(time) {
+            id?.let { this.id = it }
+            game = this@AbstractGame
+            this.onComplete = onComplete
+        }
+        currentTimer!!.start()
+    }
+
+    fun asyncCountdown(duration: Duration, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null)
+        = asyncCountdown(duration.inWholeSeconds.toInt(), id, onComplete)
+
+    /**
+     * Runs a [Timer] constructed externally
+     * @param timer The timer instance to start
+     */
+    suspend fun timer(timer: Timer) {
+        currentTimer = timer
+        currentTimer!!.start()
+    }
+
+    /**
+     * Cancel a countdown if one is active
+     */
+    suspend fun cancelCountdown() {
+        if(currentTimer == null || !currentTimer!!.isRunning) return
+
+        currentTimer!!.end()
+    }
+
+    /**
+     * Gets a score amount from [ScoreSource]s provided in the [data] object
+     * @param source The source to get
+     * @return The amount of score a source gives (or 0 if not specified)
+     */
+    fun getScoreSource(source: ScoreSource): Int {
+        return data.scores[source] ?: 0
+    }
+
+    /**
+     * Grants score to a [TumblingPlayer] and their team
+     * @param player The tumbling player to give score to
+     * @param source The source of score
+     */
+    fun grantScore(player: TumblingPlayer, source: ScoreSource, amountOverride: Int? = null) {
+        val amount = amountOverride ?: getScoreSource(source)
+        val team = player.team
+
+        teamScores[team] = teamScores[team]!! + amount
+        playerScores[player] = (playerScores[player] ?: 0) + amount
+
+        if(scoreMessages.contains(source) && player.bukkitPlayer != null)
+            player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
+
+        DebugUtil.info("Granting $amount score to ${player.name} with source $source")
+        EventController.grantScore(player, amount)
+    }
+
+    /**
+     * Grants score to a [Player] and their team
+     * @param player The player to give score to
+     * @param source The source of score
+     */
+    fun grantScore(player: Player, source: ScoreSource, amountOverride: Int? = null) = grantScore(player.tumblingPlayer, source, amountOverride)
+
+    /**
+     * Grants a score equally amongst a team
+     * @param team The team to give score to
+     * @param source The source of score
+     * @return The score value that each player got in a [HashMap] from [TumblingPlayer] to their score in an [Int]
+     */
+    fun grantTeamScore(team: Team, source: ScoreSource, amountOverride: Int? = null): HashMap<TumblingPlayer, Int> {
+        val amount = amountOverride ?: getScoreSource(source)
+        val playerCount = team.getAllPlayers().size
+
+        var remainder = amount % playerCount
+        if (remainder > 0) {
+            DebugUtil.info("Attempted to give team ${team.name} ($playerCount players) $amount score, which is not divisible by $playerCount, and has a remainder of $remainder that will be distributed prioritizing players with the least score.")
+        }
+
+        val scores: HashMap<TumblingPlayer, Int> = HashMap()
+        team.getAllPlayers().sortedBy { it.score }.forEach {
+            var scoreToGrant = amount / playerCount
+            if(remainder > 0) {
+                scoreToGrant++
+                remainder--
+            }
+
+            scores[it] = scoreToGrant
+            grantScore(it, source, scoreToGrant)
+        }
+
+        return scores
+    }
+
+    /**
+     * Gets a message formatted with the icon of the game
+     */
+    fun gameMessage(text: Component): Component {
+        return Format.format(text, Format.MessageFormatter.GAME_MESSAGE)
+    }
+
+    /**
+     * Get the current placements for all playing teams
+     * @return An ArrayList of teams sorted by score (descending) with ties broken by team priority (ascending)
+     */
+    fun getTeamPlacements(): ArrayList<Pair<Team, Int>> {
+        val sorted = teamScores.entries
+            .sortedWith(compareBy({ -it.value }, { it.key.priority }))
+
+        return calculatePlacements(sorted)
+    }
+
+    /**
+     * Get the current individual placements for all playing players
+     * @return An ArrayList of players sorted by score (descending) with ties broken by team priority (ascending)
+     */
+    fun getIndividualPlacements(): ArrayList<Pair<TumblingPlayer, Int>> {
+        val sorted = playerScores.entries
+            .sortedWith(compareBy({ -it.value }, { it.key.team.priority }))
+
+        return calculatePlacements(sorted)
+    }
+
+    /**
+     * Announce the team standings for this game
+     */
+    suspend fun announceTeamScores() {
+        if(EventController.scoresHidden) return
+
+        var teamScoresComponent = Component.empty()
+            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val teamPlacements = getTeamPlacements()
+        teamPlacements.forEach {
+            teamScoresComponent = teamScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+        teamScoresComponent = teamScoresComponent.appendNewline()
+        Bukkit.broadcast(teamScoresComponent)
+        delay(5000)
+    }
+
+    /**
+     * Announce the individual standings for this game
+     */
+    suspend fun announceIndivScores() {
+        if(EventController.scoresHidden) return
+
+        var individualScoresComponent = Component.empty()
+            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val indivPlacements = getIndividualPlacements()
+        indivPlacements.forEach {
+            individualScoresComponent = individualScoresComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(Format.formatPlayerName(it.first))
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(playerScores[it.first] ?: 0, NamedTextColor.YELLOW))
+            )
+        }
+
+        individualScoresComponent = individualScoresComponent.appendNewline()
+        Bukkit.broadcast(individualScoresComponent)
+        delay(5000)
+    }
+
+    /**
+     * Announce the event team scores
+     */
+    suspend fun announceOverallTeamScores() {
+        if(EventController.scoresHidden) {
+            Bukkit.broadcast(Format.info("Team standings will be revealed soon!"))
+            delay(5000)
+            return
+        }
+
+        var eventPlacementsComponent = Component.empty()
+            .append(Component.text("Overall Team Scores").decorate(TextDecoration.BOLD))
+            .appendNewline()
+
+        val eventPlacements = EventController.getEventTeamPlacements()
+        eventPlacements.forEach {
+            eventPlacementsComponent = eventPlacementsComponent.append(
+                Component.empty()
+                    .appendNewline()
+                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
+                    .append(it.first.formattedName)
+                    .append(Component.text(" - ", NamedTextColor.GRAY))
+                    .append(Component.text(EventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+            )
+        }
+
+        eventPlacementsComponent = eventPlacementsComponent.appendNewline()
+        Bukkit.broadcast(eventPlacementsComponent)
+
+        if(!EventController.eventMode) {
+            Bukkit.broadcast(Format.warning("Event mode is disabled so team points will reset after a server restart!"))
+        }
+
+        delay(5000)
+    }
+
+    /**
+     * Calls the respective method in the [xyz.devcmb.tumblers.controllers.player.SpectatorController]
+     *
+     * @param player The player to enable spectator for
+     * @param sendActionBar Whether there should be a "Spectating" actionbar when the player is in spectator
+     */
+    fun makeSpectator(player: Player, sendActionBar: Boolean = true, participating: Boolean = true) {
+        if(participating) participatingSpectators.add(player)
+        gameSpectators.add(player)
+        SpectatorController.makeSpectator(player, sendActionBar)
+    }
+
+    /**
+     * Calls the respective method in the [SpectatorController]
+     *
+     * @param player The player to disable spectator for
+     */
+    fun unSpectate(player: Player) {
+        participatingSpectators.remove(player)
+        gameSpectators.remove(player)
+        SpectatorController.unSpectate(player)
+    }
+
+    /**
+     * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
+     */
+    abstract fun playerJoin(player: Player)
+
+    /**
+     * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
+     */
+    abstract fun playerLeave(player: Player)
+
+    /**
+     * The method for setting up a custom tab list (main section)
+     *
+     * By default, this is null and uses the default behavior
+     */
+    open fun overrideTabList(): Component? {
+        return null
+    }
+
+    /**
+     * Grants a badge to a tumbling player
+     * @param player The player to award the badge to
+     * @param badge The badge to award
+     */
+    fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = BadgeController.grantBadge(player, badge)
+
+    /**
+     * Pauses the game until all gameParticipants are connected, or until it is skipped
+     */
+    var playerCheckActive: Boolean = false
+        private set
+    var playerCheckSkipped: Boolean = false
+    var playerCheckPersistentSkipped: Boolean = false
+    suspend fun playerCheck(participants: Set<TumblingPlayer> = gameParticipants) {
+        if(!participants.all { it.isOnline }) {
+            playerCheckActive = true
+            var pausedByPlayerCheck = false
+            if(currentTimer != null && !currentTimer!!.paused) {
+                currentTimer!!.paused = true
+                pausedByPlayerCheck = true
+            }
+
+            while(!participants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
+                delay(500)
+                gamePlayers.forEach {
+                    it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${participants.filter { entry -> entry.isOnline }.size}/${participants.size}</gray>"))
+                }
+            }
+
+            if(pausedByPlayerCheck && currentTimer != null) {
+                currentTimer!!.paused = false
+            }
+            playerCheckSkipped = false
+            playerCheckActive = false
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerJoinEvent(event: PlayerJoinEvent) {
+        val player = event.player
+
+        if(!player.tumblingPlayer.team.playingTeam) {
+            makeSpectator(player, participating = false)
+        }
+
+        // The normal `playerJoinEvent` runs events after 1 tick, so after 2 everything is done
+        runTaskLater(2) {
+            when (currentState) {
+                State.CUTSCENE -> {
+                    currentCutscene!!.addObserver(player, true)
+                }
+
+                State.PREGAME,
+                State.GAME_ON -> {
+                    // this might be problematic in the future, but idk
+                    if (data.flags.contains(Flag.SURVIVAL_MODE)) {
+                        player.gameMode = GameMode.SURVIVAL
+                    }
+
+                    playerJoin(player)
+                }
+
+                else -> return@runTaskLater
+            }
+        }
+    }
+
+    @EventHandler(priority = EventPriority.HIGHEST)
+    fun playerLeaveEvent(event: PlayerQuitEvent) {
+        val player = event.player
+
+        unSpectate(player)
+
+        when(currentState) {
+            State.CUTSCENE -> {
+                currentCutscene!!.removeObserver(player)
+            }
+
+            State.PREGAME,
+            State.GAME_ON -> {
+                playerLeave(player)
+            }
+            else -> return
+        }
+    }
+
+    @EventHandler
+    fun playerDeathEvent(event: PlayerDeathEvent){
+        if(data.flags.contains(Flag.ENABLE_ITEM_DROPS) || event.isCancelled) return
+        event.drops.clear()
+    }
+
+    @EventHandler
+    fun playerAttackEvent(event: EntityDamageByEntityEvent) {
+        val attacker = event.damager
+        val attacked = event.entity
+
+        if(attacker !is Player || attacked !is Player) return
+
+        if(attacker.tumblingPlayer.team == attacked.tumblingPlayer.team || data.flags.contains(Flag.DISABLE_PVP)) {
+            event.isCancelled = true
+        }
+    }
+
+    @EventHandler
+    fun blockBreakEvent(event: BlockBreakEvent) {
+        if(data.flags.contains(Flag.DISABLE_BLOCK_BREAKING))
+            event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerHealEvent(event: EntityRegainHealthEvent) {
+        if(
+            event.entity !is Player
+            || event.regainReason == EntityRegainHealthEvent.RegainReason.CUSTOM
+            || !data.flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
+        ) return
+        event.isCancelled = true
+    }
+
+    @EventHandler(priority = EventPriority.LOW)
+    fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
+        if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
+            event.isCancelled = true
+            event.player.showTitle(Title.title(
+                Format.mm("<red><b>You died!</b></red>"),
+                Component.empty(),
+                Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(0))
+            ))
+
+            makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
+        }
+    }
+
+    /**
+     * The current state of the active game
+     */
+    enum class State {
+        UNLOADED,
+        LOADING,
+        CUTSCENE,
+        PREGAME,
+        GAME_ON,
+    }
+
+    enum class SpawnCycle {
+        PREGAME,
+        PRE_ROUND
+    }
+}
