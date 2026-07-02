@@ -31,7 +31,10 @@ object GameIconItemGenerator : ItemGenerator {
                 name
             ))
 
-            generatedItems.add(GeneratedItem(resource, ItemModelReference(resource).getSerialized()))
+            generatedItems.add(GeneratedItem(resource, ItemModelReference(
+                IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", resource.resourcePath.path))
+            ).getSerialized()))
+
         }
 
         return generatedItems

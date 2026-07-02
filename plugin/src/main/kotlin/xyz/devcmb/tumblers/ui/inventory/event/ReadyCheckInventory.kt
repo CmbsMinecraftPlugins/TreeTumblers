@@ -44,7 +44,7 @@ class ReadyCheckInventory : HandledInventory {
             pane[0,4] = StaticElement(drawable(ItemStack.of(Material.ECHO_SHARD).apply {
                 setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                 itemMeta = itemMeta.also {
-                    it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "timer")
+                    it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "icon/timer")
                     it.isHideTooltip = true
                 }
             }))

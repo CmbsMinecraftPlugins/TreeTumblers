@@ -31,7 +31,7 @@ object BadgeController : IController {
                 it.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
             }
         )
-        model(NamespacedKey(TreeTumblers.NAMESPACE, "item/icon/collection"))
+        model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/collection"))
 
         droppable(false)
         movable(false)

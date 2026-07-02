@@ -20,7 +20,6 @@ object IconItemGenerator : ItemGenerator {
                 if(it.isDirectory) searchDir(it)
                 else {
                     val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath(
-                        "item",
                         "icon",
                         *it.path
                             .substringAfter(iconsFolder.path + File.separator)
@@ -30,7 +29,9 @@ object IconItemGenerator : ItemGenerator {
                     ))
 
                     println(resource)
-                    items.add(GeneratedItem(resource, ItemModelReference(resource).getSerialized()))
+                    items.add(GeneratedItem(resource, ItemModelReference(
+                        IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", resource.resourcePath.path))
+                    ).getSerialized()))
                 }
             }
         }

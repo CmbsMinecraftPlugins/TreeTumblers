@@ -50,7 +50,7 @@ class BadgeCollectionInventory : HandledInventory {
                             Component.empty(),
                             game.data.logo.color(NamedTextColor.WHITE).decoration(TextDecoration.ITALIC, false)
                         ))
-                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "games/${game.data.id}")
+                        it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "game/${game.data.id}_icon")
                     }
                 }
 
@@ -92,7 +92,7 @@ class BadgeCollectionInventory : HandledInventory {
                             setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                             itemMeta = itemMeta.also {
                                 it.itemName(Format.mm("<gold>${badge.badgeName}</gold>"))
-                                it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "lock")
+                                it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "icon/locked")
                                 it.lore(listOf(
                                     Component.empty(),
                                     Format.mm("<red>Locked!</red>"),
@@ -109,7 +109,7 @@ class BadgeCollectionInventory : HandledInventory {
                             setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                             itemMeta = itemMeta.also {
                                 it.itemName(Format.mm("<gold>${badge.badgeName}</gold>"))
-                                it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "badges/${badge.game}/${badge.name.lowercase()}")
+                                it.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "icon/badges/${badge.game}/${badge.name.lowercase()}")
                                 it.lore(listOf(
                                     Component.empty(),
                                     Format.mm("<green>Unlocked on ${SimpleDateFormat("EEE MMM d, yyyy ").format(timestamp.time)}</green>"),
