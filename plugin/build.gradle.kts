@@ -37,6 +37,7 @@ tasks {
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
         dependsOn("build")
+        dependsOn(":pack:run")
         downloadPlugins {
             modrinth("packetevents", "2.12.1+spigot")
             modrinth("axiom-paper-plugin", "5.0.4+26.1")

@@ -6,9 +6,13 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/") {
+        name = "papermc-repo"
+    }
 }
 
 dependencies {
+    implementation(libs.paper.api)
     implementation(libs.kotlinx.serialization)
     implementation(libs.kotlinx.coroutines)
 }

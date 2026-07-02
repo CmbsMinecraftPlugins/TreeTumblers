@@ -1,5 +1,7 @@
 package xyz.devcmb.font
 
+import xyz.devcmb.pack.ResourcePackBuilder
+
 interface FontGenerator {
-    fun generateFonts(): Iterable<GeneratedFont>
+    fun generateFonts(builder: ResourcePackBuilder): Iterable<GeneratedFont>
 }
