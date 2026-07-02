@@ -8,7 +8,6 @@ import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
@@ -55,6 +54,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
@@ -173,7 +173,7 @@ class CrumbleController : RoundedGame(
                 try {
                     clipboard = playerSession.clipboard.clipboards.lastOrNull()
                         ?: throw IllegalStateException("No clipboard loaded for this session")
-                } catch(e: Exception) {
+                } catch(_: Exception) {
                     sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
                     return@to
                 }
@@ -365,8 +365,8 @@ class CrumbleController : RoundedGame(
                 val kit = playerKits[player.tumblingPlayer]
                 if(kit != null) {
                     component = component.append(UserInterfaceUtility.backgroundTextCenter(
-                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
-                        Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Component.text(kit.kitIcon).font(font))),
+                        Font.getGlyph("hud/crumble_kit_bg"),
+                        Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Font.getGlyph("icon/crumble/${kit.id}"))),
                         kit.name,
                         69.5,
                         14.0

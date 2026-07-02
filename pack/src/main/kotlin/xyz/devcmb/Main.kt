@@ -29,6 +29,7 @@ fun createPackBuilder(): ResourcePackBuilder {
 fun main() {
     val pack = createPackBuilder().build()
 
-    val outDir = System.getProperty("buildDir")
+    val outDir = System.getenv("RESOURCE_PACK_BUILD_LOCATION") ?: System.getProperty("buildDir")
     pack.savePack(File(outDir, "pack"))
+    println("Output pack to $outDir")
 }

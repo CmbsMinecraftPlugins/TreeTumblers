@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 
 class CooldownBossbar(
@@ -18,10 +19,9 @@ class CooldownBossbar(
 
     override fun getComponent(): Component {
         val activeGame = GameController.activeGame
-        if(activeGame == null || activeGame !is DeathrunController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
+        if(activeGame == null || activeGame !is DeathrunController) return DebugUtil.DebugLogLevel.ERROR.icon()
 
-        val currentTrap = activeGame.currentTraps[player] ?: return Component.text(DebugUtil.DebugLogLevel.ERROR.icon)
-            .font(UserInterfaceUtility.WARNINGS)
+        val currentTrap = activeGame.currentTraps[player] ?: return DebugUtil.DebugLogLevel.ERROR.icon()
 
         val cooldownTime = activeGame.cooldownTimes[currentTrap]
         return if(cooldownTime != null) {
@@ -29,18 +29,16 @@ class CooldownBossbar(
             val elapsedSeconds = (System.currentTimeMillis() - cooldownTime) / 1000L
             val timeLeft = (trap.cooldown.toLong() - elapsedSeconds).coerceAtLeast(0L)
             UserInterfaceUtility.backgroundTextCenter(
-                Component.text("\uEF02")
-                    .shadowColor(ShadowColor.shadowColor(0))
-                    .font(DeathrunController.font),
+                Font.getGlyph("hud/deathrun_trap_cooldown_active")
+                    .shadowColor(ShadowColor.shadowColor(0)),
                 Format.mm("<red>On cooldown! <white>${timeLeft}s</white></red>"),
                 "On cooldown! ${timeLeft}s",
                 175.0
             )
         } else {
             UserInterfaceUtility.backgroundTextCenter(
-                Component.text("\uEF01")
-                    .shadowColor(ShadowColor.shadowColor(0))
-                    .font(DeathrunController.font),
+                Font.getGlyph("hud/deathrun_trap_cooldown_inactive")
+                    .shadowColor(ShadowColor.shadowColor(0)),
                 Format.mm("<green>Off cooldown!</green>"),
                 "Off cooldown!",
                 175.0

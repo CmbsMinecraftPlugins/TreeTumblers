@@ -4,9 +4,9 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.breach.BreachController
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Font
 
 class ScoreBossbar : HandledBossbar {
     override val id: String = "breachScoreBossbar"
@@ -14,31 +14,31 @@ class ScoreBossbar : HandledBossbar {
 
     override fun getComponent(): Component {
         val activeGame = GameController.activeGame
-        if(activeGame == null || activeGame !is BreachController) return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
+        if(activeGame == null || activeGame !is BreachController) return DebugUtil.DebugLogLevel.ERROR.icon()
 
-        var component = Component.text(activeGame.playingTeams.first.icon).font(UserInterfaceUtility.ICONS)
+        var component = activeGame.playingTeams.first.formattedIcon
         component = component.append(Component.text(" "))
 
         repeat(activeGame.team1score) {
-            component = component.append(Component.text("\uEF00").font(BreachController.font).color(activeGame.playingTeams.first.color))
+            component = component.append(Font.getGlyph("hud/breach_star").color(activeGame.playingTeams.first.color))
         }
 
         repeat(BreachController.bestOf - activeGame.team1score) {
-            component = component.append(Component.text("\uEF00").font(BreachController.font).color(NamedTextColor.DARK_GRAY))
+            component = component.append(Font.getGlyph("hud/breach_star").color(NamedTextColor.DARK_GRAY))
         }
 
-        component = component.append(Component.text("\uEF01").font(BreachController.font))
+        component = component.append(Font.getGlyph("hud/breach_nether_star"))
 
         repeat(BreachController.bestOf - activeGame.team2score) {
-            component = component.append(Component.text("\uEF00").font(BreachController.font).color(NamedTextColor.DARK_GRAY))
+            component = component.append(Font.getGlyph("hud/breach_star").color(NamedTextColor.DARK_GRAY))
         }
 
         repeat(activeGame.team2score) {
-            component = component.append(Component.text("\uEF00").font(BreachController.font).color(activeGame.playingTeams.second.color))
+            component = component.append(Font.getGlyph("hud/breach_star").color(activeGame.playingTeams.second.color))
         }
 
         component = component.append(Component.text(" "))
-        component = component.append(Component.text(activeGame.playingTeams.second.icon).font(UserInterfaceUtility.ICONS))
+        component = component.append(activeGame.playingTeams.second.formattedIcon)
 
         return component
     }

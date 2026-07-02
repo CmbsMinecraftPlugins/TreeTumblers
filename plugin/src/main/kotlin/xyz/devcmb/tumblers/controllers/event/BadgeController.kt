@@ -11,7 +11,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -56,7 +56,7 @@ object BadgeController : IController {
                 "<green>(<white><icon></white>) You've unlocked a new badge: <gold><hover:show_text:'" +
                         "<gold>${badge.badgeName}</gold><br><white><hint></white>" +
                         "'>[${badge.badgeName}]</hover></gold></green>",
-                Placeholder.component("icon", Component.text("\uE00B").font(UserInterfaceUtility.ICONS)),
+                Placeholder.component("icon", Font.getGlyph("icon/collection")),
                 Placeholder.component("hint", wrapComponent(Component.text(badge.hint), 30)
                     .reduce { acc, component -> acc.append(Component.newline()).append(component) }
                 )

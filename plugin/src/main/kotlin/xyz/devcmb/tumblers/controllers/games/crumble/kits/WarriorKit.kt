@@ -39,7 +39,6 @@ class WarriorKit(
     override val killPowerName: String = "Strength"
     override val killPowerDescription: String = "Enchants your sword with sharpness for 1 hit"
 
-    override val kitIcon: String = "\uE006"
     override val kitDisplayTextLength: Double = 50.5
 
     override fun onKill(killed: Player) {

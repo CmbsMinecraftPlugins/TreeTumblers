@@ -30,7 +30,7 @@ class BadgeCollectionInventory : HandledInventory {
     @Suppress("UnstableApiUsage")
     override val inventory = buildChestInterface {
         titleSupplier = { UserInterfaceUtility.customInventoryTitle(
-            Component.text("\uEF00", NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "collection")),
+            Format.mm("<glyph:container/badge_collection_inventory>"),
             Component.text("Badge Collection", NamedTextColor.WHITE)
         ) }
         rows = 6
@@ -39,7 +39,7 @@ class BadgeCollectionInventory : HandledInventory {
         var selectedGame by selectedGameProperty
 
         // Game Selector
-        withTransform(selectedGameProperty) { pane, view ->
+        withTransform(selectedGameProperty) { pane, _ ->
             forEachInGridIndexed(4, 2) { index, row, col ->
                 val game = GameController.games.getOrNull(index) ?: return@forEachInGridIndexed
                 val item = ItemStack.of(Material.ECHO_SHARD).apply {

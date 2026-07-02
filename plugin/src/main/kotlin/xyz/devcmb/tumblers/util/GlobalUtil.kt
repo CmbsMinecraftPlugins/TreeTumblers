@@ -16,7 +16,6 @@ import org.bukkit.Bukkit
 import org.bukkit.FireworkEffect
 import org.bukkit.Location
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.World
 import org.bukkit.block.Biome
@@ -134,7 +133,7 @@ fun Player.fadeTp(location: Location, force: Boolean = false) {
 
     val fade = 4
     val title = Title.title(
-        Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
+        Font.getGlyph("hud/fade"),
         Component.empty(),
         Title.Times.times(Tick.of(fade.toLong()), Tick.of(3), Tick.of(fade.toLong()))
     )

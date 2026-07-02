@@ -5,10 +5,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController.Companion.font
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -28,10 +26,10 @@ object CrumbleData : GameData(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/crumble")))
+                .append(Format.mm("<glyph:game/crumble_icon>"))
                 .append(Component.text(" Crumble")),
             "cutscene.start"
-        ) { map ->
+        ) { _ ->
             delay(5000)
         },
         CutsceneStep(
@@ -82,7 +80,7 @@ object CrumbleData : GameData(
         CutsceneStep(
             Format.mm("This game was originally designed by <click:open_url:https://www.youtube.com/@MatMart><u><red>Mat</red><white>Mart</white></u></click>, coded by <click:open_url:https://blackilykat.dev><u><color:#e09cff>Blackilykat</color></u></click>, and funded by <click:open_url:https://www.youtube.com/@Cobgd><color:#ff701e><u>GDCob</u></color></click>!"),
             "cutscene.credit"
-        ) { map ->
+        ) { _ ->
             delay(4000)
         },
         CutsceneStep.GLHF
@@ -98,10 +96,9 @@ object CrumbleData : GameData(
         CommonScoreSource.TEAM_ROUND_DRAW to 240,
         CommonScoreSource.TEAM_ROUND_LOSE to 120,
     ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/crumble_icon>"),
+    logo = Format.mm("<glyph:game/crumble_logo>"),
+    tabLogo = Format.mm("<glyph:game/crumble_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scoreboard = "crumbleScoreboard",
     badges = CrumbleBadge.entries,

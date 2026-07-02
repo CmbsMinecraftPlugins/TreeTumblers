@@ -32,7 +32,7 @@ class HungryTask(
     val atlas = if (item == Material.BROWN_MUSHROOM || item == Material.RED_MUSHROOM) "block" else "item"
 
     override var displayText = ""
-        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.iconGlyph}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Feed it " +
                     "<sprite:${atlas}s:${atlas}/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}>!</yellow>"
 

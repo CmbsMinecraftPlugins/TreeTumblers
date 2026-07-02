@@ -49,7 +49,6 @@ class ArcherKit(
     override val killPowerName: String = "Robin Hood"
     override val killPowerDescription: String = "Gives swiftness for ${swiftnessTicks.tickSeconds}s"
 
-    override val kitIcon: String = "\uE000"
     override val kitDisplayTextLength: Double = 48.5
 
     var abilityActive = false

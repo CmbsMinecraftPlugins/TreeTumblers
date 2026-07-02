@@ -5,12 +5,10 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.entity.Item
 import org.bukkit.inventory.ItemStack
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController.Companion.font
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -30,15 +28,15 @@ object BreachData : GameData(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/breach")))
+                .append(Format.mm("<glyph:game/breach_icon>"))
                 .append(Component.text(" Breach")),
             "cutscene.start"
-        ) { map ->
+        ) { _ ->
             delay(5000)
         },
         CutsceneStep(Format.mm("Each round you get to pick a weapon, and one person on the team needs to hold the <light_purple>star.</light_purple>"),
             "cutscene.preround"
-        ) { map ->
+        ) { _ ->
             delay(5000)
         },
         CutsceneStep(Format.mm("A round is <green>won</green> by stealing the other team's <light_purple>star</light_purple>, by <red>killing</red> the holder of the <light_purple>star</light_purple> and picking it up before their teammates can retrieve it"),
@@ -58,7 +56,7 @@ object BreachData : GameData(
         },
         CutsceneStep(Format.mm("As the round goes on, walls will start to crack and break down, opening up the map"),
             "cutscene.breaking"
-        ) { map ->
+        ) { _ ->
             val game = game as BreachController
             var breakingTask = object : BukkitRunnable() {
                 override fun run() {
@@ -76,12 +74,12 @@ object BreachData : GameData(
         },
         CutsceneStep(Format.mm("The first team to win 3 rounds, <green>wins it all.</green>"),
             "cutscene.end"
-        ) { map ->
+        ) { _ ->
             delay(4000)
         },
         CutsceneStep(Format.mm("<b><gold>Good Luck, Have Fun, and may the best team win!</gold></b>"),
             "cutscene.end"
-        ) { map ->
+        ) { _ ->
             // A comment from "Nibbles"
             // Ts Pmo Why Don It Work Pmo Pmo Pmo Pmo
 
@@ -132,10 +130,9 @@ object BreachData : GameData(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.HIDE_ENEMY_NAMETAGS
     ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/breach_icon>"),
+    logo = Format.mm("<glyph:game/breach_logo>"),
+    tabLogo = Format.mm("<glyph:game/breach_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scores = hashMapOf(),
     scoreboard = "breachScoreboard"

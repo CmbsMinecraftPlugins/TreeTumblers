@@ -22,7 +22,7 @@ object DefaultAscentGenerator : FontGenerator {
             GeneratedFont(IdentifiedResource(Namespace.TUMBLING, ResourcePath("default_shift", "ascent_$it")), listOf(
                 FontProvider.BitmapFontProvider(
                     IdentifiedResource(Namespace.MINECRAFT, ResourcePath("font", "ascii.png")),
-                    4,
+                    if(it > 4) 8 else 4,
                     it,
                     ConstantPackValues.defaultMinecraftAsciiCharacters
                 ),

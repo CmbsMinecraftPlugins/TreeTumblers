@@ -5,14 +5,11 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.Sound
 import org.bukkit.block.data.Levelled
 import org.bukkit.entity.Entity
 import org.bukkit.entity.EntityType
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController.Companion.font
 import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.SnifferCaretakerController.SnifferCaretakerScoreSource
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
@@ -33,16 +30,16 @@ object SnifferCaretakerData : GameData(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")))
+                .append(Format.mm("<glyph:game/sniffer_caretaker_icon>"))
                 .append(Component.text(" Sniffer Caretaker")),
             "cutscene.start"
-        ) { map ->
+        ) { _ ->
             delay(5000)
         },
         CutsceneStep(
             Format.mm("In this game, you need to fulfill your <red>sniffer's</red> wants as seen on the <blue>task board.</blue> <blue>Tasks</blue> will give more <yellow>score</yellow> based on how many <aqua>stars</aqua> it has."),
             "cutscene.tasks"
-        ) { map ->
+        ) { _ ->
             val game = game as SnifferCaretakerController
 
             val exampleTasks: List<String> = listOf(
@@ -103,7 +100,7 @@ object SnifferCaretakerData : GameData(
         CutsceneStep(
             Format.mm("To giving the sniffer things to sniff..."),
             "cutscene.blocks"
-        ) { map ->
+        ) { _ ->
             val game = game as SnifferCaretakerController
 
             suspendSync {
@@ -174,7 +171,7 @@ object SnifferCaretakerData : GameData(
         CutsceneStep(
             Format.mm("Remember, your only goal is to keep the <red>sniffer</red> <yellow>happy</yellow>, and complete as many <blue>tasks</blue> as you can!"),
             "cutscene.end"
-        ) { map ->
+        ) { _ ->
             delay(4000)
         },
         CutsceneStep.GLHF
@@ -187,10 +184,9 @@ object SnifferCaretakerData : GameData(
         SnifferCaretakerScoreSource.TASK_4_STAR to 80,
         SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/sniffer_caretaker_icon>"),
+    logo = Format.mm("<glyph:game/sniffer_caretaker_logo>"),
+    tabLogo = Format.mm("<glyph:game/sniffer_caretaker_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scoreboard = "snifferCaretakerScoreboard",
     name = "Sniffer Caretaker"

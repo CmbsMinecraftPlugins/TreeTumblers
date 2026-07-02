@@ -29,7 +29,7 @@ class BoredTask(
     override var completer: Player? = null
 
     override var displayText = ""
-        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.iconGlyph}</font> " +
                 "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
                 "<sprite:blocks:block/${item?.name?.lowercase()}> " +
                 "$count <yellow><lang:${item?.blockTranslationKey}></yellow> to its pen!"

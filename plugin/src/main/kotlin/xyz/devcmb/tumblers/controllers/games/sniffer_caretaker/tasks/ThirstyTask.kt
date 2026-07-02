@@ -29,7 +29,7 @@ class ThirstyTask(
     override var completer: Player? = null
 
     override var displayText = ""
-        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.iconGlyph}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring " +
                     "<sprite:items:item/${item?.name?.lowercase()}> <yellow><lang:${item?.itemTranslationKey}></yellow> to its cauldron!"
 

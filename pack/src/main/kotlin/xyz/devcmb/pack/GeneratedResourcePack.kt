@@ -108,11 +108,16 @@ class GeneratedResourcePack(
                 val provider = provider as? FontProvider.BitmapFontProvider ?: return@forEach
                 if(provider.chars.size > 1) return@forEach
 
+                var key = "${it.resource.resourcePath.path}.${provider.file.resourcePath.path
+                    .substringAfter("font/")
+                    .substringAfter("item/")
+                    .substringBefore(".png")}"
+                if(fontTextureIndex.isSet(key)) {
+                    key += "_${provider.ascent}a_${provider.height}h"
+                }
+
                 fontTextureIndex.set(
-                    "${it.resource.resourcePath.path}.${provider.file.resourcePath.path
-                        .substringAfter("font/")
-                        .substringAfter("item/")
-                        .substringBefore(".png")}",
+                    key,
                     provider.chars.first()
                 )
             }

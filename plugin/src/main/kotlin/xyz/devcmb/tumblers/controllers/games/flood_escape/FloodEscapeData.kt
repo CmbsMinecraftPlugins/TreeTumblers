@@ -9,7 +9,6 @@ import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController.Companion.font
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController.MovementDirection
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
@@ -28,7 +27,7 @@ object FloodEscapeData : GameData(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(font))
+                .append(Format.mm("<glyph:game/flood_escape_icon>"))
                 .append(Component.text(" Flood Escape")),
             "cutscene.start"
         ) {
@@ -121,10 +120,9 @@ object FloodEscapeData : GameData(
         Flag.USE_SPECTATOR_DEATH_SYSTEM,
         Flag.DISABLE_NATURAL_REGENERATION
     ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/flood_escape_icon>"),
+    logo = Format.mm("<glyph:game/flood_escape_logo>"),
+    tabLogo = Format.mm("<glyph:game/flood_escape_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scores = hashMapOf(
         FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 2,

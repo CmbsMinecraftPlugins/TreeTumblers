@@ -54,7 +54,6 @@ class NinjaKit(
     override val killPowerName: String = "Vanish"
     override val killPowerDescription: String = "Gives you a smoke bomb"
 
-    override val kitIcon: String = "\uE004"
     override val kitDisplayTextLength: Double = 38.5
 
     companion object {

@@ -144,25 +144,25 @@ class BreachController: AbstractGame(BreachData) {
 
     override val debugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
-            "star_1" to { sender ->
+            "star_1" to {
                 val team2spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
                     ?: throw GameControllerException("Team 1 spawn not found")
 
                 starDrop(playingTeams.first, team2spawn)
             },
-            "star_2" to { sender ->
+            "star_2" to {
                 val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
                     ?: throw GameControllerException("Team 2 spawn not found")
 
                 starDrop(playingTeams.second, team2spawn)
             },
-            "win_1" to { sender ->
+            "win_1" to {
                 val team1spawn = currentMap.data.getList("team_1_spawn")?.validateLocation(currentMap.world)
                     ?: throw GameControllerException("Team 1 spawn not found")
 
                 roundEnd(playingTeams.first, team1spawn)
             },
-            "win_2" to { sender ->
+            "win_2" to {
                 val team2spawn = currentMap.data.getList("team_2_spawn")?.validateLocation(currentMap.world)
                     ?: throw GameControllerException("Team 2 spawn not found")
 
@@ -839,7 +839,7 @@ class BreachController: AbstractGame(BreachData) {
         }
 
         val message = Component.empty()
-            .append(Component.text(team.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+            .append(team.formattedIcon)
             .append(Component.text(" ${team.teamName}", team.color))
             .append(Format.mm(" have dropped their <light_purple>star!</light_purple>"))
         // As per DevCmb, the correct word is "have", and not "has". keeping this bug in the game would break everything.

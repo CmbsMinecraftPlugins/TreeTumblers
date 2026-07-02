@@ -7,6 +7,7 @@ import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Format
 
 class DebugBossbar : HandledBossbar {
     override val id: String = "debugBossbar"
@@ -16,7 +17,7 @@ class DebugBossbar : HandledBossbar {
         val text = "TreeTumblers | ${Constants.BRANCH} (${Constants.VERSION})"
 
         return UserInterfaceUtility.backgroundTextCenter(
-            Component.text("\uEF02").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
+            Format.mm("<glyph:hud/debug_bg>").shadowColor(ShadowColor.shadowColor(0)),
             Component.empty()
                 .append(Component.text("TreeTumblers", NamedTextColor.GREEN))
                 .append(Component.text(" ").font(NamespacedKey("minecraft", "default")))

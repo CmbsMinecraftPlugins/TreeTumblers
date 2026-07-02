@@ -6,13 +6,10 @@ import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Color
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.entity.ArmorStand
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ColorableArmorMeta
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController.Companion.font
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController.Companion.lives
 import xyz.devcmb.tumblers.controllers.games.deathrun.DeathrunController.DeathrunScoreSource
 import xyz.devcmb.tumblers.data.Team
@@ -35,7 +32,7 @@ object DeathrunData : GameData(
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(NamespacedKey(TreeTumblers.NAMESPACE, "games/deathrun")))
+            .append(Format.mm("<glyph:game/deathrun_icon>"))
             .append(Component.text(" Deathrun"))
         ) {
             teleportConfig("cutscene.start")
@@ -131,10 +128,9 @@ object DeathrunData : GameData(
         DeathrunScoreSource.TRAP_KILL to 40,
         DeathrunScoreSource.TRAP_DAMAGE to 20
     ),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/deathrun_icon>"),
+    logo = Format.mm("<glyph:game/deathrun_logo>"),
+    tabLogo = Format.mm("<glyph:game/deathrun_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scoreboard = "deathrunScoreboard"
 )

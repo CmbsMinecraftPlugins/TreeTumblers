@@ -11,6 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import org.bukkit.plugin.java.JavaPlugin
+import xyz.devcmb.tumblers.util.Font
 import java.util.logging.Logger
 
 class TreeTumblers : JavaPlugin() {
@@ -34,6 +35,7 @@ class TreeTumblers : JavaPlugin() {
         plugin = this
         pluginLogger = logger
 
+        Font.loadFontIndex()
         InterfacesListeners.install(this)
         ControllerRegistry.init()
     }

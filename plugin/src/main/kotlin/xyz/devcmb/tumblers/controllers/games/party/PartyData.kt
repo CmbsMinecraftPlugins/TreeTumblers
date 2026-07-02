@@ -4,7 +4,6 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
-import xyz.devcmb.tumblers.controllers.games.party.PartyController.Companion.font
 import xyz.devcmb.tumblers.controllers.games.party.PartyController.PartyScoreSource
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
@@ -22,7 +21,7 @@ object PartyData : GameData(
     cutsceneSteps = arrayListOf(
         CutsceneStep(Component.empty()
             .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-            .append(Component.text("\uEA00").font(font))
+            .append(Format.mm("<glyph:game/party_icon>"))
             .append(Component.text(" Party")),
             "cutscene.start"
         ) {
@@ -74,10 +73,9 @@ object PartyData : GameData(
         Flag.DISABLE_NATURAL_REGENERATION,
         Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
-    icon = Component.text("\uEA00").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/party_icon>"),
+    logo = Format.mm("<glyph:game/party_logo>"),
+    tabLogo = Format.mm("<glyph:game/party_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scoreboard = "partyScoreboard",
-    logo = Component.text("\uEA01").font(font)
 )

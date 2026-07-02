@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.components.ConfirmationButtonType
 import xyz.devcmb.tumblers.ui.inventory.components.confirmationButton
+import xyz.devcmb.tumblers.util.Font
 
 class ReadyCheckInventory : HandledInventory {
     override val id: String = "readyCheckInventory"
@@ -24,7 +25,7 @@ class ReadyCheckInventory : HandledInventory {
     override val inventory = buildChestInterface {
         titleSupplier = {
             UserInterfaceUtility.customInventoryTitle(
-                Component.text("\uE000", NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, "containers")),
+                Font.getGlyph("container/filled_9"),
                 Component.text("Are you ready?", NamedTextColor.WHITE)
             )
         }
@@ -40,7 +41,7 @@ class ReadyCheckInventory : HandledInventory {
             EventController.markNotReady(it.view.player)
         }
 
-        withTransform { pane, view ->
+        withTransform { pane, _ ->
             pane[0,4] = StaticElement(drawable(ItemStack.of(Material.ECHO_SHARD).apply {
                 setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                 itemMeta = itemMeta.also {

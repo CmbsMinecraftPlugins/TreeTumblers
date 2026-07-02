@@ -27,7 +27,7 @@ class LonelyTask(
     override var completer: Player? = null
 
     override var displayText = ""
-        get() = "<font:${UserInterfaceUtility.ICONS}>${team.icon}</font> " +
+        get() = "<font:${UserInterfaceUtility.ICONS}>${team.iconGlyph}</font> " +
                     "<color:${team.color.asHexString()}>Sniffer</color> is ${feeling}! Bring a " +
                     "<yellow><lang:${item?.translationKey()}></yellow> to its pen for $count seconds!"
 

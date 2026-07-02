@@ -31,7 +31,7 @@ class CrumbleKitSelector : HandledInventory {
     override val inventory = buildChestInterface {
         titleSupplier = {
             UserInterfaceUtility.customInventoryTitle(
-                Component.text("\uEF02", NamedTextColor.WHITE).font(CrumbleController.font),
+                Format.mm("<glyph:container/crumble_kit_selector>"),
                 Component.text("Kit Selector", NamedTextColor.WHITE)
             )
         }

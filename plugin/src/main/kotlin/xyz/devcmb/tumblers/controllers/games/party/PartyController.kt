@@ -49,6 +49,7 @@ import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.configurable
@@ -422,7 +423,7 @@ class PartyController : AbstractGame(PartyData) {
                 && it.tumblingPlayer.team != player.tumblingPlayer.team
                 && (lastIndividualMatchups[player] != it || allowRefights)
             }
-        } catch(e: NoSuchElementException) {
+        } catch(_: NoSuchElementException) {
             null
         }
 
@@ -464,7 +465,7 @@ class PartyController : AbstractGame(PartyData) {
         val opponent = try {
             if (allowSolos) Team.entries.filter { it != team && it.playingTeam && (lastTeamMatchups[team] != it || allowRefights) }.random()
             else waitingTeams.first { it != team && (lastTeamMatchups[team] != it || allowRefights) }
-        } catch(e: Exception) {
+        } catch(_: Exception) {
             null
         }
 
@@ -681,7 +682,7 @@ class PartyController : AbstractGame(PartyData) {
 
             override fun announceLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
+                    Font.getGlyph("hud/fade"),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
@@ -692,7 +693,7 @@ class PartyController : AbstractGame(PartyData) {
 
             override suspend fun concludeLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
+                    Font.getGlyph("hud/fade"),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
                 )
@@ -784,7 +785,7 @@ class PartyController : AbstractGame(PartyData) {
 
             override fun announceLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
+                    Font.getGlyph("hud/fade"),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
                 )
@@ -795,7 +796,7 @@ class PartyController : AbstractGame(PartyData) {
 
             override suspend fun concludeLoading() {
                 val title = Title.title(
-                    Component.text("\uE000").font(NamespacedKey(TreeTumblers.NAMESPACE, "hud")),
+                    Font.getGlyph("hud/fade"),
                     Component.text("Loading arena...", NamedTextColor.GREEN),
                     Title.Times.times(Tick.of(0), Tick.of(0), Tick.of(10))
                 )

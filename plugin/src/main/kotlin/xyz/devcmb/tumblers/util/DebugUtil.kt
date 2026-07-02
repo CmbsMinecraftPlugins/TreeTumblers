@@ -5,7 +5,6 @@ import net.kyori.adventure.text.event.HoverEvent
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 
 object DebugUtil {
     val ansiColorMap: HashMap<NamedTextColor, String> = hashMapOf(
@@ -42,8 +41,7 @@ object DebugUtil {
             if(logLevel.level >= level.level) {
                 player.sendMessage(
                     Component.text("[")
-                        .append(Component.text(level.icon, NamedTextColor.WHITE)
-                            .font(UserInterfaceUtility.WARNINGS))
+                        .append(logLevel.icon())
                         .append(Component.text(" TreeTumblers] "))
                         .color(level.color)
                         .hoverEvent(HoverEvent.showText(
@@ -58,13 +56,17 @@ object DebugUtil {
     enum class DebugLogLevel(
         val level: Int,
         val color: NamedTextColor = NamedTextColor.WHITE,
-        val icon: String = "",
+        val glyph: String = "",
     ) {
         NONE(0),
-        ERROR(1, NamedTextColor.RED, "\uE004"),
-        WARNING(2, NamedTextColor.YELLOW, "\uE005"),
-        SUCCESS(3, NamedTextColor.GREEN, "\uE001"),
-        BENCHMARK(4, NamedTextColor.LIGHT_PURPLE, "\uE003"),
-        INFO(5, NamedTextColor.AQUA, "\uE000"),
+        ERROR(1, NamedTextColor.RED, "icon/warning/red"),
+        WARNING(2, NamedTextColor.YELLOW, "icon/warning/yellow"),
+        SUCCESS(3, NamedTextColor.GREEN, "icon/warning/green"),
+        BENCHMARK(4, NamedTextColor.LIGHT_PURPLE, "icon/warning/purple"),
+        INFO(5, NamedTextColor.AQUA, "icon/warning/blue");
+
+        fun icon(): Component {
+            return Font.getGlyph(glyph)
+        }
     }
 }

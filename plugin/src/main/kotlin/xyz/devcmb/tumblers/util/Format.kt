@@ -8,27 +8,24 @@ import net.kyori.adventure.text.minimessage.tag.Tag
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
-import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import java.util.UUID
 
 object Format {
     val miniMessage: MiniMessage = MiniMessage.builder()
         .tags(TagResolver.builder()
             .resolver(StandardTags.defaults())
-            .resolver(TagResolver.resolver("line") { args, context ->
+            .resolver(TagResolver.resolver("line") { args, _ ->
                 var component = Component.empty()
 
                 var length = try {
                     args.popOr { "Line argument must be a specified integer" }.value().toInt()
-                } catch(e: NumberFormatException) {
+                } catch(_: NumberFormatException) {
                     DebugUtil.severe("Line argument was not a number!")
                     return@resolver Tag.inserting(Component.empty())
                 }
@@ -43,7 +40,7 @@ object Format {
 
                 Tag.inserting(component)
             })
-            .resolver(TagResolver.resolver("team") { args, context ->
+            .resolver(TagResolver.resolver("team") { args, _ ->
                 val team = args.popOr { "Team argument must be a specified team color!" }.value()
                 val tumblingTeam = Team.entries.find { it.name.equals(team, ignoreCase = true) }
                 if(tumblingTeam == null) {
@@ -57,7 +54,7 @@ object Format {
                     else -> throw IllegalStateException("Type argument must be a specified string of either \"name\" or \"icon\"")
                 })
             })
-            .resolver(TagResolver.resolver("player") { args, context ->
+            .resolver(TagResolver.resolver("player") { args, _ ->
                 val player = args.popOr { "Player argument must be a valid specified player UUID!" }.value()
                 val tumblingPlayer = PlayerController.players.find { it.uuid == UUID.fromString(player) }
                 if(tumblingPlayer == null) {
@@ -65,6 +62,10 @@ object Format {
                 }
 
                 Tag.inserting(tumblingPlayer.formattedName)
+            })
+            .resolver(TagResolver.resolver("glyph") { args, _ ->
+                val glyph = args.popOr { "Glyph must be a specified path!" }.value()
+                Tag.inserting(Font.getGlyph(glyph))
             })
             .build())
         .build()
@@ -88,8 +89,7 @@ object Format {
             val team = Team.SPECTATORS
             return Component.empty()
                 .append(
-                    Component.text(team.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
+                    team.formattedIcon
                 )
                 .append(Component.text(" "))
                 .append(Component.text("Player", team.color))
@@ -98,8 +98,7 @@ object Format {
         val team = player.team
         return Component.empty()
             .append(
-                Component.text(team.icon, NamedTextColor.WHITE)
-                    .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
+                team.formattedIcon
             )
             .append(Component.text(" "))
             .append(Component.text(player.name, team.color))
@@ -113,20 +112,14 @@ object Format {
 
         val killerName =
             if(killer == null) Component.empty()
-                .append(
-                    Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
-                )
+                .append(Team.SPECTATORS.formattedIcon)
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
             else formatPlayerName(killer)
 
         val killedName =
             if(killed == null) Component.empty()
-                .append(
-                    Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
-                )
+                .append(Team.SPECTATORS.formattedIcon)
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
             else formatPlayerName(killed)
@@ -150,10 +143,7 @@ object Format {
     fun formatDeathMessage(killed: TumblingPlayer?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
         val killedName =
             if(killed == null) Component.empty()
-                .append(
-                    Component.text(Team.SPECTATORS.icon, NamedTextColor.WHITE)
-                        .font(NamespacedKey(TreeTumblers.NAMESPACE, "icons"))
-                )
+                .append(Team.SPECTATORS.formattedIcon)
                 .append(Component.text(" "))
                 .append(Component.text("Player", NamedTextColor.WHITE))
             else formatPlayerName(killed)
@@ -182,13 +172,13 @@ object Format {
 
     fun log(text: String, level: DebugUtil.DebugLogLevel) : Component {
         return Component.empty()
-            .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
+            .append(level.icon())
             .append(Component.text(" $text", level.color))
     }
 
     fun log(text: Component, level: DebugUtil.DebugLogLevel) : Component {
         return Component.empty()
-            .append(Component.text(level.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.WARNINGS))
+            .append(level.icon())
             .append(Component.text(" "))
             .append(text).color(level.color)
     }

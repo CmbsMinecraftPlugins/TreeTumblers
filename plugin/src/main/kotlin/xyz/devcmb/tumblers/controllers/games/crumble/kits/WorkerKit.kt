@@ -47,7 +47,6 @@ class WorkerKit(
     override val killPowerName: String = "Efficiency"
     override val killPowerDescription: String = "Gives you efficiency II on your tools for ${efficiencyDuration.tickSeconds}s"
 
-    override val kitIcon: String = "\uE007"
     override val kitDisplayTextLength: Double = 48.5
 
     var kills: Int = 0
@@ -59,7 +58,7 @@ class WorkerKit(
             try {
                 it.addEnchantment(Enchantment.EFFICIENCY, 2)
                 stacks.add(it)
-            } catch(e: Exception) {}
+            } catch(_: Exception) {}
         }
 
         kills++

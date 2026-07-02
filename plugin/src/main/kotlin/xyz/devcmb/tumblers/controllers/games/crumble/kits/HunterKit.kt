@@ -39,7 +39,6 @@ class HunterKit(
     override val killPowerName: String = "Blast Off"
     override val killPowerDescription: String = "Gives you a firework to charge your crossbow with"
 
-    override val kitIcon: String = "\uE003"
     override val kitDisplayTextLength: Double = 46.5
     override fun onKill(killed: Player) {
         require(player != null) { "Cannot invoke methods on the kit template" }

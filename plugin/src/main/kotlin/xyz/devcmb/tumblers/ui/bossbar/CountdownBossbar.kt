@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formatToMSS
 
@@ -18,7 +19,7 @@ class CountdownBossbar : HandledBossbar {
 
         if(currentGame.currentTimer?.paused == true) {
             return UserInterfaceUtility.backgroundTextCenter(
-                Component.text("\uEF03").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
+                Font.getGlyph("hud/countdown_paused_bg").shadowColor(ShadowColor.shadowColor(0)),
                 Format.mm("<yellow>Paused</yellow>").font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_5")),
                 "Paused",
                 75.0
@@ -27,7 +28,7 @@ class CountdownBossbar : HandledBossbar {
 
         val text = formatToMSS(currentGame.countdownTime)
         return UserInterfaceUtility.backgroundTextCenter(
-            Component.text("\uEF01").font(UserInterfaceUtility.HUD).shadowColor(ShadowColor.shadowColor(0)),
+            Font.getGlyph("hud/countdown_bg").shadowColor(ShadowColor.shadowColor(0)),
             Component.text(text).font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_5")),
             text,
             30.0

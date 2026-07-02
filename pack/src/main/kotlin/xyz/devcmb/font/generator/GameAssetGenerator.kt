@@ -26,7 +26,7 @@ object GameAssetGenerator : FontGenerator {
                 throw IllegalStateException("Game ${gameFolder.name} does not have valid game assets")
 
             val iconResource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", "game", "${gameFolder.name}_icon.png"))
-            val logoResource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", "games", "${gameFolder.name}_logo.png"))
+            val logoResource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", "game", "${gameFolder.name}_logo.png"))
 
             builder.addTexture(logo, logoResource)
 

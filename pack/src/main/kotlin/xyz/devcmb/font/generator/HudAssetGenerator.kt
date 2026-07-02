@@ -14,7 +14,7 @@ object HudAssetGenerator : FontGenerator {
     override fun generateFonts(builder: ResourcePackBuilder): Iterable<GeneratedFont> {
         val games = javaClass.getResource("/pack/hud")
         val file = File(games!!.toURI().path)
-        val providers: ArrayList<FontProvider.BitmapFontProvider> = dirToBitmapProviders(builder, file)
+        val providers: ArrayList<FontProvider.BitmapFontProvider> = dirToBitmapProviders(builder, file, 15, 9)
 
         return listOf(GeneratedFont(IdentifiedResource(Namespace.TUMBLING, ResourcePath("hud")), providers))
     }

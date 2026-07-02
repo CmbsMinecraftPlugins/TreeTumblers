@@ -41,7 +41,6 @@ class SorcererKit(
     override val killPowerName: String = "Kill With Kindness"
     override val killPowerDescription: String = "Heals you $healHearts hearts over ${healDuration.tickSeconds}s"
 
-    override val kitIcon: String = "\uE005"
     override val kitDisplayTextLength: Double = 59.75
 
     override fun onKill(killed: Player) {

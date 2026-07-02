@@ -9,6 +9,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.bossbar.HandledBossbar
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formatToMSS
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -22,7 +23,7 @@ class CrumbleBossbar(
     override fun getComponent(): Component {
         val crumble = GameController.activeGame
             as? CrumbleController
-            ?: return Component.text(DebugUtil.DebugLogLevel.ERROR.icon).font(UserInterfaceUtility.WARNINGS)
+            ?: return DebugUtil.DebugLogLevel.ERROR.icon()
 
         var component = Component.empty()
         val matchup = crumble.getCurrentMatchup(player) ?: return Component.empty()
@@ -87,7 +88,7 @@ class CrumbleBossbar(
 
         val bgComponent = Component.empty()
             .append(UserInterfaceUtility.negativeSpace(2))
-            .append(Component.text("\uEF03").font(CrumbleController.font).shadowColor(ShadowColor.shadowColor(0)))
+            .append(Font.getGlyph("hud/crumble_matchup_bossbar").shadowColor(ShadowColor.shadowColor(0)))
             .append(UserInterfaceUtility.negativeSpace(191))
             .append(component)
 

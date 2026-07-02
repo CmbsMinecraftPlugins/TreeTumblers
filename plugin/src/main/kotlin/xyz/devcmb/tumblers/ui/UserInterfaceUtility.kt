@@ -21,14 +21,12 @@ import kotlin.math.roundToInt
 
 object UserInterfaceUtility {
     val SPACES = NamespacedKey(TreeTumblers.NAMESPACE, "spaces")
-    val WARNINGS = NamespacedKey(TreeTumblers.NAMESPACE, "warnings")
-    val HUD = NamespacedKey(TreeTumblers.NAMESPACE, "hud")
     val ICONS = NamespacedKey(TreeTumblers.NAMESPACE, "icons")
 
     // item model key
     val FLAT_SKULL = NamespacedKey(TreeTumblers.NAMESPACE, "flat_skull")
 
-    val CLOCK = Component.text("\uEF04").font(HUD)
+    val CLOCK = Format.mm("<glyph:icon/timer>")
 
     val NEGATIVE_ADVANCES: HashMap<Int, String> = hashMapOf(
         -1 to "\uF000",

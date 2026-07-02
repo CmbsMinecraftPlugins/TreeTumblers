@@ -433,10 +433,7 @@ object EventController : IController {
                         teams,
                         *Team.entries
                             .filter { it.playingTeam }
-                            .map { Placeholder.component(
-                                it.name.lowercase(),
-                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
-                            }
+                            .map { Placeholder.component(it.name.lowercase(), it.formattedIcon) }
                             .toTypedArray()
                     ),
                     Format.mm("In ${placement}${getOrdinalSuffix(placement)} place"),
@@ -467,7 +464,7 @@ object EventController : IController {
                             .filter { it.playingTeam }
                             .map { Placeholder.component(
                                 it.name.lowercase(),
-                                Component.text(it.icon, NamedTextColor.WHITE).font(UserInterfaceUtility.ICONS))
+                                it.formattedIcon)
                             }
                             .toTypedArray()
                     ),
@@ -609,7 +606,7 @@ object EventController : IController {
             it.sendPlayerListHeader(
                 Component.empty()
                     .appendNewline()
-                    .append(Component.text("\u0001").font(UserInterfaceUtility.ICONS))
+                    .append(Format.mm("<glyph:hud/title>"))
                     .appendNewline()
                     .appendNewline()
                     .appendNewline()
@@ -691,7 +688,7 @@ object EventController : IController {
                 )
             }
         } else {
-            placements.forEachIndexed { i, it ->
+            placements.forEachIndexed { _, it ->
                 var playersComponent = getTeamPlayersComponent(it.first)
                 playersComponent = playersComponent.append(Component.text(" "))
 

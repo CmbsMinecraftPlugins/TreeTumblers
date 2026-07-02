@@ -8,7 +8,6 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
@@ -207,7 +206,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
                     val text = formatMsTime(time * 50L)
 
                     it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
-                        Component.text("\uEF00").font(font).shadowColor(ShadowColor.shadowColor(0)),
+                        Font.getGlyph("hud/deathrun_time_bg"),
                         Component.empty()
                             .append(UserInterfaceUtility.CLOCK)
                             .append(Component.text(" $text")),
