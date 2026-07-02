@@ -14,8 +14,11 @@ object PredefinedModelGenerator : ModelGenerator {
         val models = javaClass.getResource("/pack/models")
         val file = File(models!!.toURI().path)
 
-        val modelTextures = javaClass.getResource("/pack/model_textures")
-        val modelTexturesFile = File(modelTextures!!.toURI().path)
+        val modelItemTextures = javaClass.getResource("/pack/model_item_textures")
+        val modelItemTexturesFile = File(modelItemTextures!!.toURI().path)
+
+        val modelBlockTextures = javaClass.getResource("/pack/model_block_textures")
+        val modelBlockTexturesFile = File(modelBlockTextures!!.toURI().path)
 
         fun searchDir(parent: File) {
             parent.listFiles().filter { it.name.endsWith(".json") || it.isDirectory }.forEach {
@@ -34,14 +37,14 @@ object PredefinedModelGenerator : ModelGenerator {
             }
         }
 
-        fun searchModelTextures(parent: File) {
+        fun searchModelTextures(root: File, parent: File, type: String) {
             parent.listFiles().filter { it.name.endsWith(".png") || it.isDirectory }.forEach {
-                if(it.isDirectory) searchModelTextures(it)
+                if(it.isDirectory) searchModelTextures(root, it, type)
                 else {
                     val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath(
-                        "model",
+                        type,
                         *it.path
-                            .substringAfter(modelTexturesFile.path + File.separator)
+                            .substringAfter(root.path + File.separator)
                             .split(File.separator)
                             .toTypedArray()
                     ))
@@ -52,7 +55,8 @@ object PredefinedModelGenerator : ModelGenerator {
         }
 
         searchDir(file)
-        searchModelTextures(modelTexturesFile)
+        searchModelTextures(modelItemTexturesFile, modelItemTexturesFile, "item")
+        searchModelTextures(modelBlockTexturesFile, modelBlockTexturesFile, "block")
 
         return generatedModels
     }
