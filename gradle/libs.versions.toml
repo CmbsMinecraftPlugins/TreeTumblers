@@ -17,7 +17,7 @@ noxesium = { group = "com.noxcrew.noxesium", name = "paper-platform", version = 
 
 # Libraries
 kotlin = { group = "org.jetbrains.kotlin", name = "kotlin-stdlib-jdk8" }
-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.2" }
+kotlinx-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-core", version = "1.10.2" }
 
 interfaces = { group = "com.noxcrew.interfaces", name = "interfaces", version = "2.0.0" }
 reflections = { group = "org.reflections", name = "reflections", version = "0.10.2" }
@@ -31,11 +31,13 @@ ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "
 ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
 ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 
+kotlinx-serialization = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version = "1.11.0" }
+
 [bundles]
 plugins = ["fawe", "packetevents", "disguises", "noxesium"]
 libraries = [
     "kotlin",
-    "coroutines",
+    "kotlinx-coroutines",
     "interfaces",
     "reflections",
     "litecommands-bukkit",
