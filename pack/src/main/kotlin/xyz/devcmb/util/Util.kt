@@ -14,6 +14,7 @@ fun dirToBitmapProviders(
     root: File,
     defaultHeight: Int = 9,
     defaultAscent: Int = 8,
+    addTextures: Boolean = true
 ): ArrayList<FontProvider.BitmapFontProvider> {
     var currentIndex = 0
     val providers = arrayListOf<FontProvider.BitmapFontProvider>()
@@ -28,7 +29,7 @@ fun dirToBitmapProviders(
                 .substringAfter(root.path.toString() + File.separator)
                 .replace(File.separator, "_")
             val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", root.name, name))
-            builder.addTexture(it, resource)
+            if(addTextures) builder.addTexture(it, resource)
 
             val (height, ascent) = FontOverrides.getOverrides(it, defaultHeight, defaultAscent)
             providers.add(FontProvider.BitmapFontProvider(

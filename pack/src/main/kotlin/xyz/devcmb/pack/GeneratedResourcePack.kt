@@ -7,14 +7,19 @@ import kotlinx.serialization.json.Json
 import org.bukkit.configuration.file.YamlConfiguration
 import xyz.devcmb.font.FontProvider
 import xyz.devcmb.font.GeneratedFont
+import xyz.devcmb.items.GeneratedItem
+import xyz.devcmb.models.GeneratedModel
 import xyz.devcmb.util.ConstantPackValues
 import xyz.devcmb.util.IdentifiedResource
+import xyz.devcmb.util.Namespace
 import java.io.File
 import kotlin.io.path.Path
 import kotlin.time.Duration.Companion.milliseconds
 
 class GeneratedResourcePack(
     val fonts: Iterable<GeneratedFont>,
+    val models: Iterable<GeneratedModel>,
+    val items: Iterable<GeneratedItem>,
     val textures: HashSet<Pair<File, IdentifiedResource>>
 ) {
     val fontTextureIndex: YamlConfiguration = YamlConfiguration()
@@ -39,6 +44,9 @@ class GeneratedResourcePack(
             saveTextures(location)
             saveFonts(location)
             saveFontIndex()
+            saveModels(location)
+            saveItems(location)
+            saveSounds(location)
         }
     }
 
@@ -101,7 +109,10 @@ class GeneratedResourcePack(
                 if(provider.chars.size > 1) return@forEach
 
                 fontTextureIndex.set(
-                    "${it.resource.resourcePath.path}.${provider.file.resourcePath.path.substringAfter("font/").substringBefore(".png")}",
+                    "${it.resource.resourcePath.path}.${provider.file.resourcePath.path
+                        .substringAfter("font/")
+                        .substringAfter("item/")
+                        .substringBefore(".png")}",
                     provider.chars.first()
                 )
             }
@@ -118,5 +129,61 @@ class GeneratedResourcePack(
         ).toString())
 
         fontTextureIndex.save(saveDir)
+    }
+
+    private fun saveModels(root: File) {
+        models.forEach {
+            val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
+            resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
+
+            val parent = File(Path(
+                root.toString(),
+                "assets",
+                it.resource.namespace.name.lowercase(),
+                "models",
+                *resourcePath.dropLast(1).toTypedArray()
+            ).toString())
+            parent.mkdirs()
+
+            File(parent, resourcePath.last()).writeText(it.contents)
+        }
+    }
+
+    private fun saveItems(root: File) {
+        items.forEach {
+            val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
+            resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
+
+            val parent = File(Path(
+                root.toString(),
+                "assets",
+                it.resource.namespace.name.lowercase(),
+                "items",
+                *resourcePath.dropLast(1).toTypedArray()
+            ).toString())
+            parent.mkdirs()
+
+            File(parent, resourcePath.last()).writeText(it.contents)
+        }
+    }
+
+    private fun saveSounds(root: File) {
+        val soundsFolder = File(javaClass.getResource("/pack/sounds")!!.toURI().path)
+        val soundsFile = File(javaClass.getResource("/pack/sounds.json")!!.toURI().path)
+
+        val namespaceRoot = File(Path(
+            root.path,
+            "assets",
+            Namespace.TUMBLING.name.lowercase(),
+        ).toString())
+        namespaceRoot.mkdirs()
+
+        File(namespaceRoot, "sounds.json").outputStream().use {
+            soundsFile.inputStream().copyTo(it)
+        }
+
+        val soundsDir = File(namespaceRoot, "sounds")
+        soundsDir.mkdirs()
+        soundsFolder.copyRecursively(soundsDir)
     }
 }
