@@ -41,14 +41,18 @@ class GeneratedResourcePack(
 
     fun saveFonts(root: File) {
         fonts.forEach {
-            val resourcePath = it.resource.resourcePath
+            val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
+            resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
 
-            // TODO: Finish its too late now
-            val path = File(Path(
+            val parent = File(Path(
+                root.toString(),
                 "assets",
                 it.resource.namespace.name.lowercase(),
                 "font"
             ).toString())
+            parent.mkdirs()
+
+            File(parent, resourcePath.last()).writeText(Json.encodeToString(it))
         }
     }
 }
