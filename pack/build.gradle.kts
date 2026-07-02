@@ -30,4 +30,9 @@ tasks.named<JavaExec>("run") {
         "buildDir",
         layout.buildDirectory.get().asFile.absolutePath
     )
+
+    systemProperty(
+        "serverDir",
+        project(":plugin").layout.projectDirectory.dir("run").asFile.absolutePath
+    )
 }
