@@ -19,8 +19,11 @@ class ResourcePackBuilder {
         generators.add(generator)
     }
 
-    fun addTexture(file: File, parent: IdentifiedResource) {
-        textures.add(file to parent)
+    /**
+     * [resource] is relative to assets/namespace/textures and should have a file extension
+     */
+    fun addTexture(file: File, resource: IdentifiedResource) {
+        textures.add(file to resource)
     }
 
     fun build() : GeneratedResourcePack {

@@ -6,6 +6,9 @@ import xyz.devcmb.util.IdentifiedResource
 
 @Serializable
 data class GeneratedFont(
+    /**
+     * [resource] is relative to assets/namespace/font
+     */
     @Transient
     val resource: IdentifiedResource = IdentifiedResource(""),
     val providers: List<FontProvider>

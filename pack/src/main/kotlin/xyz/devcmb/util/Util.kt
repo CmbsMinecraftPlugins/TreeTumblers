@@ -1,46 +1,44 @@
 package xyz.devcmb.util
 
-import java.io.IOException
-import java.net.URI
-import java.net.URISyntaxException
-import java.net.URL
-import java.nio.file.FileSystems
-import java.nio.file.Files
-import java.nio.file.Paths
+import xyz.devcmb.font.FontOverrides
+import xyz.devcmb.font.FontProvider
+import xyz.devcmb.pack.ResourcePackBuilder
+import java.io.File
 
-fun listResourcesRobust(resourcePath: String = ""): List<String> {
-    val classLoader = Thread.currentThread().contextClassLoader ?: ResourcePath::class.java.classLoader
-    val resourceUrl = classLoader.getResource(resourcePath) ?: return emptyList()
+fun Int.toUnicode(): String {
+    return String(Character.toChars(this))
+}
 
-    return try {
-        when (resourceUrl.protocol) {
-            "file" -> listFilesFromFileSystem(resourceUrl.toURI())
-            "jar" -> listFilesFromJar(resourceUrl)
-            else -> emptyList()
+fun dirToBitmapProviders(
+    builder: ResourcePackBuilder,
+    root: File,
+    defaultHeight: Int = 9,
+    defaultAscent: Int = 8,
+): ArrayList<FontProvider.BitmapFontProvider> {
+    var currentIndex = 0
+    val providers = arrayListOf<FontProvider.BitmapFontProvider>()
+    fun scanDir(file: File) {
+        file.listFiles().filter { it.name.endsWith(".png") || it.isDirectory }.forEach {
+            if(it.isDirectory) {
+                scanDir(it)
+                return@forEach
+            }
+
+            val name = it.path.toString()
+                .substringAfter(root.path.toString() + File.separator)
+                .replace(File.separator, "_")
+            val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", root.name, name))
+            builder.addTexture(it, resource)
+
+            val (height, ascent) = FontOverrides.getOverrides(it, defaultHeight, defaultAscent)
+            providers.add(FontProvider.BitmapFontProvider(
+                resource,
+                height, ascent,
+                listOf((currentIndex + 0xF000).toUnicode())
+            ))
+            currentIndex++
         }
-    } catch (e: URISyntaxException) {
-        emptyList()
-    } catch (e: IOException) {
-        emptyList()
     }
-}
-
-private fun listFilesFromFileSystem(uri: URI): List<String> {
-    val path = Paths.get(uri)
-    return Files.list(path)
-        .filter(Files::isRegularFile)
-        .map { it.fileName.toString() }
-        .toList()
-}
-
-private fun listFilesFromJar(url: URL): List<String> {
-    val jarUri = url.toURI()
-    val jarPath = jarUri.path.substringAfter("file:").substringBefore("!")
-    val entries = FileSystems.newFileSystem(URI.create("jar:file:$jarPath"), emptyMap<String, String>())
-
-    return Files.walk(entries.getPath(jarUri.path.substringAfter("!")))
-        .filter(Files::isRegularFile)
-        .map { it.fileName.toString() }
-        .toList()
-        .also { entries.close() }
+    scanDir(root)
+    return providers
 }

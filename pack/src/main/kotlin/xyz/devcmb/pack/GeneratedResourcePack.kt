@@ -72,11 +72,11 @@ class GeneratedResourcePack(
                 "assets",
                 parent.namespace.name.lowercase(),
                 "textures",
-                *resourcePath.toTypedArray()
+                *resourcePath.dropLast(1).toTypedArray()
             ).toString())
             loc.mkdirs()
 
-            File(loc, file.name).outputStream().use {
+            File(loc, resourcePath.last()).outputStream().use {
                 file.inputStream().copyTo(it)
             }
         }

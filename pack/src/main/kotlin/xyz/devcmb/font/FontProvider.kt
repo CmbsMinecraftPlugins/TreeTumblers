@@ -6,6 +6,9 @@ import xyz.devcmb.util.IdentifiedResource
 
 @Serializable
 sealed interface FontProvider {
+    /**
+     * [file] is relative to assets/namespace/textures and should contain a file extension
+     */
     @Serializable
     @SerialName("bitmap")
     class BitmapFontProvider(
@@ -22,4 +25,10 @@ sealed interface FontProvider {
         val id: IdentifiedResource
     ) : FontProvider {
     }
+
+    @Serializable
+    @SerialName("space")
+    class SpaceFontProvider(
+        val advances: Map<String, Int>
+    ): FontProvider
 }
