@@ -47,7 +47,7 @@ object GameAssetGenerator : FontGenerator {
             // Tab list logo
             providers.add(FontProvider.BitmapFontProvider(
                 logoResource,
-                14, 45,
+                45, 14,
                 listOf((index + 0xF000).toUnicode())
             ))
         }

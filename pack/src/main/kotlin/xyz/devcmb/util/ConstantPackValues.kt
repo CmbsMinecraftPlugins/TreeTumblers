@@ -28,7 +28,8 @@ object ConstantPackValues {
         @Serializable
         data class PackData(
             @EncodeDefault val description: String = "The server resources for the Tree Tumblers Minecraft Event",
-            @EncodeDefault val pack_format: Int = 84
+            @EncodeDefault val min_format: Int = 84,
+            @EncodeDefault val max_format: Int = 84
         )
     }
 }

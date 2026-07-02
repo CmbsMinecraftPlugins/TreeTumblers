@@ -9,7 +9,7 @@ class ItemModelReference(val modelLocation: IdentifiedResource) {
     fun getSerialized(): String {
         return Json.encodeToString(ItemModelReferenceData(
             ItemModelReferenceData.ModelData(
-                modelLocation.namespace.name.lowercase() + ":" + modelLocation.resourcePath.parts.drop(1).joinToString("/")
+                modelLocation.namespace.name.lowercase() + ":" + modelLocation.resourcePath.parts.joinToString("/")
             )
         ))
     }

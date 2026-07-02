@@ -9,7 +9,7 @@ class ItemModel(val textureLocation: IdentifiedResource) {
     fun getSerialized(): String {
         return Json.encodeToString(ItemModelData(
             mapOf("layer0" to
-                    textureLocation.namespace.name.lowercase() + ":" + textureLocation.resourcePath.parts.drop(1).joinToString("/")
+                    textureLocation.namespace.name.lowercase() + ":" + textureLocation.resourcePath.parts.joinToString("/")
             ),
         ))
     }
