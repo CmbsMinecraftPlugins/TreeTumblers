@@ -25,10 +25,6 @@ class BrawlController : RoundedGame(
     3,
     5.minutes
 ) {
-    companion object {
-        val font = NamespacedKey(TreeTumblers.NAMESPACE, "games/brawl")
-    }
-
     val kitSelector = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<yellow>Kit Selector</yellow>"))
         droppable = false

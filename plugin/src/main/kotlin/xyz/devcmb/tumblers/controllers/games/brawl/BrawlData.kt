@@ -4,10 +4,10 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
-import xyz.devcmb.tumblers.controllers.games.brawl.BrawlController.Companion.font
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.util.Format
 
 object BrawlData : GameData(
     id = "brawl",
@@ -18,7 +18,7 @@ object BrawlData : GameData(
         CutsceneStep(
             Component.empty()
                 .append(Component.text("Welcome to ", NamedTextColor.YELLOW))
-                .append(Component.text("\uEA00").font(font))
+                .append(Format.mm("<glyph:game/brawl_icon>"))
                 .append(Component.text(" Brawl")),
             "cutscene.start"
         ) { map ->
@@ -27,10 +27,9 @@ object BrawlData : GameData(
     ),
     flags = setOf(),
     scores = hashMapOf(),
-    icon = Component.text("\uEA00").font(font),
-    logo = Component.text("\uEA01").font(font)
-        .shadowColor(ShadowColor.none()),
-    tabLogo = Component.text("\uEA02").font(font)
+    icon = Format.mm("<glyph:game/brawl_icon>"),
+    logo = Format.mm("<glyph:game/brawl_logo>"),
+    tabLogo = Format.mm("<glyph:game/brawl_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     spawns = BrawlSpawn.entries,
     scoreboard = "brawlScoreboard",
