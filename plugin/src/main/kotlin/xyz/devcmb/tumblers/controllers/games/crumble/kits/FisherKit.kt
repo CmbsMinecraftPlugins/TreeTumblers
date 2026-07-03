@@ -33,7 +33,6 @@ class FisherKit(
 
     override val id: String = "fisher"
     override val name: String = "Fisher"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/fisher")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack.of(Material.TRIDENT).apply {
             addEnchantment(Enchantment.LOYALTY, tridentLoyaltyLevel)

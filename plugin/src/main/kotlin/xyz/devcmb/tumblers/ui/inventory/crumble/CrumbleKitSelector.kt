@@ -66,7 +66,7 @@ class CrumbleKitSelector : HandledInventory {
                 val item = ItemStack.of(Material.ECHO_SHARD).apply {
                     editMeta { meta ->
                         meta.itemName(Format.mm("<white>${kit.name}</white>"))
-                        meta.itemModel = kit.inventoryModel
+                        meta.itemModel = NamespacedKey(TreeTumblers.NAMESPACE, "icon/crumble/${kit.id}")
                         meta.lore(listOf(
                             Component.text("Ability: ${kit.abilityName}", NamedTextColor.AQUA),
                             *wrapComponent(

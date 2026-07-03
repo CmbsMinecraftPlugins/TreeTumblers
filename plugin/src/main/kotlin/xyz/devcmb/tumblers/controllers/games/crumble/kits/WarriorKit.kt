@@ -27,7 +27,6 @@ class WarriorKit(
 
     override val id: String = "warrior"
     override val name: String = "Warrior"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/warrior")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),

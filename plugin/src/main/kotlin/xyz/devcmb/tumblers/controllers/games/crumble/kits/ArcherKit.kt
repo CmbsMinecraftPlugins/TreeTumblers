@@ -28,7 +28,6 @@ class ArcherKit(
 
     override val id: String = "archer"
     override val name: String = "Archer"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/archer")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)

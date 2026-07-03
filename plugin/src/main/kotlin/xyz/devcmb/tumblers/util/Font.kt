@@ -23,7 +23,8 @@ object Font {
 
     fun getGlyph(path: String): Component {
         val value = findValue(path) ?: return Component.text("?")
-        return Component.text(value.second, NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, value.first))
+        return Component.empty()
+            .append(Component.text(value.second, NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, value.first)))
     }
 
     fun findValue(

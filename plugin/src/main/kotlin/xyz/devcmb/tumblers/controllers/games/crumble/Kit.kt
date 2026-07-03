@@ -12,7 +12,6 @@ interface Kit : Listener {
 
     val id: String
     val name: String
-    val inventoryModel: NamespacedKey
     val items: ArrayList<ItemStack>
 
     val abilityName: String

@@ -42,7 +42,6 @@ class NinjaKit(
 
     override val id: String = "ninja"
     override val name: String = "Ninja"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/ninja")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),

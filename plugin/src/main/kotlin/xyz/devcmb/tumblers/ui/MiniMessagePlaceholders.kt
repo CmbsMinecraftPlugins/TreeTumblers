@@ -72,7 +72,7 @@ object MiniMessagePlaceholders {
             "<player> should get their eyes checked",
             "<player> should buy a better pc",
             "<player> got banned from discord"
-        ).map { "<gray>$it</gray>" }
+        ).map { "<gray>(<white><glyph:icon/skull></white>) $it</gray>" }
     }
 
     object Event {

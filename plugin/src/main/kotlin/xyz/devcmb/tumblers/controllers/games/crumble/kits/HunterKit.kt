@@ -23,7 +23,6 @@ class HunterKit(
 ) : Kit {
     override val id: String = "hunter"
     override val name: String = "Hunter"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/hunter")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.WOODEN_SWORD).apply {
             addEnchantment(Enchantment.KNOCKBACK, 1)

@@ -8,6 +8,7 @@ import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
@@ -146,7 +147,7 @@ class CrumbleController : RoundedGame(
         }
     }.build()
 
-    val killModel = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/kill")
+    val killModel = NamespacedKey(TreeTumblers.NAMESPACE, "icon/crumble/kill")
 
     override val debugToolkit = object : DebugToolkit() {
         override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
@@ -365,7 +366,7 @@ class CrumbleController : RoundedGame(
                 val kit = playerKits[player.tumblingPlayer]
                 if(kit != null) {
                     component = component.append(UserInterfaceUtility.backgroundTextCenter(
-                        Font.getGlyph("hud/crumble_kit_bg"),
+                        Font.getGlyph("hud/crumble_kit_bg").shadowColor(ShadowColor.shadowColor(0)),
                         Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Font.getGlyph("icon/crumble/${kit.id}"))),
                         kit.name,
                         69.5,
@@ -776,7 +777,7 @@ class CrumbleController : RoundedGame(
                     40
                 ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
             )
-            model(kit.inventoryModel)
+            model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/crumble/${kit.id}"))
             persistentDataContainer {
                 set(kitItemsKey, PersistentDataType.BOOLEAN, true)
             }

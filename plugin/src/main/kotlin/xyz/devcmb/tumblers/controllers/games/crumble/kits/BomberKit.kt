@@ -32,7 +32,6 @@ class BomberKit(
 
     override val id: String = "bomber"
     override val name: String = "Bomber"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/bomber")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.STONE_PICKAXE),

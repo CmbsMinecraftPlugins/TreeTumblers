@@ -17,6 +17,12 @@ object SpacesGenerator : FontGenerator {
             put((it + 0xF000).toUnicode(), advance)
             advance = if (advance == -1) -5 else advance - 5
         }
+
+        advance = 1
+        (0..100).forEach {
+            put((it + 0xE000).toUnicode(), advance)
+            advance = if (advance == 1) 5 else advance + 5
+        }
     }
 
     override fun generateFonts(builder: ResourcePackBuilder): Iterable<GeneratedFont> {

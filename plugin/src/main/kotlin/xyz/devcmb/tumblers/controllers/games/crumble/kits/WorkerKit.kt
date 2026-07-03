@@ -33,7 +33,6 @@ class WorkerKit(
 
     override val id: String = "worker"
     override val name: String = "Worker"
-    override val inventoryModel: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "crumble/worker")
     override val items: ArrayList<ItemStack> = arrayListOf(
         ItemStack(Material.STONE_SWORD),
         ItemStack(Material.WOODEN_AXE),
