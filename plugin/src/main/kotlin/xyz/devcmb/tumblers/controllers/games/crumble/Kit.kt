@@ -1,0 +1,28 @@
+package xyz.devcmb.tumblers.controllers.games.crumble
+
+import org.bukkit.NamespacedKey
+import org.bukkit.entity.Player
+import org.bukkit.event.Listener
+import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.data.TumblingPlayer
+
+interface Kit : Listener {
+    val player: TumblingPlayer?
+    val crumble: CrumbleController
+
+    val id: String
+    val name: String
+    val items: ArrayList<ItemStack>
+
+    val abilityName: String
+    val abilityDescription: String
+
+    val killPowerName: String
+    val killPowerDescription: String
+
+    val kitDisplayTextLength: Double
+
+    fun onKill(killed: Player)
+    fun onAbility()
+    fun cleanup() {}
+}

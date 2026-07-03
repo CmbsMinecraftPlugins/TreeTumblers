@@ -1,0 +1,90 @@
+package xyz.devcmb.tumblers.ui
+
+import xyz.devcmb.tumblers.TreeTumblers
+
+object MiniMessagePlaceholders {
+    object Game {
+        /**
+         * placement - The team's placement in the game
+         *
+         * team - The [xyz.devcmb.tumblers.data.Team.formattedName]
+         *
+         * score - The team's score
+         */
+        const val TEAM_SCOREBOARD_PLACEMENT = "<placement>. <team> - <gold><score></gold>"
+
+        const val HIDDEN_TEAM_SCOREBOARD_PLACEMENT = "<white>?. <font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray> - <gray>?????</gray>"
+
+        /**
+         * placement - The player's placement
+         *
+         * head - The player's head component
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         *
+         * score - The player's score
+         */
+        const val INDIVIDUAL_SCOREBOARD_PLACEMENT = "<placement>. <head> <name> - <gold><score></gold>"
+
+        /**
+         * head - The player's head component
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         */
+        const val HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT = "<white>?.</white> <head> <name> - <gray>????</gray>"
+
+        /**
+         * placement - The player's placement
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         *
+         * score - The player's score
+         */
+        const val INDIVIDUAL_SCOREBOARD_PLACEMENT_NO_HEAD = "<placement>. <player> - <gold><score></gold>"
+
+        const val HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_NO_HEAD = "<white>?. <font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray> - <gray>????</gray>"
+
+        /**
+         * head - The player's head component
+         *
+         * name - The player's [xyz.devcmb.tumblers.util.Format.formatPlayerName]
+         */
+        const val HIDDEN_INDIVIDUAL_SCOREBOARD_PLACEMENT_WITH_SCORE = "<white>?.</white> <head> <name> - <gold><score></gold>"
+
+        /**
+         * current - The current round
+         *
+         * total - The total amount of rounds
+         */
+        const val SCOREBOARD_CURRENT_ROUND = "<color:${Event.EVENT_COLOR}><white>Round </white><current>/<total></color>"
+
+        /**
+         * player - The player who died
+         */
+        val DEATH_MESSAGES = arrayListOf(
+            "<player> tripped",
+            "<player> didn't try hard enough",
+            "<player> thought they could speed bridge",
+            "<player> had a skill issue",
+            "<player> became a pork chop",
+            "<player> went kaboom",
+            "<player> was caught playing fortnite",
+            "<player> should get their eyes checked",
+            "<player> should buy a better pc",
+            "<player> got banned from discord"
+        ).map { "<gray>(<white><glyph:icon/skull></white>) $it</gray>" }
+    }
+
+    object Event {
+        const val EVENT_COLOR = "#00ff78"
+
+        const val EVENT_SCOREBOARD_TITLE = "<color:$EVENT_COLOR><b>Tree Tumblers</b></color>"
+
+        /**
+         * current - Current game
+         *
+         * max - Total amount of games
+         */
+        const val EVENT_SCOREBOARD_GAME = "<white>Game: <color:$EVENT_COLOR><current>/<max></color></white>"
+    }
+}
