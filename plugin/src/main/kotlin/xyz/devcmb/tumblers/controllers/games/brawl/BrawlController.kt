@@ -5,6 +5,7 @@ import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.util.Vector
@@ -48,12 +49,13 @@ class BrawlController : RoundedGame(
     val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
     val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
+    var kitSelectActive: Boolean = false
     override suspend fun preRound() {
         playerKits.clear()
         suspendSync {
             val spectators = Team.entries
                 .filter { !it.playingTeam }
-                .fold(arrayListOf<Player>()) { acc, entry -> acc.apply { addAll(entry.getOnlinePlayers()) } }
+                .flatMap { it.getOnlinePlayers() }
             spectators.forEach { makeSpectator(it) }
 
             spawnPlayers(
@@ -71,6 +73,7 @@ class BrawlController : RoundedGame(
             }
         }
 
+        kitSelectActive = true
         timer(Timer(45) {
             id = "brawl_kit_select"
             title = "Kit Select"
@@ -99,6 +102,7 @@ class BrawlController : RoundedGame(
                 }
             }
         }
+        kitSelectActive = false
 
         super.preRound()
     }
@@ -182,6 +186,7 @@ class BrawlController : RoundedGame(
     override suspend fun gamePregame() {
     }
 
+    val teamSpawns: HashMap<Team, BrawlSpawn> = HashMap()
     /**
      * The abstract method for spawning players in
      *
@@ -193,7 +198,7 @@ class BrawlController : RoundedGame(
         if(cycle != SpawnCycle.PRE_ROUND) return
 
         val currentMap = loadedMaps[roundIndex]
-        val teamSpawns: HashMap<Team, BrawlSpawn> = HashMap()
+        teamSpawns.clear()
         Team.entries.filter { it.playingTeam }.forEach {
             teamSpawns[it] = BrawlSpawn.entries.filter { entry ->
                 entry.name.contains("SET_") && !teamSpawns.containsValue(entry)
@@ -215,6 +220,8 @@ class BrawlController : RoundedGame(
     }
 
     fun selectKit(player: TumblingPlayer, brawlKit: BrawlKit, preRound: Boolean = false) {
+        if(!kitSelectActive) return
+
         if(brawlKit !in roundKits[roundIndex])
             throw GameControllerException("Attempted to select a kit not included in the current round")
 
@@ -260,14 +267,35 @@ class BrawlController : RoundedGame(
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
-        TODO("Not yet implemented")
+        if(kitSelectActive) {
+            spawnPlayers(loadedMaps[roundIndex], setOf(player), BrawlSpawn.PRE_ROUND)
+
+            if(playerKits.containsKey(player.tumblingPlayer)) giveKit(player)
+            player.inventory.addItem(kitSelector)
+        } else if(preRound) {
+            if(player.tumblingPlayer.team.playingTeam) {
+                giveKit(player)
+                spawnPlayers(loadedMaps[roundIndex], setOf(player), teamSpawns[player.tumblingPlayer.team]!!)
+            } else {
+                spawnPlayers(loadedMaps[roundIndex], setOf(player), BrawlSpawn.SPECTATORS)
+            }
+        } else {
+            if(player.tumblingPlayer.team.playingTeam) {
+                makeSpectator(player, false)
+                player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
+            }
+            spawnPlayers(loadedMaps[roundIndex], setOf(player), BrawlSpawn.SPECTATORS)
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
     override fun playerLeave(player: Player) {
-        TODO("Not yet implemented")
+        if(player.tumblingPlayer in alivePlayers) {
+            // TODO: drop all their utility items and armor
+            playerKilled(player.tumblingPlayer, (player.lastDamageCause as? EntityDamageByEntityEvent)?.damager as? Player)
+        }
     }
 
     @EventHandler

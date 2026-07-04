@@ -51,6 +51,7 @@ import xyz.devcmb.tumblers.util.showPlayerAndTag
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.toCenterXZLocation
+import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -97,7 +98,7 @@ class FloodEscapeController : RoundedGame(
         repeat(rounds) {
             playerPlacements.add(hashMapOf())
             val map = loadMap(data.maps.random(), it)
-            generateObstacles(it, map)
+            generateObstacles(map)
         }
     }
 
@@ -126,7 +127,7 @@ class FloodEscapeController : RoundedGame(
 
     val obstacles: ArrayList<ArrayList<LoadedObstacle>> = ArrayList()
 
-    private fun generateObstacles(roundIndex: Int, map: LoadedMap) {
+    private fun generateObstacles(map: LoadedMap) {
         val pivotStart = map.data.getList("pivot_start")
             ?.validateLocation(map.world)
             ?: throw GameControllerException("Map ${map.id} does not have a valid pivot start")
@@ -135,7 +136,7 @@ class FloodEscapeController : RoundedGame(
 
         var parent: Location = pivotStart
         repeat(40) {
-            val (respawnLocation, bridgeBounds, bridgeEnd) = generateBridge(parent, it, map)
+            val (respawnLocation, bridgeBounds, bridgeEnd) = generateBridge(parent, map)
             val (obstacle, loc) = generateObstacle(bridgeEnd, it, map, bridgeBounds, respawnLocation)
             obstacles.add(obstacle)
 
@@ -180,7 +181,7 @@ class FloodEscapeController : RoundedGame(
         ) to endPivotWorld
     }
 
-    fun generateBridge(startLocation: Location, obstacleIndex: Int, map: LoadedMap): Triple<Location, Pair<Location, Location>, Location> {
+    fun generateBridge(startLocation: Location, map: LoadedMap): Triple<Location, Pair<Location, Location>, Location> {
         val mapBridges = File(Path(obstaclesDirectory, map.id, "bridge").toString())
         if(!mapBridges.exists() || !mapBridges.isDirectory) throw GameControllerException("Map ${map.id} does not have a valid bridges folder")
 
@@ -363,7 +364,7 @@ class FloodEscapeController : RoundedGame(
 
         currentTimer!!.timeExecution(340) {
             suspendSync {
-                water = spawnWater(currentMap)
+                water = spawnWater()
 
                 waterTask = object : BukkitRunnable() {
                     override fun run() {
@@ -407,7 +408,7 @@ class FloodEscapeController : RoundedGame(
         }
     }
 
-    fun spawnWater(map: LoadedMap): BlockDisplay {
+    fun spawnWater(): BlockDisplay {
         val world = currentMap.world
         val startingPosition = currentMap.data.getList("water.start_position")
             ?.validateLocation(world)
@@ -455,13 +456,6 @@ class FloodEscapeController : RoundedGame(
                 }
             }
         }
-    }
-
-    fun getWaterDistance(player: Player): Int {
-        return currentWaterMovementDirection
-            ?.axisDifference(water?.location ?: Location(currentMap.world, 0.0, 0.0, 0.0), player.location)
-            ?.toInt()
-            ?: 0
     }
 
     /**
@@ -578,7 +572,7 @@ class FloodEscapeController : RoundedGame(
                 ?: playerObstacles[player.tumblingPlayer]?.let { obstacles[roundIndex][it].respawnPoint }
                 ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawn.SPAWN).first().location
 
-            player.teleport(respawnLocation)
+            player.tp(respawnLocation)
             return
         }
 

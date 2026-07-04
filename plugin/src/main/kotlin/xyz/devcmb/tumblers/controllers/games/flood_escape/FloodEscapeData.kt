@@ -49,7 +49,7 @@ object FloodEscapeData : GameData(
             delay(4000)
             val game = game as FloodEscapeController
             val water = suspendSync {
-                game.spawnWater(it)
+                game.spawnWater()
             }
 
             val direction = MovementDirection.entries

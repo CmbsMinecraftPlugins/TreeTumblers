@@ -98,10 +98,6 @@ object PlayerController : IController {
         players.removeIf { it.uuid == uuid }
     }
 
-    fun setPlayerTeam(uuid: UUID, team: Team) {
-        players.find { it.uuid == uuid }!!.team = team
-    }
-
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -129,14 +125,15 @@ object PlayerController : IController {
             it.remove()
         }
 
-        runTask {
-            HubController.spawnHub(player)
-            reloadNametag(player)
-            nameTags.forEach { (otherPlr, tag) ->
-                if (canSeeNametag(player, otherPlr)) {
-                    player.showEntity(TreeTumblers.plugin, tag)
-                }
+        reloadNametag(player)
+        nameTags.forEach { (otherPlr, tag) ->
+            if (canSeeNametag(player, otherPlr)) {
+                player.showEntity(TreeTumblers.plugin, tag)
             }
+        }
+
+        runTask {
+            if(GameController.activeGame == null) HubController.spawnHub(player)
         }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
