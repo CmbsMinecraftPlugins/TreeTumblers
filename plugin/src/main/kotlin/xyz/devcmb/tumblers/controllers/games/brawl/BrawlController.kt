@@ -1,11 +1,13 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
 import kotlinx.coroutines.launch
+import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -62,6 +64,9 @@ class BrawlController : RoundedGame(
 
             gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 it.inventory.clear()
+                it.gameMode = GameMode.ADVENTURE
+                it.isFlying = false
+                it.allowFlight = false
                 it.inventory.addItem(kitSelector)
             }
         }
@@ -74,9 +79,11 @@ class BrawlController : RoundedGame(
 
         alivePlayers.clear()
         alivePlayers.addAll(gameParticipants)
-        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { it.inventory.clear() }
-
         suspendSync {
+            gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                it.inventory.clear()
+            }
+
             gameParticipants.forEach {
                 if(it !in playerKits.keys) {
                     selectKit(
@@ -116,6 +123,12 @@ class BrawlController : RoundedGame(
             ?: throw GameControllerException("Current map does not have any spawn boxes")
 
         suspendSync {
+            alivePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+                it.gameMode = GameMode.SURVIVAL
+            }
+        }
+
+        suspendSync {
             rooms.forEach { it ->
                 val from = it.take(3).validateLocation(currentMap.world)
                     ?: throw GameControllerException("Room $it does not have a valid from position")
@@ -131,6 +144,15 @@ class BrawlController : RoundedGame(
                 playerKilled(it, null)
             }
         }
+    }
+
+    override suspend fun postRound() {
+        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+            it.allowFlight = true
+            it.isFlying = true
+            it.velocity = it.velocity.add(Vector(0.0, 0.5, 0.0))
+        }
+        super.postRound()
     }
 
     /**
@@ -250,10 +272,16 @@ class BrawlController : RoundedGame(
 
     @EventHandler
     fun brawlPlayerDeathEvent(event: PlayerDeathEvent) {
+        if(!roundActive) return
         val killed = event.player
         val killer = killed.killer
 
         // TODO: Remove all item drops except armor and util
         playerKilled(killed.tumblingPlayer, killer)
+    }
+
+    @EventHandler
+    fun playerDamageEvent(event: EntityDamageEvent) {
+        if(event.entity is Player && !roundActive) event.isCancelled = true
     }
 }

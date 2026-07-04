@@ -102,8 +102,7 @@ abstract class RoundedGame(
     var postRoundOn = false
     open suspend fun postRound() {
         postRoundOn = true
-        delay(1000)
-
+        delay(200)
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
             it.showTitle(Title.title(
                 Format.mm("<red><b>Round Over!</b></red>"),
