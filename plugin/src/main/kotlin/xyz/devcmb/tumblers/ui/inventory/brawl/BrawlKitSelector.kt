@@ -1,18 +1,15 @@
 package xyz.devcmb.tumblers.ui.inventory.brawl
 
-import com.noxcrew.interfaces.click.ClickHandler
 import com.noxcrew.interfaces.drawable.Drawable.Companion.drawable
 import com.noxcrew.interfaces.element.StaticElement
 import com.noxcrew.interfaces.interfaces.ChestInterface
 import com.noxcrew.interfaces.interfaces.buildChestInterface
-import com.noxcrew.interfaces.utilities.forEachInGrid
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 import xyz.devcmb.tumblers.TreeTumblers
@@ -24,6 +21,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.buttonClickSound
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class BrawlKitSelector : HandledInventory {
@@ -53,6 +51,7 @@ class BrawlKitSelector : HandledInventory {
                     return
                 }
 
+                view.player.buttonClickSound()
                 brawl.selectKit(view.player.tumblingPlayer, kit, true)
                 UserInterfaceUtility.refreshAll("brawlKitSelector")
             }

@@ -136,23 +136,25 @@ abstract class AbstractGame(
             teamScores[it] = 0
         }
 
-        Bukkit.getOnlinePlayers().forEach {
-            val title = Title.title(
-                Format.mm("<glyph:hud/fade>"),
-                Component.text("Loading...", NamedTextColor.AQUA),
-                Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
-            )
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                val title = Title.title(
+                    Format.mm("<glyph:hud/fade>"),
+                    Component.text("Loading...", NamedTextColor.AQUA),
+                    Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
+                )
 
-            it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
-            it.foodLevel = 20
-            it.saturation = 0f
-            it.inventory.clear()
+                it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                it.foodLevel = 20
+                it.saturation = 0f
+                it.inventory.clear()
 
-            if(data.flags.contains(Flag.ENABLE_HUNGER)) {
-                it.removePotionEffect(PotionEffectType.HUNGER)
+                if(data.flags.contains(Flag.ENABLE_HUNGER)) {
+                    it.removePotionEffect(PotionEffectType.HUNGER)
+                }
+
+                it.showTitle(title)
             }
-
-            it.showTitle(title)
         }
 
         gameLoad()
@@ -185,7 +187,7 @@ abstract class AbstractGame(
     }
 
     /**
-     * A utility method for loading maps into the [loadedMaps] using [Map.load]
+     * A utility method for loading maps into the [loadedMaps] using [Map.load
      * @param map The map instance to load
      * @param index The index of the map to be formated as `world_name-index`
      * @return A [LoadedMap] created from the [map]

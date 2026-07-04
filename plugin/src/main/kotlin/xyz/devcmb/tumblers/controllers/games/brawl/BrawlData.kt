@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
+import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
@@ -21,11 +22,17 @@ object BrawlData : GameData(
                 .append(Format.mm("<glyph:game/brawl_icon>"))
                 .append(Component.text(" Brawl")),
             "cutscene.start"
-        ) { map ->
+        ) { _ ->
             delay(5000)
         },
     ),
-    flags = setOf(),
+    flags = setOf(
+        Flag.SURVIVAL_MODE,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,
+        Flag.ENABLE_HUNGER,
+        Flag.HIDE_ENEMY_NAMETAGS,
+        Flag.ENABLE_ITEM_DROPS
+    ),
     scores = hashMapOf(),
     icon = Format.mm("<glyph:game/brawl_icon>"),
     logo = Format.mm("<glyph:game/brawl_logo>"),

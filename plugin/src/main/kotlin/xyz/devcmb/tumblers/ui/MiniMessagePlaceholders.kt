@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.ui
 
+import org.bukkit.event.entity.EntityDamageEvent
 import xyz.devcmb.tumblers.TreeTumblers
 
 object MiniMessagePlaceholders {
@@ -58,10 +59,25 @@ object MiniMessagePlaceholders {
          */
         const val SCOREBOARD_CURRENT_ROUND = "<color:${Event.EVENT_COLOR}><white>Round </white><current>/<total></color>"
 
+        val CAUSED_DEATH_MESSAGES = mapOf(
+            EntityDamageEvent.DamageCause.SUICIDE to "<player> logged out",
+            EntityDamageEvent.DamageCause.BLOCK_EXPLOSION to "<player> exploded",
+            EntityDamageEvent.DamageCause.ENTITY_EXPLOSION to "<player> exploded",
+            EntityDamageEvent.DamageCause.WORLD_BORDER to "<player> left the confines of this world",
+            EntityDamageEvent.DamageCause.CAMPFIRE to "<player> burned to death",
+            EntityDamageEvent.DamageCause.FIRE to "<player> burned to death",
+            EntityDamageEvent.DamageCause.FIRE_TICK to "<player> burned to death",
+            EntityDamageEvent.DamageCause.CONTACT to "<player> was pricked to death",
+            EntityDamageEvent.DamageCause.CRAMMING to "<player> was squished too much",
+            EntityDamageEvent.DamageCause.DROWNING to "<player> though they could breath underwater",
+            EntityDamageEvent.DamageCause.FALL to "<player> hit the ground too hard",
+            EntityDamageEvent.DamageCause.FLY_INTO_WALL to "<player> experienced kinetic energy"
+        ).mapValues { "<gray>(<white><glyph:icon/skull></white>) ${it.value}</gray>" }
+
         /**
          * player - The player who died
          */
-        val DEATH_MESSAGES = arrayListOf(
+        val CAUSELESS_DEATH_MESSAGES = arrayListOf(
             "<player> tripped",
             "<player> didn't try hard enough",
             "<player> thought they could speed bridge",

@@ -9,6 +9,7 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver
 import net.kyori.adventure.text.minimessage.tag.standard.StandardTags
 import org.bukkit.entity.Player
+import org.bukkit.event.entity.EntityDamageEvent
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
@@ -140,7 +141,13 @@ object Format {
     fun formatDeathMessage(killed: Player?, receiver: Player, grantScore: Boolean = false, score: Int = 0)
         = formatDeathMessage(killed?.tumblingPlayer, receiver, grantScore, score)
 
-    fun formatDeathMessage(killed: TumblingPlayer?, receiver: Player, grantScore: Boolean = false, score: Int = 0): Component {
+    fun formatDeathMessage(
+        killed: TumblingPlayer?,
+        receiver: Player,
+        grantScore: Boolean = false,
+        score: Int = 0,
+        lastDamage: EntityDamageEvent.DamageCause? = null,
+    ): Component {
         val killedName =
             if(killed == null) Component.empty()
                 .append(Team.SPECTATORS.formattedIcon)
@@ -148,8 +155,12 @@ object Format {
                 .append(Component.text("Player", NamedTextColor.WHITE))
             else formatPlayerName(killed)
 
+        val message =
+            if(lastDamage == null) MiniMessagePlaceholders.Game.CAUSELESS_DEATH_MESSAGES.random()
+            else (MiniMessagePlaceholders.Game.CAUSED_DEATH_MESSAGES[lastDamage] ?: MiniMessagePlaceholders.Game.CAUSELESS_DEATH_MESSAGES.random())
+
         var result = mm(
-            MiniMessagePlaceholders.Game.DEATH_MESSAGES.random(),
+            message,
             Placeholder.component("player", killedName)
         )
 

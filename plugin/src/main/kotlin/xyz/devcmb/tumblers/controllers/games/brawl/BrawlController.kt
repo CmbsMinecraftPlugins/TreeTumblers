@@ -1,13 +1,19 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
+import kotlinx.coroutines.launch
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.giveKit
@@ -37,6 +43,9 @@ class BrawlController : RoundedGame(
     val roundKits: ArrayList<ArrayList<BrawlKit>> = ArrayList()
     val playerKits: HashMap<TumblingPlayer, BrawlKit> = HashMap()
 
+    val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
+    val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
+
     override suspend fun preRound() {
         playerKits.clear()
         suspendSync {
@@ -63,6 +72,8 @@ class BrawlController : RoundedGame(
             joined = true
         })
 
+        alivePlayers.clear()
+        alivePlayers.addAll(gameParticipants)
         gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { it.inventory.clear() }
 
         suspendSync {
@@ -105,7 +116,7 @@ class BrawlController : RoundedGame(
             ?: throw GameControllerException("Current map does not have any spawn boxes")
 
         suspendSync {
-            rooms.forEachIndexed { index, it ->
+            rooms.forEach { it ->
                 val from = it.take(3).validateLocation(currentMap.world)
                     ?: throw GameControllerException("Room $it does not have a valid from position")
                 val to = it.drop(3).validateLocation(currentMap.world)
@@ -114,6 +125,10 @@ class BrawlController : RoundedGame(
                 from.forEachRegion(to) {
                     if(it.type == Material.BARRIER) it.type = Material.AIR
                 }
+            }
+
+            alivePlayers.filter { !it.isOnline }.forEach {
+                playerKilled(it, null)
             }
         }
     }
@@ -136,6 +151,7 @@ class BrawlController : RoundedGame(
             }
 
             roundKits.add(kits)
+            roundPlacements.add(HashMap())
 
             loadMap(data.maps.random(), it)
         }
@@ -158,7 +174,7 @@ class BrawlController : RoundedGame(
         val teamSpawns: HashMap<Team, BrawlSpawn> = HashMap()
         Team.entries.filter { it.playingTeam }.forEach {
             teamSpawns[it] = BrawlSpawn.entries.filter { entry ->
-                entry.name.contains("SET_") && !teamSpawns.any { spawn -> entry.name == it.name }
+                entry.name.contains("SET_") && !teamSpawns.containsValue(entry)
             }.random()
         }
 
@@ -195,6 +211,29 @@ class BrawlController : RoundedGame(
         player.giveKit(brawlKit.kit)
     }
 
+    fun playerKilled(player: TumblingPlayer, killer: Player?) {
+        roundPlacements[roundIndex][player] = alivePlayers.size
+        alivePlayers.remove(player)
+
+        gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+            val message =
+                if(killer != null) Format.formatKillMessage(killer.tumblingPlayer, player, it, getScoreSource(CommonScoreSource.KILL))
+                else Format.formatDeathMessage(
+                    player,
+                    it,
+                    false,
+                    lastDamage = player.bukkitPlayer?.lastDamageCause?.cause ?: EntityDamageEvent.DamageCause.SUICIDE
+                )
+
+            it.sendMessage(message)
+        }
+
+        if(alivePlayers.size <= 1) {
+            if(alivePlayers.size == 1) roundPlacements[roundIndex][player] = 1
+            TreeTumblers.pluginScope.launch { endRound() }
+        }
+    }
+
     /**
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
@@ -207,5 +246,14 @@ class BrawlController : RoundedGame(
      */
     override fun playerLeave(player: Player) {
         TODO("Not yet implemented")
+    }
+
+    @EventHandler
+    fun brawlPlayerDeathEvent(event: PlayerDeathEvent) {
+        val killed = event.player
+        val killer = killed.killer
+
+        // TODO: Remove all item drops except armor and util
+        playerKilled(killed.tumblingPlayer, killer)
     }
 }
