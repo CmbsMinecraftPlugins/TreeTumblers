@@ -109,7 +109,8 @@ class CrumbleKitSelector : HandledInventory {
                                 editMeta { meta ->
                                     meta.itemModel = UserInterfaceUtility.FLAT_SKULL
                                     (meta as SkullMeta).owningPlayer = Bukkit.getOfflinePlayer(selectedPlayer.first.uuid)
-                                    meta.itemName(Format.mm("<player:${selectedPlayer.first.uuid}>"))
+                                    meta.displayName(Format.mm("<player:${selectedPlayer.first.uuid}>")
+                                        .decoration(TextDecoration.ITALIC, false))
                                 }
                             }
 

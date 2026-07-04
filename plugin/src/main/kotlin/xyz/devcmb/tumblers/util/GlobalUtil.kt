@@ -31,6 +31,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.potion.PotionType
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.TreeTumblers
@@ -616,11 +617,12 @@ fun canReplaceActionBar(): Boolean {
     return GameController.activeGame?.playerCheckActive != true
 }
 
-fun PotionEffect.splashPotion(): ItemStack {
+fun PotionEffect.splashPotion(name: String): ItemStack {
     return ItemStack.of(Material.SPLASH_POTION).apply {
-        editMeta { meta ->
-            val meta = meta as PotionMeta
+        editMeta(PotionMeta::class.java) { meta ->
             meta.addCustomEffect(this@splashPotion, true)
+            meta.color = meta.computeEffectiveColor()
+            meta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false))
         }
     }
 }

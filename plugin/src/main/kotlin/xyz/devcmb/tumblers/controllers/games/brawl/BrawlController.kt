@@ -1,19 +1,20 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.GameControllerException
-import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import kotlin.math.min
@@ -34,8 +35,10 @@ class BrawlController : RoundedGame(
     }.build()
 
     val roundKits: ArrayList<ArrayList<BrawlKit>> = ArrayList()
+    val playerKits: HashMap<TumblingPlayer, BrawlKit> = HashMap()
 
     override suspend fun preRound() {
+        playerKits.clear()
         suspendSync {
             val spectators = Team.entries
                 .filter { !it.playingTeam }
@@ -49,6 +52,7 @@ class BrawlController : RoundedGame(
             )
 
             gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                it.inventory.clear()
                 it.inventory.addItem(kitSelector)
             }
         }
@@ -60,7 +64,35 @@ class BrawlController : RoundedGame(
         })
 
         gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { it.inventory.clear() }
+
+        suspendSync {
+            gameParticipants.forEach {
+                if(it !in playerKits.keys) {
+                    selectKit(
+                        it,
+                        getAvailableRandomKit(it),
+                        true
+                    )
+                }
+
+                it.bukkitPlayer?.let { plr ->
+                    giveKit(plr)
+                    plr.closeInventory()
+                }
+            }
+        }
+
         super.preRound()
+    }
+
+    fun getAvailableRandomKit(player: TumblingPlayer): BrawlKit {
+        return roundKits[roundIndex].filter { roundKit ->
+            getSelectedKitPlayers(player.team, roundKit).size < 2
+        }.random()
+    }
+
+    fun getSelectedKitPlayers(team: Team, kit: BrawlKit): List<TumblingPlayer> {
+        return playerKits.filter { it.key.team == team && it.value == kit }.map { it.key }.toList()
     }
 
     override suspend fun startRound() {
@@ -136,13 +168,31 @@ class BrawlController : RoundedGame(
             }
         }
 
-
         val spectators = Team.entries
             .filter { !it.playingTeam }
             .fold(arrayListOf<Player>()) { acc, entry -> acc.apply { addAll(entry.getOnlinePlayers()) } }
         suspendSync {
             spawnPlayers(currentMap, spectators, BrawlSpawn.SPECTATORS)
         }
+    }
+
+    fun selectKit(player: TumblingPlayer, brawlKit: BrawlKit, preRound: Boolean = false) {
+        if(brawlKit !in roundKits[roundIndex])
+            throw GameControllerException("Attempted to select a kit not included in the current round")
+
+        playerKits[player] = brawlKit
+
+        if(player.isOnline) {
+            giveKit(player.bukkitPlayer!!)
+            if(preRound) player.bukkitPlayer!!.inventory.addItem(kitSelector)
+        }
+    }
+
+    fun giveKit(player: Player) {
+        val brawlKit = playerKits[player.tumblingPlayer]
+            ?: throw GameControllerException("Attempted to give kit items to a player without a selected kit")
+
+        player.giveKit(brawlKit.kit)
     }
 
     /**

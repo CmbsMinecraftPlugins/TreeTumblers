@@ -4,6 +4,7 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.potion.PotionType
 import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.splashPotion
 
@@ -17,10 +18,11 @@ val sharedKitItems = arrayListOf(
     Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
 ).toTypedArray()
 
-val regenerationEffect = PotionEffect(PotionEffectType.REGENERATION, 4 * 20, 2)
+val regenerationEffect = PotionEffect(PotionEffectType.REGENERATION, 4 * 20, 1)
+val regenerationSplashPotion = regenerationEffect.splashPotion("Splash Potion of Regeneration II")
 
-enum class BrawlKit(val kit: Kit.KitDefinition) {
-    WARRIOR(object : Kit.KitDefinition {
+enum class BrawlKit(val kitName: String, val kit: Kit.KitDefinition) {
+    WARRIOR("Warrior", object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
             Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD), null, false),
             Kit.KitItem.StandardItem(ItemStack(Material.GOLDEN_APPLE, 2)),
@@ -28,17 +30,17 @@ enum class BrawlKit(val kit: Kit.KitDefinition) {
         )
         override val defaultDroppability: Boolean = true
     }),
-    HEALER(object : Kit.KitDefinition {
+    HEALER("Healer", object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
             Kit.KitItem.StandardItem(ItemStack(Material.WOODEN_AXE), null, false),
+            Kit.KitItem.StandardItem(regenerationSplashPotion.clone(), null, false),
+            Kit.KitItem.StandardItem(regenerationSplashPotion.clone(), null, false),
+            Kit.KitItem.StandardItem(regenerationSplashPotion.clone(), null, false),
             *sharedKitItems,
-            Kit.KitItem.StandardItem(regenerationEffect.splashPotion(), null, false),
-            Kit.KitItem.StandardItem(regenerationEffect.splashPotion(), null, false),
-            Kit.KitItem.StandardItem(regenerationEffect.splashPotion(), null, false),
         )
         override val defaultDroppability: Boolean = true
     }),
-    NINJA(object : Kit.KitDefinition {
+    NINJA("Ninja", object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
             Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD), null, false),
             // TODO: Add scrolls

@@ -54,7 +54,7 @@ class SpectateInventory : HandledInventory {
                 pane[GridPoint.fromBukkitChestSlot(index)!!] = StaticElement(drawable(ItemStack.of(Material.PLAYER_HEAD).apply {
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
                     itemMeta = itemMeta.also {
-                        it.itemName(Format.formatPlayerName(plr))
+                        it.displayName(Format.formatPlayerName(plr).decoration(TextDecoration.ITALIC, false))
                         it.itemModel = UserInterfaceUtility.FLAT_SKULL
                         (it as SkullMeta).owningPlayer = plr
 
