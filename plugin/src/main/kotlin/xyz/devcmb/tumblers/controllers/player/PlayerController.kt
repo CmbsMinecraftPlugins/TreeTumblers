@@ -465,7 +465,7 @@ object PlayerController : IController {
                 )
             }
         },
-        STAFF("Staff", TextColor.fromHexString("#ff3c50")!!) {
+        STAFF("Staff", TextColor.fromHexString("#2aceff")!!) {
             override fun canSee(sender: Player?, receiver: Player): Boolean {
                 return receiver.hasPermission("tumbling.dev") || receiver.hasPermission("tumbling.organizer")
             }

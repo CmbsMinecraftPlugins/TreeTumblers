@@ -4,7 +4,6 @@ import org.bukkit.Material
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.potion.PotionType
 import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.splashPotion
 
@@ -45,6 +44,14 @@ enum class BrawlKit(val kitName: String, val kit: Kit.KitDefinition) {
             Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD), null, false),
             // TODO: Add scrolls
             *sharedKitItems
+        )
+        override val defaultDroppability: Boolean = true
+    }),
+    BRUTE("Brute", object : Kit.KitDefinition {
+        override val items: ArrayList<Kit.KitItem> = arrayListOf(
+            Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD)),
+            Kit.KitItem.StandardItem(ItemStack(Material.STONE_AXE)),
+            *sharedKitItems,
         )
         override val defaultDroppability: Boolean = true
     });
