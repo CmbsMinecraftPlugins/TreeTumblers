@@ -123,7 +123,7 @@ class BreachController: AbstractGame(BreachData) {
         persistentDataContainer {
             set(kitItemsKey, PersistentDataType.BOOLEAN, true)
         }
-        rightClick { player ->
+        click { player ->
             player.openHandledInventory("breachKitSelector")
         }
     }.build()

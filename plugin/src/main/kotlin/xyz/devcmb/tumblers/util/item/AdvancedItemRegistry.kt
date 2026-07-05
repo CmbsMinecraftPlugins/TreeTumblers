@@ -9,6 +9,7 @@ import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
 import xyz.devcmb.tumblers.util.runTask
 
 object AdvancedItemRegistry {
@@ -24,11 +25,11 @@ object AdvancedItemRegistry {
         val item = getItem(stack) ?: return
 
         when (event.action) {
-            Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK ->
-                item.rightClick?.invoke(stack, event.player)
-
-            Action.LEFT_CLICK_AIR, Action.LEFT_CLICK_BLOCK ->
-                item.leftClick?.invoke(stack, event.player)
+            Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK -> {
+                val useEvent = UseAdvancedItemEvent(item)
+                useEvent.callEvent()
+                if(!useEvent.isCancelled) item.click?.invoke(stack, event.player)
+            }
 
             else -> {}
         }

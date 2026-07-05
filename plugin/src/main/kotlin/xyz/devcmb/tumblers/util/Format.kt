@@ -126,7 +126,7 @@ object Format {
             else formatPlayerName(killed)
 
         var component = mm(
-            "<killed> was slain by <killer>",
+            "<gray>(<white><glyph:icon/skull></white>) <killed> was slain by <killer></gray>",
             Placeholder.component("killed", killedName),
             Placeholder.component("killer", killerName)
         )

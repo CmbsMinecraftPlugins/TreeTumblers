@@ -31,7 +31,6 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.potion.PotionType
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.TreeTumblers
@@ -106,8 +105,6 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
     }
 }
 
-fun getOnlineTumblingPlayers() = Bukkit.getOnlinePlayers().map { it.tumblingPlayer }
-
 fun Player.hunger() {
     addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 0, true, false, false))
 }
@@ -181,8 +178,6 @@ fun runTaskLater(delay: Long, runnable: Runnable) =
     Bukkit.getScheduler().runTaskLater(TreeTumblers.plugin, runnable, delay)
 fun runTaskTimer(delay: Long, period: Long, runnable: Runnable) =
     Bukkit.getScheduler().runTaskTimer(TreeTumblers.plugin, runnable, delay, period)
-fun runTaskAsynchronously(runnable: Runnable) =
-    Bukkit.getScheduler().runTaskAsynchronously(TreeTumblers.plugin, runnable)
 
 fun List<Double>.unpackCoordinates(world: World): Location {
     return Location(
@@ -276,15 +271,11 @@ fun Player.sound(sound: Sound) {
     player!!.playSound(player!!.location, sound, 10f, 1f)
 }
 
-fun Player.sound(sound: String) {
-    player!!.playSound(player!!.location, sound, 10f, 1f)
-}
-
 fun Player.hideToAll() {
     PlayerController.hiddenPlayers.add(this)
     Bukkit.getOnlinePlayers().forEach {
         if(it !== this) {
-            it.hidePlayer(TreeTumblers.plugin, this)
+            it.hidePlayerAndTag(this)
         }
     }
 }
@@ -293,7 +284,7 @@ fun Player.showToAll() {
     PlayerController.hiddenPlayers.remove(this)
     Bukkit.getOnlinePlayers().forEach {
         if(it !== this) {
-            it.showPlayer(TreeTumblers.plugin, this)
+            it.showPlayerAndTag(this)
         }
     }
 }

@@ -535,6 +535,7 @@ games:
       district:
         world: "district"
         data:
+          void_height: 80
           rooms:
             # x1,y1,z1,x2,y2,z2
             - [43,97,3,52,96,11]

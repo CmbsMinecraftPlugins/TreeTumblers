@@ -3,11 +3,17 @@ package xyz.devcmb.tumblers.controllers.games.brawl
 import kotlinx.coroutines.launch
 import org.bukkit.GameMode
 import org.bukkit.Material
+import org.bukkit.damage.DamageSource
+import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
+import org.bukkit.entity.ThrownPotion
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.ProjectileLaunchEvent
+import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -17,6 +23,7 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
+import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.giveKit
@@ -38,7 +45,7 @@ class BrawlController : RoundedGame(
     val kitSelector = AdvancedItemStack(Material.COMPASS) {
         name(Format.mm("<yellow>Kit Selector</yellow>"))
         droppable = false
-        rightClick {
+        click {
             it.openHandledInventory("brawlKitSelector")
         }
     }.build()
@@ -56,7 +63,9 @@ class BrawlController : RoundedGame(
             val spectators = Team.entries
                 .filter { !it.playingTeam }
                 .flatMap { it.getOnlinePlayers() }
-            spectators.forEach { makeSpectator(it) }
+            spectators.forEach { makeSpectator(it, sendActionBar = false, participating = false) }
+
+            participatingSpectators.toList().forEach(this::unSpectate)
 
             spawnPlayers(
                 loadedMaps[roundIndex],
@@ -98,6 +107,8 @@ class BrawlController : RoundedGame(
 
                 it.bukkitPlayer?.let { plr ->
                     giveKit(plr)
+                    plr.foodLevel = 20
+                    plr.saturation = 3f
                     plr.closeInventory()
                 }
             }
@@ -306,6 +317,28 @@ class BrawlController : RoundedGame(
 
         // TODO: Remove all item drops except armor and util
         playerKilled(killed.tumblingPlayer, killer)
+    }
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        if(!roundActive) return
+        if(event.to.y <= loadedMaps[roundIndex].data.getInt("void_height"))
+            event.player.damage(100.0, DamageSource.builder(DamageType.OUT_OF_WORLD).build())
+    }
+
+    @EventHandler
+    fun useAdvancedItemEvent(event: UseAdvancedItemEvent) {
+        if(!roundActive && event.ctx.item.type != Material.COMPASS) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerThrowPotionEvent(event: ProjectileLaunchEvent) {
+        if(event.entity is ThrownPotion && !roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerHungryEvent(event: FoodLevelChangeEvent) {
+        if(!roundActive) event.isCancelled = true
     }
 
     @EventHandler

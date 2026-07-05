@@ -5,7 +5,6 @@ import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataContainer
@@ -18,8 +17,7 @@ class AdvancedItemStackContext(
     val id = UUID.randomUUID().toString()
     val item = ItemStack(material)
 
-    var rightClick: (ItemStack.(Player) -> Unit)? = null
-    var leftClick: (ItemStack.(Player) -> Unit)? = null
+    var click: (ItemStack.(player: Player) -> Unit)? = null
 
     var droppable: Boolean = true
         set(value) {
@@ -54,26 +52,8 @@ class AdvancedItemStackContext(
         item.amount = amount
     }
 
-    fun enchants(enchantments: Map<Enchantment, Int>) {
-        item.itemMeta = item.itemMeta.also {
-            enchantments.forEach { enchant ->
-                it.addEnchant(enchant.key, enchant.value, true)
-            }
-        }
-    }
-
-    fun unbreakable(unbreakable: Boolean) {
-        item.itemMeta = item.itemMeta.also {
-            it.isUnbreakable = unbreakable
-        }
-    }
-
-    fun rightClick(action: ItemStack.(Player) -> Unit) {
-        rightClick = action
-    }
-
-    fun leftClick(action: ItemStack.(Player) -> Unit) {
-        leftClick = action
+    fun click(action: ItemStack.(Player) -> Unit) {
+        click = action
     }
 
     fun droppable(bool: Boolean) {

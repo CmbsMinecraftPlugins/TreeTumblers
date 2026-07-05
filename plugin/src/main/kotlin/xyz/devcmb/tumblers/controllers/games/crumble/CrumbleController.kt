@@ -142,7 +142,7 @@ class CrumbleController : RoundedGame(
         persistentDataContainer {
             set(kitItemsKey, PersistentDataType.BOOLEAN, true)
         }
-        rightClick { player ->
+        click { player ->
             player.openHandledInventory("crumbleKitSelector")
         }
     }.build()
@@ -782,7 +782,7 @@ class CrumbleController : RoundedGame(
                 set(kitItemsKey, PersistentDataType.BOOLEAN, true)
             }
 
-            rightClick {
+            click {
                 useAbility(it)
             }
         }.build()

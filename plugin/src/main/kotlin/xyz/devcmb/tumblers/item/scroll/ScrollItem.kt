@@ -2,7 +2,6 @@ package xyz.devcmb.tumblers.item.scroll
 
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
@@ -18,7 +17,7 @@ class ScrollItem(
 
     companion object {
         val scrollKey = NamespacedKey(TreeTumblers.NAMESPACE, "scroll_item")
-        val scrollCooldown: Int = configurable("item.scroll.cooldown")
+        val scrollCooldown: Float = configurable("item.scroll.cooldown")
     }
 
     override fun build(): AdvancedItemStack {
@@ -26,10 +25,10 @@ class ScrollItem(
             name(Format.mm("<yellow>Scroll of ${scrollEffect.scrollName}</yellow>"))
             model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/scroll/${scrollEffect.name.lowercase()}"))
 
-            useCooldown(1f, scrollKey)
+            useCooldown(scrollCooldown, scrollKey)
 
-            rightClick {
-                it.inventory.remove(this)
+            click {
+                amount -= 1
                 it.addPotionEffect(PotionEffect(
                     scrollEffect.effect,
                     scrollEffect.duration,
@@ -51,5 +50,6 @@ class ScrollItem(
         JUMP_BOOST("Jump Boost", PotionEffectType.JUMP_BOOST, 5 * 20, 1),
         REGENERATION("Regeneration", PotionEffectType.REGENERATION, 3 * 20, 1),
         INVISIBILITY("Invisibility", PotionEffectType.INVISIBILITY, 5 * 20, 0),
+        SPEED("Speed", PotionEffectType.SPEED, 5 * 20, 1),
     }
 }

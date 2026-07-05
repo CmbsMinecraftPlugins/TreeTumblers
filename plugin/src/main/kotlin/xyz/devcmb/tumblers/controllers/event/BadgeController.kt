@@ -36,7 +36,7 @@ object BadgeController : IController {
         droppable(false)
         movable(false)
 
-        rightClick {
+        click {
             it.openHandledInventory("badgeCollectionInventory")
         }
     }

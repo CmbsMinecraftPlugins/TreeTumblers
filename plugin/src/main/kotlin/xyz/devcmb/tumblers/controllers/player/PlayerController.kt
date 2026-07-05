@@ -57,6 +57,7 @@ import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
@@ -145,7 +146,7 @@ object PlayerController : IController {
         }
 
         hiddenPlayers.forEach {
-            player.hidePlayer(TreeTumblers.plugin, it)
+            player.hidePlayerAndTag(it)
         }
 
         event.joinMessage(null)

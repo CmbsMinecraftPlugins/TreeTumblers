@@ -1,17 +1,15 @@
 package xyz.devcmb.tumblers.util
 
 import org.bukkit.Color
-import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.LeatherArmorMeta
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
-import xyz.devcmb.tumblers.util.item.AdvancedItemStackContext
 
 object Kit {
     interface KitDefinition {
         val items: ArrayList<KitItem>
-        val defaultDroppability: Boolean
+        val defaultDropability: Boolean
             get() = false
     }
 
@@ -19,14 +17,14 @@ object Kit {
         fun give(kit: KitDefinition, player: Player)
 
         class AdvancedItem(
-            material: Material,
+            val stack: AdvancedItemStack,
             val slot: Int? = null,
-            init: AdvancedItemStackContext.() -> Unit,
-            val droppableOverride: Boolean? = null
-        ): AdvancedItemStack(material, init), KitItem {
+            val droppableOverride: Boolean? = null,
+        ): KitItem {
             override fun give(kit: KitDefinition, player: Player) {
-                if(!context.droppableChanged) context.droppable(droppableOverride ?: kit.defaultDroppability)
-                val item = build()
+                val context = stack.context
+                if(!context.droppableChanged) context.droppable(droppableOverride ?: kit.defaultDropability)
+                val item = stack.build()
 
                 if(slot != null) player.inventory.setItem(slot, item)
                 else player.inventory.addItem(item)
@@ -40,7 +38,7 @@ object Kit {
         ): KitItem {
             override fun give(kit: KitDefinition, player: Player) {
                 val item = AdvancedItemStack(itemStack.clone()) {
-                    droppable(droppableOverride ?: kit.defaultDroppability)
+                    droppable(droppableOverride ?: kit.defaultDropability)
                 }.build()
 
                 if(slot != null) player.inventory.setItem(slot, item)
@@ -51,7 +49,7 @@ object Kit {
         class ArmorItem(val itemStack: ItemStack): KitItem {
             override fun give(kit: KitDefinition, player: Player) {
                 val item = AdvancedItemStack(itemStack.clone()) {
-                    droppable(kit.defaultDroppability)
+                    droppable(kit.defaultDropability)
                 }.build()
 
                 if(item.type.name.contains("LEATHER")) {
@@ -70,7 +68,7 @@ object Kit {
             override fun give(kit: KitDefinition, player: Player) {
                 val item = AdvancedItemStack(ItemStack.of(player.tumblingPlayer.team.concrete)) {
                     returnOnPlace = true
-                    droppable(droppableOverride ?: kit.defaultDroppability)
+                    droppable(droppableOverride ?: kit.defaultDropability)
                     count(64)
                 }.build()
                 player.inventory.addItem(item)
