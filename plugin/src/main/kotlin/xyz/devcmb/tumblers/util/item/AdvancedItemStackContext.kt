@@ -18,8 +18,8 @@ class AdvancedItemStackContext(
     val id = UUID.randomUUID().toString()
     val item = ItemStack(material)
 
-    var rightClick: ((Player) -> Unit)? = null
-    var leftClick: ((Player) -> Unit)? = null
+    var rightClick: (ItemStack.(Player) -> Unit)? = null
+    var leftClick: (ItemStack.(Player) -> Unit)? = null
 
     var droppable: Boolean = true
         set(value) {
@@ -68,11 +68,11 @@ class AdvancedItemStackContext(
         }
     }
 
-    fun rightClick(action: (Player) -> Unit) {
+    fun rightClick(action: ItemStack.(Player) -> Unit) {
         rightClick = action
     }
 
-    fun leftClick(action: (Player) -> Unit) {
+    fun leftClick(action: ItemStack.(Player) -> Unit) {
         leftClick = action
     }
 
@@ -87,6 +87,17 @@ class AdvancedItemStackContext(
     fun persistentDataContainer(action: PersistentDataContainer.() -> Unit) {
         item.itemMeta = item.itemMeta.also {
             action(it.persistentDataContainer)
+        }
+    }
+
+    // FIXME: This doesn't work!
+    @Suppress("UnstableApiUsage")
+    fun useCooldown(cooldownSeconds: Float, key: NamespacedKey?) {
+        item.itemMeta = item.itemMeta.also {
+            val useCooldown = it.useCooldown
+            useCooldown.cooldownSeconds = cooldownSeconds
+            key?.let { k -> useCooldown.cooldownGroup = k }
+            it.setUseCooldown(useCooldown)
         }
     }
 

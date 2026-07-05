@@ -25,10 +25,10 @@ object AdvancedItemRegistry {
 
         when (event.action) {
             Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK ->
-                item.rightClick?.invoke(event.player)
+                item.rightClick?.invoke(stack, event.player)
 
             Action.LEFT_CLICK_AIR, Action.LEFT_CLICK_BLOCK ->
-                item.leftClick?.invoke(event.player)
+                item.leftClick?.invoke(stack, event.player)
 
             else -> {}
         }

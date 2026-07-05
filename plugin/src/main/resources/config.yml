@@ -107,6 +107,11 @@ lobby:
 
   void_height: 177
 
+item:
+  scroll:
+    # in seconds how long the cooldown lasts
+    cooldown: 1
+
 games:
   crumble:
     # The path where all the maps are contained
