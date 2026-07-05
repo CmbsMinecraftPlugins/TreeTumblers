@@ -29,7 +29,6 @@ object BrawlData : GameData(
     flags = setOf(
         Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,
         Flag.ENABLE_HUNGER,
-        Flag.HIDE_ENEMY_NAMETAGS,
         Flag.ENABLE_ITEM_DROPS
     ),
     scores = hashMapOf(),

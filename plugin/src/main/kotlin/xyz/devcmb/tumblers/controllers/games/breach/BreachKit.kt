@@ -6,6 +6,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
+import java.util.UUID
 
 enum class BreachKit(val label: Component, val description: List<Component>, val kit: Kit.KitDefinition, val item: Material) {
     BOW(
@@ -24,6 +25,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                 Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
                 Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
+            override val uuid: UUID = UUID.randomUUID()
         },
         Material.BOW
     ),
@@ -43,6 +45,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                 Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 1)),
                 Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
+            override val uuid: UUID = UUID.randomUUID()
         },
         Material.CROSSBOW
     ),
@@ -61,6 +64,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
                 }),
                 Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
+            override val uuid: UUID = UUID.randomUUID()
         },
         Material.TRIDENT
     )

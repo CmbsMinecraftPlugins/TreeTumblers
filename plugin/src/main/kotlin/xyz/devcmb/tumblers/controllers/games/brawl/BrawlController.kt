@@ -224,7 +224,7 @@ class BrawlController : RoundedGame(
 
         val spectators = Team.entries
             .filter { !it.playingTeam }
-            .fold(arrayListOf<Player>()) { acc, entry -> acc.apply { addAll(entry.getOnlinePlayers()) } }
+            .flatMap { it.getOnlinePlayers() }
         suspendSync {
             spawnPlayers(currentMap, spectators, BrawlSpawn.SPECTATORS)
         }
@@ -304,7 +304,6 @@ class BrawlController : RoundedGame(
      */
     override fun playerLeave(player: Player) {
         if(player.tumblingPlayer in alivePlayers) {
-            // TODO: drop all their utility items and armor
             playerKilled(player.tumblingPlayer, (player.lastDamageCause as? EntityDamageByEntityEvent)?.damager as? Player)
         }
     }
@@ -315,7 +314,6 @@ class BrawlController : RoundedGame(
         val killed = event.player
         val killer = killed.killer
 
-        // TODO: Remove all item drops except armor and util
         playerKilled(killed.tumblingPlayer, killer)
     }
 

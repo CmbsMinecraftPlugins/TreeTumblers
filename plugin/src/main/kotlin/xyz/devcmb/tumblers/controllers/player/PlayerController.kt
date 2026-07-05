@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
@@ -37,6 +38,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerStatisticIncrementEvent
+import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
@@ -56,6 +58,7 @@ import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
@@ -209,6 +212,26 @@ object PlayerController : IController {
     }
 
     @EventHandler
+    fun swapHandItemEvent(event: PlayerSwapHandItemsEvent) {
+        Kit.updateLoadout(event.player)
+    }
+
+    val playerInventoryContents: HashMap<TumblingPlayer, Array<ItemStack?>> = HashMap()
+    @EventHandler
+    fun startTickEvent(event: ServerTickStartEvent) {
+        Bukkit.getOnlinePlayers().forEach {
+            val current = it.inventory.contents.clone()
+            val previous = playerInventoryContents[it.tumblingPlayer] ?: arrayOf()
+            playerInventoryContents[it.tumblingPlayer] = current
+
+            if(!current.contentDeepEquals(previous)) {
+                DebugUtil.info("Updating loadout")
+                Kit.updateLoadout(it)
+            }
+        }
+    }
+
+    @EventHandler
     fun blockPlaceEvent(event: BlockPlaceEvent) {
         AdvancedItemRegistry.handleBlockPlace(event)
     }
@@ -321,10 +344,10 @@ object PlayerController : IController {
 
     fun canSeeNametag(viewer: Player, taggedPlayer: Player): Boolean {
         return currentNametagMode.canSee(viewer, taggedPlayer)
-                && !SpectatorController.spectators.contains(taggedPlayer)
-                && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
-                && !hiddenPlayers.contains(taggedPlayer)
-                && taggedPlayer != viewer
+            && !SpectatorController.spectators.contains(taggedPlayer)
+            && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
+            && !hiddenPlayers.contains(taggedPlayer)
+            && taggedPlayer != viewer
     }
 
     fun reloadNametags() {
