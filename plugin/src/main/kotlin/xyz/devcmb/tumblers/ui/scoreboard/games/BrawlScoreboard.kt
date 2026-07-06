@@ -2,18 +2,35 @@ package xyz.devcmb.tumblers.ui.scoreboard.games
 
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.brawl.BrawlController
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
-class BrawlScoreboard : HandledScoreboard.SidebarScoreboard() {
+class BrawlScoreboard(
+    val player: Player,
+) : HandledScoreboard.SidebarScoreboard() {
     override val id: String = "brawlScoreboard"
     override val displayName: String = "<yellow>Brawl</yellow> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
 
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame as? BrawlController ?: return arrayListOf()
+
+        var roundsComponent = Component.empty()
+        repeat(activeGame.rounds) {
+            val placement = activeGame.roundPlacements[it][player.tumblingPlayer]
+            roundsComponent = roundsComponent.append(
+                Format.mm(
+                    "${if(it != 0) " " else ""}<gray>[${if(placement != null) "<green>$placement${getOrdinalSuffix(placement)}</green>" else " "}]</gray>"
+                )
+            )
+        }
+
         return arrayListOf(
             Component.empty(),
             Format.mm(
@@ -25,6 +42,11 @@ class BrawlScoreboard : HandledScoreboard.SidebarScoreboard() {
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),
                 Placeholder.unparsed("total", activeGame.rounds.toString())
             ),
+            roundsComponent,
+            Component.empty(),
+            *UserInterfaceUtility.getTeamScoresComponent(player, activeGame).toTypedArray(),
+            Component.empty(),
+            UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty()
         )
     }

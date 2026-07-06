@@ -108,7 +108,7 @@ object Format {
     fun formatKillMessage(killer: Player?, killed: Player?, receiver: Player, score: Int)
         = formatKillMessage(killer?.tumblingPlayer, killed?.tumblingPlayer, receiver, score)
 
-    fun formatKillMessage(killer: TumblingPlayer?, killed: TumblingPlayer?, receiver: Player, score: Int): Component {
+    fun formatKillMessage(killer: TumblingPlayer?, killed: TumblingPlayer?, receiver: Player, score: Int, scoreOverride: Int? = null): Component {
         require(killer != null || killed != null) { "Both killer and killed cannot be null" }
 
         val killerName =
@@ -131,8 +131,8 @@ object Format {
             Placeholder.component("killer", killerName)
         )
 
-        if(receiver == killer && score > 0) {
-            component = component.append(Component.text(" [+$score]", NamedTextColor.GOLD))
+        if((receiver == killer && score > 0) || scoreOverride != null) {
+            component = component.append(Component.text(" [+${scoreOverride ?: score}]", NamedTextColor.GOLD))
         }
 
         return component

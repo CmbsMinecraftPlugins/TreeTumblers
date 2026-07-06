@@ -33,7 +33,9 @@ object BrawlData : GameData(
         Flag.ENABLE_ITEM_DROPS
     ),
     scores = hashMapOf(
-        CommonScoreSource.KILL to 120
+        CommonScoreSource.KILL to 180,
+        CommonScoreSource.OUTLAST to 10,
+        BrawlController.BrawlScoreSource.SURVIVE_ONE_MINUTE to 120,
     ),
     icon = Format.mm("<glyph:game/brawl_icon>"),
     logo = Format.mm("<glyph:game/brawl_logo>"),

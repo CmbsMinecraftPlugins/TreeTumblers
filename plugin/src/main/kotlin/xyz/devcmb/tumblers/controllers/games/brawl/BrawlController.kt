@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
 import kotlinx.coroutines.launch
+import net.kyori.adventure.text.Component
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.GameMode
@@ -28,6 +29,7 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
@@ -66,6 +68,12 @@ class BrawlController : RoundedGame(
     val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
     var borderRunnable: BukkitRunnable? = null
+
+    override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+        BrawlScoreSource.SURVIVE_ONE_MINUTE to {
+            gameMessage(Format.mm("Survived one minute <gold>[+$it]</gold>"))
+        }
+    )
 
     var kitSelectActive: Boolean = false
     override suspend fun preRound() {
@@ -168,14 +176,20 @@ class BrawlController : RoundedGame(
                 }
             }
 
-            alivePlayers.filter { !it.isOnline }.forEach {
-                playerKilled(it, null)
-            }
+            alivePlayers
+                .filter { !it.isOnline }
+                .sortedBy { it.team.priority }
+                .toList()
+                .forEach { playerKilled(it, null) }
         }
 
         currentTimer!!.timeExecution(4.minutes.inWholeSeconds.toInt()) {
             Bukkit.broadcast(gameMessage(Format.mm("<red>The border has started shrinking!</red>")))
             setupBorderTask()
+        }
+
+        currentTimer!!.intervalExecution(1.minutes.inWholeSeconds.toInt()) {
+            alivePlayers.forEach { grantScore(it, BrawlScoreSource.SURVIVE_ONE_MINUTE) }
         }
     }
 
@@ -312,13 +326,22 @@ class BrawlController : RoundedGame(
         roundPlacements[roundIndex][player] = alivePlayers.size
         alivePlayers.remove(player)
 
+        killer?.let { grantScore(it, CommonScoreSource.KILL) }
+        alivePlayers.forEach { grantScore(it, CommonScoreSource.OUTLAST) }
+
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach {
             val message =
-                if(killer != null) Format.formatKillMessage(killer.tumblingPlayer, player, it, getScoreSource(CommonScoreSource.KILL))
-                else Format.formatDeathMessage(
+                if(killer != null) Format.formatKillMessage(
+                    killer.tumblingPlayer,
                     player,
                     it,
-                    false,
+                    getScoreSource(CommonScoreSource.KILL),
+                    if(it != killer) getScoreSource(CommonScoreSource.OUTLAST) else null
+                ) else Format.formatDeathMessage(
+                    player,
+                    it,
+                    true,
+                    score = getScoreSource(CommonScoreSource.OUTLAST),
                     lastDamage = player.bukkitPlayer?.lastDamageCause?.cause ?: EntityDamageEvent.DamageCause.SUICIDE
                 )
 
@@ -326,7 +349,7 @@ class BrawlController : RoundedGame(
         }
 
         if(alivePlayers.size <= 1) {
-            if(alivePlayers.size == 1) roundPlacements[roundIndex][player] = 1
+            if(alivePlayers.size == 1) roundPlacements[roundIndex][alivePlayers.first()] = 1
             TreeTumblers.pluginScope.launch { endRound() }
         }
     }
@@ -410,5 +433,9 @@ class BrawlController : RoundedGame(
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         if(event.entity is Player && !roundActive) event.isCancelled = true
+    }
+
+    enum class BrawlScoreSource(override val id: String) : ScoreSource {
+        SURVIVE_ONE_MINUTE("brawl_survive_one_minute")
     }
 }
