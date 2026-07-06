@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.crumble.kits
 import org.bukkit.Color
 import org.bukkit.FireworkEffect
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Player
@@ -12,7 +11,6 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.inventory.meta.FireworkMeta
-import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.data.TumblingPlayer

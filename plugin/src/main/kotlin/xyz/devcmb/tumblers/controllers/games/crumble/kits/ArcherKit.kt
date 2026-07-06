@@ -1,7 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.crumble.kits
 
 import org.bukkit.Material
-import org.bukkit.NamespacedKey
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Player
@@ -10,7 +9,6 @@ import org.bukkit.event.entity.EntityShootBowEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.data.TumblingPlayer

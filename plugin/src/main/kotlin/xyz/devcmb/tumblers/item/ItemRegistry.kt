@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.item
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.item.scroll.ScrollItem
 import kotlin.reflect.KClass
-import kotlin.reflect.full.primaryConstructor
 
 object ItemRegistry {
     val items: HashMap<String, KClass<out CustomItem>> = HashMap()

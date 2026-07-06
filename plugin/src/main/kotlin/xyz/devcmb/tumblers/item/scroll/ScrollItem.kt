@@ -12,7 +12,6 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.intToRoman
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.tickSeconds
-import kotlin.time.Duration.Companion.seconds
 
 class ScrollItem(
     val scrollEffect: ScrollEffect
