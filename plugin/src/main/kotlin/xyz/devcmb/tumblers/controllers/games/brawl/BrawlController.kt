@@ -86,7 +86,7 @@ class BrawlController : RoundedGame(
             val spectators = Team.entries
                 .filter { !it.playingTeam }
                 .flatMap { it.getOnlinePlayers() }
-            spectators.forEach { makeSpectator(it, sendActionBar = false, participating = false) }
+            spectators.forEach { makeSpectator(it, participating = false) }
 
             participatingSpectators.toList().forEach(this::unSpectate)
 
@@ -384,7 +384,7 @@ class BrawlController : RoundedGame(
             }
         } else {
             if(player.tumblingPlayer.team.playingTeam) {
-                makeSpectator(player, false)
+                makeSpectator(player)
                 player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
             }
             spawnPlayers(loadedMaps[roundIndex], setOf(player), BrawlSpawn.SPECTATORS)

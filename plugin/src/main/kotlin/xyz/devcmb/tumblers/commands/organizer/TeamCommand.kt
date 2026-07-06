@@ -9,6 +9,7 @@ import dev.rollczi.litecommands.annotations.permission.Permission
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.command.CommandSender
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
@@ -23,6 +24,11 @@ class TeamCommand {
         @Arg("team") team: Team,
         @Flag("--confirm") confirm: Boolean
     ) {
+        if(GameController.activeGame != null) {
+            executor.sendMessage(Format.error("You cannot change teams while a game is active!"))
+            return
+        }
+
         if(!team.playingTeam && !confirm) {
             executor.sendMessage(
                 Format.warning("You entered a team which is not playing in the event. If you wish to proceed anyways, rerun the command with the --confirm flag.")
@@ -39,7 +45,7 @@ class TeamCommand {
     @Execute(name = "list")
     fun executeList(@Context sender: CommandSender) {
         var teams = Component.empty()
-        Team.entries.forEachIndexed { i, it ->
+        Team.entries.forEach { it ->
             teams = teams.appendNewline().append(it.formattedName)
         }
         sender.sendMessage(Component.text("Here are all the teams: ", NamedTextColor.AQUA).append(teams))

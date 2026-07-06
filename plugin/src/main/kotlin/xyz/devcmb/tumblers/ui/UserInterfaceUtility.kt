@@ -282,6 +282,8 @@ object UserInterfaceUtility {
 
     fun getIndividualScoreComponent(player: Player, activeGame: AbstractGame): Component {
         val tumblingPlayer = player.tumblingPlayer
+        if(!tumblingPlayer.team.playingTeam) return Format.mm("<gray>You are not participating</gray>")
+
         val playerPlacement = activeGame.getIndividualPlacements().find { it.first == tumblingPlayer }
             ?: Pair(tumblingPlayer,activeGame.getIndividualPlacements().size + 1)
 

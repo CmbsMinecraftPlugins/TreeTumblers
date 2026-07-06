@@ -41,7 +41,7 @@ object BrawlData : GameData(
         CutsceneStep.GLHF,
     ),
     flags = setOf(
-        Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,
+        Flag.USE_SPECTATOR_DEATH_SYSTEM,
         Flag.ENABLE_HUNGER,
         Flag.ENABLE_ITEM_DROPS
     ),
