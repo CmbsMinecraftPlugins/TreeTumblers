@@ -24,11 +24,11 @@ class BrawlScoreboard(
         var roundsComponent = Component.empty()
         repeat(activeGame.rounds) {
             val placement = activeGame.roundPlacements[it][player.tumblingPlayer]
-            roundsComponent = roundsComponent.append(
-                Format.mm(
-                    "${if(it != 0) " " else ""}<gray>[${if(placement != null) "<green>$placement${getOrdinalSuffix(placement)}</green>" else " "}]</gray>"
-                )
-            )
+            roundsComponent = roundsComponent.append(if(placement == -1) Format.mm(
+                "${if(it != 0) " " else ""}<gray>[<white><glyph:icon/trophy></white>]</gray>"
+            ) else Format.mm(
+                "${if(it != 0) " " else ""}<gray>[${if(placement != null) "<green>$placement${getOrdinalSuffix(placement)}</green>" else " "}]</gray>"
+            ))
         }
 
         return arrayListOf(

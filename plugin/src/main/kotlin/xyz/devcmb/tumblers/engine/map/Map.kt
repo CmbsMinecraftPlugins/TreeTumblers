@@ -1,13 +1,17 @@
 package xyz.devcmb.tumblers.engine.map
 
 import org.bukkit.GameRules
+import org.bukkit.Location
 import org.bukkit.configuration.ConfigurationSection
 import org.bukkit.configuration.file.YamlConfiguration
+import org.bukkit.entity.Interaction
+import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.MapSetupException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.base.AbstractGame
+import xyz.devcmb.tumblers.engine.base.AbstractGame.Companion.spawnKey
 import xyz.devcmb.tumblers.util.suspendSync
 import kotlin.io.path.Path
 
@@ -82,6 +86,31 @@ class Map(
             config.getConfigurationSection(dataPath)
                 ?: YamlConfiguration()
 
-        return LoadedMap(id, world, data)
+        val spawns: HashMap<SpawnLocation, List<Location>> = suspendSync {
+            if (game.data.spawns != null)
+                HashMap(
+                    world.entities
+                    .filterIsInstance<Interaction>()
+                    .mapNotNull { interaction ->
+                        val key = interaction.persistentDataContainer.get(
+                            spawnKey,
+                            PersistentDataType.STRING
+                        ) ?: return@mapNotNull null
+
+                        val spawn = game.data.spawns!!.find {
+                            it.name.equals(key, ignoreCase = true)
+                        } ?: return@mapNotNull null
+
+                        interaction.remove()
+                        spawn to interaction.location
+                    }
+                    .groupBy(
+                        keySelector = { it.first },
+                        valueTransform = { it.second }
+                    ))
+            else hashMapOf()
+        }
+
+        return LoadedMap(id, world, spawns, data)
     }
 }

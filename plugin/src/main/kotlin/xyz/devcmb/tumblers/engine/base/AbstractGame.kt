@@ -9,9 +9,9 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
-import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -22,7 +22,6 @@ import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -54,7 +53,6 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.collections.forEach
-import kotlin.time.Duration
 
 /**
  * Base class for all games
@@ -293,7 +291,7 @@ abstract class AbstractGame(
             )
 
         players.forEachIndexed { index, player ->
-            player.tp(markers[index % markers.size].location)
+            player.tp(markers[index % markers.size])
         }
     }
 
@@ -304,12 +302,8 @@ abstract class AbstractGame(
      * @param location The [SpawnLocation] to use
      * @return A list of all the interaction entities
      */
-    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Interaction> {
-        val world = map.world
-        return world.entities
-            .filterIsInstance<Interaction>()
-            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
-            .shuffled()
+    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Location> {
+        return map.spawns[location]!!
     }
 
     /**
@@ -390,8 +384,6 @@ abstract class AbstractGame(
         EventController.replicateScores()
     }
 
-    private var countdownCancelled: Boolean = false
-
     /**
      * Runs a [Timer] instance with [Timer.joined] set to true, running synchronously
      * @param time How long to run the countdown for
@@ -420,9 +412,6 @@ abstract class AbstractGame(
         }
         currentTimer!!.start()
     }
-
-    fun asyncCountdown(duration: Duration, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null)
-        = asyncCountdown(duration.inWholeSeconds.toInt(), id, onComplete)
 
     /**
      * Runs a [Timer] constructed externally
@@ -674,13 +663,14 @@ abstract class AbstractGame(
      */
     fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = BadgeController.grantBadge(player, badge)
 
-    /**
-     * Pauses the game until all gameParticipants are connected, or until it is skipped
-     */
     var playerCheckActive: Boolean = false
         private set
     var playerCheckSkipped: Boolean = false
     var playerCheckPersistentSkipped: Boolean = false
+
+    /**
+     * Pauses the game until all gameParticipants are connected, or until it is skipped
+     */
     suspend fun playerCheck(participants: Set<TumblingPlayer> = gameParticipants) {
         if(!participants.all { it.isOnline }) {
             playerCheckActive = true

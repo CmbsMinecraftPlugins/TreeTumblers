@@ -26,6 +26,19 @@ object BrawlData : GameData(
         ) { _ ->
             delay(5000)
         },
+        CutsceneStep(Format.mm(
+            "In this game, you choose a <yellow>kit</yellow> to bring into battle<br>" +
+                "The kits you can choose from are <aqua>chosen randomly</aqua> for each round, each providing a <green>unique playstyle</green>"
+        ), "cutscene.start") {
+            delay(5000)
+        },
+        CutsceneStep(Format.mm(
+            "After <yellow>1 minute</yellow>, a <red>border</red> will start shrinking in from the edges of the map.<br>" +
+                    "Whichever team outlasts all the other ones will be the <yellow>victor!</yellow>"
+        ), "cutscene.start") {
+            delay(5000)
+        },
+        CutsceneStep.GLHF,
     ),
     flags = setOf(
         Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR,

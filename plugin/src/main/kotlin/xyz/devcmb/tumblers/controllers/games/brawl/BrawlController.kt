@@ -67,6 +67,8 @@ class BrawlController : RoundedGame(
     val playerKits: HashMap<TumblingPlayer, BrawlKit> = HashMap()
 
     val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
+    val aliveTeams: HashSet<Team>
+        get() = HashSet(alivePlayers.map { it.team })
     val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
     var borderRunnable: BukkitRunnable? = null
@@ -350,8 +352,16 @@ class BrawlController : RoundedGame(
             it.sendMessage(message)
         }
 
-        if(alivePlayers.size <= 1) {
-            if(alivePlayers.size == 1) roundPlacements[roundIndex][alivePlayers.first()] = 1
+        if(!alivePlayers.any { it.team == player.team }) {
+            Bukkit.broadcast(gameMessage(Format.mm("<red><team:${player.team.name.lowercase()}:name> has been eliminated!</red>")))
+        }
+
+        if(aliveTeams.size <= 1) {
+            if(aliveTeams.size == 1) {
+                alivePlayers.filter { it.team == aliveTeams.first() }.forEach {
+                    roundPlacements[roundIndex][it] = -1
+                }
+            }
             TreeTumblers.pluginScope.launch { endRound() }
         }
     }

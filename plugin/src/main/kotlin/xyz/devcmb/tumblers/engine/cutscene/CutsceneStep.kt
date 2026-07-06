@@ -10,10 +10,12 @@ import xyz.devcmb.tumblers.util.Format
  * @param chatMessage The message to send all observers of the cutscene
  * @param run The function to run with a [LoadedMap] param and the [Cutscene] object's [CutsceneContext]
  */
-open class CutsceneStep(
+class CutsceneStep(
     val chatMessage: Component?,
     val startingTeleport: String? = null,
     val run: suspend CutsceneContext.(map: LoadedMap) -> Unit
 ) {
-    object GLHF : CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>"), null, {})
+    companion object {
+        val GLHF = CutsceneStep(Format.mm("<b><green>Good Luck, Have Fun!</green></b>"), null) {}
+    }
 }

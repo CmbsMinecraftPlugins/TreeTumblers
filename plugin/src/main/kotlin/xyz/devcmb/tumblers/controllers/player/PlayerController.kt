@@ -225,7 +225,6 @@ object PlayerController : IController {
             playerInventoryContents[it.tumblingPlayer] = current
 
             if(!current.contentDeepEquals(previous)) {
-                DebugUtil.info("Updating loadout")
                 Kit.updateLoadout(it)
             }
         }

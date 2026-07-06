@@ -570,7 +570,7 @@ class FloodEscapeController : RoundedGame(
         if(event.to.y <= voidHeight) {
             val respawnLocation = obstacle?.respawnPoint
                 ?: playerObstacles[player.tumblingPlayer]?.let { obstacles[roundIndex][it].respawnPoint }
-                ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawn.SPAWN).first().location
+                ?: getSpawns(loadedMaps[roundIndex], FloodEscapeSpawn.SPAWN).first()
 
             player.tp(respawnLocation)
             return
