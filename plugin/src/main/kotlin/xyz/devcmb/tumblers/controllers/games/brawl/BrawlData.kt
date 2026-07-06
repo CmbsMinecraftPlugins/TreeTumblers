@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.util.Format
 
 object BrawlData : GameData(
@@ -31,7 +32,9 @@ object BrawlData : GameData(
         Flag.ENABLE_HUNGER,
         Flag.ENABLE_ITEM_DROPS
     ),
-    scores = hashMapOf(),
+    scores = hashMapOf(
+        CommonScoreSource.KILL to 120
+    ),
     icon = Format.mm("<glyph:game/brawl_icon>"),
     logo = Format.mm("<glyph:game/brawl_logo>"),
     tabLogo = Format.mm("<glyph:game/brawl_logo_14a_45h>")

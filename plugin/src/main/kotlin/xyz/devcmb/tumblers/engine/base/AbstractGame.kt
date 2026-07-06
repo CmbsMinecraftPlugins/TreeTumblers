@@ -53,7 +53,6 @@ import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.uiController
 import kotlin.collections.forEach
 import kotlin.time.Duration
 
@@ -370,13 +369,6 @@ abstract class AbstractGame(
                     HubController.spawnHub(it)
                     it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                     it.foodLevel = 20
-
-                    it.uiController.otherTeams.forEach { (_, team) ->
-                        team.setOption(
-                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                            org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
-                        )
-                    }
 
                     if (it.gameMode != GameMode.CREATIVE) {
                         it.gameMode = GameMode.ADVENTURE

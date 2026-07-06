@@ -10,7 +10,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
-import xyz.devcmb.tumblers.util.runTask
+import xyz.devcmb.tumblers.util.runTaskLater
 
 object AdvancedItemRegistry {
     val items: HashMap<String, AdvancedItemStackContext> = HashMap()
@@ -60,7 +60,7 @@ object AdvancedItemRegistry {
         val item = getItem(stack) ?: return
 
         if(item.returnOnPlace) {
-            runTask {
+            runTaskLater(2) {
                 stack.amount += 1
             }
         }

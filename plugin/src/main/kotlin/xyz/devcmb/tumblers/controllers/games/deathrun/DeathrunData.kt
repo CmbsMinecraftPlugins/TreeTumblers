@@ -121,8 +121,6 @@ object DeathrunData : GameData(
     scores = hashMapOf(
         // this * placement = awarded score
         DeathrunScoreSource.RUN_COMPLETE to 8,
-        // constant value
-        DeathrunScoreSource.RUN_FAILED to 15,
 
         // split across the whole team
         DeathrunScoreSource.TRAP_KILL to 40,

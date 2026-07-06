@@ -1,19 +1,24 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
 import kotlinx.coroutines.launch
+import org.bukkit.Bukkit
+import org.bukkit.Color
 import org.bukkit.GameMode
 import org.bukkit.Material
+import org.bukkit.Particle
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Player
 import org.bukkit.entity.ThrownPotion
 import org.bukkit.event.EventHandler
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -26,6 +31,7 @@ import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.item.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -33,7 +39,10 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import xyz.devcmb.tumblers.util.withY
 import kotlin.math.min
+import kotlin.math.pow
+import kotlin.random.Random
 import kotlin.time.Duration.Companion.minutes
 
 @EventGame
@@ -56,6 +65,8 @@ class BrawlController : RoundedGame(
     val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
     val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
+    var borderRunnable: BukkitRunnable? = null
+
     var kitSelectActive: Boolean = false
     override suspend fun preRound() {
         playerKits.clear()
@@ -76,6 +87,8 @@ class BrawlController : RoundedGame(
             gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 it.inventory.clear()
                 it.gameMode = GameMode.ADVENTURE
+                it.health = 20.0
+                it.foodLevel = 20
                 it.isFlying = false
                 it.allowFlight = false
                 it.inventory.addItem(kitSelector)
@@ -159,6 +172,48 @@ class BrawlController : RoundedGame(
                 playerKilled(it, null)
             }
         }
+
+        currentTimer!!.timeExecution(4.minutes.inWholeSeconds.toInt()) {
+            Bukkit.broadcast(gameMessage(Format.mm("<red>The border has started shrinking!</red>")))
+            setupBorderTask()
+        }
+    }
+
+    var borderRadius: Int = 0
+    fun setupBorderTask() {
+        val currentMap = loadedMaps[roundIndex]
+        borderRadius = currentMap.data.getInt("starting_border_radius")
+
+        val mapOrigin = currentMap.data.getList("origin")
+            ?.validateLocation(currentMap.world)
+            ?: throw GameControllerException("Current map does not have a valid origin")
+
+        borderRunnable = object : BukkitRunnable() {
+            override fun run() {
+                borderRadius -= 1
+                alivePlayers.mapNotNull { it.bukkitPlayer }.forEach {
+                    if(it.location.withY(mapOrigin.y).distanceSquared(mapOrigin) > borderRadius.toDouble().pow(2.0)) {
+                        it.damage(2.0)
+                    }
+                }
+
+                repeat(borderRadius * 10) {
+                    val center = mapOrigin.clone()
+                    center.y += ((-5..5).random())
+
+                    val point = getRandomCirclePoint(center, borderRadius.toDouble())
+                    currentMap.world.spawnParticle(
+                        Particle.DUST,
+                        point.x,
+                        point.y,
+                        point.z,
+                        3,
+                        Particle.DustOptions(Color.RED, Random.nextDouble(1.0, 5.5).toFloat())
+                    )
+                }
+            }
+        }
+        borderRunnable!!.runTaskTimer(TreeTumblers.plugin, 0, 20)
     }
 
     override suspend fun postRound() {
@@ -167,6 +222,8 @@ class BrawlController : RoundedGame(
             it.isFlying = true
             it.velocity = it.velocity.add(Vector(0.0, 0.5, 0.0))
         }
+        borderRunnable?.cancel()
+        borderRunnable = null
         super.postRound()
     }
 
@@ -337,6 +394,17 @@ class BrawlController : RoundedGame(
     @EventHandler
     fun playerHungryEvent(event: FoodLevelChangeEvent) {
         if(!roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun blockPlaceEvent(event: BlockPlaceEvent) {
+        if(!roundActive) return
+
+        val buildLimit = loadedMaps[roundIndex].data.getInt("build_limit")
+        if(event.block.location.y >= buildLimit) {
+            event.isCancelled = true
+            event.player.sendMessage(Format.error("You cannot build this high!"))
+        }
     }
 
     @EventHandler

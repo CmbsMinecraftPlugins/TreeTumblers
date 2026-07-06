@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games.brawl
 
 import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -10,7 +11,11 @@ import xyz.devcmb.tumblers.util.splashPotion
 import java.util.UUID
 
 val sharedKitItems = arrayListOf(
-    Kit.KitItem.StandardItem(ItemStack(Material.IRON_PICKAXE), false),
+    Kit.KitItem.StandardItem(ItemStack(Material.IRON_PICKAXE).apply {
+        editMeta {
+            addEnchantment(Enchantment.EFFICIENCY, 3)
+        }
+    }, false),
     Kit.KitItem.StandardItem(ItemStack(Material.COOKED_BEEF, 8)),
     Kit.KitItem.TeamConcreteItem(false),
 

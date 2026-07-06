@@ -105,12 +105,6 @@ class CrumbleController : RoundedGame(
                 Component.text("Round Drawn! ", NamedTextColor.WHITE)
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
-        },
-        CommonScoreSource.TEAM_ROUND_LOSE to { amount ->
-            gameMessage(
-                Component.text("Round Lost! ", NamedTextColor.WHITE)
-                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
-            )
         }
     )
 
@@ -715,7 +709,7 @@ class CrumbleController : RoundedGame(
             it.showTitle(title)
         }
 
-        grantTeamScore(team, CommonScoreSource.TEAM_ROUND_LOSE)
+        team.audience.sendMessage(gameMessage(Format.mm("Round Lost!")))
         matchResults[roundIndex][team] = RoundResult.LOSS
     }
 

@@ -92,12 +92,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
                 Component.text("Run complete! ")
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
-        },
-        DeathrunScoreSource.RUN_FAILED to { amount ->
-            gameMessage(
-                Component.text("Run failed! ")
-                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
-            )
         }
     )
 
@@ -658,7 +652,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
         }
 
         makePlayerSpectate(player)
-        grantScore(player, DeathrunScoreSource.RUN_FAILED)
+        player.sendMessage(Format.mm("Run failed!"))
         Bukkit.broadcast(
             gameMessage(Format.mm(
                 "<red><player> has been eliminated!</red>",
@@ -669,8 +663,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
 
         player.showTitle(Title.title(
             Component.empty(),
-            Format.error("Run failed")
-                .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_FAILED)}]", NamedTextColor.GOLD)),
+            Format.error("Run failed"),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
     }
@@ -821,7 +814,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
 
     enum class DeathrunScoreSource(override val id: String) : ScoreSource {
         RUN_COMPLETE("deathrun_run_complete"),
-        RUN_FAILED("deathrun_run_failed"),
         TRAP_DAMAGE("deathrun_trap_damage"),
         TRAP_KILL("deathrun_trap_kill")
     }

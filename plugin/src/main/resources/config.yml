@@ -535,7 +535,12 @@ games:
       district:
         world: "district"
         data:
+          origin: [3, 96, -2]
+          starting_border_radius: 70
+
+          build_limit: 115
           void_height: 80
+
           rooms:
             # x1,y1,z1,x2,y2,z2
             - [43,97,3,52,96,11]
