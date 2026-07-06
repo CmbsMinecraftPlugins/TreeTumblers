@@ -16,7 +16,7 @@ class BrawlScoreboard(
     val player: Player,
 ) : HandledScoreboard.SidebarScoreboard() {
     override val id: String = "brawlScoreboard"
-    override val displayName: String = "<yellow>Brawl</yellow> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+    override val displayName: String = "<green>Brawl</green> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
 
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame as? BrawlController ?: return arrayListOf()
