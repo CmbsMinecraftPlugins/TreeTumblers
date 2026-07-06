@@ -321,6 +321,7 @@ class FloodEscapeController : RoundedGame(
     override suspend fun preRound() {
         playerDistances.clear()
         alivePlayers.clear()
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { it.inventory.clear() }
         alivePlayers.addAll(gameParticipants)
         playerDistances.putAll(alivePlayers.associateWith { -20.0 })
 

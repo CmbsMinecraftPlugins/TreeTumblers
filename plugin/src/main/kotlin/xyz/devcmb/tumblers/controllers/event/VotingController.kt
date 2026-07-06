@@ -231,12 +231,12 @@ object VotingController : IController {
         suspendSync { cutscene.cleanup() }
     }
 
-    private suspend fun blinkQuadrant(quadrantIndex: Int, concrete: Material, times: Int, delay: Long, endOn: Boolean) {
+    private suspend fun blinkQuadrant(quadrantIndex: Int, times: Int, delay: Long, endOn: Boolean) {
         val blocks = votingQuadrants[quadrantIndex]
         repeat(times) {
             suspendSync {
                 blocks.forEach {
-                    it.block.type = concrete
+                    it.block.type = votingConcretes[quadrantIndex]
                 }
             }
 
@@ -254,7 +254,7 @@ object VotingController : IController {
         if(endOn) {
             suspendSync {
                 blocks.forEach {
-                    it.block.type = concrete
+                    it.block.type = votingConcretes[quadrantIndex]
                 }
             }
         }
@@ -382,7 +382,11 @@ object VotingController : IController {
         if(quadrantGames.size > 2) return
 
         repeat(4 - quadrantGames.size) {
-            val games = GameController.games.filter { game -> !EventController.playedGames.contains(game.data.id) && !quadrantGames.containsValue(game) && game.data.votable }
+            val games = GameController.games.filter { game ->
+                !EventController.playedGames.contains(game.data.id)
+                && !quadrantGames.containsValue(game)
+                && game.data.votable
+            }
             if(games.isEmpty()) return@repeat
 
             val index = (0..3).first { num -> num !in quadrantGames.keys }
@@ -390,9 +394,9 @@ object VotingController : IController {
             quadrantGames[index] = game
 
             val diorama = loadDiorama(game.data.id, index)
-            blinkQuadrant(it, votingConcretes[index], 3, 200, true)
+            blinkQuadrant(index, 3, 200, true)
 
-            placeGame(it, game, diorama)
+            placeGame(index, game, diorama)
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                 Title.title(
@@ -407,7 +411,7 @@ object VotingController : IController {
 
     suspend fun placeGame(quadrantIndex: Int, game: GameController.RegisteredGame, dioramaSession: Pair<EditSession, Operation>?) {
         // this just makes it turn on regardless of state, good for the recovery system because with the animation that takes time, this doesn't
-        blinkQuadrant(quadrantIndex, votingConcretes[quadrantIndex], 0, 0, true)
+        blinkQuadrant(quadrantIndex, 0, 0, true)
 
         val diorama = dioramaSession ?: loadDiorama(game.data.id, quadrantIndex)
 
@@ -470,10 +474,16 @@ object VotingController : IController {
     }
 
     private fun loadDiorama(id: String, index: Int): Pair<EditSession, Operation>? {
-        val schematic = File(dioramasFolder, "$id.schem")
+        var schematic = File(dioramasFolder, "$id.schem")
         if (!schematic.exists()) {
-            DebugUtil.warning("Could not find a diorama schematic for $id, aborting")
-            return null
+            DebugUtil.warning("Could not find a diorama schematic for $id, using fallback instead")
+            val fallbackSchematic = File(dioramasFolder, "fallback.schem")
+            if(!fallbackSchematic.exists()) {
+                DebugUtil.severe("Fallback schematic not found, aborting diorama load")
+                return null
+            }
+
+            schematic = fallbackSchematic
         }
 
         val format = ClipboardFormats.findByFile(schematic)
