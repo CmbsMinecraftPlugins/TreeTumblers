@@ -18,6 +18,8 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
+import org.bukkit.event.player.PlayerDropItemEvent
+import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Vector
@@ -433,6 +435,22 @@ class BrawlController : RoundedGame(
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         if(event.entity is Player && !roundActive) event.isCancelled = true
+    }
+
+    @EventHandler
+    fun dropItemEvent(event: PlayerDropItemEvent) {
+        if(roundActive) return
+        event.isCancelled = true
+    }
+
+    @EventHandler
+    fun playerInteractEvent(event: PlayerInteractEvent) {
+        if(roundActive) return
+
+        val item = event.player.inventory.itemInMainHand
+        if(item.type.isEdible) {
+            event.isCancelled = true
+        }
     }
 
     enum class BrawlScoreSource(override val id: String) : ScoreSource {
