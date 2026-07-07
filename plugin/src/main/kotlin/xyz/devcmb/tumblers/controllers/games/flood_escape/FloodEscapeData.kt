@@ -128,6 +128,6 @@ object FloodEscapeData : GameData(
         FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 2,
         FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25
     ),
-    scoreboard = "floodEscapeScoreboard",
+    scoreboard = FloodEscapeScoreboard::class,
     spawns = FloodEscapeSpawn.entries
 )

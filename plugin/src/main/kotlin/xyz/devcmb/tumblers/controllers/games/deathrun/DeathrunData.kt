@@ -130,6 +130,6 @@ object DeathrunData : GameData(
     logo = Format.mm("<glyph:game/deathrun_logo>"),
     tabLogo = Format.mm("<glyph:game/deathrun_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
-    scoreboard = "deathrunScoreboard",
+    scoreboard = DeathrunScoreboard::class,
     listed = false
 )

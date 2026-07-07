@@ -26,9 +26,9 @@ import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.inventory.hub.*
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.*
-import xyz.devcmb.tumblers.ui.scoreboard.games.*
 import xyz.devcmb.tumblers.util.runTaskTimer
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import kotlin.reflect.full.primaryConstructor
 
 class PlayerUIController(val player: Player) {
     val inventories: ArrayList<HandledInventory> = ArrayList()
@@ -133,18 +133,15 @@ class PlayerUIController(val player: Player) {
     }
 
     fun registerScoreboards() {
-        registerScoreboard(CrumbleScoreboard(player))
-        registerScoreboard(SnifferCaretakerScoreboard(player))
-        registerScoreboard(DeathrunScoreboard(player))
-        registerScoreboard(PartyScoreboard(player))
-        registerScoreboard(BreachScoreboard(player))
-        registerScoreboard(FloodEscapeScoreboard(player))
-        registerScoreboard(BrawlScoreboard(player))
+        GameController.games.forEach {
+            val scoreboard = it.data.scoreboard.primaryConstructor!!.call(player, it.data)
+            registerScoreboard(scoreboard)
+        }
 
         registerScoreboard(IntermissionScoreboard(player))
 
         if(GameController.activeGame == null) {
-            activateScoreboard("intermissionScoreboard")
+            activateScoreboard("intermission_scoreboard")
         }
     }
 

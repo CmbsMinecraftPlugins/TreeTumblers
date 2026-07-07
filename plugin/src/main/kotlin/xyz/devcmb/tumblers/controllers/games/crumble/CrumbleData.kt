@@ -99,7 +99,7 @@ object CrumbleData : GameData(
     logo = Format.mm("<glyph:game/crumble_logo>"),
     tabLogo = Format.mm("<glyph:game/crumble_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
-    scoreboard = "crumbleScoreboard",
+    scoreboard = CrumbleScoreboard::class,
     badges = CrumbleBadge.entries,
     spawns = CrumbleSpawn.entries
 )

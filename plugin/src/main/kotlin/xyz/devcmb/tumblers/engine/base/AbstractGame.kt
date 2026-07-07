@@ -119,7 +119,7 @@ abstract class AbstractGame(
         currentState = State.LOADING
 
         suspendSync {
-            PlayerController.players.forEach { it.deactivateScoreboard("intermissionScoreboard") }
+            PlayerController.players.forEach { it.deactivateScoreboard("intermission_scoreboard") }
         }
 
         gamePlayers.addAll(players)
@@ -244,7 +244,7 @@ abstract class AbstractGame(
 
         suspendSync {
             gamePlayers.forEach {
-                it.activateScoreboard(data.scoreboard)
+                it.activateScoreboard("${data.id}_scoreboard")
             }
 
             if (data.flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
@@ -355,8 +355,8 @@ abstract class AbstractGame(
             gameSpectators.toList().forEach(this::unSpectate)
 
             gamePlayers.forEach { tumblingPlayer ->
-                tumblingPlayer.deactivateScoreboard(data.scoreboard)
-                tumblingPlayer.activateScoreboard("intermissionScoreboard")
+                tumblingPlayer.deactivateScoreboard("${data.id}_scoreboard")
+                tumblingPlayer.activateScoreboard("intermission_scoreboard")
 
                 tumblingPlayer.bukkitPlayer?.let {
                     it.inventory.clear()

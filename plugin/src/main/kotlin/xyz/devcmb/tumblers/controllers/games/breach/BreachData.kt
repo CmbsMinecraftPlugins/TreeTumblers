@@ -135,5 +135,5 @@ object BreachData : GameData(
     tabLogo = Format.mm("<glyph:game/breach_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     scores = hashMapOf(),
-    scoreboard = "breachScoreboard"
+    scoreboard = BreachScoreboard::class
 )

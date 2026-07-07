@@ -6,6 +6,8 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
+import kotlin.reflect.KClass
 
 /**
  * Configuration data for a game implementation
@@ -34,7 +36,7 @@ open class GameData(
     val icon: Component,
     val logo: Component,
     val tabLogo: Component,
-    val scoreboard: String,
+    val scoreboard: KClass<out HandledScoreboard>,
     val badges: List<BadgeController.Badge>? = null,
     val spawns: List<SpawnLocation>? = null,
     val listed: Boolean = true,

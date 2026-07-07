@@ -1,10 +1,11 @@
-package xyz.devcmb.tumblers.ui.scoreboard.games
+package xyz.devcmb.tumblers.controllers.games.party
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
@@ -13,10 +14,8 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class PartyScoreboard(
     val player: Player,
-) : HandledScoreboard.SidebarScoreboard() {
-    override val displayName: String = "<aqua>Party</aqua> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
-    override val id: String = "partyScoreboard"
-
+    gameData: GameData,
+) : HandledScoreboard.GameScoreboard(gameData, NamedTextColor.AQUA) {
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame
         if(activeGame !is PartyController) return arrayListOf()

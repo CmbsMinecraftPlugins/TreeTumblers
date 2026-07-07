@@ -12,7 +12,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 class IntermissionScoreboard(
     val player: Player,
 ) : HandledScoreboard.SidebarScoreboard() {
-    override val id: String = "intermissionScoreboard"
+    override val id: String = "intermission_scoreboard"
     override val displayName: String = MiniMessagePlaceholders.Event.EVENT_SCOREBOARD_TITLE
 
     override fun getLines(): ArrayList<Component> {

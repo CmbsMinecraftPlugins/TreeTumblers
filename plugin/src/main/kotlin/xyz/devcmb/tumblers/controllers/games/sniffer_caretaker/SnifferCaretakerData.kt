@@ -188,6 +188,6 @@ object SnifferCaretakerData : GameData(
     logo = Format.mm("<glyph:game/sniffer_caretaker_logo>"),
     tabLogo = Format.mm("<glyph:game/sniffer_caretaker_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
-    scoreboard = "snifferCaretakerScoreboard",
+    scoreboard = SnifferCaretakerScoreboard::class,
     name = "Sniffer Caretaker"
 )

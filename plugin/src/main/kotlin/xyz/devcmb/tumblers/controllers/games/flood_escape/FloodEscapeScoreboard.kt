@@ -1,11 +1,12 @@
-package xyz.devcmb.tumblers.ui.scoreboard.games
+package xyz.devcmb.tumblers.controllers.games.flood_escape
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -14,11 +15,9 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.math.roundToInt
 
 class FloodEscapeScoreboard(
-    val player: Player
-) : HandledScoreboard.SidebarScoreboard() {
-    override val displayName: String = "<blue>Flood Escape</blue> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
-    override val id: String = "floodEscapeScoreboard"
-
+    val player: Player,
+    gameData: GameData,
+) : HandledScoreboard.GameScoreboard(gameData, NamedTextColor.BLUE) {
     val placementTemplate: String = "<placement>. <player> <gray>-</gray> <white><distance></white>"
 
     override fun getLines(): ArrayList<Component> {
@@ -29,7 +28,11 @@ class FloodEscapeScoreboard(
             val placement = activeGame.playerPlacements[it][player.tumblingPlayer]
             roundsComponent = roundsComponent.append(
                 Format.mm(
-                    "${if(it != 0) " " else ""}<gray>[${if(placement != null) "<green>$placement${getOrdinalSuffix(placement)}</green>" else " "}]</gray>"
+                    "${if(it != 0) " " else ""}<gray>[${if(placement != null) "<green>$placement${
+                        getOrdinalSuffix(
+                            placement
+                        )
+                    }</green>" else " "}]</gray>"
                 )
             )
         }
@@ -45,7 +48,8 @@ class FloodEscapeScoreboard(
         if(!top.isEmpty()) {
             if(!top.any { it.first == player.tumblingPlayer } && player.tumblingPlayer.team.playingTeam) {
                 val topPlayer = top.first()
-                leaderboard.add(Format.mm(
+                leaderboard.add(
+                    Format.mm(
                     placementTemplate,
                     Placeholder.unparsed("placement", "1"),
                     Placeholder.component("player",
@@ -72,7 +76,8 @@ class FloodEscapeScoreboard(
 
                 closestDistances.filterNotNull().forEach {
                     val (plr) = it
-                    leaderboard.add(Format.mm(
+                    leaderboard.add(
+                        Format.mm(
                         placementTemplate,
                         Placeholder.component("player",
                             if(plr !in activeGame.alivePlayers) plr.eliminatedName else plr.formattedName
@@ -84,7 +89,8 @@ class FloodEscapeScoreboard(
             } else {
                 val top4 = distances.take(4)
                 top4.forEach {
-                    leaderboard.add(Format.mm(
+                    leaderboard.add(
+                        Format.mm(
                         placementTemplate,
                         Placeholder.component("player",
                             if(it.first !in activeGame.alivePlayers) it.first.eliminatedName else it.first.formattedName

@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.ui.scoreboard
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.scoreboard.Criteria
 import org.bukkit.scoreboard.DisplaySlot
@@ -9,6 +10,8 @@ import org.bukkit.scoreboard.RenderType
 import org.bukkit.scoreboard.Score
 import org.bukkit.scoreboard.Scoreboard
 import xyz.devcmb.tumblers.controllers.event.EventController
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.addScoreboardObjectiveLines
 
@@ -71,6 +74,15 @@ sealed interface HandledScoreboard {
             val scores = addScoreboardObjectiveLines(objective!!, lines)
             this.scores.addAll(scores)
         }
+    }
+
+    abstract class GameScoreboard(
+        val data: GameData,
+        val color: TextColor
+    ): SidebarScoreboard() {
+        override val displayName: String =
+            "<color:${color.asHexString()}>${data.name}</color> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
+        override val id: String = "${data.id}_scoreboard"
     }
 
     abstract class StaticScoreboard(

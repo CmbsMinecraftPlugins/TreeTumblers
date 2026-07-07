@@ -1,10 +1,11 @@
-package xyz.devcmb.tumblers.ui.scoreboard.games
+package xyz.devcmb.tumblers.controllers.games.breach
 
 import net.kyori.adventure.text.Component
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
@@ -12,10 +13,8 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class BreachScoreboard(
     val player: Player,
-) : HandledScoreboard.SidebarScoreboard() {
-    override val displayName: String = "<color:${Team.ORANGE.color.asHexString()}>Breach</color> <dark_gray>|</dark_gray> <white>Finale</white>"
-    override val id: String = "breachScoreboard"
-
+    gameData: GameData,
+) : HandledScoreboard.GameScoreboard(gameData, Team.ORANGE.color) {
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame
         if(activeGame !is BreachController) return arrayListOf()

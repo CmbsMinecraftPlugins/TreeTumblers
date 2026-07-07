@@ -55,5 +55,5 @@ object BrawlData : GameData(
     tabLogo = Format.mm("<glyph:game/brawl_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
     spawns = BrawlSpawn.entries,
-    scoreboard = "brawlScoreboard",
+    scoreboard = BrawlScoreboard::class,
 )

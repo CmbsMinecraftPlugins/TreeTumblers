@@ -75,5 +75,5 @@ object PartyData : GameData(
     logo = Format.mm("<glyph:game/party_logo>"),
     tabLogo = Format.mm("<glyph:game/party_logo_14a_45h>")
         .shadowColor(ShadowColor.none()),
-    scoreboard = "partyScoreboard",
+    scoreboard = PartyScoreboard::class
 )

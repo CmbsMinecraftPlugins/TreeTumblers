@@ -1,10 +1,12 @@
-package xyz.devcmb.tumblers.ui.scoreboard.games
+package xyz.devcmb.tumblers.controllers.games.brawl
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.games.brawl.BrawlController
+import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
@@ -14,10 +16,8 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class BrawlScoreboard(
     val player: Player,
-) : HandledScoreboard.SidebarScoreboard() {
-    override val id: String = "brawlScoreboard"
-    override val displayName: String = "<green>Brawl</green> <dark_gray>|</dark_gray> <gray>Game <game>/<total></gray>"
-
+    gameData: GameData,
+) : HandledScoreboard.GameScoreboard(gameData, NamedTextColor.GREEN) {
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame as? BrawlController ?: return arrayListOf()
 
