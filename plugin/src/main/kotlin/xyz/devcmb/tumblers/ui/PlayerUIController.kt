@@ -20,7 +20,7 @@ import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.brawl.BrawlKitSelector
 import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
-import xyz.devcmb.tumblers.ui.inventory.global.SpectateInventory
+import xyz.devcmb.tumblers.ui.inventory.global.GlobalSpectateInventory
 import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.inventory.hub.*
@@ -114,7 +114,7 @@ class PlayerUIController(val player: Player) {
         registerInventory(CrumbleKitSelector())
         registerInventory(BreachKitSelector())
         registerInventory(ReadyCheckInventory())
-        registerInventory(SpectateInventory())
+        registerInventory(GlobalSpectateInventory())
         registerInventory(HubNavigationInventory())
         registerInventory(BadgeCollectionInventory())
         registerInventory(BrawlKitSelector())
