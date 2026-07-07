@@ -13,6 +13,7 @@ import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.hideToAll
@@ -63,7 +64,8 @@ object SpectatorController : IController {
             name(Format.mm("<green>Spectate menu</green>"))
             droppable(false)
             click {
-                player.openHandledInventory("spectateInventory")
+                val inventory = GameController.activeGame?.data?.spectateInventory ?: "spectateInventory"
+                player.openHandledInventory(inventory)
             }
         }.build())
     }

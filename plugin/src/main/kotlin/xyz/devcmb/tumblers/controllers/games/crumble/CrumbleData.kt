@@ -101,5 +101,6 @@ object CrumbleData : GameData(
         .shadowColor(ShadowColor.none()),
     scoreboard = CrumbleScoreboard::class,
     badges = CrumbleBadge.entries,
-    spawns = CrumbleSpawn.entries
+    spawns = CrumbleSpawn.entries,
+    spectateInventory = "crumbleSpectateMenu"
 )

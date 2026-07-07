@@ -20,10 +20,11 @@ import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.ui.inventory.brawl.BrawlKitSelector
 import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
-import xyz.devcmb.tumblers.ui.inventory.global.GlobalSpectateInventory
 import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
 import xyz.devcmb.tumblers.ui.inventory.crumble.CrumbleKitSelector
 import xyz.devcmb.tumblers.ui.inventory.hub.*
+import xyz.devcmb.tumblers.ui.inventory.spectate.CrumbleSpectateMenu
+import xyz.devcmb.tumblers.ui.inventory.spectate.GlobalSpectateInventory
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.ui.scoreboard.*
 import xyz.devcmb.tumblers.util.runTaskTimer
@@ -114,10 +115,12 @@ class PlayerUIController(val player: Player) {
         registerInventory(CrumbleKitSelector())
         registerInventory(BreachKitSelector())
         registerInventory(ReadyCheckInventory())
-        registerInventory(GlobalSpectateInventory())
         registerInventory(HubNavigationInventory())
         registerInventory(BadgeCollectionInventory())
         registerInventory(BrawlKitSelector())
+
+        registerInventory(GlobalSpectateInventory())
+        registerInventory(CrumbleSpectateMenu())
     }
 
     fun registerBossBars() {

@@ -1,9 +1,10 @@
-package xyz.devcmb.tumblers.ui.inventory.global
+package xyz.devcmb.tumblers.ui.inventory.spectate
 
-import com.noxcrew.interfaces.drawable.Drawable.Companion.drawable
+import com.noxcrew.interfaces.drawable.Drawable
 import com.noxcrew.interfaces.element.StaticElement
 import com.noxcrew.interfaces.grid.GridPoint
 import com.noxcrew.interfaces.interfaces.buildChestInterface
+import com.noxcrew.noxesium.api.util.Unit
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
@@ -43,30 +44,31 @@ class GlobalSpectateInventory : HandledInventory {
                     .filter { it != player && it !in SpectatorController.spectators }
 
             players.forEachIndexed { index, plr ->
-                pane[GridPoint.fromBukkitChestSlot(index)!!] = StaticElement(drawable(ItemStack.of(Material.PLAYER_HEAD).apply {
-                    setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, com.noxcrew.noxesium.api.util.Unit.INSTANCE)
-                    editMeta(SkullMeta::class.java) {
-                        it.displayName(Format.formatPlayerName(plr).decoration(TextDecoration.ITALIC, false))
-                        it.itemModel = UserInterfaceUtility.FLAT_SKULL
-                        it.owningPlayer = plr
+                pane[GridPoint.fromBukkitChestSlot(index)!!] =
+                    StaticElement(Drawable.drawable(ItemStack.of(Material.PLAYER_HEAD).apply {
+                        setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
+                        editMeta(SkullMeta::class.java) {
+                            it.displayName(Format.formatPlayerName(plr).decoration(TextDecoration.ITALIC, false))
+                            it.itemModel = UserInterfaceUtility.FLAT_SKULL
+                            it.owningPlayer = plr
 
-                        it.lore(
-                            listOf(
-                                plr.tumblingPlayer.team.formattedName
-                            ).map { line -> line.decoration(TextDecoration.ITALIC, false) }
-                        )
+                            it.lore(
+                                listOf(
+                                    plr.tumblingPlayer.team.formattedName
+                                ).map { line -> line.decoration(TextDecoration.ITALIC, false) }
+                            )
+                        }
+                    })) {
+                        if (!SpectatorController.spectators.contains(player)) return@StaticElement
+
+                        if (SpectatorController.spectators.contains(plr)) {
+                            plr.sendMessage(Format.warning("This player can't be spectated right now."))
+                            return@StaticElement
+                        }
+
+                        player.tp(plr.location)
+                        view.close(TreeTumblers.pluginScope)
                     }
-                })) {
-                    if (!SpectatorController.spectators.contains(plr)) return@StaticElement
-
-                    if (SpectatorController.spectators.contains(plr)) {
-                        plr.sendMessage(Format.warning("This player can't be spectated right now."))
-                        return@StaticElement
-                    }
-
-                    player.tp(plr.location)
-                    view.close(TreeTumblers.pluginScope)
-                }
             }
         }
     }
