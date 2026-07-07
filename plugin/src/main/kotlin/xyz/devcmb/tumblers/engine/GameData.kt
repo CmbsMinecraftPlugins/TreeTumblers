@@ -36,5 +36,6 @@ open class GameData(
     val tabLogo: Component,
     val scoreboard: String,
     val badges: List<BadgeController.Badge>? = null,
-    val spawns: List<SpawnLocation>? = null
+    val spawns: List<SpawnLocation>? = null,
+    val listed: Boolean = true,
 )

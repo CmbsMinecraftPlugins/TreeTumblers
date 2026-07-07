@@ -33,7 +33,7 @@ class BadgeCollectionInventory : HandledInventory {
             Format.mm("<glyph:container/badge_collection_inventory>"),
             Component.text("Badge Collection", NamedTextColor.WHITE)
         ) }
-        rows = 6
+        rows = 5
 
         val selectedGameProperty = interfaceProperty(SelectedGame(null, null))
         var selectedGame by selectedGameProperty
@@ -41,7 +41,7 @@ class BadgeCollectionInventory : HandledInventory {
         // Game Selector
         withTransform(selectedGameProperty) { pane, _ ->
             forEachInGridIndexed(4, 2) { index, row, col ->
-                val game = GameController.games.getOrNull(index) ?: return@forEachInGridIndexed
+                val game = GameController.games.filter { it.data.listed }.getOrNull(index) ?: return@forEachInGridIndexed
                 val item = ItemStack.of(Material.ECHO_SHARD).apply {
                     setNoxesiumComponent(CommonItemComponentTypes.IMMOVABLE, Unit.INSTANCE)
                     itemMeta = itemMeta.also {
