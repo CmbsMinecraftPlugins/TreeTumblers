@@ -16,7 +16,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
  * @param maps A [Set] containing all the [xyz.devcmb.tumblers.engine.map.Map] instances
  * @param cutsceneSteps An [ArrayList] containing all the [xyz.devcmb.tumblers.engine.cutscene.CutsceneStep] instances
  * @param flags A [Set] of [xyz.devcmb.tumblers.engine.Flag] enums to determine certain shared behaviors
- * @param scores A [HashMap] of [xyz.devcmb.tumblers.engine.score.CommonScoreSource]s to the amount of score they give
+ * @param scores A [HashMap] of [ScoreSource]s to the amount of score they give
  * @param icon The component icon of the game
  * @param logo The component logo of the game
  * @param tabLogo The larger version of the [logo] to be put into the lab list

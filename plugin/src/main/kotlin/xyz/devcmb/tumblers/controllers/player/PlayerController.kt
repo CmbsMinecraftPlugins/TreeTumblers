@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.protocol.player.Equipment
 import com.github.retrooper.packetevents.protocol.player.EquipmentSlot
@@ -25,6 +26,7 @@ import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityPotionEffectEvent
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -36,6 +38,7 @@ import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerStatisticIncrementEvent
+import org.bukkit.event.player.PlayerSwapHandItemsEvent
 import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
@@ -55,7 +58,9 @@ import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
@@ -97,10 +102,6 @@ object PlayerController : IController {
         players.removeIf { it.uuid == uuid }
     }
 
-    fun setPlayerTeam(uuid: UUID, team: Team) {
-        players.find { it.uuid == uuid }!!.team = team
-    }
-
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -128,14 +129,15 @@ object PlayerController : IController {
             it.remove()
         }
 
-        runTask {
-            HubController.spawnHub(player)
-            reloadNametag(player)
-            nameTags.forEach { (otherPlr, tag) ->
-                if (canSeeNametag(player, otherPlr)) {
-                    player.showEntity(TreeTumblers.plugin, tag)
-                }
+        reloadNametag(player)
+        nameTags.forEach { (otherPlr, tag) ->
+            if (canSeeNametag(player, otherPlr)) {
+                player.showEntity(TreeTumblers.plugin, tag)
             }
+        }
+
+        runTask {
+            if(GameController.activeGame == null) HubController.spawnHub(player)
         }
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
@@ -147,7 +149,7 @@ object PlayerController : IController {
         }
 
         hiddenPlayers.forEach {
-            player.hidePlayer(TreeTumblers.plugin, it)
+            player.hidePlayerAndTag(it)
         }
 
         event.joinMessage(null)
@@ -207,6 +209,30 @@ object PlayerController : IController {
     @EventHandler
     fun inventoryClickEvent(event: InventoryClickEvent) {
         AdvancedItemRegistry.handleInventoryClickEvent(event)
+    }
+
+    @EventHandler
+    fun swapHandItemEvent(event: PlayerSwapHandItemsEvent) {
+        Kit.updateLoadout(event.player)
+    }
+
+    val playerInventoryContents: HashMap<TumblingPlayer, Array<ItemStack?>> = HashMap()
+    @EventHandler
+    fun startTickEvent(event: ServerTickStartEvent) {
+        Bukkit.getOnlinePlayers().forEach {
+            val current = it.inventory.contents.clone()
+            val previous = playerInventoryContents[it.tumblingPlayer] ?: arrayOf()
+            playerInventoryContents[it.tumblingPlayer] = current
+
+            if(!current.contentDeepEquals(previous)) {
+                Kit.updateLoadout(it)
+            }
+        }
+    }
+
+    @EventHandler
+    fun blockPlaceEvent(event: BlockPlaceEvent) {
+        AdvancedItemRegistry.handleBlockPlace(event)
     }
 
     @EventHandler
@@ -317,10 +343,10 @@ object PlayerController : IController {
 
     fun canSeeNametag(viewer: Player, taggedPlayer: Player): Boolean {
         return currentNametagMode.canSee(viewer, taggedPlayer)
-                && !SpectatorController.spectators.contains(taggedPlayer)
-                && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
-                && !hiddenPlayers.contains(taggedPlayer)
-                && taggedPlayer != viewer
+            && !SpectatorController.spectators.contains(taggedPlayer)
+            && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
+            && !hiddenPlayers.contains(taggedPlayer)
+            && taggedPlayer != viewer
     }
 
     fun reloadNametags() {
@@ -462,7 +488,7 @@ object PlayerController : IController {
                 )
             }
         },
-        STAFF("Staff", TextColor.fromHexString("#ff3c50")!!) {
+        STAFF("Staff", TextColor.fromHexString("#2aceff")!!) {
             override fun canSee(sender: Player?, receiver: Player): Boolean {
                 return receiver.hasPermission("tumbling.dev") || receiver.hasPermission("tumbling.organizer")
             }

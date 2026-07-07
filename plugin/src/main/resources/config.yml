@@ -107,6 +107,11 @@ lobby:
 
   void_height: 177
 
+item:
+  scroll:
+    # in seconds how long the cooldown lasts
+    cooldown: 1
+
 games:
   crumble:
     # The path where all the maps are contained
@@ -524,3 +529,27 @@ games:
             first: [8.5,67.0,-4.5,0.0,0.0]
             second: [16.5,66.5,20.5,135.0,8.0]
             third: [1.5, 69.0, 37.5, -45.0, 25.0]
+  brawl:
+    worlds_folder: "brawl"
+    maps:
+      district:
+        world: "district"
+        data:
+          origin: [3, 96, -2]
+          starting_border_radius: 70
+
+          build_limit: 115
+          void_height: 80
+
+          rooms:
+            # x1,y1,z1,x2,y2,z2
+            - [43,97,3,52,96,11]
+            - [43,97,-17,52,96,-9]
+            - [-11,97,46,-3,96,37]
+            - [17,97,37,9,96,46]
+            - [-46,97,3,-37,96,11]
+            - [-46,97,-9,-37,96,-17]
+            - [-3,97,-43,-11,96,-52]
+            - [9,97,-43,17,96,-52]
+          cutscene:
+            start: [-14.5, 132.5, 7.5, -120.0, 25.0]

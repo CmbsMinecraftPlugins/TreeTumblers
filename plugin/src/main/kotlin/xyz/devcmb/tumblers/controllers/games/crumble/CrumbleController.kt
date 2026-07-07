@@ -105,12 +105,6 @@ class CrumbleController : RoundedGame(
                 Component.text("Round Drawn! ", NamedTextColor.WHITE)
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
-        },
-        CommonScoreSource.TEAM_ROUND_LOSE to { amount ->
-            gameMessage(
-                Component.text("Round Lost! ", NamedTextColor.WHITE)
-                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
-            )
         }
     )
 
@@ -142,7 +136,7 @@ class CrumbleController : RoundedGame(
         persistentDataContainer {
             set(kitItemsKey, PersistentDataType.BOOLEAN, true)
         }
-        rightClick { player ->
+        click { player ->
             player.openHandledInventory("crumbleKitSelector")
         }
     }.build()
@@ -274,8 +268,8 @@ class CrumbleController : RoundedGame(
                 suspendSync {
                     currentMatchups.forEachIndexed { index, matchup ->
                         val arena = index + 1
-                        val spawnSet1 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_1")
-                        val spawnSet2 = CrumbleSpawns.valueOf("ARENA_${arena}_SET_2")
+                        val spawnSet1 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_1")
+                        val spawnSet2 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_2")
 
                         spawnPlayers(currentMap, matchup.first.getOnlinePlayers().toSet(), spawnSet1)
                         spawnPlayers(currentMap, matchup.second.getOnlinePlayers().toSet(), spawnSet2)
@@ -715,7 +709,7 @@ class CrumbleController : RoundedGame(
             it.showTitle(title)
         }
 
-        grantTeamScore(team, CommonScoreSource.TEAM_ROUND_LOSE)
+        team.audience.sendMessage(gameMessage(Format.mm("Round Lost!")))
         matchResults[roundIndex][team] = RoundResult.LOSS
     }
 
@@ -782,7 +776,7 @@ class CrumbleController : RoundedGame(
                 set(kitItemsKey, PersistentDataType.BOOLEAN, true)
             }
 
-            rightClick {
+            click {
                 useAbility(it)
             }
         }.build()

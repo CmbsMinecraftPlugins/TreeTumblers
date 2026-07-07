@@ -92,12 +92,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
                 Component.text("Run complete! ")
                     .append(Component.text("[+$amount]", NamedTextColor.GOLD))
             )
-        },
-        DeathrunScoreSource.RUN_FAILED to { amount ->
-            gameMessage(
-                Component.text("Run failed! ")
-                    .append(Component.text("[+$amount]", NamedTextColor.GOLD))
-            )
         }
     )
 
@@ -323,7 +317,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
             summonScoreDisplay()
         }
 
-        val checkpoints: List<Triple<Location, Location, Location>> = currentMap.data.getList("checkpoints")?.mapIndexed { index, checkpoint ->
+        val checkpoints: List<Triple<Location, Location, Location>> = currentMap.data.getList("checkpoints")?.map { checkpoint ->
             if(
                 checkpoint !is HashMap<*,*>
                 || checkpoint["start"] == null
@@ -377,7 +371,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
                 if(plr.tumblingPlayer.team == currentTeam) return@forEach
                 gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { other ->
                     if(other == plr || !alivePlayers.contains(other)) return@forEach
-                    plr.hidePlayer(TreeTumblers.plugin, other)
+                    plr.hidePlayerAndTag(other)
                 }
             }
         }
@@ -401,7 +395,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
                 if(plr.isOnline) {
                     gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { other ->
                         if(other == plr || !gameParticipants.contains(other.tumblingPlayer)) return@forEach
-                        plr.bukkitPlayer!!.showPlayer(TreeTumblers.plugin, other)
+                        plr.bukkitPlayer!!.showPlayerAndTag(other)
                     }
                 }
             }
@@ -546,17 +540,17 @@ class DeathrunController : AbstractGame(DeathrunData) {
             droppable(false)
             model(trap.itemKey)
 
-            rightClick {
-                if(player.tumblingPlayer.team != currentTeam) return@rightClick
+            click {
+                if(player.tumblingPlayer.team != currentTeam) return@click
 
                 if(!roundActive) {
                     player.sendMessage(Format.error("You can't use traps unless the round is active!"))
-                    return@rightClick
+                    return@click
                 }
 
                 if(cooldownTimes.contains(index)) {
                     player.sendMessage(Format.error("This trap is currently on cooldown!"))
-                    return@rightClick
+                    return@click
                 }
 
                 cooldownTimes[index] = System.currentTimeMillis()
@@ -658,7 +652,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
         }
 
         makePlayerSpectate(player)
-        grantScore(player, DeathrunScoreSource.RUN_FAILED)
+        player.sendMessage(Format.mm("Run failed!"))
         Bukkit.broadcast(
             gameMessage(Format.mm(
                 "<red><player> has been eliminated!</red>",
@@ -669,8 +663,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
 
         player.showTitle(Title.title(
             Component.empty(),
-            Format.error("Run failed")
-                .append(Component.text(" [+${getScoreSource(DeathrunScoreSource.RUN_FAILED)}]", NamedTextColor.GOLD)),
+            Format.error("Run failed"),
             Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
         ))
     }
@@ -821,7 +814,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
 
     enum class DeathrunScoreSource(override val id: String) : ScoreSource {
         RUN_COMPLETE("deathrun_run_complete"),
-        RUN_FAILED("deathrun_run_failed"),
         TRAP_DAMAGE("deathrun_trap_damage"),
         TRAP_KILL("deathrun_trap_kill")
     }

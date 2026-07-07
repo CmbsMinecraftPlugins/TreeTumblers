@@ -91,10 +91,9 @@ object CrumbleData : GameData(
         Flag.DISABLE_NATURAL_REGENERATION
     ),
     scores = hashMapOf(
-        CommonScoreSource.KILL to 45,
+        CommonScoreSource.KILL to 120,
         CommonScoreSource.TEAM_ROUND_WIN to 480,
         CommonScoreSource.TEAM_ROUND_DRAW to 240,
-        CommonScoreSource.TEAM_ROUND_LOSE to 120,
     ),
     icon = Format.mm("<glyph:game/crumble_icon>"),
     logo = Format.mm("<glyph:game/crumble_logo>"),
@@ -102,5 +101,5 @@ object CrumbleData : GameData(
         .shadowColor(ShadowColor.none()),
     scoreboard = "crumbleScoreboard",
     badges = CrumbleBadge.entries,
-    spawns = CrumbleSpawns.entries
+    spawns = CrumbleSpawn.entries
 )

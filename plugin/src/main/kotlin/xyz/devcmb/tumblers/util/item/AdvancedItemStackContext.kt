@@ -5,7 +5,6 @@ import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
-import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataContainer
@@ -18,8 +17,7 @@ class AdvancedItemStackContext(
     val id = UUID.randomUUID().toString()
     val item = ItemStack(material)
 
-    var rightClick: ((Player) -> Unit)? = null
-    var leftClick: ((Player) -> Unit)? = null
+    var click: (ItemStack.(player: Player) -> Unit)? = null
 
     var droppable: Boolean = true
         set(value) {
@@ -29,6 +27,8 @@ class AdvancedItemStackContext(
     var droppableChanged: Boolean = false
 
     var movable: Boolean = true
+
+    var returnOnPlace: Boolean = false
 
     fun name(component: Component) {
         item.itemMeta = item.itemMeta.also {
@@ -52,26 +52,8 @@ class AdvancedItemStackContext(
         item.amount = amount
     }
 
-    fun enchants(enchantments: Map<Enchantment, Int>) {
-        item.itemMeta = item.itemMeta.also {
-            enchantments.forEach { enchant ->
-                it.addEnchant(enchant.key, enchant.value, true)
-            }
-        }
-    }
-
-    fun unbreakable(unbreakable: Boolean) {
-        item.itemMeta = item.itemMeta.also {
-            it.isUnbreakable = unbreakable
-        }
-    }
-
-    fun rightClick(action: (Player) -> Unit) {
-        rightClick = action
-    }
-
-    fun leftClick(action: (Player) -> Unit) {
-        leftClick = action
+    fun click(action: ItemStack.(Player) -> Unit) {
+        click = action
     }
 
     fun droppable(bool: Boolean) {
@@ -85,6 +67,17 @@ class AdvancedItemStackContext(
     fun persistentDataContainer(action: PersistentDataContainer.() -> Unit) {
         item.itemMeta = item.itemMeta.also {
             action(it.persistentDataContainer)
+        }
+    }
+
+    // FIXME: This doesn't work!
+    @Suppress("UnstableApiUsage")
+    fun useCooldown(cooldownSeconds: Float, key: NamespacedKey?) {
+        item.itemMeta = item.itemMeta.also {
+            val useCooldown = it.useCooldown
+            useCooldown.cooldownSeconds = cooldownSeconds
+            key?.let { k -> useCooldown.cooldownGroup = k }
+            it.setUseCooldown(useCooldown)
         }
     }
 

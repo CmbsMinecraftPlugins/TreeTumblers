@@ -2,12 +2,15 @@ package xyz.devcmb.tumblers.util.item
 
 import org.bukkit.NamespacedKey
 import org.bukkit.event.block.Action
+import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.events.UseAdvancedItemEvent
+import xyz.devcmb.tumblers.util.runTaskLater
 
 object AdvancedItemRegistry {
     val items: HashMap<String, AdvancedItemStackContext> = HashMap()
@@ -22,11 +25,11 @@ object AdvancedItemRegistry {
         val item = getItem(stack) ?: return
 
         when (event.action) {
-            Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK ->
-                item.rightClick?.invoke(event.player)
-
-            Action.LEFT_CLICK_AIR, Action.LEFT_CLICK_BLOCK ->
-                item.leftClick?.invoke(event.player)
+            Action.RIGHT_CLICK_AIR, Action.RIGHT_CLICK_BLOCK -> {
+                val useEvent = UseAdvancedItemEvent(item)
+                useEvent.callEvent()
+                if(!useEvent.isCancelled) item.click?.invoke(stack, event.player)
+            }
 
             else -> {}
         }
@@ -48,6 +51,17 @@ object AdvancedItemRegistry {
         items.forEach {
             if(!it.movable) {
                 event.isCancelled = true
+            }
+        }
+    }
+
+    fun handleBlockPlace(event: BlockPlaceEvent) {
+        val stack = event.itemInHand
+        val item = getItem(stack) ?: return
+
+        if(item.returnOnPlace) {
+            runTaskLater(2) {
+                stack.amount += 1
             }
         }
     }

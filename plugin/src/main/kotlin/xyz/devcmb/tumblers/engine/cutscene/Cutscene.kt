@@ -92,7 +92,7 @@ class Cutscene(val steps: List<CutsceneStep>, val dontAutoCleanup: Boolean = fal
      * @param config The configuration section to be given to the [LoadedMap] for [CutsceneContext] operations
      */
     suspend fun run(observers: Set<Player>, world: World, config: ConfigurationSection) =
-        run(observers, LoadedMap(world.name, world, config), null)
+        run(observers, LoadedMap(world.name, world, hashMapOf(), config), null)
 
     /**
      * Adds an observer to the cutscene

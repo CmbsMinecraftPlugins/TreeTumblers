@@ -49,7 +49,7 @@ object FloodEscapeData : GameData(
             delay(4000)
             val game = game as FloodEscapeController
             val water = suspendSync {
-                game.spawnWater(it)
+                game.spawnWater()
             }
 
             val direction = MovementDirection.entries
@@ -129,5 +129,5 @@ object FloodEscapeData : GameData(
         FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25
     ),
     scoreboard = "floodEscapeScoreboard",
-    spawns = FloodEscapeSpawns.entries
+    spawns = FloodEscapeSpawn.entries
 )

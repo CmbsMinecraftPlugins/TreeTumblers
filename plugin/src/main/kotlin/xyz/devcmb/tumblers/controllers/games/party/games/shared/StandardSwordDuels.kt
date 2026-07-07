@@ -5,6 +5,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyGame
 import xyz.devcmb.tumblers.util.Kit
+import java.util.UUID
 
 class StandardSwordDuels(
     party: PartyController?,
@@ -22,6 +23,7 @@ class StandardSwordDuels(
             Kit.KitItem.StandardItem(ItemStack.of(Material.STONE_SWORD)),
             Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
         )
+        override val uuid: UUID = UUID.randomUUID()
     }
 
     override val team: Boolean = true

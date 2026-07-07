@@ -62,7 +62,7 @@ object SpectatorController : IController {
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
             name(Format.mm("<green>Spectate menu</green>"))
             droppable(false)
-            rightClick {
+            click {
                 player.openHandledInventory("spectateInventory")
             }
         }.build())

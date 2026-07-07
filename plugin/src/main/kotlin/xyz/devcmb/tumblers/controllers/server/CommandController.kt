@@ -10,6 +10,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
 import xyz.devcmb.tumblers.commands.arguments.BadgeArgument
 import xyz.devcmb.tumblers.commands.arguments.ChatChannelArgument
+import xyz.devcmb.tumblers.commands.arguments.CustomItemArgument
 import xyz.devcmb.tumblers.commands.arguments.DebugLogLevelArgument
 import xyz.devcmb.tumblers.commands.arguments.DebuggingEventArgument
 import xyz.devcmb.tumblers.commands.arguments.GameArgument
@@ -23,6 +24,7 @@ import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
 import xyz.devcmb.tumblers.commands.arguments.TimerArgument
 import xyz.devcmb.tumblers.commands.arguments.TumblingPlayerArgument
 import xyz.devcmb.tumblers.commands.dev.DebugCommand
+import xyz.devcmb.tumblers.commands.dev.ItemCommand
 import xyz.devcmb.tumblers.commands.dev.NametagCommand
 import xyz.devcmb.tumblers.commands.dev.PartyCommand
 import xyz.devcmb.tumblers.commands.dev.QibCommand
@@ -48,6 +50,7 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
+import xyz.devcmb.tumblers.item.ItemRegistry
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
@@ -70,7 +73,8 @@ object CommandController : IController {
                 ChatCommand(),
                 NametagCommand(),
                 QibCommand(),
-                BadgeCommand()
+                BadgeCommand(),
+                ItemCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
@@ -86,6 +90,7 @@ object CommandController : IController {
             .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())
             .argument(BadgeController.Badge::class.java, BadgeArgument())
             .argument(SpawnLocation::class.java, SpawnLocationArgument())
+            .argument(ItemRegistry.CustomItemDefinition::class.java, CustomItemArgument())
             .extension(LiteAdventureExtension()) { config ->
                 config.serializer(Format.miniMessage)
             }

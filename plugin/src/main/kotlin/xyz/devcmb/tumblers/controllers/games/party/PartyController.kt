@@ -139,12 +139,6 @@ class PartyController : AbstractGame(PartyData) {
         },
         PartyScoreSource.TEAM_GAME_DRAW to {
             gameMessage(Format.mm("<white>Game drawn! <gold>[+${it}]</gold></white>"))
-        },
-        PartyScoreSource.INDIVIDUAL_GAME_LOSE to {
-            gameMessage(Format.mm("<white>Game lost! <gold>[+${it}]</gold></white>"))
-        },
-        PartyScoreSource.TEAM_GAME_LOSE to {
-            gameMessage(Format.mm("<white>Game lost! <gold>[+${it}]</gold></white>"))
         }
     )
 
@@ -907,10 +901,8 @@ class PartyController : AbstractGame(PartyData) {
 
     enum class PartyScoreSource(override val id: String) : ScoreSource {
         INDIVIDUAL_GAME_WIN("individual_party_game_win"),
-        INDIVIDUAL_GAME_LOSE("individual_party_game_lose"),
         INDIVIDUAL_GAME_DRAW("individual_party_game_draw"),
         TEAM_GAME_WIN("team_party_game_win"),
-        TEAM_GAME_LOSE("team_party_game_lose"),
         TEAM_GAME_DRAW("team_party_game_draw")
     }
 

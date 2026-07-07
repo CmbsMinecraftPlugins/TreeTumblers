@@ -21,7 +21,7 @@ object PlayerEventController : IController {
     val queuedEvents: HashMap<TumblingPlayer, ArrayList<Event>> = HashMap()
 
     override fun init() {
-        runTaskTimer(0, 5) {
+        runTaskTimer(0, 1) {
             queuedEvents.forEach { (_, events) ->
                 if(events.isEmpty()) return@forEach
 

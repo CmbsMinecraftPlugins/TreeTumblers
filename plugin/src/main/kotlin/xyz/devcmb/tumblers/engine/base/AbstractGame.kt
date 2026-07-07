@@ -9,9 +9,9 @@ import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Location
 import org.bukkit.NamespacedKey
 import org.bukkit.attribute.Attribute
-import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
@@ -22,7 +22,6 @@ import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.persistence.PersistentDataType
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
@@ -53,9 +52,7 @@ import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
-import xyz.devcmb.tumblers.util.uiController
 import kotlin.collections.forEach
-import kotlin.time.Duration
 
 /**
  * Base class for all games
@@ -136,23 +133,25 @@ abstract class AbstractGame(
             teamScores[it] = 0
         }
 
-        Bukkit.getOnlinePlayers().forEach {
-            val title = Title.title(
-                Format.mm("<glyph:hud/fade>"),
-                Component.text("Loading...", NamedTextColor.AQUA),
-                Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
-            )
+        suspendSync {
+            Bukkit.getOnlinePlayers().forEach {
+                val title = Title.title(
+                    Format.mm("<glyph:hud/fade>"),
+                    Component.text("Loading...", NamedTextColor.AQUA),
+                    Title.Times.times(Tick.of(10), Tick.of(9999999), Tick.of(0))
+                )
 
-            it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
-            it.foodLevel = 20
-            it.saturation = 0f
-            it.inventory.clear()
+                it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
+                it.foodLevel = 20
+                it.saturation = 0f
+                it.inventory.clear()
 
-            if(data.flags.contains(Flag.ENABLE_HUNGER)) {
-                it.removePotionEffect(PotionEffectType.HUNGER)
+                if(data.flags.contains(Flag.ENABLE_HUNGER)) {
+                    it.removePotionEffect(PotionEffectType.HUNGER)
+                }
+
+                it.showTitle(title)
             }
-
-            it.showTitle(title)
         }
 
         gameLoad()
@@ -185,7 +184,7 @@ abstract class AbstractGame(
     }
 
     /**
-     * A utility method for loading maps into the [loadedMaps] using [Map.load]
+     * A utility method for loading maps into the [loadedMaps] using [Map.load
      * @param map The map instance to load
      * @param index The index of the map to be formated as `world_name-index`
      * @return A [LoadedMap] created from the [map]
@@ -283,7 +282,7 @@ abstract class AbstractGame(
      * @param players The players to spawn
      * @param location The [SpawnLocation] to spawn players at
      */
-    fun spawnPlayers(map: LoadedMap, players: Set<Player>, location: SpawnLocation) {
+    fun spawnPlayers(map: LoadedMap, players: Iterable<Player>, location: SpawnLocation) {
         val markers = getSpawns(map, location)
 
         if(markers.isEmpty())
@@ -292,7 +291,7 @@ abstract class AbstractGame(
             )
 
         players.forEachIndexed { index, player ->
-            player.tp(markers[index % markers.size].location)
+            player.tp(markers[index % markers.size])
         }
     }
 
@@ -303,12 +302,8 @@ abstract class AbstractGame(
      * @param location The [SpawnLocation] to use
      * @return A list of all the interaction entities
      */
-    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Interaction> {
-        val world = map.world
-        return world.entities
-            .filterIsInstance<Interaction>()
-            .filter { it.persistentDataContainer.get(spawnKey, PersistentDataType.STRING) == location.name.lowercase() }
-            .shuffled()
+    fun getSpawns(map: LoadedMap, location: SpawnLocation): List<Location> {
+        return map.spawns[location]!!
     }
 
     /**
@@ -369,13 +364,6 @@ abstract class AbstractGame(
                     it.health = it.getAttribute(Attribute.MAX_HEALTH)?.value ?: 20.0
                     it.foodLevel = 20
 
-                    it.uiController.otherTeams.forEach { (_, team) ->
-                        team.setOption(
-                            org.bukkit.scoreboard.Team.Option.NAME_TAG_VISIBILITY,
-                            org.bukkit.scoreboard.Team.OptionStatus.ALWAYS
-                        )
-                    }
-
                     if (it.gameMode != GameMode.CREATIVE) {
                         it.gameMode = GameMode.ADVENTURE
                         it.isFlying = false
@@ -395,8 +383,6 @@ abstract class AbstractGame(
 
         EventController.replicateScores()
     }
-
-    private var countdownCancelled: Boolean = false
 
     /**
      * Runs a [Timer] instance with [Timer.joined] set to true, running synchronously
@@ -426,9 +412,6 @@ abstract class AbstractGame(
         }
         currentTimer!!.start()
     }
-
-    fun asyncCountdown(duration: Duration, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null)
-        = asyncCountdown(duration.inWholeSeconds.toInt(), id, onComplete)
 
     /**
      * Runs a [Timer] constructed externally
@@ -680,13 +663,14 @@ abstract class AbstractGame(
      */
     fun grantBadge(player: TumblingPlayer, badge: BadgeController.Badge) = BadgeController.grantBadge(player, badge)
 
-    /**
-     * Pauses the game until all gameParticipants are connected, or until it is skipped
-     */
     var playerCheckActive: Boolean = false
         private set
     var playerCheckSkipped: Boolean = false
     var playerCheckPersistentSkipped: Boolean = false
+
+    /**
+     * Pauses the game until all gameParticipants are connected, or until it is skipped
+     */
     suspend fun playerCheck(participants: Set<TumblingPlayer> = gameParticipants) {
         if(!participants.all { it.isOnline }) {
             playerCheckActive = true

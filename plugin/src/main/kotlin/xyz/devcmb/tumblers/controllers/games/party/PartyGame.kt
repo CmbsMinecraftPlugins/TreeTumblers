@@ -65,14 +65,14 @@ abstract class PartyGame(
     private fun lose(side: MatchupSide) {
         when(matchup) {
             is PartyController.PartyMatchup.IndividualMatchup -> {
-                val winner = if(side == MatchupSide.FIRST) matchup.player1 else matchup.player2
-                winner!!.showTitle(defeatTitle)
-                partyController!!.grantScore(winner, PartyController.PartyScoreSource.INDIVIDUAL_GAME_LOSE)
+                val loser = if(side == MatchupSide.FIRST) matchup.player1 else matchup.player2
+                loser!!.showTitle(defeatTitle)
+                loser.sendMessage(partyController!!.gameMessage(Format.mm("Game lost!")))
             }
             is PartyController.PartyMatchup.TeamMatchup -> {
-                val winner = if(side == MatchupSide.FIRST) matchup.team1 else matchup.team2
-                winner.audience.showTitle(defeatTitle)
-                partyController!!.grantTeamScore(winner, PartyController.PartyScoreSource.TEAM_GAME_LOSE)
+                val loser = if(side == MatchupSide.FIRST) matchup.team1 else matchup.team2
+                loser.audience.showTitle(defeatTitle)
+                loser.audience.sendMessage(partyController!!.gameMessage(Format.mm("Game lost!")))
             }
         }
     }

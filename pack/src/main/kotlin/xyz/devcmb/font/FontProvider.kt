@@ -16,15 +16,13 @@ sealed interface FontProvider {
         val height: Int,
         val ascent: Int,
         val chars: List<String>
-    ) : FontProvider {
-    }
+    ) : FontProvider
 
     @Serializable
     @SerialName("reference")
     class ReferenceFontProvider(
         val id: IdentifiedResource
-    ) : FontProvider {
-    }
+    ) : FontProvider
 
     @Serializable
     @SerialName("space")

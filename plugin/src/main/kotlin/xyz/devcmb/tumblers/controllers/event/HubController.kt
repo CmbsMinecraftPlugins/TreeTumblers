@@ -53,7 +53,7 @@ object HubController : IController {
         ).map { it.decoration(TextDecoration.ITALIC, false) })
         droppable(false)
         movable(false)
-        rightClick {
+        click {
             it.openHandledInventory("hubNavigationInventory")
         }
     }

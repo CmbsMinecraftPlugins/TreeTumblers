@@ -18,6 +18,7 @@ import xyz.devcmb.tumblers.ui.bossbar.games.breach.ScoreBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.crumble.CrumbleBossbar
 import xyz.devcmb.tumblers.ui.bossbar.games.deathrun.CooldownBossbar
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
+import xyz.devcmb.tumblers.ui.inventory.brawl.BrawlKitSelector
 import xyz.devcmb.tumblers.ui.inventory.event.ReadyCheckInventory
 import xyz.devcmb.tumblers.ui.inventory.global.SpectateInventory
 import xyz.devcmb.tumblers.ui.inventory.breach.BreachKitSelector
@@ -116,6 +117,7 @@ class PlayerUIController(val player: Player) {
         registerInventory(SpectateInventory())
         registerInventory(HubNavigationInventory())
         registerInventory(BadgeCollectionInventory())
+        registerInventory(BrawlKitSelector())
     }
 
     fun registerBossBars() {
@@ -137,6 +139,7 @@ class PlayerUIController(val player: Player) {
         registerScoreboard(PartyScoreboard(player))
         registerScoreboard(BreachScoreboard(player))
         registerScoreboard(FloodEscapeScoreboard(player))
+        registerScoreboard(BrawlScoreboard(player))
 
         registerScoreboard(IntermissionScoreboard(player))
 

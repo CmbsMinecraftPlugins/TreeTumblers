@@ -62,10 +62,8 @@ object PartyData : GameData(
     scores = hashMapOf(
         PartyScoreSource.INDIVIDUAL_GAME_WIN to 80,
         PartyScoreSource.INDIVIDUAL_GAME_DRAW to 40,
-        PartyScoreSource.INDIVIDUAL_GAME_LOSE to 10,
         PartyScoreSource.TEAM_GAME_WIN to 240,
-        PartyScoreSource.TEAM_GAME_DRAW to 160,
-        PartyScoreSource.TEAM_GAME_LOSE to 40
+        PartyScoreSource.TEAM_GAME_DRAW to 160
     ),
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
