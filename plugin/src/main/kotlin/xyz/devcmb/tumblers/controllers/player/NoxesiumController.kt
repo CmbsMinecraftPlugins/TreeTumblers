@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import com.destroystokyo.paper.event.player.PlayerJumpEvent
 import com.noxcrew.noxesium.api.component.NoxesiumComponentType
 import com.noxcrew.noxesium.api.feature.qib.QibDefinition
 import com.noxcrew.noxesium.api.feature.qib.QibEffect
@@ -7,24 +8,33 @@ import com.noxcrew.noxesium.api.registry.NoxesiumRegistries
 import com.noxcrew.noxesium.api.util.Unit
 import com.noxcrew.noxesium.core.registry.CommonEntityComponentTypes
 import com.noxcrew.noxesium.core.registry.CommonGameComponentTypes
+import com.noxcrew.noxesium.paper.component.getNoxesiumComponent
+import com.noxcrew.noxesium.paper.component.noxesiumPlayer
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import com.noxcrew.noxesium.paper.event.NoxesiumPlayerRegisteredEvent
 import net.kyori.adventure.key.Key
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Interaction
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
+import org.bukkit.event.Listener
+import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingNoxesiumException
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.util.contains
+import xyz.devcmb.tumblers.util.runTask
 
 @Controller(Controller.Priority.MEDIUM)
 object NoxesiumController : IController {
     override fun init() {
         QibType.entries.forEach {
             it.register()
+            Bukkit.getPluginManager().registerEvents(it, TreeTumblers.plugin)
         }
     }
 
@@ -40,7 +50,7 @@ object NoxesiumController : IController {
         }
     }
 
-    enum class QibType(val key: Key) {
+    enum class QibType(val key: Key) : Listener {
         JUMP_PAD(Key.key(TreeTumblers.NAMESPACE, "jump_pad")) {
             override fun register() {
                 val enterEffect = getEffect("qibs/jump_pad_enter.json")
@@ -91,6 +101,20 @@ object NoxesiumController : IController {
                     it.setNoxesiumComponent(CommonEntityComponentTypes.QIB_BEHAVIOR, key)
                 }
             }
+
+            @EventHandler
+            fun playerJumpEvent(event: PlayerJumpEvent) {
+                val player = event.player
+                if(player.noxesiumPlayer != null) return
+
+                val interaction = player.world.entities
+                    .filterIsInstance<Interaction>()
+                    .firstOrNull { it.contains(player) } ?: return
+
+                if(interaction.getNoxesiumComponent(CommonEntityComponentTypes.QIB_BEHAVIOR) == key) {
+                    applyDirectionalForce(player, -35f, 2.2, 10.0)
+                }
+            }
         },
         ULTRA_LAUNCH_PAD(Key.key(TreeTumblers.NAMESPACE, "ultra_boost_pad")) {
             override fun register() {
@@ -116,6 +140,21 @@ object NoxesiumController : IController {
                     it.setNoxesiumComponent(CommonEntityComponentTypes.QIB_BEHAVIOR, key)
                 }
             }
+
+            @EventHandler
+            fun playerJumpEvent(event: PlayerJumpEvent) {
+                val player = event.player
+                if(player.noxesiumPlayer != null) return
+
+                val interaction = player.world.entities
+                    .filterIsInstance<Interaction>()
+                    .firstOrNull { it.contains(player) } ?: return
+
+                if(interaction.getNoxesiumComponent(CommonEntityComponentTypes.QIB_BEHAVIOR) == key) {
+                    // numbers gotten through trial and error comparing against a clip of the noxesium pad
+                    applyDirectionalForce(player, -21.5f, 4.7, 25.0)
+                }
+            }
         };
 
         abstract fun register()
@@ -127,6 +166,21 @@ object NoxesiumController : IController {
 
             val data = effectDefinition.bufferedReader(Charsets.UTF_8).use { content -> content.readText() }
             return QibDefinition.QIB_GSON.fromJson(data, QibEffect::class.java)
+        }
+
+        fun applyDirectionalForce(player: Player, pitch: Float, strength: Double, limit: Double) {
+            val eyeLocation = player.eyeLocation
+            eyeLocation.pitch = pitch
+
+            val direction = eyeLocation.direction.normalize()
+
+            runTask {
+                player.velocity = Vector(
+                    (direction.x * strength).coerceIn(-limit, limit),
+                    (direction.y * strength).coerceIn(-limit, limit),
+                    (direction.z * strength).coerceIn(-limit, limit)
+                )
+            }
         }
     }
 }

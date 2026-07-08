@@ -22,6 +22,7 @@ import org.bukkit.block.Biome
 import org.bukkit.block.Block
 import org.bukkit.configuration.MemorySection
 import org.bukkit.entity.Firework
+import org.bukkit.entity.Interaction
 import org.bukkit.entity.Player
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -39,7 +40,6 @@ import xyz.devcmb.tumblers.TumblingConfigTypeMismatchException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.ui.PlayerUIController
 import java.time.Duration
 import kotlin.math.cos
 import kotlin.math.max
@@ -51,11 +51,6 @@ import kotlin.random.Random
 val Player.tumblingPlayer: TumblingPlayer
     get() {
         return PlayerController.players.find { it.uuid == this.uniqueId }!!
-    }
-
-val Player.uiController: PlayerUIController
-    get() {
-        return PlayerController.playerUIControllers[this]!!
     }
 
 val Player.formattedName: Component
@@ -616,4 +611,13 @@ fun PotionEffect.splashPotion(name: String): ItemStack {
             meta.displayName(Component.text(name).decoration(TextDecoration.ITALIC, false))
         }
     }
+}
+
+fun Interaction.contains(location: Location): Boolean {
+    val box = this.boundingBox
+    return box.contains(location.toVector())
+}
+
+fun Interaction.contains(player: Player): Boolean {
+    return contains(player.location)
 }
