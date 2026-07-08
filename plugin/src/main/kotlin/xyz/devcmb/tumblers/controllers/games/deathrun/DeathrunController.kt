@@ -46,7 +46,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.*
 import xyz.devcmb.tumblers.util.suspendSync
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import kotlin.collections.get
 import kotlin.math.max
 

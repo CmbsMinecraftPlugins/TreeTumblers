@@ -61,7 +61,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
-import xyz.devcmb.tumblers.util.item.AdvancedItemRegistry
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemRegistry
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tumblingPlayer

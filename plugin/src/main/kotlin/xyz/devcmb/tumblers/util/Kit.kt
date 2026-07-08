@@ -8,7 +8,7 @@ import org.bukkit.inventory.meta.LeatherArmorMeta
 import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import java.util.UUID
 
 object Kit {

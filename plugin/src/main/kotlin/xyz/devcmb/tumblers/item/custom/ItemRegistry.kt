@@ -1,7 +1,7 @@
-package xyz.devcmb.tumblers.item
+package xyz.devcmb.tumblers.item.custom
 
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.item.scroll.ScrollItem
+import xyz.devcmb.tumblers.item.custom.scroll.ScrollItem
 import kotlin.reflect.KClass
 
 object ItemRegistry {

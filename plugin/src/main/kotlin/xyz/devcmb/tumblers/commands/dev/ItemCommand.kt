@@ -6,7 +6,7 @@ import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.item.ItemRegistry
+import xyz.devcmb.tumblers.item.custom.ItemRegistry
 import xyz.devcmb.tumblers.util.Format
 
 @Command(name = "item")

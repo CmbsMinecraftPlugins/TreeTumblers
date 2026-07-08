@@ -21,7 +21,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.forEachRegion
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation

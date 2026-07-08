@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.item.scroll
+package xyz.devcmb.tumblers.item.custom.scroll
 
 import net.kyori.adventure.text.format.TextDecoration
 import org.bukkit.Material
@@ -6,11 +6,11 @@ import org.bukkit.NamespacedKey
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.item.CustomItem
+import xyz.devcmb.tumblers.item.custom.CustomItem
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.intToRoman
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.tickSeconds
 
 class ScrollItem(

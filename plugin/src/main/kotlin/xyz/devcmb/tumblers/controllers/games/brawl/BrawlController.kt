@@ -37,7 +37,7 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.giveKit
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer

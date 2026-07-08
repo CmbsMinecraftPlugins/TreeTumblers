@@ -17,7 +17,7 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.hideToAll
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.showToAll
 

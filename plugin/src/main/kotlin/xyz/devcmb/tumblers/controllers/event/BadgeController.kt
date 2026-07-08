@@ -13,7 +13,7 @@ import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.wrapComponent
 import java.sql.Timestamp

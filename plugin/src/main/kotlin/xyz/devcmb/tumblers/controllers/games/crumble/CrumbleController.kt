@@ -64,7 +64,7 @@ import xyz.devcmb.tumblers.util.disableBossBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.isArmor
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer

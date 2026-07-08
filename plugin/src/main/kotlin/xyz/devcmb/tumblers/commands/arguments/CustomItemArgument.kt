@@ -7,7 +7,7 @@ import dev.rollczi.litecommands.invocation.Invocation
 import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.item.ItemRegistry
+import xyz.devcmb.tumblers.item.custom.ItemRegistry
 import xyz.devcmb.tumblers.util.Format
 
 class CustomItemArgument : ArgumentResolver<CommandSender, ItemRegistry.CustomItemDefinition>() {

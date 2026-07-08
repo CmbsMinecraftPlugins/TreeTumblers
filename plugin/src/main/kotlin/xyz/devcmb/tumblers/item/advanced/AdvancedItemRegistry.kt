@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.util.item
+package xyz.devcmb.tumblers.item.advanced
 
 import org.bukkit.NamespacedKey
 import org.bukkit.event.block.Action

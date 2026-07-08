@@ -11,7 +11,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 import org.bukkit.plugin.java.JavaPlugin
-import xyz.devcmb.tumblers.item.ItemRegistry
+import xyz.devcmb.tumblers.item.custom.ItemRegistry
 import xyz.devcmb.tumblers.util.Font
 import java.util.logging.Logger
 

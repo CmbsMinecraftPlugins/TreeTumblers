@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.util.item
+package xyz.devcmb.tumblers.item.advanced
 
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent

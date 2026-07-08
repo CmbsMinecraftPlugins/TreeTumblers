@@ -3,7 +3,7 @@ package xyz.devcmb.tumblers.events
 import org.bukkit.event.Cancellable
 import org.bukkit.event.Event
 import org.bukkit.event.HandlerList
-import xyz.devcmb.tumblers.util.item.AdvancedItemStackContext
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStackContext
 
 class UseAdvancedItemEvent(val ctx: AdvancedItemStackContext) : Event(), Cancellable {
     private var isEventCancelled: Boolean = false

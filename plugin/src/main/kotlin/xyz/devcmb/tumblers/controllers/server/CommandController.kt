@@ -50,7 +50,7 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
-import xyz.devcmb.tumblers.item.ItemRegistry
+import xyz.devcmb.tumblers.item.custom.ItemRegistry
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 

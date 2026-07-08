@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.util.item
+package xyz.devcmb.tumblers.item.advanced
 
 import org.bukkit.Material
 import org.bukkit.inventory.ItemStack

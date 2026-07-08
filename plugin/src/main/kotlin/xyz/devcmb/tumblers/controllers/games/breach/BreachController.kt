@@ -61,7 +61,7 @@ import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.hideToAll
-import xyz.devcmb.tumblers.util.item.AdvancedItemStack
+import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
