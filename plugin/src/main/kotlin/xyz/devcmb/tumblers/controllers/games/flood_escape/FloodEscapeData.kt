@@ -34,7 +34,7 @@ object FloodEscapeData : GameData(
             delay(5000)
         },
         CutsceneStep(
-            Format.mm("In this game, you need to complete a set of <green>obstacles</green> in order to outrun the <aqua>tsunami</aqua> speeding towards you."),
+            Format.mm("In this game, you need to complete a set of <green>obstacles</green> in order to outrun the <aqua>flood</aqua> speeding towards you."),
             "cutscene.first"
         ) {
             delay(6000)
