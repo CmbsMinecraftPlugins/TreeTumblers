@@ -11,6 +11,7 @@ import xyz.devcmb.items.GeneratedItem
 import xyz.devcmb.models.GeneratedModel
 import xyz.devcmb.util.ConstantPackValues
 import xyz.devcmb.util.IdentifiedResource
+import xyz.devcmb.util.Logger
 import xyz.devcmb.util.Namespace
 import java.io.File
 import kotlin.io.path.Path
@@ -25,7 +26,7 @@ class GeneratedResourcePack(
     val fontTextureIndex: YamlConfiguration = YamlConfiguration()
 
     fun savePack(location: File) {
-        println("Saving pack...")
+        Logger.info("Saving pack...")
 
         runBlocking(Dispatchers.IO) {
             if(location.exists()) {
@@ -39,18 +40,25 @@ class GeneratedResourcePack(
 
             location.mkdirs()
 
-            savePackRoot(location)
-            saveOverrides(location)
-            saveTextures(location)
-            saveFonts(location)
-            saveFontIndex()
-            saveModels(location)
-            saveItems(location)
-            saveSounds(location)
+            try {
+                savePackRoot(location)
+                saveOverrides(location)
+                saveTextures(location)
+                saveFonts(location)
+                saveFontIndex()
+                saveModels(location)
+                saveItems(location)
+                saveSounds(location)
+            } catch(e: Exception) {
+                Logger.error("Failed to save pack assets: ${e.message}")
+            }
         }
+
+        Logger.success("Pack saved to ${location.absolutePath}")
     }
 
     private fun savePackRoot(root: File) {
+        Logger.info("Saving pack root...")
         val pack = object {}.javaClass.getResource("/pack/pack.png")
         File(root, "pack.png").outputStream().use {
             pack!!.openStream().copyTo(it)
@@ -59,9 +67,12 @@ class GeneratedResourcePack(
         File(root, "pack.mcmeta").writeText(
             Json.encodeToString(ConstantPackValues.PackMcMeta())
         )
+
+        Logger.success("Saved pack root contents successfully")
     }
 
     private fun saveOverrides(root: File) {
+        Logger.info("Saving pack overrides...")
         val overridesResource = object {}.javaClass.getResource("/pack/vanilla_overrides")
         val overridesPath = overridesResource!!.toURI().path
         val sourceDir = File(overridesPath)
@@ -70,9 +81,11 @@ class GeneratedResourcePack(
         targetDir.mkdirs()
 
         sourceDir.copyRecursively(targetDir, overwrite = true)
+        Logger.success("Saved vanilla overrides successfully")
     }
 
     private fun saveTextures(root: File) {
+        Logger.info("Saving pack textures...")
         textures.forEach { (file, parent) ->
             val resourcePath = ArrayList(parent.resourcePath.parts.toList())
             val loc = File(Path(
@@ -87,10 +100,13 @@ class GeneratedResourcePack(
             File(loc, resourcePath.last()).outputStream().use {
                 file.inputStream().copyTo(it)
             }
+            Logger.success("Saved texture ${resourcePath.joinToString("/")} successfully")
         }
+        Logger.success("Saved all textures successfully")
     }
 
     private fun saveFonts(root: File) {
+        Logger.info("Saving pack fonts...")
         fonts.forEach {
             val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
             resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
@@ -123,10 +139,14 @@ class GeneratedResourcePack(
             }
 
             File(parent, resourcePath.last()).writeText(Json.encodeToString(it))
+            Logger.success("Saved font file ${resourcePath.joinToString("/")} successfully")
         }
+
+        Logger.success("Saved all font files successfully")
     }
 
     private fun saveFontIndex() {
+        Logger.info("Saving font index to server directory...")
         val serverDir = System.getProperty("serverDir")
         val saveDir = File(Path(
             serverDir.toString(),
@@ -134,9 +154,11 @@ class GeneratedResourcePack(
         ).toString())
 
         fontTextureIndex.save(saveDir)
+        Logger.success("Saved font index successfully")
     }
 
     private fun saveModels(root: File) {
+        Logger.info("Saving models...")
         models.forEach {
             val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
             resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
@@ -151,10 +173,14 @@ class GeneratedResourcePack(
             parent.mkdirs()
 
             File(parent, resourcePath.last()).writeText(it.contents)
+            Logger.success("Saved model file ${resourcePath.joinToString("/")} successfully")
         }
+
+        Logger.success("Saved all models successfully")
     }
 
     private fun saveItems(root: File) {
+        Logger.info("Saving items...")
         items.forEach {
             val resourcePath = ArrayList(it.resource.resourcePath.parts.toList())
             resourcePath[resourcePath.lastIndex] = "${resourcePath[resourcePath.lastIndex]}.json"
@@ -169,10 +195,15 @@ class GeneratedResourcePack(
             parent.mkdirs()
 
             File(parent, resourcePath.last()).writeText(it.contents)
+            Logger.success("Saved item file ${resourcePath.joinToString("/")} successfully")
         }
+
+        Logger.success("Saved all items successfully")
     }
 
     private fun saveSounds(root: File) {
+        Logger.info("Saving sounds...")
+
         val soundsFolder = File(javaClass.getResource("/pack/sounds")!!.toURI().path)
         val soundsFile = File(javaClass.getResource("/pack/sounds.json")!!.toURI().path)
 
@@ -190,5 +221,7 @@ class GeneratedResourcePack(
         val soundsDir = File(namespaceRoot, "sounds")
         soundsDir.mkdirs()
         soundsFolder.copyRecursively(soundsDir)
+
+        Logger.success("Saved all sounds successfully")
     }
 }

@@ -30,8 +30,6 @@ object IconsGenerator : FontGenerator {
                     .replace(File.separatorChar, '/')
                 val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", "icon", name))
 
-                println(resource)
-
                 val (height, ascent) = FontOverrides.getOverrides(it, 9, 8)
                 providers.add(FontProvider.BitmapFontProvider(
                     resource,

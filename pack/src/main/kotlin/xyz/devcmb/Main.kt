@@ -31,5 +31,4 @@ fun main() {
 
     val outDir = System.getenv("RESOURCE_PACK_BUILD_LOCATION") ?: System.getProperty("buildDir")
     pack.savePack(File(outDir, "pack"))
-    println("Output pack to $outDir")
 }

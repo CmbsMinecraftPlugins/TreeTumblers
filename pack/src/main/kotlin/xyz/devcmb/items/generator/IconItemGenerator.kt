@@ -28,7 +28,6 @@ object IconItemGenerator : ItemGenerator {
                             .toTypedArray()
                     ))
 
-                    println(resource)
                     items.add(GeneratedItem(resource, ItemModelReference(
                         IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", resource.resourcePath.path))
                     ).getSerialized()))
