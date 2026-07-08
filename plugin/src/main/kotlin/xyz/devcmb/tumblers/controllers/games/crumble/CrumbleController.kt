@@ -116,6 +116,8 @@ class CrumbleController : RoundedGame(
     var preRoundFreeze = false
 
     val matchups: ArrayList<List<Pair<Team, Team>>> = ArrayList()
+    val spectatorMatchups: HashMap<Player, Int> = HashMap()
+
     val alivePlayers: HashMap<Team, ArrayList<TumblingPlayer>> = HashMap()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
@@ -214,7 +216,7 @@ class CrumbleController : RoundedGame(
     override suspend fun gameLoad() {
         registerKits()
 
-        val teams = Team.entries.filter { it.playingTeam }.toMutableList()
+        val teams = Team.entries.filter { it.playingTeam }.shuffled().toMutableList()
         teams.forEach {
             alivePlayers[it] = arrayListOf()
         }
@@ -289,12 +291,21 @@ class CrumbleController : RoundedGame(
     }
 
     fun spawnSpectator(player: Player) {
-        val arena1Center: Location = currentMap.data
-            .getList("centers.arena1")
+        spectateMatchup(player, 0)
+    }
+
+    fun spectateMatchup(player: Player, index: Int, tp: Boolean = true) {
+        spectatorMatchups[player] = index
+
+        val arenaCenter = getArena(index + 1)
+        if(tp) player.tp(arenaCenter)
+    }
+
+    fun getArena(index: Int): Location {
+        return currentMap.data
+            .getList("centers.arena$index")
             ?.validateLocation(currentMap.world)
             ?: throw GameControllerException("Spawn set not found")
-
-        player.tp(arena1Center)
     }
 
     fun spawnPlayerPregame(player: Player) {
@@ -451,6 +462,20 @@ class CrumbleController : RoundedGame(
                 spawnPlayerPreRound(player)
                 if(!preRound) {
                     makeSpectator(player, false)
+                    val tumblingPlayer = player.tumblingPlayer
+                    var matchupIndex = matchups[roundIndex]
+                        .indexOfFirst { entry -> entry.first == tumblingPlayer.team || entry.second == tumblingPlayer.team }
+
+                    if(matchupIndex == -1) {
+                        var lowestMatchupIndex = matchups[roundIndex].indexOfFirst {
+                            it.first !in matchResults[roundIndex].keys && it.second !in matchResults[roundIndex].keys
+                        }
+                        if(lowestMatchupIndex == -1) lowestMatchupIndex = 0
+
+                        matchupIndex = lowestMatchupIndex
+                    }
+
+                    spectatorMatchups[player] = matchupIndex
                     player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
                 } else {
                     givePlayerKit(player)
@@ -672,8 +697,9 @@ class CrumbleController : RoundedGame(
     fun sendMatchupMessage(player: TumblingPlayer, message: (receiver: Player) -> Component) {
         val matchup = getCurrentMatchup(player.team)!!
         val (team1, team2) = matchup
+        val spectators = spectatorMatchups.filter { it.value == matchups[roundIndex].indexOf(matchup) }.keys
 
-        (team1.getOnlinePlayers() + team2.getOnlinePlayers()).forEach { it.sendMessage(message(it)) }
+        (team1.getOnlinePlayers() + team2.getOnlinePlayers() + spectators).forEach { it.sendMessage(message(it)) }
     }
 
     fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer.team)
@@ -876,10 +902,10 @@ class CrumbleController : RoundedGame(
 
         if(alivePlayers[killedTeam]!!.isEmpty()) {
             Bukkit.broadcast(gameMessage(
-                Format.mm("<team:${killedTeam.name}:name> have finished their game!")
+                Format.mm("<team:${killedTeam.name}:name> have finished their match!")
             ))
             Bukkit.broadcast(gameMessage(
-                Format.mm("<team:${killerTeam.name}:name> have finished their game!")
+                Format.mm("<team:${killerTeam.name}:name> have finished their match!")
             ))
 
             // this game is becoming spaghetti very quickly

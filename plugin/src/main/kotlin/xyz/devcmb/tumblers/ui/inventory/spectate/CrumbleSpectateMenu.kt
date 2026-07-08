@@ -23,6 +23,7 @@ import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tp
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class CrumbleSpectateMenu : HandledInventory {
     override val id: String = "crumbleSpectateMenu"
@@ -50,6 +51,7 @@ class CrumbleSpectateMenu : HandledInventory {
         }
     }
 
+    // TODO: Edit the title supplier to show the team icons besides the player heads instead of just showing the team emblem
     fun addMatchupSide(pane: Pane, view: InterfaceView, players: Set<TumblingPlayer>, row: Int, columnOffset: Int) {
         val crumble = GameController.activeGame as? CrumbleController ?: return
         players.take(4).forEachIndexed { plrIndex, player ->
@@ -68,13 +70,23 @@ class CrumbleSpectateMenu : HandledInventory {
             pane[row, plrIndex + columnOffset] = StaticElement(Drawable.drawable(item)) {
                 if (!SpectatorController.spectators.contains(it.player)) return@StaticElement
 
-                if (player.bukkitPlayer == null || SpectatorController.spectators.contains(player.bukkitPlayer)) {
+                val canSpectatePlayer = player.bukkitPlayer != null && !SpectatorController.spectators.contains(player.bukkitPlayer)
+                crumble.spectateMatchup(it.player,
+                    crumble.matchups[crumble.roundIndex]
+                        .indexOfFirst { entry ->
+                            player in entry.first.getAllPlayers() || player in entry.second.getAllPlayers()
+                        },
+                    !canSpectatePlayer
+                )
+
+                view.close(TreeTumblers.pluginScope)
+
+                if (!canSpectatePlayer) {
                     it.player.sendMessage(Format.warning("This player can't be spectated right now."))
                     return@StaticElement
                 }
 
                 it.player.tp(player.bukkitPlayer!!.location)
-                view.close(TreeTumblers.pluginScope)
             }
         }
     }
