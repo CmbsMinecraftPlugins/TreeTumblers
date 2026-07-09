@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.brawl
 
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.GameMode
@@ -38,6 +39,7 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -72,6 +74,7 @@ class BrawlController : RoundedGame(
     val roundPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
 
     var borderRunnable: BukkitRunnable? = null
+    var actionbarRunnable: BukkitRunnable? = null
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         BrawlScoreSource.SURVIVE_ONE_MINUTE to {
@@ -267,6 +270,23 @@ class BrawlController : RoundedGame(
 
             loadMap(data.maps.random(), it)
         }
+
+        actionbarRunnable = object : BukkitRunnable() {
+            override fun run() {
+                if(!canReplaceActionBar()) return
+
+                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+                    val kit = playerKits[it.tumblingPlayer]
+                    if(kit == null) {
+                        it.sendActionBar(Component.empty())
+                        return@forEach
+                    }
+
+                    it.sendActionBar(Format.mm("<glyph:icon/brawl/${kit.name.lowercase()}>").shadowColor(ShadowColor.shadowColor(0)))
+                }
+            }
+        }
+        actionbarRunnable!!.runTaskTimer(TreeTumblers.plugin, 0, 3)
     }
 
     override suspend fun gamePregame() {
@@ -398,6 +418,11 @@ class BrawlController : RoundedGame(
         if(player.tumblingPlayer in alivePlayers) {
             playerKilled(player.tumblingPlayer, (player.lastDamageCause as? EntityDamageByEntityEvent)?.damager as? Player)
         }
+    }
+
+    override suspend fun cleanup() {
+        actionbarRunnable?.cancel()
+        super.cleanup()
     }
 
     @EventHandler

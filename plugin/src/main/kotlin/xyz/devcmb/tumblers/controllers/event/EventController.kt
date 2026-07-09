@@ -164,10 +164,11 @@ object EventController : IController {
         Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
     )
+    val eventName: String = configurable("event.title")
     suspend fun eventStartSequence() {
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
-            Format.mm("<green><b>Tree Tumblers</b></green>"),
+            Format.mm("<green><b>Tree Tumblers</b></green> <white>$eventName</white>"),
             Component.empty(),
             Title.Times.times(Tick.of(0), Tick.of(99999), Tick.of(0))
         ))
@@ -176,7 +177,7 @@ object EventController : IController {
         // TODO: Play intro music
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
-            Format.mm("<green><b>Tree Tumblers</b></green>"),
+            Format.mm("<green><b>Tree Tumblers</b></green> <white>$eventName</white>"),
             Format.mm("Is starting in <b><aqua>60 seconds</aqua></b>"),
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
@@ -184,7 +185,7 @@ object EventController : IController {
         actionBarTask = object : BukkitRunnable() {
             override fun run() {
                 Audience.audience(Bukkit.getOnlinePlayers()).sendActionBar(
-                    Format.mm("<green><b>Tree Tumblers</b></green> is starting in <aqua>${eventTimer?.currentTime ?: 0}</aqua> seconds")
+                    Format.mm("<green><b>Tree Tumblers</b></green> <white>$eventName</white> is starting in <aqua>${eventTimer?.currentTime ?: 0}</aqua> seconds")
                 )
             }
         }

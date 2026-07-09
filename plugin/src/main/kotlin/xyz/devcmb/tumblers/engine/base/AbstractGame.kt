@@ -47,7 +47,6 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
-import xyz.devcmb.tumblers.util.hunger
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
@@ -330,7 +329,7 @@ abstract class AbstractGame(
         gameTimers.clear()
 
         postGame()
-        updateScores()
+        suspendSync { updateScores() }
     }
 
     private fun updateScores() {
@@ -374,10 +373,6 @@ abstract class AbstractGame(
                         it.gameMode = GameMode.ADVENTURE
                         it.isFlying = false
                         it.allowFlight = false
-                    }
-
-                    if (!it.hasPotionEffect(PotionEffectType.HUNGER)) {
-                        it.hunger()
                     }
                 }
             }

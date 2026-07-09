@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.ui
 
 import org.bukkit.event.entity.EntityDamageEvent
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.util.configurable
 
 object MiniMessagePlaceholders {
     object Game {
@@ -94,7 +95,8 @@ object MiniMessagePlaceholders {
     object Event {
         const val EVENT_COLOR = "#00ff78"
 
-        const val EVENT_SCOREBOARD_TITLE = "<color:$EVENT_COLOR><b>Tree Tumblers</b></color>"
+        val EVENT_SCOREBOARD_TITLE = "${" ".repeat(2)}<color:$EVENT_COLOR><b>Tree Tumblers</b></color> " +
+                "<gray>|</gray> <white>${configurable<String>("event.title")}</white>${" ".repeat(2)}"
 
         /**
          * current - Current game

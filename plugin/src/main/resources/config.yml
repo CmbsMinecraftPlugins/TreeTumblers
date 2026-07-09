@@ -12,6 +12,9 @@ event:
   # Whether the plugin should override the server's MOTD
   override_motd: true
 
+  # The title of the current event
+  title: "<gold>Dev</gold>"
+
   podiums:
     yaw: -180.0
     pitch: 0.0

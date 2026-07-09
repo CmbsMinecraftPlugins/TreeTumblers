@@ -31,7 +31,6 @@ import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.PotionMeta
 import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
 import org.bukkit.scoreboard.Objective
 import org.bukkit.scoreboard.Score
 import xyz.devcmb.tumblers.TreeTumblers
@@ -99,10 +98,6 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
     this.bukkitPlayer?.let {
         PlayerController.playerUIControllers[it]!!.deactivateScoreboard(id)
     }
-}
-
-fun Player.hunger() {
-    addPotionEffect(PotionEffect(PotionEffectType.HUNGER, PotionEffect.INFINITE_DURATION, 0, true, false, false))
 }
 
 fun Player.giveKit(kit: Kit.KitDefinition) {

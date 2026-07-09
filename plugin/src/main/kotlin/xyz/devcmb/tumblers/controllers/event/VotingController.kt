@@ -23,9 +23,12 @@ import org.bukkit.Color
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Display
+import org.bukkit.entity.Player
 import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -260,6 +263,9 @@ object VotingController : IController {
         }
     }
 
+    var currentVoteActionbarTask: BukkitRunnable? = null
+    val playerQuadrants: HashMap<Player, Int?> = HashMap()
+    var votingOpen = false
     suspend fun startVoting(): String {
         MusicController.playMusic(MusicController.Music.VOTING)
 
@@ -314,6 +320,23 @@ object VotingController : IController {
                 Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
             ))
 
+        votingOpen = true
+        currentVoteActionbarTask = object : BukkitRunnable() {
+            override fun run() {
+                Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam }.forEach {
+                    val currentQuadrant = playerQuadrants[it]
+                    if(currentQuadrant == null) {
+                        it.sendActionBar(Component.empty())
+                        return@forEach
+                    }
+
+                    val currentGame = quadrantGames[currentQuadrant]!!
+                    it.sendActionBar(Format.mm("<glyph:game/${currentGame.data.id}_icon_-12a_18h>" ))
+                }
+            }
+        }
+        currentVoteActionbarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 5)
+
         EventController.eventTimer!!.start()
 
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
@@ -322,6 +345,7 @@ object VotingController : IController {
                 Component.empty(),
                 Title.Times.times(Tick.of(5), Tick.of(40), Tick.of(5))
             ))
+        votingOpen = false
 
         val winningGame = countVotes()
         val winningIndex = winningGame.second
@@ -345,6 +369,10 @@ object VotingController : IController {
                 Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             )
         )
+
+        currentVoteActionbarTask!!.cancel()
+        currentVoteActionbarTask = null
+        playerQuadrants.clear()
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
         quadrantGames.forEach { (i, it) ->
@@ -473,6 +501,20 @@ object VotingController : IController {
         return Pair(highest?.let { quadrantGames[highest.first]!! } ?: quadrantGames[randomFallback]!!, highest?.first ?: randomFallback)
     }
 
+    fun getPlayerCurrentQuadrant(player: Player): Int? {
+        quadrantGames.forEach { (i, _) ->
+            val quadrant = votingQuadrants[i]
+            if(quadrantGames[i] == null) return@forEach
+
+            val players = quadrant.getPlayers(3, 0) { it.tumblingPlayer.team.playingTeam }
+            if(player in players) {
+                return i
+            }
+        }
+
+        return null
+    }
+
     private fun loadDiorama(id: String, index: Int): Pair<EditSession, Operation>? {
         var schematic = File(dioramasFolder, "$id.schem")
         if (!schematic.exists()) {
@@ -567,5 +609,13 @@ object VotingController : IController {
         if(votingOn) {
             event.damage = 0.0
         }
+    }
+
+    @EventHandler
+    fun playerMoveEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        if(!player.tumblingPlayer.team.playingTeam || !votingOpen) return
+
+        playerQuadrants[player] = getPlayerCurrentQuadrant(player)
     }
 }

@@ -8,7 +8,6 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.HandlerList
 import org.bukkit.event.entity.FoodLevelChangeEvent
-import org.bukkit.event.player.PlayerJoinEvent
 import org.reflections.Reflections
 import org.reflections.scanners.Scanners
 import xyz.devcmb.tumblers.GameOperatorException
@@ -19,10 +18,10 @@ import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.base.AbstractGame
+import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
-import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
 object GameController : IController {
@@ -107,12 +106,11 @@ object GameController : IController {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    fun playerJoin(event: PlayerJoinEvent) {
+    fun playerJoin(event: LoggedOnTumblingPlayerReadyEvent) {
+        val player = event.bukkitPlayer
         if(activeGame == null || !activeGame!!.data.flags.contains(Flag.ENABLE_HUNGER)) {
-            val player = event.player
             player.foodLevel = 20
             player.saturation = 0f
-            player.hunger()
         }
     }
 }

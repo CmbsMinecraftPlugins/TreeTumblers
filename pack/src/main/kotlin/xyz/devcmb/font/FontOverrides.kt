@@ -6,8 +6,13 @@ import java.io.File
 
 object FontOverrides {
     fun getOverrides(file: File, defaultHeight: Int, defaultAscent: Int): Pair<Int, Int> {
-        val config = File(file.parent, "${file.name}.overrides.json")
-        if(!config.exists()) return defaultHeight to defaultAscent
+        var config = File(file.parent, "${file.name}.overrides.json")
+        if(!config.exists()) {
+            val parentOverrides = File(file.parent, "folder_overrides.json")
+            if(parentOverrides.exists()) {
+                config = parentOverrides
+            } else return defaultHeight to defaultAscent
+        }
 
         val data = Json.decodeFromString<FontOverrideData>(config.readText())
         return (data.height ?: defaultHeight) to (data.ascent ?: defaultAscent)

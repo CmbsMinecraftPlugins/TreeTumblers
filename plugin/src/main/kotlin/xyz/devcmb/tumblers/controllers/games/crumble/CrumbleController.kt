@@ -53,9 +53,7 @@ import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
-import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
@@ -367,16 +365,10 @@ class CrumbleController : RoundedGame(
             override fun run() {
                 if(!canReplaceActionBar()) return
 
-                var component = Component.empty()
+                var component: Component = Component.empty()
                 val kit = playerKits[player.tumblingPlayer]
                 if(kit != null) {
-                    component = component.append(UserInterfaceUtility.backgroundTextCenter(
-                        Font.getGlyph("hud/crumble_kit_bg").shadowColor(ShadowColor.shadowColor(0)),
-                        Format.mm("<icon> ${kit.name}", Placeholder.component("icon", Font.getGlyph("icon/crumble/${kit.id}"))),
-                        kit.name,
-                        69.5,
-                        14.0
-                    ))
+                    component = Format.mm("<glyph:icon/crumble/${kit.id}>").shadowColor(ShadowColor.shadowColor(0))
                 }
 
                 player.sendActionBar(component)

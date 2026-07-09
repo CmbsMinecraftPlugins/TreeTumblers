@@ -34,6 +34,13 @@ object GameAssetGenerator : FontGenerator {
             providers.add(FontProvider.BitmapFontProvider(
                 iconResource,
                 10, 9,
+                listOf((index + 0xB000).toUnicode())
+            ))
+
+            // Actionbar font icon
+            providers.add(FontProvider.BitmapFontProvider(
+                iconResource,
+                18, -12,
                 listOf((index + 0xC000).toUnicode())
             ))
 
