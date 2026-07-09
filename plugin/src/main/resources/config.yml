@@ -16,13 +16,20 @@ event:
   title: "<gold>Dev</gold>"
 
   podiums:
+    # The yaw that all the podium NPCs use
     yaw: -180.0
+    # The pitch that all the podium NPCs use
     pitch: 0.0
+    # The location where the first place NPC is spawned
     first: [-83, 206, 29]
+    # The location where the second place NPC is spawned
     second: [-85, 205, 29]
+    # The location where the third place NPC is spawned
     third: [-87, 204, 29]
+    # The location where the individual scores NPC is spawned
     individual: [-81, 202, 27, 135, 0]
 
+  # The positions and rotations (x, y, z, yaw, pitch) of all the leaderboards
   leaderboards:
     last_game_team: [-90.0, 203.0, 29.0, -180.0, 0.0]
     last_game_indiv: [-93.75, 203.0, 27.5, -135.0, 0.0]
@@ -60,6 +67,8 @@ event:
       - [8,192,23,-5,188,9]
       - [8,192,7,-5,188,-6]
 
+
+    # The locations where players will spawn on each quadrant in the loading sequence
     quadrant_spawns:
       - [16.5, 192.5, 1.5, 45.0, -7.0]
       - [16.5, 192.5, 15.5, 135.0, -7.0]
@@ -83,6 +92,7 @@ event:
     # Should be the same position the dioramas were copied from
     center: [9,191,8]
 
+# The resource pack info
 pack:
   url: ""
   hash: ""
@@ -91,6 +101,7 @@ templates:
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
 
   # The path where all the template worlds are contained
+  # Names are self-explanatory
   world_root: "&/templates/worlds"
   party_games: "&/templates/party"
   dioramas: "&/templates/dioramas"
@@ -111,10 +122,12 @@ lobby:
     yaw: -90.0
     pitch: 0.0
 
+  # The locations that the navigator takes you to
   navigator:
     lodge: [-73, 202, 8, -90, 0]
     practice_courses: [40, 202, -92, 180, 0]
 
+  # The height in the lobby that will respawn the player
   void_height: 177
 
 item:
@@ -123,6 +136,7 @@ item:
     cooldown: 1
 
 games:
+  # If all pre-game cutscenes should be skipped
   skip_cutscene: false
 
   crumble:
@@ -519,22 +533,38 @@ games:
           bounds:
             [[0, 72, 48], [-37, 65, 11]]
   flood_escape:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "flood_escape"
+
+    # The amount of rounds the game has
     rounds: 3
+
+    # The starting speed of the flood in blocks per second
     starting_speed: 3.5
+
     maps:
       sewer:
         world: "sewer"
         data:
+          # The height that respawns players at the last checkpoint when fallen to
           void_height: 61
+          # The starting pivot position that all the schematics will be placed about
           pivot_start: [8, 64, 8]
+          # The starting location of fence gates
           gate_start: [16, 65, 6]
+          # The ending location of fence gates
           gate_end: [0, 65, 6]
           water:
+            # The position (relative to bottom right corner) where the water spawns
             start_position: [-3.0, 61.0625, 11.5625]
+            # The axis and direction that the water moves along
             movement_direction: "z+"
+            # The scale of the block display entity
             scale: [24, 19, 1]
+            # The left rotation of the block display's quaternion
             left_rotation: [-0.241, 0, 0, 0.971]
+            # The right rotation of the block display's quaternion
             right_rotation: [-0.004, 0, 0, 1]
           cutscene:
             start: [-5.0,70.0,3.0,-120.0,20.0]
@@ -542,17 +572,26 @@ games:
             second: [16.5,66.5,20.5,135.0,8.0]
             third: [1.5, 69.0, 37.5, -45.0, 25.0]
   brawl:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "brawl"
     maps:
       district:
         world: "district"
         data:
+          # The centerpoint of the map that the border will shrink to
           origin: [3, 96, -2]
+
+          # The starting size of the border
           starting_border_radius: 70
 
+          # The Y height at which the game will prevent the player from building
           build_limit: 115
+
+          # The Y height that will kill the player upon falling there
           void_height: 80
 
+          # The to and from positions for the player containment rooms that have barriers that are removed when the game starts
           rooms:
             # x1,y1,z1,x2,y2,z2
             - [43,97,3,52,96,11]
