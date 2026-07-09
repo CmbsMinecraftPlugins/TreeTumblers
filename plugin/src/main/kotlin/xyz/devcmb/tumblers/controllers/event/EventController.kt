@@ -54,6 +54,7 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
+import kotlin.math.floor
 import kotlin.math.min
 
 @Controller(Controller.Priority.MEDIUM)
@@ -80,6 +81,11 @@ object EventController : IController {
         set(value) {
             field = value
             sendDefaultTopbar()
+        }
+
+    val multiplier: Double
+        get() {
+            return 1.00 + ((floor(game / 2.0)) * 0.25)
         }
 
     var lastGameTeamPlacements: ArrayList<Pair<Team, Int>>? = null
@@ -732,11 +738,11 @@ object EventController : IController {
     fun updateEventScores(game: AbstractGame) {
         DebugUtil.info("Updating team scores from event game")
         game.playerScores.forEach {
-            it.key.score += it.value
+            it.key.score += floor(it.value * multiplier).toInt()
         }
 
         game.teamScores.forEach {
-            game.teamScores[it.key] = (teamScores[it.key] ?: 0) + it.value
+            teamScores[it.key] = (teamScores[it.key] ?: 0) + floor(it.value * multiplier).toInt()
         }
     }
 

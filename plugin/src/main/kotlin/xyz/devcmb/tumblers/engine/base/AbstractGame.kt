@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -42,6 +43,7 @@ import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.activateScoreboard
@@ -52,6 +54,7 @@ import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import kotlin.collections.forEach
+import kotlin.math.floor
 
 /**
  * Base class for all games
@@ -532,18 +535,17 @@ abstract class AbstractGame(
         if(EventController.scoresHidden) return
 
         var teamScoresComponent = Component.empty()
-            .append(Component.text("Team Scores").decorate(TextDecoration.BOLD))
+            .append(Component.text("Team Scores (${EventController.multiplier}x)").decorate(TextDecoration.BOLD))
             .appendNewline()
 
         val teamPlacements = getTeamPlacements()
         teamPlacements.forEach {
             teamScoresComponent = teamScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(teamScores[it.first]!!, NamedTextColor.YELLOW))
+                Format.mm(
+                    "<br><b>#${it.second}</b> <team><shift>${" ".repeat(35)}<gold>${floor(teamScores[it.first]!!.toDouble() * EventController.multiplier).toInt()}</gold> <gray>(${teamScores[it.first]!!})</gray>",
+                    Placeholder.component("team", it.first.formattedName),
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("#${it.second} ${it.first.teamName}")))
+                )
             )
         }
         teamScoresComponent = teamScoresComponent.appendNewline()
@@ -558,18 +560,17 @@ abstract class AbstractGame(
         if(EventController.scoresHidden) return
 
         var individualScoresComponent = Component.empty()
-            .append(Component.text("Individual Scores").decorate(TextDecoration.BOLD))
+            .append(Component.text("Individual Scores (${EventController.multiplier}x)").decorate(TextDecoration.BOLD))
             .appendNewline()
 
         val indivPlacements = getIndividualPlacements()
         indivPlacements.forEach {
             individualScoresComponent = individualScoresComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(Format.formatPlayerName(it.first))
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(playerScores[it.first] ?: 0, NamedTextColor.YELLOW))
+                Format.mm(
+                    "<br><b>#${it.second}</b> <player><shift>${" ".repeat(35)}<gold>${floor(playerScores[it.first]!!.toDouble() * EventController.multiplier).toInt()}</gold> <gray>(${playerScores[it.first]!!})</gray>",
+                    Placeholder.component("player", it.first.formattedName),
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("#${it.second} ${it.first.name}")))
+                )
             )
         }
 
@@ -594,13 +595,13 @@ abstract class AbstractGame(
 
         val eventPlacements = EventController.getEventTeamPlacements()
         eventPlacements.forEach {
+            val newScore = EventController.teamScores[it.first]!! + floor(teamScores[it.first]!!.toDouble() * EventController.multiplier).toInt()
             eventPlacementsComponent = eventPlacementsComponent.append(
-                Component.empty()
-                    .appendNewline()
-                    .append(Component.text("#${it.second} ").decorate(TextDecoration.BOLD))
-                    .append(it.first.formattedName)
-                    .append(Component.text(" - ", NamedTextColor.GRAY))
-                    .append(Component.text(EventController.teamScores[it.first]!!, NamedTextColor.YELLOW))
+                Format.mm(
+                    "<br><b>#${it.second}</b> <team><shift>${" ".repeat(35)}<gold>${newScore}</gold>",
+                    Placeholder.component("team", it.first.formattedName),
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("#${it.second} ${it.first.teamName}")))
+                )
             )
         }
 

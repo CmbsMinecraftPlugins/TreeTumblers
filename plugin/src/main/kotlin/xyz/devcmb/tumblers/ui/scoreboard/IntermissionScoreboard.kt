@@ -81,6 +81,7 @@ class IntermissionScoreboard(
             Component.empty(),
             timer,
             gameComponent,
+            Format.mm("Score Multiplier: <color:${MiniMessagePlaceholders.Event.EVENT_COLOR}>${EventController.multiplier}x</color>"),
             Component.empty(),
             *teamComponent.toTypedArray(),
             Component.empty()

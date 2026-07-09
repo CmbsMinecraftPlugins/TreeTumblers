@@ -766,18 +766,18 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
         var text = Format.mm(task.displayText)
 
         val starSprite = when(task.stars) {
-            1 -> "\uEF00"
-            2 -> "\uEF01"
-            3 -> "\uEF02"
-            4 -> "\uEF03"
-            5 -> "\uEF04"
-            else -> "\uEF00"
+            1 -> "<glyph:icon/star/blue>"
+            2 -> "<glyph:icon/star/purple>"
+            3 -> "<glyph:icon/star/orange>"
+            4 -> "<glyph:icon/star/red>"
+            5 -> "<glyph:icon/star/yellow>"
+            else -> "<glyph:icon/star/blue>"
         }
 
         text = text.append(Component.text(" "))
 
-        for (i in (1..task.stars)) {
-            text = text.append(Component.text(starSprite).font(NamespacedKey(TreeTumblers.NAMESPACE, "games/sniffer_caretaker")))
+        repeat(task.stars) {
+            text = text.append(Format.mm(starSprite))
         }
 
         val score = data.scores[SnifferCaretakerScoreSource.valueOf("TASK_${task.stars}_STAR")]

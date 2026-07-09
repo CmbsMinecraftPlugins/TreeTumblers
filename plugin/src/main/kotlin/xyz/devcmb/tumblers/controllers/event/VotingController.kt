@@ -16,6 +16,7 @@ import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
@@ -313,6 +314,17 @@ object VotingController : IController {
         summonGames()
         delay(2000)
 
+        if(EventController.game % 2 == 0) {
+            Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
+                Title.title(
+                    Format.mm("<gold>Score Multiplier</gold>"),
+                    Format.mm("<yellow>${EventController.multiplier - 0.25}x <white>></white> <b>${EventController.multiplier}x</b></yellow>"),
+                    Title.Times.times(Tick.of(5), Tick.of(60), Tick.of(5))
+                ))
+
+            delay(4000)
+        }
+
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
             Title.title(
                 Format.mm("<green>Vote!</green>"),
@@ -428,7 +440,7 @@ object VotingController : IController {
 
             Audience.audience(Bukkit.getOnlinePlayers()).showTitle(
                 Title.title(
-                    Component.text(game.data.name, votingTextColors[index]),
+                    Component.text(game.data.name, votingTextColors[index]).decoration(TextDecoration.BOLD, true),
                     Component.empty(),
                     Title.Times.times(Tick.of(0), Tick.of(70), Tick.of(5))
                 ))
