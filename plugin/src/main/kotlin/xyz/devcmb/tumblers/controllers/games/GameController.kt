@@ -1,6 +1,7 @@
 package xyz.devcmb.tumblers.controllers.games
 
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
@@ -18,6 +19,9 @@ import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.base.AbstractGame
+import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.hunger
 
 @Controller(Controller.Priority.HIGH)
@@ -25,6 +29,8 @@ object GameController : IController {
     val games: ArrayList<RegisteredGame> = ArrayList()
     var activeGame: AbstractGame? = null
     var activeGameJob: Job? = null
+
+    val skipCutscenes: Boolean = configurable("games.skip_cutscene")
 
     data class RegisteredGame(
         val game: Class<out AbstractGame>,
@@ -70,14 +76,24 @@ object GameController : IController {
 
         game.load(true)
         game.finishLoading()
-        game.runCutscene()
+        if(!skipCutscenes) game.runCutscene()
         game.pregame()
+
+        var exception = false
         activeGameJob = TreeTumblers.pluginScope.launch {
-            game.gameMain()
+            try {
+                game.gameMain()
+            } catch (e: Throwable) {
+                exception = true
+                DebugUtil.severe("Game encountered an exception during execution: ${e.javaClass.simpleName} ${e.message} (${e.stackTrace[0]})")
+
+                Bukkit.broadcast(Format.error("An error has occurred that requires this game to be cancelled. Scores will not be changed and the server may require a restart."))
+                delay(5000)
+            }
         }
         activeGameJob!!.join()
         activeGameJob = null
-        game.basePostGame()
+        if(!exception) game.basePostGame()
         TreeTumblers.pluginScope.launch {
             game.cleanup()
         }

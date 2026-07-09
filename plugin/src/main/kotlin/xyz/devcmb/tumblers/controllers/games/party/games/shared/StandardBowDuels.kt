@@ -5,7 +5,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyGame
-import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.item.Kit
 import java.util.UUID
 
 class StandardBowDuels(

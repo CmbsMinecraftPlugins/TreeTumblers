@@ -63,7 +63,7 @@ import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemRegistry
@@ -173,7 +173,7 @@ object PlayerController : IController {
                 .packs(resourcePackInfo)
                 .prompt(Format.mm("The event requires a resource pack for certain UI elements to render correctly."))
                 .required(true)
-                .callback { uuid, status, audience ->
+                .callback { _, status, _ ->
                     if(status != ResourcePackStatus.SUCCESSFULLY_LOADED) {
                         if(!status.intermediate()) {
                             player.kick(Format.mm("<red>Resource pack load failed. Please rejoin or try again later.</red>"))

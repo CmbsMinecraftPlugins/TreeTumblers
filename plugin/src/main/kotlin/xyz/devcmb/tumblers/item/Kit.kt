@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.util
+package xyz.devcmb.tumblers.item
 
 import org.bukkit.Color
 import org.bukkit.NamespacedKey
@@ -9,6 +9,7 @@ import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 
 object Kit {

@@ -47,6 +47,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 import kotlin.random.Random
+import xyz.devcmb.tumblers.item.Kit
 
 val Player.tumblingPlayer: TumblingPlayer
     get() {

@@ -120,6 +120,8 @@ item:
     cooldown: 1
 
 games:
+  skip_cutscene: false
+
   crumble:
     # The path where all the maps are contained
     # This path is relative to the `world_root` config value

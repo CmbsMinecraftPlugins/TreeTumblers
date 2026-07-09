@@ -10,7 +10,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 abstract class PartyGame(

@@ -51,7 +51,7 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar

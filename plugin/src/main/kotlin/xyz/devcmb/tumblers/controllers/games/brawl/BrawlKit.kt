@@ -6,7 +6,7 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.item.custom.scroll.ScrollItem
-import xyz.devcmb.tumblers.util.Kit
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.splashPotion
 import java.util.UUID
 

@@ -20,7 +20,6 @@ import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.GameControllerException
@@ -331,6 +330,19 @@ abstract class AbstractGame(
         gameTimers.clear()
 
         postGame()
+        updateScores()
+    }
+
+    private fun updateScores() {
+        EventController.updateEventScores(this)
+
+        EventController.lastGameTeamPlacements = getTeamPlacements()
+        EventController.lastGamePlayerPlacements = getIndividualPlacements()
+
+        EventController.lastGameTeamScores = teamScores
+        EventController.lastGamePlayerScores = playerScores
+
+        EventController.refreshLeaderboards()
     }
 
     /**
@@ -344,15 +356,8 @@ abstract class AbstractGame(
      * This should be expanded upon if the game has any listeners registered not in the main class.
      */
     open suspend fun cleanup() {
-        EventController.lastGameTeamPlacements = getTeamPlacements()
-        EventController.lastGamePlayerPlacements = getIndividualPlacements()
-
-        EventController.lastGameTeamScores = teamScores
-        EventController.lastGamePlayerScores = playerScores
-
         suspendSync {
             PlayerController.currentNametagMode = PlayerController.NametagMode.ALL
-            EventController.refreshLeaderboards()
             gameSpectators.toList().forEach(this::unSpectate)
 
             gamePlayers.forEach { tumblingPlayer ->
@@ -450,14 +455,13 @@ abstract class AbstractGame(
         val amount = amountOverride ?: getScoreSource(source)
         val team = player.team
 
+        DebugUtil.info("Granting $amount score to ${player.name} with source $source")
+
         teamScores[team] = teamScores[team]!! + amount
         playerScores[player] = (playerScores[player] ?: 0) + amount
 
         if(scoreMessages.contains(source) && player.bukkitPlayer != null)
             player.bukkitPlayer!!.sendMessage(scoreMessages[source]!!(amount))
-
-        DebugUtil.info("Granting $amount score to ${player.name} with source $source")
-        EventController.grantScore(player, amount)
     }
 
     /**

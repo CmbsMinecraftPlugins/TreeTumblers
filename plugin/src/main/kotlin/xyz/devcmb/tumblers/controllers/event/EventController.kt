@@ -22,7 +22,6 @@ import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.player.PlayerInteractEntityEvent
-import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.server.ServerListPingEvent
 import org.bukkit.persistence.PersistentDataType
@@ -729,9 +728,15 @@ object EventController : IController {
         return playersComponent
     }
 
-    fun grantScore(player: TumblingPlayer, amount: Int) {
-        player.score += amount
-        teamScores[player.team] = (teamScores[player.team] ?: 0) + amount
+    fun updateEventScores(game: AbstractGame) {
+        DebugUtil.info("Updating team scores from event game")
+        game.playerScores.forEach {
+            it.key.score += it.value
+        }
+
+        game.teamScores.forEach {
+            game.teamScores[it.key] = (teamScores[it.key] ?: 0) + it.value
+        }
     }
 
     fun getEventTeamPlacements(): ArrayList<Pair<Team, Int>> {
