@@ -40,6 +40,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -1098,8 +1099,8 @@ object EventController : IController {
     }
 
     @EventHandler(priority = EventPriority.HIGH)
-    fun playerJoinEvent(event: PlayerJoinEvent) {
-        val player = event.player
+    fun playerReadyEvent(event: LoggedOnTumblingPlayerReadyEvent) {
+        val player = event.bukkitPlayer
         playerSpecificMannequins[player] = arrayListOf()
         playerSpecificMannequinNameTags[player] = arrayListOf()
 

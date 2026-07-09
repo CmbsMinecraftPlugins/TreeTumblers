@@ -705,8 +705,10 @@ class CrumbleController : RoundedGame(
     fun getCurrentMatchup(player: Player) = getCurrentMatchup(player.tumblingPlayer.team)
 
     fun getCurrentMatchup(team: Team): Pair<Team, Team>? {
-        val roundMatchup = matchups[roundIndex]
-        return roundMatchup.find { it.first == team || it.second == team }
+        try {
+            val roundMatchup = matchups[roundIndex]
+            return roundMatchup.find { it.first == team || it.second == team }
+        } catch(e: IndexOutOfBoundsException) { return null }
     }
 
     fun roundWin(team: Team) {

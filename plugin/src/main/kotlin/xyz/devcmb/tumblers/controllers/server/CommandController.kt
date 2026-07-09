@@ -26,6 +26,7 @@ import xyz.devcmb.tumblers.commands.arguments.TumblingPlayerArgument
 import xyz.devcmb.tumblers.commands.dev.DebugCommand
 import xyz.devcmb.tumblers.commands.dev.ItemCommand
 import xyz.devcmb.tumblers.commands.dev.NametagCommand
+import xyz.devcmb.tumblers.commands.dev.PackCommand
 import xyz.devcmb.tumblers.commands.dev.PartyCommand
 import xyz.devcmb.tumblers.commands.dev.QibCommand
 import xyz.devcmb.tumblers.commands.dev.SpectateCommand
@@ -74,7 +75,8 @@ object CommandController : IController {
                 NametagCommand(),
                 QibCommand(),
                 BadgeCommand(),
-                ItemCommand()
+                ItemCommand(),
+                PackCommand()
             )
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())

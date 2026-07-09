@@ -80,6 +80,10 @@ event:
     # Should be the same position the dioramas were copied from
     center: [9,191,8]
 
+pack:
+  url: ""
+  hash: ""
+
 templates:
   # Use & to refer to the plugin's data container (plugins/TreeTumblers in most cases)
 
@@ -92,6 +96,9 @@ templates:
 lobby:
   # The hub world
   world: hub
+
+  # Where players are placed while waiting for their resource pack to download
+  loading_spawn: [-90,195,13]
 
   # Where to teleport players in the hub world
   spawn:

@@ -12,6 +12,9 @@ import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
 import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.resource.ResourcePackInfo
+import net.kyori.adventure.resource.ResourcePackRequest
+import net.kyori.adventure.resource.ResourcePackStatus
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.TextColor
@@ -52,9 +55,11 @@ import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.event.HubController
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
+import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.ui.PlayerUIController
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
@@ -62,9 +67,14 @@ import xyz.devcmb.tumblers.util.Kit
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemRegistry
+import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import xyz.devcmb.tumblers.util.validateLocation
+import java.net.URI
 import java.util.UUID
 
 @Controller(Controller.Priority.MEDIUM)
@@ -102,6 +112,14 @@ object PlayerController : IController {
         players.removeIf { it.uuid == uuid }
     }
 
+    val packURL: String = configurable("pack.url")
+    val packHash: String = configurable("pack.hash")
+
+    val resourcePackInfo: ResourcePackInfo = ResourcePackInfo.resourcePackInfo()
+        .uri(URI(packURL))
+        .hash(packHash)
+        .build()
+
     @EventHandler
     fun playerJoin(event: PlayerJoinEvent) {
         val player = event.player
@@ -113,6 +131,69 @@ object PlayerController : IController {
         player.level = 0
         player.exp = 1f
         player.clearActivePotionEffects()
+        player.hideToAll()
+
+        player.vehicle?.let {
+            player.leaveVehicle()
+            it.remove()
+        }
+
+        player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
+        player.health = 20.0
+
+        Bukkit.getOnlinePlayers().forEach {
+            player.unlistPlayer(it)
+            it.unlistPlayer(player)
+        }
+
+        event.joinMessage(null)
+        playerUIControllers.forEach { it.value.playerJoin(player) }
+        playerUIControllers[player] = PlayerUIController(player)
+
+        val tumblingPlayer = players.find { it.uuid == player.uniqueId }!!
+        tumblingPlayer.bukkitPlayer = player
+        tumblingPlayer.name = player.name
+
+        player.displayName(Format.formatPlayerName(tumblingPlayer))
+        Bukkit.broadcast(Format.mm("<white>(<green>+</green>)</white> <player:${tumblingPlayer.uuid}>"))
+
+        val loadingSpawn: List<Int> = configurable("lobby.loading_spawn")
+        val location = loadingSpawn.validateLocation(Bukkit.getWorld(WorldController.lobbyWorld)!!)
+            ?: throw IllegalStateException("Loading spawn position not specified")
+
+        runTask {
+            player.teleport(location)
+            if(Constants.IS_DEVELOPMENT) {
+                val playerReadyEvent = LoggedOnTumblingPlayerReadyEvent(player, tumblingPlayer)
+                playerReadyEvent.callEvent()
+                return@runTask
+            }
+
+            val request = ResourcePackRequest.resourcePackRequest()
+                .packs(resourcePackInfo)
+                .prompt(Format.mm("The event requires a resource pack for certain UI elements to render correctly."))
+                .required(true)
+                .callback { uuid, status, audience ->
+                    if(status != ResourcePackStatus.SUCCESSFULLY_LOADED) {
+                        if(!status.intermediate()) {
+                            player.kick(Format.mm("<red>Resource pack load failed. Please rejoin or try again later.</red>"))
+                        }
+                        return@callback
+                    }
+
+                    val playerReadyEvent = LoggedOnTumblingPlayerReadyEvent(player, tumblingPlayer)
+                    playerReadyEvent.callEvent()
+                }
+                .build()
+            player.sendResourcePacks(request)
+        }
+    }
+
+    @EventHandler
+    fun playerReady(event: LoggedOnTumblingPlayerReadyEvent) {
+        val player = event.bukkitPlayer
+
+        player.showToAll()
 
         runTaskLater(40) {
             if(player.noxesiumPlayer == null) {
@@ -122,11 +203,6 @@ object PlayerController : IController {
                             " to make your experience the best it can be during the event. This mod synchronizes certain events to make them work identically regardless of ping."
                 )))
             }
-        }
-
-        player.vehicle?.let {
-            player.leaveVehicle()
-            it.remove()
         }
 
         reloadNametag(player)
@@ -140,36 +216,19 @@ object PlayerController : IController {
             if(GameController.activeGame == null) HubController.spawnHub(player)
         }
 
-        player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        player.health = 20.0
-
-        Bukkit.getOnlinePlayers().forEach {
-            player.unlistPlayer(it)
-            it.unlistPlayer(player)
-        }
-
         hiddenPlayers.forEach {
             player.hidePlayerAndTag(it)
         }
 
-        event.joinMessage(null)
-        playerUIControllers.forEach { it.value.playerJoin(player) }
-        playerUIControllers[player] = PlayerUIController(player)
-
         if(Constants.IS_DEVELOPMENT) {
             DebugUtil.subscribe(player, DebugUtil.DebugLogLevel.WARNING)
             player.sendMessage(
-                Component.text("Developer mode is active. You have automatically been subscribed to the warning debug channel.")
-                    .color(NamedTextColor.YELLOW)
+                Format.info(Format.mm("Developer mode is enabled.<br>" +
+                    " <white><gray>•</gray> You have been automatically subscribed to the <glyph:icon/warning/yellow> <yellow>Warning</yellow> debug channel<br>" +
+                        " <gray>•</gray> Resource pack downloading has been skipped. <green><click:run_command:'/pack reload'>[Get Anyways]</click></green></white>"
+                ))
             )
         }
-
-        val tumblingPlayer = players.find { it.uuid == player.uniqueId }!!
-        tumblingPlayer.bukkitPlayer = player
-        tumblingPlayer.name = player.name
-
-        player.displayName(Format.formatPlayerName(tumblingPlayer))
-        Bukkit.broadcast(Format.mm("<white>(<green>+</green>)</white> <player:${tumblingPlayer.uuid}>"))
     }
 
     @EventHandler

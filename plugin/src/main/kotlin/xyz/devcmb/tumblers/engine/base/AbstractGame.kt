@@ -42,6 +42,7 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.activateScoreboard
@@ -696,10 +697,11 @@ abstract class AbstractGame(
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
-    fun playerJoinEvent(event: PlayerJoinEvent) {
-        val player = event.player
+    fun playerJoinEvent(event: LoggedOnTumblingPlayerReadyEvent) {
+        val player = event.bukkitPlayer
+        val tumblingPlayer = event.tumblingPlayer
 
-        if(!player.tumblingPlayer.team.playingTeam) {
+        if(!tumblingPlayer.team.playingTeam) {
             makeSpectator(player, participating = false)
         }
 
