@@ -14,7 +14,15 @@ import xyz.devcmb.util.IdentifiedResource
 import xyz.devcmb.util.Logger
 import xyz.devcmb.util.Namespace
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.StandardCopyOption
+import java.util.zip.ZipEntry
+import java.util.zip.ZipOutputStream
+import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
+import kotlin.io.path.deleteRecursively
+import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
 
 class GeneratedResourcePack(
@@ -25,36 +33,85 @@ class GeneratedResourcePack(
 ) {
     val fontTextureIndex: YamlConfiguration = YamlConfiguration()
 
-    fun savePack(location: File) {
+    @OptIn(ExperimentalPathApi::class)
+    fun savePack(locations: HashMap<File, Boolean>) {
         Logger.info("Saving pack...")
 
         runBlocking(Dispatchers.IO) {
-            if(location.exists()) {
-                while(location.exists()) {
-                    try {
-                        location.deleteRecursively()
-                        delay(200.milliseconds)
-                    } catch (_: Exception) {}
-                }
-            }
-
-            location.mkdirs()
+            val tempDir = Files.createTempDirectory("resourcepack")
+            val tempZip = Files.createTempFile("pack", ".zip")
 
             try {
-                savePackRoot(location)
-                saveOverrides(location)
-                saveTextures(location)
-                saveFonts(location)
+                val tempRoot = tempDir.toFile()
+
+                savePackRoot(tempRoot)
+                saveOverrides(tempRoot)
+                saveTextures(tempRoot)
+                saveFonts(tempRoot)
                 saveFontIndex()
-                saveModels(location)
-                saveItems(location)
-                saveSounds(location)
-            } catch(e: Exception) {
+                saveModels(tempRoot)
+                saveItems(tempRoot)
+                saveSounds(tempRoot)
+
+                ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
+                    tempRoot.listFiles()?.forEach { child ->
+                        zipRecursively(child.toPath(), tempDir, zip)
+                    }
+                }
+
+                Logger.success("Pack zipped successfully")
+
+                locations.forEach { (it, zip) ->
+                    val packOutput = File(it, "pack${if (zip) ".zip" else ""}")
+
+                    it.mkdirs()
+
+                    if (packOutput.exists()) {
+                        while (packOutput.exists()) {
+                            Logger.warn("Pack output already exists ${packOutput.canonicalPath}. Attemping to remove.")
+                            try {
+                                if(packOutput.isDirectory) packOutput.deleteRecursively() else packOutput.delete()
+                                delay(200.milliseconds)
+                            } catch (_: Exception) {}
+                        }
+                    }
+
+                    Files.copy(
+                        if(zip) tempZip else tempDir,
+                        packOutput.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING
+                    )
+
+                    Logger.success("Pack saved to $packOutput")
+                }
+            } catch (e: Exception) {
                 Logger.error("Failed to save pack assets: ${e.message}")
+            } finally {
+                try {
+                    tempDir.deleteRecursively()
+                } catch (_: Exception) {}
             }
         }
+    }
 
-        Logger.success("Pack saved to ${location.absolutePath}")
+    private fun zipRecursively(
+        file: Path,
+        root: Path,
+        zip: ZipOutputStream
+    ) {
+        if (Files.isDirectory(file)) {
+            Files.list(file).use { stream ->
+                stream.forEach { child ->
+                    zipRecursively(child, root, zip)
+                }
+            }
+        } else {
+            val entryName = root.relativize(file).toString().replace('\\', '/')
+
+            zip.putNextEntry(ZipEntry(entryName))
+            Files.newInputStream(file).use { it.copyTo(zip) }
+            zip.closeEntry()
+        }
     }
 
     private fun savePackRoot(root: File) {
