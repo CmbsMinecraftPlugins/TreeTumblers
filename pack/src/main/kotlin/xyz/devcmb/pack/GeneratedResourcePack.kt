@@ -16,11 +16,12 @@ import xyz.devcmb.util.Namespace
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
-import java.nio.file.StandardCopyOption
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import kotlin.io.path.ExperimentalPathApi
 import kotlin.io.path.Path
+import kotlin.io.path.copyTo
+import kotlin.io.path.copyToRecursively
 import kotlin.io.path.deleteRecursively
 import kotlin.io.path.outputStream
 import kotlin.time.Duration.Companion.milliseconds
@@ -76,11 +77,8 @@ class GeneratedResourcePack(
                         }
                     }
 
-                    Files.copy(
-                        if(zip) tempZip else tempDir,
-                        packOutput.toPath(),
-                        StandardCopyOption.REPLACE_EXISTING
-                    )
+                    if(zip) tempZip.copyTo(packOutput.toPath(), overwrite = true)
+                    else tempDir.copyToRecursively(packOutput.toPath(), followLinks = false, overwrite = true)
 
                     Logger.success("Pack saved to $packOutput")
                 }
