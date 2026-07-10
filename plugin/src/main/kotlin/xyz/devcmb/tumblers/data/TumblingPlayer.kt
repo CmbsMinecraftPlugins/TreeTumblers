@@ -24,6 +24,7 @@ data class TumblingPlayer(
 
     val currentScoreboards: ArrayList<String> = ArrayList()
     val currentBossbars: ArrayList<String> = ArrayList()
+    val currentActionBars: ArrayList<String> = ArrayList()
 
     val isOnline: Boolean
         get() {

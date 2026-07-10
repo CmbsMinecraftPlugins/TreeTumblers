@@ -31,13 +31,15 @@ fun dirToBitmapProviders(
             val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", root.name, name))
             if(addTextures) builder.addTexture(it, resource)
 
-            val (height, ascent) = FontOverrides.getOverrides(it, defaultHeight, defaultAscent)
-            providers.add(FontProvider.BitmapFontProvider(
-                resource,
-                height, ascent,
-                listOf((currentIndex + 0xF000).toUnicode())
-            ))
-            currentIndex++
+            val overrides: List<Pair<Int, Int>> = FontOverrides.getOverrides(it, defaultHeight, defaultAscent)
+            overrides.forEach { (height, ascent) ->
+                providers.add(FontProvider.BitmapFontProvider(
+                    resource,
+                    height, ascent,
+                    listOf((currentIndex + 0xF000).toUnicode())
+                ))
+                currentIndex++
+            }
         }
     }
     scanDir(root)

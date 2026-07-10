@@ -53,6 +53,7 @@ class GeneratedResourcePack(
                 saveModels(tempRoot)
                 saveItems(tempRoot)
                 saveSounds(tempRoot)
+                saveTinselAssets(tempRoot)
 
                 ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
                     tempRoot.listFiles()?.forEach { child ->
@@ -69,7 +70,6 @@ class GeneratedResourcePack(
 
                     if (packOutput.exists()) {
                         while (packOutput.exists()) {
-                            Logger.warn("Pack output already exists ${packOutput.canonicalPath}. Attemping to remove.")
                             try {
                                 if(packOutput.isDirectory) packOutput.deleteRecursively() else packOutput.delete()
                                 delay(200.milliseconds)
@@ -278,5 +278,18 @@ class GeneratedResourcePack(
         soundsFolder.copyRecursively(soundsDir)
 
         Logger.success("Saved all sounds successfully")
+    }
+
+    private fun saveTinselAssets(root: File) {
+        Logger.info("Saving tinsel files...")
+        val overridesResource = object {}.javaClass.getResource("/pack/tinsel")
+        val overridesPath = overridesResource!!.toURI().path
+        val sourceDir = File(overridesPath)
+
+        val targetDir = File(Path(root.toString(), "assets", "tinsel").toString())
+        targetDir.mkdirs()
+
+        sourceDir.copyRecursively(targetDir, overwrite = true)
+        Logger.success("Saved tinsel files successfully")
     }
 }

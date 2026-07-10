@@ -18,20 +18,24 @@ object ContainersGenerator : FontGenerator {
         val containers = javaClass.getResource("/pack/container")
         val file = File(containers!!.toURI().path)
 
-        file.listFiles().filter { it.name.endsWith(".png") || it.isDirectory }.forEachIndexed { index, it ->
+        var currentIndex = 0
+        file.listFiles().filter { it.name.endsWith(".png") || it.isDirectory }.forEach {
             val location = IdentifiedResource(Namespace.TUMBLING, ResourcePath("font", "container", it.name))
             builder.addTexture(
                 it,
                 location
             )
 
-            val char = (index + 0xF000).toUnicode()
-            val (height, ascent) = FontOverrides.getOverrides(it, 256, 13)
-            providers.add(FontProvider.BitmapFontProvider(
-                location,
-                height, ascent,
-                listOf(char)
-            ))
+            val overrides: List<Pair<Int, Int>> = FontOverrides.getOverrides(it, 256, 13)
+            overrides.forEach { (height, ascent) ->
+                val char = (currentIndex + 0xF000).toUnicode()
+                providers.add(FontProvider.BitmapFontProvider(
+                    location,
+                    height, ascent,
+                    listOf(char)
+                ))
+                currentIndex++
+            }
         }
 
         return listOf(

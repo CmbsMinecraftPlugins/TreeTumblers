@@ -30,13 +30,15 @@ object IconsGenerator : FontGenerator {
                     .replace(File.separatorChar, '/')
                 val resource = IdentifiedResource(Namespace.TUMBLING, ResourcePath("item", "icon", name))
 
-                val (height, ascent) = FontOverrides.getOverrides(it, 9, 8)
-                providers.add(FontProvider.BitmapFontProvider(
-                    resource,
-                    height, ascent,
-                    listOf((currentIndex + 0xF000).toUnicode())
-                ))
-                currentIndex++
+                val overrides: List<Pair<Int, Int>> = FontOverrides.getOverrides(it, 9, 8)
+                overrides.forEach { (height, ascent) ->
+                    providers.add(FontProvider.BitmapFontProvider(
+                        resource,
+                        height, ascent,
+                        listOf((currentIndex + 0xF000).toUnicode())
+                    ))
+                    currentIndex++
+                }
             }
         }
         scanDir(iconsFolder)

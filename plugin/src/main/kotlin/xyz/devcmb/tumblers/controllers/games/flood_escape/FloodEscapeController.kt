@@ -39,8 +39,9 @@ import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
@@ -58,7 +59,6 @@ import xyz.devcmb.tumblers.util.validateLocation
 import xyz.devcmb.tumblers.util.withY
 import java.io.File
 import kotlin.io.path.Path
-import kotlin.math.roundToInt
 
 @EventGame
 class FloodEscapeController : RoundedGame(
@@ -114,7 +114,7 @@ class FloodEscapeController : RoundedGame(
 
         suspendSync {
             gamePlayers.filter { it.isOnline && !it.team.playingTeam }.forEach {
-                makeSpectator(it.bukkitPlayer!!, sendActionBar = true, participating = false)
+                makeSpectator(it.bukkitPlayer!!, participating = false)
             }
 
             spawnPlayers(
@@ -304,6 +304,9 @@ class FloodEscapeController : RoundedGame(
     }
 
     override suspend fun gamePregame() {
+        gameParticipants.forEach {
+            it.enableActionBar("floodEscapeActionBar")
+        }
     }
 
     // Blocks/second
@@ -374,14 +377,6 @@ class FloodEscapeController : RoundedGame(
                             water!!.location,
                             (waterSpeed / 20).toFloat()
                         ))
-
-                        if(!canReplaceActionBar()) return
-                        alivePlayers.mapNotNull { it.bukkitPlayer }.forEach {
-                            val distance = currentWaterMovementDirection!!.axisDifference(water!!.location, it.location)
-                            it.sendActionBar(Format.mm(
-                                "<white><aqua>Water Distance:</aqua> ${distance.roundToInt()}</white>"
-                            ))
-                        }
                     }
                 }
                 waterTask!!.runTaskTimer(TreeTumblers.plugin, 0, 1)
@@ -459,6 +454,13 @@ class FloodEscapeController : RoundedGame(
         }
     }
 
+    override suspend fun postGame() {
+        gameParticipants.forEach {
+            it.disableActionBar("floodEscapeActionBar")
+        }
+        super.postGame()
+    }
+
     /**
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
@@ -472,7 +474,7 @@ class FloodEscapeController : RoundedGame(
         if(!player.tumblingPlayer.team.playingTeam) return
 
         if(!preRound) {
-            makeSpectator(player, false)
+            makeSpectator(player)
             player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
         } else {
             if(countdownActive) {

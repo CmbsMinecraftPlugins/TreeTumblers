@@ -20,21 +20,21 @@ class ScoreBossbar : HandledBossbar {
         component = component.append(Component.text(" "))
 
         repeat(activeGame.team1score) {
-            component = component.append(Font.getGlyph("hud/breach_star").color(activeGame.playingTeams.first.color))
+            component = component.append(Font.getGlyph("hud/breach_star", false).color(activeGame.playingTeams.first.color))
         }
 
         repeat(BreachController.bestOf - activeGame.team1score) {
-            component = component.append(Font.getGlyph("hud/breach_star").color(NamedTextColor.DARK_GRAY))
+            component = component.append(Font.getGlyph("hud/breach_star", false).color(NamedTextColor.DARK_GRAY))
         }
 
         component = component.append(Font.getGlyph("hud/breach_nether_star"))
 
         repeat(BreachController.bestOf - activeGame.team2score) {
-            component = component.append(Font.getGlyph("hud/breach_star").color(NamedTextColor.DARK_GRAY))
+            component = component.append(Font.getGlyph("hud/breach_star", false).color(NamedTextColor.DARK_GRAY))
         }
 
         repeat(activeGame.team2score) {
-            component = component.append(Font.getGlyph("hud/breach_star").color(activeGame.playingTeams.second.color))
+            component = component.append(Font.getGlyph("hud/breach_star", false).color(activeGame.playingTeams.second.color))
         }
 
         component = component.append(Component.text(" "))

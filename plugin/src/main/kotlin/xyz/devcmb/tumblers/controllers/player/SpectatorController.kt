@@ -9,41 +9,26 @@ import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityTargetLivingEntityEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerQuitEvent
-import org.bukkit.scheduler.BukkitRunnable
-import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.showToAll
 
 @Controller(Controller.Priority.MEDIUM)
 object SpectatorController : IController {
-    val spectators: HashMap<Player, Boolean> = HashMap()
-    private var spectatorTask: BukkitRunnable? = null
+    val spectators: ArrayList<Player> = ArrayList()
 
     override fun init() {
-        spectatorTask = object : BukkitRunnable() {
-            override fun run() {
-                if(!canReplaceActionBar()) return
-                spectators.forEach { (player, bar) ->
-                    if(bar) player.sendActionBar(Format.mm("<gray>Spectating</gray>"))
-                }
-            }
-        }
-        spectatorTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
     }
 
-    override fun cleanup() {
-        spectatorTask?.cancel()
-    }
-
-    fun makeSpectator(player: Player, sendActionBar: Boolean = true) {
-        spectators[player] = sendActionBar
+    fun makeSpectator(player: Player) {
+        spectators.add(player)
 
         player.hideToAll()
         player.heal(20.0)
@@ -57,6 +42,7 @@ object SpectatorController : IController {
                     mob.target = null
                 }
             }
+        player.enableActionBar("spectatorActionBar")
 
         PlayerController.updateNametagVisibility(player)
 
@@ -71,7 +57,7 @@ object SpectatorController : IController {
     }
 
     fun unSpectate(player: Player) {
-        if(!spectators.containsKey(player)) return
+        if(!spectators.contains(player)) return
         spectators.remove(player)
 
         player.showToAll()
@@ -79,6 +65,7 @@ object SpectatorController : IController {
         player.inventory.remove(Material.COMPASS)
         player.isFlying = false
         player.allowFlight = false
+        player.disableActionBar("spectatorActionBar")
         PlayerController.updateNametagVisibility(player)
     }
 
@@ -91,18 +78,18 @@ object SpectatorController : IController {
     @EventHandler
     fun spectatorTargetEvent(event: EntityTargetLivingEntityEvent) {
         val player = event.target as? Player ?: return
-        if(player in spectators.keys) event.isCancelled = true
+        if(player in spectators) event.isCancelled = true
     }
 
     @EventHandler
     fun spectatorInteractEvent(event: PlayerInteractEvent) {
-        if(event.player in spectators.keys) event.isCancelled = true
+        if(event.player in spectators) event.isCancelled = true
     }
 
     @EventHandler
     fun spectatorAttackEvent(event: EntityDamageEvent) {
         val player = event.damageSource.causingEntity as? Player ?: return
-        if(player in spectators.keys) event.isCancelled = true
+        if(player in spectators) event.isCancelled = true
     }
 
     @EventHandler

@@ -49,6 +49,8 @@ import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.activateScoreboard
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.deactivateScoreboard
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
@@ -619,12 +621,12 @@ abstract class AbstractGame(
      * Calls the respective method in the [xyz.devcmb.tumblers.controllers.player.SpectatorController]
      *
      * @param player The player to enable spectator for
-     * @param sendActionBar Whether there should be a "Spectating" actionbar when the player is in spectator
+     * @param participating If the player will be added to the [participatingSpectators] pool
      */
-    fun makeSpectator(player: Player, sendActionBar: Boolean = true, participating: Boolean = true) {
+    fun makeSpectator(player: Player, participating: Boolean = true) {
         if(participating) participatingSpectators.add(player)
         gameSpectators.add(player)
-        SpectatorController.makeSpectator(player, sendActionBar)
+        SpectatorController.makeSpectator(player)
     }
 
     /**
@@ -672,7 +674,10 @@ abstract class AbstractGame(
     /**
      * Pauses the game until all gameParticipants are connected, or until it is skipped
      */
+    val playerCheckParticipants: HashSet<TumblingPlayer> = HashSet()
     suspend fun playerCheck(participants: Set<TumblingPlayer> = gameParticipants) {
+        playerCheckParticipants.addAll(participants)
+
         if(!participants.all { it.isOnline }) {
             playerCheckActive = true
             var pausedByPlayerCheck = false
@@ -681,11 +686,16 @@ abstract class AbstractGame(
                 pausedByPlayerCheck = true
             }
 
+            gamePlayers.forEach {
+                it.enableActionBar("waitingForPlayersActionBar")
+            }
+
             while(!participants.all { it.isOnline } && !playerCheckSkipped && !playerCheckPersistentSkipped) {
                 delay(500)
-                gamePlayers.forEach {
-                    it.bukkitPlayer?.sendActionBar(Format.mm("<aqua>Waiting for players...</aqua> <gray>${participants.filter { entry -> entry.isOnline }.size}/${participants.size}</gray>"))
-                }
+            }
+
+            gamePlayers.forEach {
+                it.disableActionBar("waitingForPlayersActionBar")
             }
 
             if(pausedByPlayerCheck && currentTimer != null) {
@@ -694,6 +704,8 @@ abstract class AbstractGame(
             playerCheckSkipped = false
             playerCheckActive = false
         }
+
+        playerCheckParticipants.clear()
     }
 
     @EventHandler(priority = EventPriority.HIGHEST)
@@ -782,7 +794,7 @@ abstract class AbstractGame(
 
     @EventHandler(priority = EventPriority.LOW)
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
-        if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM) || data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR)) {
+        if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM)) {
             event.isCancelled = true
             event.player.showTitle(Title.title(
                 Format.mm("<red><b>You died!</b></red>"),
@@ -790,7 +802,7 @@ abstract class AbstractGame(
                 Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(0))
             ))
 
-            makeSpectator(event.player, !data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM_NO_ACTIONBAR))
+            makeSpectator(event.player)
         }
     }
 

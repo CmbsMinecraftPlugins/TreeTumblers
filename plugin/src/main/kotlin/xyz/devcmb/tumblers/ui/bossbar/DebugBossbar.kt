@@ -1,12 +1,10 @@
 package xyz.devcmb.tumblers.ui.bossbar
 
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
-import org.bukkit.NamespacedKey
+import net.kyori.adventure.text.format.Style
 import xyz.devcmb.tumblers.Constants
-import xyz.devcmb.tumblers.TreeTumblers
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.controllers.player.UIController
 import xyz.devcmb.tumblers.util.Format
 
 class DebugBossbar : HandledBossbar {
@@ -14,21 +12,11 @@ class DebugBossbar : HandledBossbar {
     override val padding: Int = 0
 
     override fun getComponent(): Component {
-        val text = "TreeTumblers | ${Constants.BRANCH} (${Constants.VERSION})"
-
-        return UserInterfaceUtility.backgroundTextCenter(
-            Format.mm("<glyph:hud/debug_bg>").shadowColor(ShadowColor.shadowColor(0)),
-            Component.empty()
-                .append(Component.text("TreeTumblers", NamedTextColor.GREEN))
-                .append(Component.text(" ").font(NamespacedKey("minecraft", "default")))
-                .append(Component.text("|", NamedTextColor.WHITE))
-                .append(Component.text(" ").font(NamespacedKey("minecraft", "default")))
-                .append(Component.text(Constants.BRANCH, NamedTextColor.GOLD))
-                .append(Component.text(" ").font(NamespacedKey("minecraft", "default")))
-                .append(Component.text("(${Constants.VERSION})", NamedTextColor.GRAY))
-                .font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_5")),
-            text,
-            250.0
-        )
+        return UIController.tinsel.draw(250, Style.empty()) { ctx ->
+            ctx.drawWithWidth(Format.mm("<glyph:hud/debug_bg>").shadowColor(ShadowColor.shadowColor(0)), 250)
+            ctx.drawAligned(Format.mm(
+                "<green>Tree Tumblers</green> <white>|</white> <gold>${Constants.BRANCH}</gold> <gray>(${Constants.VERSION})</gray>"
+            ), 0.5f)
+        }
     }
 }

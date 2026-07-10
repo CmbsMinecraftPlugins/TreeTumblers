@@ -8,7 +8,6 @@ import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.format.TextDecoration
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
@@ -55,7 +54,6 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
-import xyz.devcmb.tumblers.util.canReplaceActionBar
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
@@ -63,6 +61,8 @@ import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.isArmor
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -123,8 +123,6 @@ class CrumbleController : RoundedGame(
     val kitTemplates: HashMap<String, Kit> = HashMap()
     val playerKits: HashMap<TumblingPlayer, Kit> = HashMap()
     val abilitiesUsed: ArrayList<TumblingPlayer> = ArrayList()
-
-    val actionBarTasks: ArrayList<BukkitRunnable> = ArrayList()
 
     var currentCrumbleRadius: Double = 0.0
     var crumbleEvent: BukkitRunnable? = null
@@ -361,25 +359,13 @@ class CrumbleController : RoundedGame(
         if(!player.tumblingPlayer.team.playingTeam) return
 
         player.inventory.addItem(kitSelector.clone())
-        val task = object : BukkitRunnable() {
-            override fun run() {
-                if(!canReplaceActionBar()) return
-
-                var component: Component = Component.empty()
-                val kit = playerKits[player.tumblingPlayer]
-                if(kit != null) {
-                    component = Format.mm("<glyph:icon/crumble/${kit.id}>").shadowColor(ShadowColor.shadowColor(0))
-                }
-
-                player.sendActionBar(component)
-            }
-        }
-        task.runTaskTimer(TreeTumblers.plugin, 0, 5)
-        actionBarTasks.add(task)
     }
 
     override suspend fun gamePregame() {
         gamePlayers.mapNotNull { it.bukkitPlayer }.forEach(this::pregamePlayer)
+        gameParticipants.forEach {
+            it.enableActionBar("crumbleActionBar")
+        }
 
         countdown(20, "crumble_kit_selection_timer")
 
@@ -411,13 +397,6 @@ class CrumbleController : RoundedGame(
             HandlerList.unregisterAll(it.value)
         }
 
-        actionBarTasks.forEach {
-            try {
-                it.cancel()
-            } catch(e: Exception) {
-                DebugUtil.warning("Failed to cancel action bar task: ${e.message}")
-            }
-        }
         Bukkit.getOnlinePlayers().forEach {
             it.tumblingPlayer.disableBossBar("crumbleBossbar")
         }
@@ -453,7 +432,7 @@ class CrumbleController : RoundedGame(
             State.GAME_ON -> {
                 spawnPlayerPreRound(player)
                 if(!preRound) {
-                    makeSpectator(player, false)
+                    makeSpectator(player)
                     val tumblingPlayer = player.tumblingPlayer
                     var matchupIndex = matchups[roundIndex]
                         .indexOfFirst { entry -> entry.first == tumblingPlayer.team || entry.second == tumblingPlayer.team }
@@ -645,6 +624,13 @@ class CrumbleController : RoundedGame(
         super.postRound()
     }
 
+    override suspend fun postGame() {
+        gameParticipants.forEach {
+            it.disableActionBar("crumbleActionBar")
+        }
+        super.postGame()
+    }
+
     suspend fun dropWalls() {
         val currentMap = loadedMaps.getOrNull(roundIndex)
             ?: throw GameControllerException("Current map for round $currentRound was not found")
@@ -700,7 +686,7 @@ class CrumbleController : RoundedGame(
         try {
             val roundMatchup = matchups[roundIndex]
             return roundMatchup.find { it.first == team || it.second == team }
-        } catch(e: IndexOutOfBoundsException) { return null }
+        } catch(_: IndexOutOfBoundsException) { return null }
     }
 
     fun roundWin(team: Team) {
@@ -908,7 +894,7 @@ class CrumbleController : RoundedGame(
                 roundDraw(killerTeam)
             } else {
                 alivePlayers[killerTeam]!!.filter { it.bukkitPlayer != null }.forEach {
-                    makeSpectator(it.bukkitPlayer!!, false)
+                    makeSpectator(it.bukkitPlayer!!)
                 }
                 alivePlayers[killerTeam]!!.clear()
 

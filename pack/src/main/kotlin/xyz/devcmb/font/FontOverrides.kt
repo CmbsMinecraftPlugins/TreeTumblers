@@ -2,20 +2,30 @@ package xyz.devcmb.font
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.decodeFromJsonElement
 import java.io.File
 
 object FontOverrides {
-    fun getOverrides(file: File, defaultHeight: Int, defaultAscent: Int): Pair<Int, Int> {
+    fun getOverrides(file: File, defaultHeight: Int, defaultAscent: Int): List<Pair<Int, Int>> {
         var config = File(file.parent, "${file.name}.overrides.json")
         if(!config.exists()) {
             val parentOverrides = File(file.parent, "folder_overrides.json")
             if(parentOverrides.exists()) {
                 config = parentOverrides
-            } else return defaultHeight to defaultAscent
+            } else return listOf(defaultHeight to defaultAscent)
         }
 
-        val data = Json.decodeFromString<FontOverrideData>(config.readText())
-        return (data.height ?: defaultHeight) to (data.ascent ?: defaultAscent)
+        val element: JsonElement = Json.parseToJsonElement(config.readText())
+        val overrides: List<FontOverrideData> = when(element) {
+            is JsonArray -> Json.decodeFromJsonElement(element)
+            is JsonObject -> listOf(Json.decodeFromJsonElement(element))
+            else -> emptyList()
+        }
+
+        return overrides.map { (it.height ?: defaultHeight) to (it.ascent ?: defaultAscent) }
     }
 
     @Serializable

@@ -33,7 +33,6 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
@@ -53,8 +52,10 @@ import xyz.devcmb.tumblers.util.Font
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.disableBossBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.enableBossBar
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.giveKit
@@ -171,7 +172,6 @@ class PartyController : AbstractGame(PartyData) {
     val frozenPlayers: MutableSet<Player> = HashSet()
 
     var teamGamesTimer: Timer? = null
-    var actionBarRunnable: BukkitRunnable? = null
 
     /**
      * The load sequence that each individual game should do
@@ -197,26 +197,9 @@ class PartyController : AbstractGame(PartyData) {
         pivot = pivotLocation
         nextXPosition = pivotLocation.x.toInt()
 
-        actionBarRunnable = object : BukkitRunnable() {
-            override fun run() {
-                if(currentState != State.GAME_ON) return
-
-                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { player ->
-                    val message: Component? = if(currentGameType == PartyGameType.GAME_OVER) {
-                        Format.mm("<red>Game Over!</red>")
-                    } else if(player in disabledGameWaitingPlayers) {
-                        Format.mm("<yellow>Waiting for <b>team games</b> to activate...</yellow>")
-                    } else if (player in waitingTeamPlayers[player.tumblingPlayer.team]!!) {
-                        Format.mm("<aqua>Waiting for your teammates to finish their games...</aqua>")
-                    } else if(player !in inGamePlayers) {
-                        Format.mm("<aqua>Waiting for a match...</aqua>")
-                    } else null
-
-                    message?.let { player.sendActionBar(it) }
-                }
-            }
+        gameParticipants.forEach {
+            it.enableActionBar("partyActionBar")
         }
-        actionBarRunnable!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
     }
 
     /**
@@ -247,7 +230,7 @@ class PartyController : AbstractGame(PartyData) {
 
         player.tp(spawn)
         if(!preGame) {
-            makeSpectator(player, false)
+            makeSpectator(player)
         }
     }
 
@@ -356,7 +339,9 @@ class PartyController : AbstractGame(PartyData) {
     }
 
     override suspend fun cleanup() {
-        actionBarRunnable?.cancel()
+        gameParticipants.forEach {
+            it.disableActionBar("partyActionBar")
+        }
         Bukkit.getOnlinePlayers().forEach {
             it.tumblingPlayer.disableBossBar("countdownBossbar")
         }
@@ -502,7 +487,7 @@ class PartyController : AbstractGame(PartyData) {
         Bukkit.getPluginManager().registerEvents(gameClass, TreeTumblers.plugin)
         activeGames.add(gameClass)
 
-        val clipboard: Clipboard
+        var clipboard: Clipboard
         val pos = BukkitAdapter.adapt(pivot).toBlockPoint().withX(xPosition)
 
         withContext(Dispatchers.IO) {

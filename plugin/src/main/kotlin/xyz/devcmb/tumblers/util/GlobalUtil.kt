@@ -100,6 +100,23 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
     }
 }
 
+fun TumblingPlayer.enableActionBar(id: String) {
+    this.currentActionBars.add(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.enableActionBar(id)
+    }
+}
+
+fun TumblingPlayer.disableActionBar(id: String) {
+    this.currentActionBars.remove(id)
+    this.bukkitPlayer?.let {
+        PlayerController.playerUIControllers[it]!!.disableActionBar(id)
+    }
+}
+
+fun Player.enableActionBar(id: String) = this.tumblingPlayer.enableActionBar(id)
+fun Player.disableActionBar(id: String) = this.tumblingPlayer.disableActionBar(id)
+
 fun Player.giveKit(kit: Kit.KitDefinition) {
     Kit.giveKit(this, kit)
 }
@@ -595,7 +612,7 @@ fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Locatio
     )
 }
 
-fun canReplaceActionBar(): Boolean {
+fun isPlayercheckActive(): Boolean {
     return GameController.activeGame?.playerCheckActive != true
 }
 

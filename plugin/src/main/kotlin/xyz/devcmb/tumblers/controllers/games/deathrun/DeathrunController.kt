@@ -43,7 +43,6 @@ import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.*
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
@@ -112,7 +111,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
 
     var ticksElapsed: Int = 0
     val completionTimes: HashMap<TumblingPlayer, Int> = HashMap()
-    lateinit var timerActionBarTask: BukkitRunnable
 
     var endDisplay: TextDisplay? = null
     var endDisplayUpdateTask: BukkitRunnable? = null
@@ -191,28 +189,9 @@ class DeathrunController : AbstractGame(DeathrunData) {
     }
 
     override suspend fun gamePregame() {
-        val runnable = object : BukkitRunnable() {
-            override fun run() {
-                if(playerCheckActive) return
-
-                gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
-                    val time = completionTimes.getOrElse(it.tumblingPlayer) { ticksElapsed }
-                    val text = formatMsTime(time * 50L)
-
-                    it.sendActionBar(UserInterfaceUtility.backgroundTextCenter(
-                        Font.getGlyph("hud/deathrun_time_bg"),
-                        Component.empty()
-                            .append(UserInterfaceUtility.CLOCK)
-                            .append(Component.text(" $text")),
-                        " $text",
-                        120.0,
-                        9.0
-                    ))
-                }
-            }
+        gamePlayers.forEach {
+            it.enableActionBar("deathrunActionBar")
         }
-        runnable.runTaskTimer(TreeTumblers.plugin, 0, 1)
-        timerActionBarTask = runnable
     }
 
     /**
@@ -428,7 +407,9 @@ class DeathrunController : AbstractGame(DeathrunData) {
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        timerActionBarTask.cancel()
+        gamePlayers.forEach {
+            it.disableActionBar("deathrunActionBar")
+        }
 
         endDisplayUpdateTask?.cancel()
         endDisplayUpdateTask = null
@@ -479,7 +460,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
             }
 
             if(roundActive && player.tumblingPlayer.team.playingTeam) {
-                makeSpectator(player, false)
+                makeSpectator(player)
                 player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
             } else if(preRound) {
                 alivePlayers.add(player)
@@ -593,7 +574,7 @@ class DeathrunController : AbstractGame(DeathrunData) {
     fun makePlayerSpectate(player: Player) {
         alivePlayers.remove(player)
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
-        makeSpectator(player, false)
+        makeSpectator(player)
 
         if(alivePlayers.isEmpty()) {
             roundEnded = true

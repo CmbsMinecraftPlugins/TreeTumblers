@@ -21,10 +21,13 @@ object Font {
         return value.second
     }
 
-    fun getGlyph(path: String): Component {
+    fun getGlyph(path: String, shouldColor: Boolean = true): Component {
         val value = findValue(path) ?: return Component.text("?")
-        return Component.empty()
-            .append(Component.text(value.second, NamedTextColor.WHITE).font(NamespacedKey(TreeTumblers.NAMESPACE, value.first)))
+        var component = Component.empty()
+            .append(Component.text(value.second).font(NamespacedKey(TreeTumblers.NAMESPACE, value.first)))
+        if(shouldColor) component = component.color(NamedTextColor.WHITE)
+
+        return component
     }
 
     fun findValue(

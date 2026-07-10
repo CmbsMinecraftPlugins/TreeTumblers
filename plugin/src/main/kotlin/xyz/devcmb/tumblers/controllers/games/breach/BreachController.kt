@@ -62,6 +62,8 @@ import xyz.devcmb.tumblers.util.fill
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.randomBetween
 import xyz.devcmb.tumblers.util.runTaskLater
@@ -75,7 +77,6 @@ import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 import kotlin.collections.set
-import kotlin.math.min
 
 @EventGame
 class BreachController: AbstractGame(BreachData) {
@@ -197,6 +198,10 @@ class BreachController: AbstractGame(BreachData) {
         repeat(rounds + 1) {
             loadMap(data.maps.random(), it)
         }
+
+        gameParticipants.forEach {
+            it.enableActionBar("breachActionBar")
+        }
     }
 
     /**
@@ -234,7 +239,7 @@ class BreachController: AbstractGame(BreachData) {
 
             gamePlayers.filter { it.isOnline }.forEach {
                 if (it.team != playingTeams.first && it.team != playingTeams.second) {
-                    makeSpectator(it.bukkitPlayer!!, sendActionBar = true, participating = false)
+                    makeSpectator(it.bukkitPlayer!!, participating = false)
                     it.bukkitPlayer!!.tp(spectatorSpawn)
                 }
             }
@@ -284,6 +289,10 @@ class BreachController: AbstractGame(BreachData) {
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
+        gameParticipants.forEach {
+            it.disableActionBar("breachActionBar")
+        }
+
         val winner = if (team1score >= bestOf) playingTeams.first else playingTeams.second
         gameState = GameState.GAME_OVER
 
@@ -399,7 +408,7 @@ class BreachController: AbstractGame(BreachData) {
             }
         } else {
             player.tp(spectatorSpawn)
-            makeSpectator(player, sendActionBar = true, participating = false)
+            makeSpectator(player, participating = false)
         }
     }
 
@@ -750,26 +759,6 @@ class BreachController: AbstractGame(BreachData) {
         }
     }
 
-    fun sendPickupProgressActionbar(player: Player) {
-        val currentTicks = starPickupTimes.getOrDefault(player, 0).toDouble()
-        val totalTicks = starPickupTicks.toDouble()
-        val progress = min(currentTicks / totalTicks, 1.0)
-
-        var component = Format.mm("<light_purple>Stealing: </light_purple>")
-
-        component = component.append(Format.mm("<white>[</white>"))
-
-        repeat(20) { i ->
-            val color = if (progress>= (i.toDouble() / 20.0)) "aqua" else "dark_grey"
-            component = component.append(Format.mm("<$color>|</$color>"))
-        }
-        component = component.append(Format.mm("<white>] ${(progress * 100.0).toInt()}%</white>"))
-
-
-        player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_PLING, 5f, 0.5f + progress.toFloat())
-        player.sendActionBar(component)
-    }
-
     fun checkItemPickup() {
         playingTeams.first.getOnlinePlayers().forEach {
             if (deadPlayers[it] == true) return@forEach
@@ -786,13 +775,11 @@ class BreachController: AbstractGame(BreachData) {
             if (team2droppedStar != null) {
                 if (it.location.distance(team2droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
-                    sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.first, team2droppedStar!!.location)
                     }
                 } else {
                     starPickupTimes[it] = 0
-                    it.sendActionBar(Component.empty())
                 }
             }
         }
@@ -812,13 +799,11 @@ class BreachController: AbstractGame(BreachData) {
             if (team1droppedStar != null) {
                 if (it.location.distance(team1droppedStar!!.location) < 2) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
-                    sendPickupProgressActionbar(it)
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.second, team1droppedStar!!.location)
                     }
                 } else {
                     starPickupTimes[it] = 0
-                    it.sendActionBar(Component.empty())
                 }
             }
         }

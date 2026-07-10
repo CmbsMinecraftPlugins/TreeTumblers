@@ -28,6 +28,9 @@ dependencies {
     compileOnly(libs.paper.api)
     compileOnly(libs.bundles.plugins)
     implementation(libs.bundles.libraries)
+    implementation(libs.tinsel) {
+        isTransitive = false
+    }
     implementation(kotlin("reflect"))
 }
 

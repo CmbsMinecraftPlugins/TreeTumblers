@@ -46,6 +46,8 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.calculatePlacements
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.openHandledInventory
@@ -163,7 +165,6 @@ object EventController : IController {
         cleanupEvent()
     }
 
-    var actionBarTask: BukkitRunnable? = null
     val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
         Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
         Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><red>Programmer</red> • <light_purple>Composer</light_purple> • <aqua>Builder</aqua></white>"),
@@ -188,14 +189,9 @@ object EventController : IController {
             Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
         ))
 
-        actionBarTask = object : BukkitRunnable() {
-            override fun run() {
-                Audience.audience(Bukkit.getOnlinePlayers()).sendActionBar(
-                    Format.mm("<green><b>Tree Tumblers</b></green> <white>$eventName</white> is starting in <aqua>${eventTimer?.currentTime ?: 0}</aqua> seconds")
-                )
-            }
+        PlayerController.players.forEach {
+            it.enableActionBar("preEventActionBar")
         }
-        actionBarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 10)
 
         delay(4000)
 
@@ -218,8 +214,9 @@ object EventController : IController {
             delay(100)
         }
 
-        actionBarTask!!.cancel()
-        actionBarTask = null
+        PlayerController.players.forEach {
+            it.disableActionBar("preEventActionBar")
+        }
 
         // TODO: Tutorial section
         Bukkit.broadcast(Format.mm("<white><green><line:30></green><br><br>" +

@@ -29,7 +29,6 @@ import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerMoveEvent
-import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.util.Transformation
 import org.joml.Quaternionf
 import org.joml.Vector3f
@@ -39,6 +38,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.MusicController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Timer
@@ -47,6 +47,8 @@ import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPlayers
@@ -264,7 +266,6 @@ object VotingController : IController {
         }
     }
 
-    var currentVoteActionbarTask: BukkitRunnable? = null
     val playerQuadrants: HashMap<Player, Int?> = HashMap()
     var votingOpen = false
     suspend fun startVoting(): String {
@@ -333,21 +334,9 @@ object VotingController : IController {
             ))
 
         votingOpen = true
-        currentVoteActionbarTask = object : BukkitRunnable() {
-            override fun run() {
-                Bukkit.getOnlinePlayers().filter { it.tumblingPlayer.team.playingTeam }.forEach {
-                    val currentQuadrant = playerQuadrants[it]
-                    if(currentQuadrant == null) {
-                        it.sendActionBar(Component.empty())
-                        return@forEach
-                    }
-
-                    val currentGame = quadrantGames[currentQuadrant]!!
-                    it.sendActionBar(Format.mm("<glyph:game/${currentGame.data.id}_icon_-12a_18h>" ))
-                }
-            }
+        PlayerController.players.forEach {
+            it.enableActionBar("votingDisplayActionBar")
         }
-        currentVoteActionbarTask!!.runTaskTimer(TreeTumblers.plugin, 0, 5)
 
         EventController.eventTimer!!.start()
 
@@ -382,8 +371,10 @@ object VotingController : IController {
             )
         )
 
-        currentVoteActionbarTask!!.cancel()
-        currentVoteActionbarTask = null
+        PlayerController.players.forEach {
+            it.disableActionBar("votingDisplayActionBar")
+        }
+
         playerQuadrants.clear()
 
         var votesComponent = Format.mm("<white><bold>Votes </bold><br></white>")
