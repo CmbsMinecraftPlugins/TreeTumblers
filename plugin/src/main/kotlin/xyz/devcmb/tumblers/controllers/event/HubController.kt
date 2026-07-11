@@ -9,6 +9,7 @@ import org.bukkit.block.BlockFace
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.BlockBreakEvent
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerMoveEvent
@@ -98,6 +99,11 @@ object HubController : IController {
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         if(!isHub || isVoting || event.entity !is Player) return
+        if(
+            event is EntityDamageByEntityEvent
+            && event.damager is Player
+            && (event.damager as Player).gameMode == GameMode.CREATIVE
+        ) return
         event.isCancelled = true
     }
 

@@ -44,7 +44,7 @@ object SpectatorController : IController {
             }
         player.enableActionBar("spectatorActionBar")
 
-        PlayerController.updateNametagVisibility(player)
+        PlayerController.updateTextDisplaySetVisibility(PlayerController.OverheadTextDisplayType.BOTH, player)
 
         player.inventory.addItem(AdvancedItemStack(Material.COMPASS) {
             name(Format.mm("<green>Spectate menu</green>"))
@@ -66,7 +66,7 @@ object SpectatorController : IController {
         player.isFlying = false
         player.allowFlight = false
         player.disableActionBar("spectatorActionBar")
-        PlayerController.updateNametagVisibility(player)
+        PlayerController.updateTextDisplaySetVisibility(PlayerController.OverheadTextDisplayType.BOTH, player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
