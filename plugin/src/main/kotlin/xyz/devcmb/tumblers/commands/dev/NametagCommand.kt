@@ -6,7 +6,7 @@ import dev.rollczi.litecommands.annotations.execute.Execute
 import dev.rollczi.litecommands.annotations.permission.Permission
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.player.PlayerController
+import xyz.devcmb.tumblers.controllers.player.NametagController
 import xyz.devcmb.tumblers.util.Format
 import java.util.Optional
 import kotlin.jvm.optionals.getOrNull
@@ -18,30 +18,23 @@ class NametagCommand {
     fun executeNametag(@Context executor: CommandSender, @Arg player: Optional<Player>) {
         val player = player.getOrNull()
         if(player == null) {
-            PlayerController.reloadNametags()
+            NametagController.refreshAllTags()
         } else {
-            PlayerController.reloadNametag(player)
+            NametagController.refreshPlayerTags(player)
         }
 
         executor.sendMessage(Format.success("Nametags have been reloaded successfully!"))
     }
 
     @Execute(name = "mode")
-    fun executeMode(@Context executor: CommandSender, @Arg("mode") mode: PlayerController.NametagMode) {
-        PlayerController.currentNametagMode = mode
+    fun executeMode(@Context executor: CommandSender, @Arg("mode") mode: NametagController.NametagMode) {
+        NametagController.currentTagMode = mode
         executor.sendMessage(Format.success("Nametag mode has been updated successfully!"))
     }
 
     @Execute(name = "remove")
     fun executeRemove(@Context executor: CommandSender, @Arg("player") player: Player) {
-        val tag = PlayerController.nameTags[player]
-        if(tag == null) {
-            executor.sendMessage(Format.warning("Nothing to remove, player does not have a nametag."))
-            return
-        }
-
-        tag.remove()
-        PlayerController.nameTags.remove(player)
+        NametagController.removePlayerTags(player)
         executor.sendMessage(Format.success("Nametag has been removed successfully!"))
     }
 }

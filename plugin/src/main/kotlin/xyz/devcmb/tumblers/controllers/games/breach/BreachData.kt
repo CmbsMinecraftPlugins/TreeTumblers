@@ -128,7 +128,9 @@ object BreachData : GameData(
         Flag.DISABLE_BLOCK_BREAKING,
         Flag.DISABLE_NATURAL_REGENERATION,
         Flag.DISABLE_FALL_DAMAGE,
-        Flag.HIDE_ENEMY_NAMETAGS
+        Flag.HIDE_ENEMY_NAMETAGS,
+        Flag.CUSTOM_DEATH_SYSTEM,
+        Flag.HIDE_HEALTH_INDICATOR
     ),
     icon = Format.mm("<glyph:game/breach_icon>"),
     logo = Format.mm("<glyph:game/breach_logo>"),

@@ -176,7 +176,7 @@ object SnifferCaretakerData : GameData(
         },
         CutsceneStep.GLHF
     ),
-    flags = setOf(Flag.SURVIVAL_MODE),
+    flags = setOf(Flag.SURVIVAL_MODE, Flag.HIDE_HEALTH_INDICATOR),
     scores = hashMapOf(
         SnifferCaretakerScoreSource.TASK_1_STAR to 20,
         SnifferCaretakerScoreSource.TASK_2_STAR to 40,

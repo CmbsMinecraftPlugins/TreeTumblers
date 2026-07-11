@@ -37,6 +37,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingConfigKeyMissingException
 import xyz.devcmb.tumblers.TumblingConfigTypeMismatchException
 import xyz.devcmb.tumblers.controllers.games.GameController
+import xyz.devcmb.tumblers.controllers.player.NametagController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import java.time.Duration
@@ -64,12 +65,18 @@ fun Player.openHandledInventory(id: String) {
 
 fun Player.hidePlayerAndTag(other: Player) {
     this.hidePlayer(TreeTumblers.plugin, other)
-    PlayerController.nameTags[other]?.let { this.hideEntity(TreeTumblers.plugin, it) }
+    NametagController.playerTags[other]?.let {
+        val entities = listOf(it.nameTag, it.healthBar)
+        entities.forEach { e -> this.hideEntity(TreeTumblers.plugin, e) }
+    }
 }
 
 fun Player.showPlayerAndTag(other: Player) {
     this.showPlayer(TreeTumblers.plugin, other)
-    PlayerController.nameTags[other]?.let { this.showEntity(TreeTumblers.plugin, it) }
+    NametagController.playerTags[other]?.let {
+        val entities = listOf(it.nameTag, it.healthBar)
+        entities.forEach { e -> this.showEntity(TreeTumblers.plugin, e) }
+    }
 }
 
 fun TumblingPlayer.enableBossBar(id: String) {
@@ -128,9 +135,9 @@ fun Player.tp(location: Location) {
         return
     }
 
-    PlayerController.removeNametag(this)
+    NametagController.removePlayerTags(this)
     this.teleport(location)
-    PlayerController.reloadNametag(this)
+    NametagController.createPlayerTags(this)
 }
 
 val teleportingPlayers: ArrayList<Player> = ArrayList()

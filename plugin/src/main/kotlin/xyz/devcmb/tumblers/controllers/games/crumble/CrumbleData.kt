@@ -87,7 +87,6 @@ object CrumbleData : GameData(
     ),
     flags = setOf(
         Flag.SURVIVAL_MODE,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM,
         Flag.DISABLE_NATURAL_REGENERATION
     ),
     scores = hashMapOf(

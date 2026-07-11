@@ -24,9 +24,7 @@ import org.bukkit.GameMode
 import org.bukkit.Material
 import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageType
-import org.bukkit.entity.Display
 import org.bukkit.entity.Player
-import org.bukkit.entity.TextDisplay
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority
 import org.bukkit.event.block.BlockPlaceEvent
@@ -42,12 +40,8 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.event.player.PlayerStatisticIncrementEvent
 import org.bukkit.event.player.PlayerSwapHandItemsEvent
-import org.bukkit.event.player.PlayerToggleSneakEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffectType
-import org.bukkit.util.Transformation
-import org.joml.AxisAngle4f
-import org.joml.Vector3f
 import xyz.devcmb.tumblers.Constants
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
@@ -67,7 +61,6 @@ import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemRegistry
-import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.hideToAll
 import xyz.devcmb.tumblers.util.runTask
@@ -75,12 +68,8 @@ import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.showToAll
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateLocation
-import java.lang.reflect.Field
 import java.net.URI
 import java.util.UUID
-import kotlin.math.ceil
-import kotlin.reflect.KProperty
-import kotlin.reflect.KProperty0
 
 @Controller(Controller.Priority.MEDIUM)
 object PlayerController : IController {
@@ -88,15 +77,6 @@ object PlayerController : IController {
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
     var isChatMuted = false
-
-    var currentNametagMode: NametagMode = NametagMode.ALL
-        set(value) {
-            field = value
-            updateTextDisplaySetVisibility(OverheadTextDisplayType.BOTH)
-        }
-
-    val nameTags: HashMap<Player, TextDisplay> = HashMap()
-    val healthIndicators: HashMap<Player, TextDisplay> = HashMap()
 
     override fun init() {
         TreeTumblers.pluginScope.launch {
@@ -206,21 +186,8 @@ object PlayerController : IController {
                 player.sendMessage(Format.warning(Format.mm(
                     "We highly recommend downloading the " +
                             "<hover:show_text:'<green>Click to Download</green>'><click:open_url:https://modrinth.com/mod/noxesium><green>[Noxesium Mod]</green></click></hover>" +
-                            " to make your experience the best it can be during the event. This mod synchronizes certain events to make them work identically regardless of ping."
+                            " to make your experience the best it can be during the event."
                 )))
-            }
-        }
-
-        reloadNametag(player)
-        nameTags.forEach { (otherPlr, tag) ->
-            if (canSeeNametag(player, otherPlr)) {
-                player.showEntity(TreeTumblers.plugin, tag)
-            }
-        }
-
-        healthIndicators.forEach { (otherPlr, tag) ->
-            if (canSeeNametag(player, otherPlr)) {
-                player.showEntity(TreeTumblers.plugin, tag)
             }
         }
 
@@ -253,8 +220,6 @@ object PlayerController : IController {
         playerUIControllers[player]?.cleanup()
         playerUIControllers.remove(player)
         playerUIControllers.forEach { it.value.playerLeave(player) }
-
-        nameTags[player]?.remove()
 
         event.quitMessage(null)
         Bukkit.broadcast(Format.mm("<white>(<red>-</red>)</white> <player:${tumblingPlayer.uuid}>"))
@@ -398,181 +363,6 @@ object PlayerController : IController {
         Bukkit.broadcast(Format.info("The chat has been unmuted!"))
     }
 
-    fun updateTextDisplaySetVisibility(type: OverheadTextDisplayType, player: Player? = null) {
-        when(type) {
-            OverheadTextDisplayType.NAMETAG,
-            OverheadTextDisplayType.HEALTHBAR -> {
-                val playerValues = type.list!!.get()
-                val tags = if(player == null) playerValues else hashMapOf(player to playerValues[player]!!)
-                tags.forEach {
-                    Bukkit.getOnlinePlayers().forEach { plr ->
-                        if(canSeeNametag(plr, it.key)) {
-                            plr.showEntity(TreeTumblers.plugin, it.value)
-                        } else {
-                            plr.hideEntity(TreeTumblers.plugin, it.value)
-                        }
-                    }
-                }
-            }
-
-            OverheadTextDisplayType.BOTH -> {
-                val nameTags = if(player == null) nameTags else hashMapOf(player to nameTags[player]!!)
-                val healthbars = if(player == null) healthIndicators else hashMapOf(player to healthIndicators[player]!!)
-
-                nameTags.forEach {
-                    Bukkit.getOnlinePlayers().forEach { plr ->
-                        if(canSeeNametag(plr, it.key)) {
-                            plr.showEntity(TreeTumblers.plugin, it.value)
-                        } else {
-                            plr.hideEntity(TreeTumblers.plugin, it.value)
-                        }
-                    }
-                }
-
-                healthbars.forEach {
-                    Bukkit.getOnlinePlayers().forEach { plr ->
-                        if(canSeeNametag(plr, it.key)) {
-                            plr.showEntity(TreeTumblers.plugin, it.value)
-                        } else {
-                            plr.hideEntity(TreeTumblers.plugin, it.value)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    fun canSeeNametag(viewer: Player, taggedPlayer: Player): Boolean {
-        return currentNametagMode.canSee(viewer, taggedPlayer)
-            && !SpectatorController.spectators.contains(taggedPlayer)
-            && !taggedPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)
-            && !hiddenPlayers.contains(taggedPlayer)
-            && taggedPlayer != viewer
-    }
-
-    fun reloadNametags() {
-        Bukkit.getOnlinePlayers().forEach {
-            reloadNametag(it)
-            reloadHealthbar(it)
-        }
-    }
-
-    fun removeNametag(player: Player) {
-        val tag = nameTags[player] ?: return
-        tag.remove()
-        nameTags.remove(player)
-    }
-
-    fun constructHealthbar(player: Player): Component {
-        var component = Format.mm("<glyph:icon/hp_bar/base>")
-            .append(UserInterfaceUtility.negativeSpace(1))
-
-        val hearts = ceil(player.health / 2.0).toInt().coerceIn(1, 10)
-
-        repeat(4) { index ->
-            val threshold = (index + 1) * 2
-
-            component = component.append(
-                when {
-                    hearts > threshold -> Format.mm("<glyph:icon/hp_bar/full>")
-                    hearts == threshold -> Format.mm("<glyph:icon/hp_bar/half>")
-                    else -> Format.mm("<glyph:icon/hp_bar/empty>")
-                }
-            )
-
-            component = component.append(UserInterfaceUtility.negativeSpace(1))
-        }
-
-        component = component.append(
-            if (hearts >= 10)
-                Format.mm("<glyph:icon/hp_bar/end_full>")
-            else
-                Format.mm("<glyph:icon/hp_bar/end_empty>")
-        )
-
-        return component
-    }
-
-    fun reloadNametag(player: Player) {
-        if(nameTags.containsKey(player)) {
-            nameTags[player]!!.remove()
-            nameTags.remove(player)
-        }
-
-        player.world.spawn(player.location.clone().add(0.0, 2.0, 0.0), TextDisplay::class.java) {
-            nameTags[player] = it
-
-            it.text(player.formattedName)
-            it.isVisibleByDefault = false
-            it.billboard = Display.Billboard.CENTER
-
-            it.isSeeThrough = !player.isSneaking
-            it.textOpacity = (if(player.isSneaking) 0x55 else 0xFF).toByte()
-
-            it.transformation = Transformation(
-                Vector3f(0f, 0.3f, 0f),
-                AxisAngle4f(),
-                Vector3f(1f, 1f, 1f),
-                AxisAngle4f()
-            )
-
-            player.addPassenger(it)
-            updateTextDisplaySetVisibility(OverheadTextDisplayType.NAMETAG, player)
-        }
-
-        reloadHealthbar(player)
-    }
-
-    fun reloadHealthbar(player: Player) {
-        if(healthIndicators.containsKey(player)) {
-            healthIndicators[player]!!.remove()
-            healthIndicators.remove(player)
-        }
-
-        player.world.spawn(player.location.clone().add(0.0, 3.0, 0.0), TextDisplay::class.java) {
-            healthIndicators[player] = it
-
-            it.text(constructHealthbar(player))
-            it.isVisibleByDefault = false
-            it.billboard = Display.Billboard.CENTER
-
-            it.isSeeThrough = !player.isSneaking
-            it.textOpacity = (if(player.isSneaking) 0x55 else 0xFF).toByte()
-
-            it.transformation = Transformation(
-                Vector3f(0f, 0.6f, 0f),
-                AxisAngle4f(),
-                Vector3f(1f, 1f, 1f),
-                AxisAngle4f()
-            )
-
-            val nametag = nameTags[player]!!
-            nametag.addPassenger(it)
-            updateTextDisplaySetVisibility(OverheadTextDisplayType.HEALTHBAR, player)
-        }
-    }
-
-    @EventHandler
-    fun playerCrouchEvent(event: PlayerToggleSneakEvent) {
-        val nameTag = nameTags[event.player] ?: return
-
-        nameTag.isSeeThrough = !event.isSneaking
-        nameTag.textOpacity = (if(event.isSneaking) 0x55 else 0xFF).toByte()
-
-        val healthBar = healthIndicators[event.player] ?: return
-        healthBar.isSeeThrough = !event.isSneaking
-        healthBar.textOpacity = (if(event.isSneaking) 0x55 else 0xFF).toByte()
-    }
-
-    @EventHandler(priority = EventPriority.MONITOR)
-    fun playerDamageEvent(event: EntityDamageEvent) {
-        val player = event.entity as? Player ?: return
-        reloadHealthbar(player)
-
-        // TODO: Only reload if the current state should allow it to
-        // (games without the disable flag)
-    }
-
     @EventHandler
     fun playerEffectEvent(event: EntityPotionEffectEvent) {
         val player = event.entity as? Player ?: return
@@ -604,32 +394,7 @@ object PlayerController : IController {
                 )
                 PacketEvents.getAPI().playerManager.sendPacket(it, packet)
             }
-
-            if(nameTags.containsKey(player))
-                updateTextDisplaySetVisibility(OverheadTextDisplayType.NAMETAG, player)
-            if(healthIndicators.containsKey(player))
-                updateTextDisplaySetVisibility(OverheadTextDisplayType.HEALTHBAR, player)
         }
-    }
-
-    enum class NametagMode {
-        ALL {
-            override fun canSee(source: Player, viewer: Player): Boolean {
-                return true
-            }
-        },
-        TEAM {
-            override fun canSee(source: Player, viewer: Player): Boolean {
-                return (source.tumblingPlayer.team == viewer.tumblingPlayer.team) || !viewer.tumblingPlayer.team.playingTeam
-            }
-        },
-        NONE {
-            override fun canSee(source: Player, viewer: Player): Boolean {
-                return false
-            }
-        };
-
-        abstract fun canSee(source: Player, viewer: Player): Boolean
     }
 
     enum class ChatChannel(val channelName: String, val color: TextColor) {
@@ -706,11 +471,5 @@ object PlayerController : IController {
         abstract fun canSee(sender: Player?, receiver: Player): Boolean
         abstract fun canSend(player: Player): Boolean
         abstract fun format(sender: Player, message: Component): Component
-    }
-
-    enum class OverheadTextDisplayType(val list: KProperty0<Map<Player, TextDisplay>>?) {
-        NAMETAG(::nameTags),
-        HEALTHBAR(::healthIndicators),
-        BOTH(null)
     }
 }

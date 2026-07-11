@@ -68,8 +68,7 @@ object PartyData : GameData(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_BLOCK_BREAKING,
-        Flag.DISABLE_NATURAL_REGENERATION,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM
+        Flag.DISABLE_NATURAL_REGENERATION
     ),
     icon = Format.mm("<glyph:game/party_icon>"),
     logo = Format.mm("<glyph:game/party_logo>"),

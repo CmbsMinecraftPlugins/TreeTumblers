@@ -28,6 +28,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.player.NametagController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.data.Team
@@ -219,7 +220,7 @@ abstract class AbstractGame(
         currentCutscene = null
 
         suspendSync {
-            PlayerController.reloadNametags()
+            NametagController.refreshAllTags()
         }
     }
 
@@ -252,7 +253,7 @@ abstract class AbstractGame(
             }
 
             if (data.flags.contains(Flag.HIDE_ENEMY_NAMETAGS)) {
-                PlayerController.currentNametagMode = PlayerController.NametagMode.TEAM
+                NametagController.currentTagMode = NametagController.NametagMode.TEAM
             }
         }
 
@@ -361,7 +362,7 @@ abstract class AbstractGame(
      */
     open suspend fun cleanup() {
         suspendSync {
-            PlayerController.currentNametagMode = PlayerController.NametagMode.ALL
+            NametagController.currentTagMode = NametagController.NametagMode.ALL
             gameSpectators.toList().forEach(this::unSpectate)
 
             gamePlayers.forEach { tumblingPlayer ->
@@ -790,20 +791,6 @@ abstract class AbstractGame(
             || !data.flags.contains(Flag.DISABLE_NATURAL_REGENERATION)
         ) return
         event.isCancelled = true
-    }
-
-    @EventHandler(priority = EventPriority.LOW)
-    fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
-        if(data.flags.contains(Flag.USE_SPECTATOR_DEATH_SYSTEM)) {
-            event.isCancelled = true
-            event.player.showTitle(Title.title(
-                Format.mm("<red><b>You died!</b></red>"),
-                Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(45), Tick.of(0))
-            ))
-
-            makeSpectator(event.player)
-        }
     }
 
     /**

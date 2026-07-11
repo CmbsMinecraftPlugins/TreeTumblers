@@ -116,7 +116,6 @@ object DeathrunData : GameData(
         Flag.DISABLE_PVP,
         Flag.DISABLE_BLOCK_BREAKING,
         Flag.DISABLE_NATURAL_REGENERATION,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM
     ),
     scores = hashMapOf(
         // this * placement = awarded score

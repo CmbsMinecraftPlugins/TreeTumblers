@@ -117,8 +117,8 @@ object FloodEscapeData : GameData(
     flags = setOf(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
-        Flag.USE_SPECTATOR_DEATH_SYSTEM,
-        Flag.DISABLE_NATURAL_REGENERATION
+        Flag.DISABLE_NATURAL_REGENERATION,
+        Flag.HIDE_HEALTH_INDICATOR
     ),
     icon = Format.mm("<glyph:game/flood_escape_icon>"),
     logo = Format.mm("<glyph:game/flood_escape_logo>"),
