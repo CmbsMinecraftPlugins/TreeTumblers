@@ -25,12 +25,7 @@ class SnifferCaretakerScoreboard(
 
         return arrayListOf(
             Component.empty(),
-            Format.mm(
-                "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${
-                    if(activeGame.currentState == AbstractGame.State.PREGAME) "Game starts in"
-                    else "Game ends in"}:</white> <timer></color>",
-                Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("10:00"))
-            ),
+            UserInterfaceUtility.timer(activeGame),
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),

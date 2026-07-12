@@ -13,7 +13,7 @@ class DebugBossbar : HandledBossbar {
 
     override fun getComponent(): Component {
         return UIController.tinsel.draw(250, Style.empty()) { ctx ->
-            ctx.drawWithWidth(Format.mm("<glyph:hud/debug_bg>").shadowColor(ShadowColor.shadowColor(0)), 250)
+            ctx.drawAligned(Format.mm("<glyph:hud/debug_bg>").shadowColor(ShadowColor.shadowColor(0)), 0.5f)
             ctx.drawAligned(Format.mm(
                 "<green>Tree Tumblers</green> <white>|</white> <gold>${Constants.BRANCH}</gold> <gray>(${Constants.VERSION})</gray>"
             ), 0.5f)

@@ -21,28 +21,19 @@ class PartyScoreboard(
         if(activeGame !is PartyController) return arrayListOf()
 
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
+        val wins = activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.WIN }?.size ?: 0
+        val losses = activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.LOSS }?.size ?: 0
+        val draws = activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.DRAW }?.size ?: 0
+
         return arrayListOf(
             Component.empty(),
-            (
-                if(activeGame.teamGamesTimer?.isRunning ?: true)
-                    Format.mm(
-                        "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Team games in:</white> <time></color>",
-                        Placeholder.component("time", activeGame.teamGamesTimer?.format() ?: Component.text("5:00"))
-                    )
-                else
-                    Format.mm(
-                        "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Game ends in:</white> <time></color>",
-                        Placeholder.component("time", activeGame.currentTimer?.format() ?: Component.text("0:00"))
-                    )
-            ),
+            UserInterfaceUtility.timer(activeGame),
             Component.empty(),
             *leaderboard.toTypedArray(),
             Component.empty(),
             UserInterfaceUtility.getIndividualScoreComponent(player, activeGame),
             Component.empty(),
-            Format.mm(" <white>Wins: <green>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.WIN }?.size ?: 0}</green></white>"),
-            Format.mm(" <white>Losses: <red>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.LOSS }?.size ?: 0}</red></white>"),
-            Format.mm(" <white>Draws: <yellow>${activeGame.gameOutcomes[player.tumblingPlayer]?.filter { it == PartyController.PartyGameResult.DRAW }?.size ?: 0}</yellow></white>"),
+            Format.mm("<white>Wins/Losses/Draws: <green>${wins}</green>/<red>${losses}</red>/<yellow>${draws}</yellow>"),
             Component.empty()
         )
     }

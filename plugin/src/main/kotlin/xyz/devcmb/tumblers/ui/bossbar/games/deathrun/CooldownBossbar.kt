@@ -29,7 +29,7 @@ class CooldownBossbar(
             val elapsedSeconds = (System.currentTimeMillis() - cooldownTime) / 1000L
             val timeLeft = (trap.cooldown.toLong() - elapsedSeconds).coerceAtLeast(0L)
             UserInterfaceUtility.backgroundTextCenter(
-                Font.getGlyph("hud/deathrun_trap_cooldown_active")
+                Font.getGlyph("hud/deathrun/trap_cooldown_inactive")
                     .shadowColor(ShadowColor.shadowColor(0)),
                 Format.mm("<red>On cooldown! <white>${timeLeft}s</white></red>"),
                 "On cooldown! ${timeLeft}s",
@@ -37,7 +37,7 @@ class CooldownBossbar(
             )
         } else {
             UserInterfaceUtility.backgroundTextCenter(
-                Font.getGlyph("hud/deathrun_trap_cooldown_inactive")
+                Font.getGlyph("hud/deathrun/trap_cooldown_active")
                     .shadowColor(ShadowColor.shadowColor(0)),
                 Format.mm("<green>Off cooldown!</green>"),
                 "Off cooldown!",

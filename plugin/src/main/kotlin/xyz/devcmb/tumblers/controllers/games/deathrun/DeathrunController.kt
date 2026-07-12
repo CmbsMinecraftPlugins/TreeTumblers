@@ -40,6 +40,7 @@ import xyz.devcmb.tumblers.controllers.games.deathrun.traps.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
@@ -254,10 +255,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        gamePlayers.forEach {
-            it.enableBossBar("countdownBossbar")
-        }
-
         repeat(rounds) {
             TreeTumblers.pluginScope.ensureActive()
 
@@ -265,13 +262,22 @@ class DeathrunController : AbstractGame(DeathrunData) {
             cooldownTimes.clear()
             currentTraps.clear()
             spawn(SpawnCycle.PRE_ROUND)
-            asyncCountdown(10, "deathrun_pregame_countdown") {}
+            timer(Timer(10) {
+                joined = false
+                title = "Round Start"
+                id = "deathrun_pregame_countdown"
+            })
             preRound()
             roundActive = true
             roundStart()
-            asyncCountdown(120, "deathrun_game_countdown") { early ->
-                if(!early) roundEnded = true
-            }
+            timer(Timer(120) {
+                joined = false
+                title = "Round Over"
+                id = "deathrun_game_on"
+                onComplete {
+                    if(!it) roundEnded = true
+                }
+            })
 
             while(!roundEnded) {
                 delay(500)
@@ -440,11 +446,6 @@ class DeathrunController : AbstractGame(DeathrunData) {
     }
 
     override suspend fun cleanup() {
-        suspendSync {
-            gamePlayers.forEach {
-                it.disableBossBar("countdownBossbar")
-            }
-        }
         super.cleanup()
     }
 

@@ -102,8 +102,8 @@ class CrumbleBossbar(
         val bgComponent = Component.empty()
             // for consistency since skulls are 1 pixel longer than the normal player heads
             .append(UserInterfaceUtility.positiveSpace(skulls/2))
-            .append(UserInterfaceUtility.negativeSpace(2))
-            .append(Font.getGlyph("hud/crumble_matchup_bossbar").shadowColor(ShadowColor.shadowColor(0)))
+            .append(UserInterfaceUtility.negativeSpace(6))
+            .append(Font.getGlyph("hud/crumble/matchup_bossbar").shadowColor(ShadowColor.shadowColor(0)))
             .append(UserInterfaceUtility.negativeSpace(
                 (
                     // Team icons

@@ -342,4 +342,11 @@ object UserInterfaceUtility {
             .append(negativeSpace(lowerTextOffset.roundToInt()))
             .append(component2.font(NamespacedKey(TreeTumblers.NAMESPACE, "default_shift/ascent_-5")))
     }
+
+    fun timer(game: AbstractGame): Component {
+        return Format.mm(
+            "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${game.currentTimer?.title ?: "Timer"}:</white> <timer></color>",
+            Placeholder.component("timer", game.currentTimer?.format() ?: Component.text("0:00"))
+        )
+    }
 }

@@ -5,14 +5,18 @@ import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController.PartyGameType
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.ui.actionbar.HandledActionBar
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.isPlayercheckActive
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class PartyActionBar(val player: Player) : HandledActionBar {
     override val id: String = "partyActionBar"
     override fun draw(ctx: TextDrawContext) {
         val party = GameController.activeGame as? PartyController ?: return
+        if(party.currentState == AbstractGame.State.CUTSCENE || isPlayercheckActive()) return
+
         val message = when {
             party.currentGameType == PartyGameType.GAME_OVER ->
                 Format.mm("<red>Game Over!</red>")

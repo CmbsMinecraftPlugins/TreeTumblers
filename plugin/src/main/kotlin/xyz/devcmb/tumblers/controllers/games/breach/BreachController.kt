@@ -49,6 +49,7 @@ import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
@@ -77,6 +78,7 @@ import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.util.UUID
 import kotlin.collections.set
+import kotlin.time.Duration.Companion.seconds
 
 @EventGame
 class BreachController: AbstractGame(BreachData) {
@@ -258,7 +260,6 @@ class BreachController: AbstractGame(BreachData) {
         currentRound = 1
 
         gamePlayers.forEach {
-            it.enableBossBar("countdownBossbar")
             it.enableBossBar("breachScoreBossbar")
         }
 
@@ -278,7 +279,7 @@ class BreachController: AbstractGame(BreachData) {
             awaitEnd()
             if (team1score >= bestOf || team2score >= bestOf) break
 
-            delay(2500)
+            delay(6.seconds)
             currentRound++
         }
 
@@ -297,10 +298,6 @@ class BreachController: AbstractGame(BreachData) {
         gameState = GameState.GAME_OVER
 
         suspendSync {
-            gamePlayers.forEach {
-                it.disableBossBar("countdownBossbar")
-            }
-
             gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 it.sound(Sound.UI_TOAST_CHALLENGE_COMPLETE)
                 it.inventory.clear()
@@ -308,7 +305,6 @@ class BreachController: AbstractGame(BreachData) {
                 cleanupPlayer(it)
             }
         }
-
 
         val bounds = currentMap.data.getList("bounds")?.map {
             if (it !is List<*>) throw GameControllerException("Map bounds is not a valid list")
@@ -455,7 +451,11 @@ class BreachController: AbstractGame(BreachData) {
 
         spawn(SpawnCycle.PRE_ROUND)
         playerCheck((playingTeams.first.getAllPlayers() + playingTeams.second.getAllPlayers()))
-        countdown(15, "kit_selection")
+        timer(Timer(15) {
+            id = "breach_kit_selection"
+            title = "Kit Select"
+            joined = true
+        })
 
         if (team1holder == null && playingTeams.first.getOnlinePlayers().isNotEmpty()) team1holder = playingTeams.first.getOnlinePlayers().random()
         if (team2holder == null && playingTeams.second.getOnlinePlayers().isNotEmpty()) team2holder = playingTeams.second.getOnlinePlayers().random()
@@ -483,13 +483,17 @@ class BreachController: AbstractGame(BreachData) {
         }
 
         gameState = GameState.PRE_ROUND
-        asyncCountdown(8, "pre_round")
+        timer(Timer(8) {
+            id = "breach_pre_round"
+            title = "Round Start"
+            joined = false
+        })
         delay(3000)
         titleCountdown(Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }), Format.mm("Round starts in"), 5)
         gameState = GameState.GAME_ON
     }
 
-    fun roundStart(round: Int) {
+    suspend fun roundStart(round: Int) {
         val doors: List<List<List<Int>>> = (currentMap.data.getList("doors")?.map { list ->
             if (list !is List<*>) throw GameControllerException("Door locations is not a valid list")
             list.map {
@@ -530,9 +534,15 @@ class BreachController: AbstractGame(BreachData) {
             }
         }
 
-        asyncCountdown(150, "round") {
-            breakingTask?.cancel()
-        }
+        timer(Timer(150) {
+            id = "breach_round_on"
+            title = "Round Over"
+            joined = false
+
+            onComplete {
+                breakingTask?.cancel()
+            }
+        })
 
         runTaskLater(15 * 20) {
             if (currentRound != round || gameState != GameState.GAME_ON) return@runTaskLater
@@ -629,7 +639,7 @@ class BreachController: AbstractGame(BreachData) {
             it.showTitle(Title.title(
                 Format.mm("<b><green>Round Won!</green></b>"),
                 Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+                Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             ))
         }
 
@@ -637,7 +647,7 @@ class BreachController: AbstractGame(BreachData) {
             it.showTitle(Title.title(
                 Format.mm("<b><red>Round Lost</red></b>"),
                 Component.empty(),
-                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+                Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             ))
         }
 
@@ -645,7 +655,7 @@ class BreachController: AbstractGame(BreachData) {
             it.showTitle(Title.title(
                 Format.mm("<b><red>Round Over</red></b>"),
                 Format.mm("<white><team> win!</white>", Placeholder.component("team", winner.formattedName)),
-                Title.Times.times(Tick.of(0), Tick.of(40), Tick.of(10))
+                Title.Times.times(Tick.of(0), Tick.of(60), Tick.of(20))
             ))
         }
 

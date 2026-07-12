@@ -7,6 +7,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -30,6 +31,7 @@ class BreachScoreboard(
 
         return arrayListOf(
             Component.empty(),
+            UserInterfaceUtility.timer(activeGame),
             Format.mm("<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>Round</white> ${activeGame.currentRound}</color>"),
             Component.empty(),
             activeGame.playingTeams.first.formattedName.append(Format.mm(" <dark_gray>-</dark_gray> <gray>${activeGame.team1score}/${BreachController.bestOf}")),

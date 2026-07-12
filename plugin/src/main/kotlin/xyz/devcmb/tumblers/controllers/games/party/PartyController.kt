@@ -66,6 +66,7 @@ import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
+import kotlin.time.Duration.Companion.minutes
 
 /*
  * Party is quick-time action game where teams and players face head to head in minigames
@@ -171,8 +172,6 @@ class PartyController : AbstractGame(PartyData) {
 
     val frozenPlayers: MutableSet<Player> = HashSet()
 
-    var teamGamesTimer: Timer? = null
-
     /**
      * The load sequence that each individual game should do
      *
@@ -213,10 +212,6 @@ class PartyController : AbstractGame(PartyData) {
         if(cycle != SpawnCycle.PREGAME) return
 
         suspendSync {
-            gamePlayers.forEach {
-                it.enableBossBar("countdownBossbar")
-            }
-
             gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
                 spawnPlayer(it, true)
             }
@@ -237,7 +232,11 @@ class PartyController : AbstractGame(PartyData) {
     override suspend fun gamePregame() {
         playerCheck()
 
-        asyncCountdown(10, "party_pregame")
+        timer(Timer(10) {
+            joined = false
+            id = "party_pregame"
+            title = "Game Start"
+        })
         delay(3000)
         Audience.audience(Bukkit.getOnlinePlayers()).showTitle(Title.title(
             Format.mm("<white>First up</white>"),
@@ -272,9 +271,10 @@ class PartyController : AbstractGame(PartyData) {
             addWaitingPlayer(it)
         }
 
-        teamGamesTimer = Timer(5 * 60) {
+        timer(Timer(5.minutes) {
             id = "party_team_games_switchover_timer"
-            game = this@PartyController
+            joined = true
+            title = "Team Games"
             timeBroadcast(
                 20,
                 "Individual games are going to switch to team games in 20 seconds! Game starting has been disabled!",
@@ -293,10 +293,13 @@ class PartyController : AbstractGame(PartyData) {
                 disabledGameWaitingPlayers.clear()
                 Bukkit.broadcast(gameMessage(Component.text("Team games are now active!")))
             }
-        }
-        teamGamesTimer!!.start()
+        })
 
-        countdown(10 * 60)
+        timer(Timer(5.minutes) {
+            joined = true
+            id = "party_game_on_post_team_games_switchover"
+            title = "Game Over"
+        })
 
         currentGameType = PartyGameType.GAME_OVER
     }
@@ -341,9 +344,6 @@ class PartyController : AbstractGame(PartyData) {
     override suspend fun cleanup() {
         gameParticipants.forEach {
             it.disableActionBar("partyActionBar")
-        }
-        Bukkit.getOnlinePlayers().forEach {
-            it.tumblingPlayer.disableBossBar("countdownBossbar")
         }
 
         super.cleanup()

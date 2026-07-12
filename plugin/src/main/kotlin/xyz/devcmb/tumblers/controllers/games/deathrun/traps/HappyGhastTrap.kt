@@ -21,7 +21,7 @@ class HappyGhastTrap(
 ) : Trap {
     override val name: Component = Format.mm("<bold><yellow>Happy Ghast Trap</yellow></bold>")
     override val id: String = "happy_ghast"
-    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "deathrun/happy_ghast_trap")
+    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "icon/deathrun/happy_ghast_trap")
     override val cooldown: Int = 15
 
     override suspend fun activate() {

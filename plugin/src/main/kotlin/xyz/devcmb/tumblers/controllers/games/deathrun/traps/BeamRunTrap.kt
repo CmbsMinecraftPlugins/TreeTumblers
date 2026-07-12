@@ -25,7 +25,7 @@ class BeamRunTrap(
 ) : Trap {
     override val name: Component = Format.mm("<bold><yellow>Beam Run Trap</yellow></bold>")
     override val id: String = "beam_run"
-    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "deathrun/beam_run_trap")
+    override val itemKey: NamespacedKey = NamespacedKey(TreeTumblers.NAMESPACE, "icon/deathrun/beam_run_trap")
     override val cooldown: Int = 10
 
     override suspend fun activate() {

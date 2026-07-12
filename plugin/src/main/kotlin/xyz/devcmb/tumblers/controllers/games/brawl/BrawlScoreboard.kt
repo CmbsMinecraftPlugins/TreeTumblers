@@ -33,10 +33,7 @@ class BrawlScoreboard(
 
         return arrayListOf(
             Component.empty(),
-            Format.mm(
-                "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${activeGame.currentTimer?.title ?: "Timer"}:</white> <timer></color>",
-                Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("0:00"))
-            ),
+            UserInterfaceUtility.timer(activeGame),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),

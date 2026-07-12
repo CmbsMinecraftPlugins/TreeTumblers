@@ -396,6 +396,7 @@ abstract class AbstractGame(
      * @param time How long to run the countdown for
      * @param id An optional identifier for the /timer command
      */
+    @Deprecated("The `timer` method offers much more control than this one does, and should be used instead.")
     suspend fun countdown(time: Int, id: String? = null) {
         currentTimer = Timer(time) {
             id?.let { this.id = id }
@@ -411,6 +412,7 @@ abstract class AbstractGame(
      * @param id An optional identifier for the /timer command
      * @param onComplete The function to invoke when the countdown finishes executing
      */
+    @Deprecated("The `timer` method offers much more control than this one does, and should be used instead.")
     fun asyncCountdown(time: Int, id: String? = null, onComplete: (suspend (earlyEnd: Boolean) -> Unit)? = null) = TreeTumblers.pluginScope.launch {
         currentTimer = Timer(time) {
             id?.let { this.id = it }
@@ -425,6 +427,7 @@ abstract class AbstractGame(
      * @param timer The timer instance to start
      */
     suspend fun timer(timer: Timer) {
+        timer.game = this
         currentTimer = timer
         currentTimer!!.start()
     }

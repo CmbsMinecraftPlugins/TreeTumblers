@@ -48,6 +48,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Flag
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -355,7 +356,6 @@ class CrumbleController : RoundedGame(
     }
 
     fun pregamePlayer(player: Player) {
-        player.tumblingPlayer.enableBossBar("countdownBossbar")
         if(!player.tumblingPlayer.team.playingTeam) return
 
         player.inventory.addItem(kitSelector.clone())
@@ -367,13 +367,13 @@ class CrumbleController : RoundedGame(
             it.enableActionBar("crumbleActionBar")
         }
 
-        countdown(20, "crumble_kit_selection_timer")
+        timer(Timer(60) {
+            title = "Kit Select"
+            id = "crumble_kit_select_timer"
+            joined = true
+        })
 
         suspendSync {
-            gamePlayers.forEach {
-                it.disableBossBar("countdownBossbar")
-            }
-
             gameParticipants.forEach {
                 if(!playerKits.containsKey(it)) {
                     selectKit(

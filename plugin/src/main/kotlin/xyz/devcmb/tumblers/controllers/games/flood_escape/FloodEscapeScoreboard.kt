@@ -8,6 +8,7 @@ import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
@@ -104,10 +105,7 @@ class FloodEscapeScoreboard(
 
         return arrayListOf(
             Component.empty(),
-            Format.mm(
-                "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${activeGame.currentTimer?.title ?: "Timer"}:</white> <timer></color>",
-                Placeholder.component("timer", activeGame.currentTimer?.format() ?: Component.text("0:00"))
-            ),
+            UserInterfaceUtility.timer(activeGame),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),

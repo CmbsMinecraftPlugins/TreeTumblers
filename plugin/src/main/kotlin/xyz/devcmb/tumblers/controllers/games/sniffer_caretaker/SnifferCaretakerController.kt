@@ -62,6 +62,7 @@ import xyz.devcmb.tumblers.controllers.games.sniffer_caretaker.tasks.ThirstyTask
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
@@ -345,12 +346,13 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
     override suspend fun gamePregame() {
         spawn(SpawnCycle.PRE_ROUND)
 
-        playerCheck()
+        timer(Timer(15) {
+            joined = false
+            title = "Game Start"
+            id = "sniffer_caretaker_game_start"
+        })
 
-        gamePlayers.forEach {
-            it.enableBossBar("countdownBossbar")
-        }
-        asyncCountdown(15)
+        playerCheck()
 
         delay(5000)
 
@@ -471,7 +473,11 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
             taskTask.runTaskTimer(TreeTumblers.plugin, 0, 20*taskInterval)
         }
 
-        countdown(gameLength)
+        timer(Timer(gameLength) {
+            joined = true
+            title = "Game Over"
+            id = "sniffer_caretaker_game_on"
+        })
 
         suspendSync {
             chestTask.cancel()
@@ -523,13 +529,6 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
         announceTeamScores()
         announceIndivScores()
         announceOverallTeamScores()
-    }
-
-    override suspend fun cleanup() {
-        Bukkit.getOnlinePlayers().forEach {
-            it.tumblingPlayer.disableBossBar("countdownBossbar")
-        }
-        super.cleanup()
     }
 
     /**

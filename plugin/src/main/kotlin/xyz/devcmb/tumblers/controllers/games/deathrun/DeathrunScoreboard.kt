@@ -46,6 +46,7 @@ class DeathrunScoreboard(
         val leaderboard: ArrayList<Component> = UserInterfaceUtility.getTeamScoresComponent(player, activeGame)
         return arrayListOf(
             Component.empty(),
+            UserInterfaceUtility.timer(activeGame),
             Format.mm(
                 MiniMessagePlaceholders.Game.SCOREBOARD_CURRENT_ROUND,
                 Placeholder.unparsed("current", activeGame.currentRound.toString()),
