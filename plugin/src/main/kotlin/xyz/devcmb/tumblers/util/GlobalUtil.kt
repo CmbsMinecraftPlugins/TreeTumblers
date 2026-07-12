@@ -49,20 +49,24 @@ import kotlin.math.sin
 import kotlin.random.Random
 import xyz.devcmb.tumblers.item.Kit
 
+/** Gets a [TumblingPlayer] for the attached [Player] **/
 val Player.tumblingPlayer: TumblingPlayer
     get() {
         return PlayerController.players.find { it.uuid == this.uniqueId }!!
     }
 
+/** Gets the formatted player name from the [Format.formatPlayerName] method **/
 val Player.formattedName: Component
     get() {
         return Format.formatPlayerName(this.tumblingPlayer)
     }
 
+/** Opens a [xyz.devcmb.tumblers.ui.inventory.HandledInventory] by its ID **/
 fun Player.openHandledInventory(id: String) {
     PlayerController.playerUIControllers[this]!!.openInventory(id)
 }
 
+/** Hides a player and their nametag **/
 fun Player.hidePlayerAndTag(other: Player) {
     this.hidePlayer(TreeTumblers.plugin, other)
     NametagController.playerTags[other]?.let {
@@ -71,6 +75,7 @@ fun Player.hidePlayerAndTag(other: Player) {
     }
 }
 
+/** Shows a player and their nametag **/
 fun Player.showPlayerAndTag(other: Player) {
     this.showPlayer(TreeTumblers.plugin, other)
     NametagController.playerTags[other]?.let {
@@ -79,6 +84,7 @@ fun Player.showPlayerAndTag(other: Player) {
     }
 }
 
+/** Enables a [xyz.devcmb.tumblers.ui.bossbar.HandledBossbar] by its ID **/
 fun TumblingPlayer.enableBossBar(id: String) {
     this.currentBossbars.add(id)
     this.bukkitPlayer?.let {
@@ -86,6 +92,7 @@ fun TumblingPlayer.enableBossBar(id: String) {
     }
 }
 
+/** Disables a [xyz.devcmb.tumblers.ui.bossbar.HandledBossbar] by its ID **/
 fun TumblingPlayer.disableBossBar(id: String) {
     this.currentBossbars.remove(id)
     this.bukkitPlayer?.let {
@@ -93,6 +100,7 @@ fun TumblingPlayer.disableBossBar(id: String) {
     }
 }
 
+/** Activates a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard] by its ID **/
 fun TumblingPlayer.activateScoreboard(id: String) {
     this.currentScoreboards.add(id)
     this.bukkitPlayer?.let {
@@ -100,6 +108,7 @@ fun TumblingPlayer.activateScoreboard(id: String) {
     }
 }
 
+/** Deactivates a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard] by its ID **/
 fun TumblingPlayer.deactivateScoreboard(id: String) {
     this.currentScoreboards.remove(id)
     this.bukkitPlayer?.let {
@@ -107,6 +116,7 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
     }
 }
 
+/** Enable a [xyz.devcmb.tumblers.ui.actionbar.HandledActionBar] by its ID **/
 fun TumblingPlayer.enableActionBar(id: String) {
     this.currentActionBars.add(id)
     this.bukkitPlayer?.let {
@@ -114,6 +124,7 @@ fun TumblingPlayer.enableActionBar(id: String) {
     }
 }
 
+/** Disable a [xyz.devcmb.tumblers.ui.actionbar.HandledActionBar] by its ID **/
 fun TumblingPlayer.disableActionBar(id: String) {
     this.currentActionBars.remove(id)
     this.bukkitPlayer?.let {
@@ -121,13 +132,18 @@ fun TumblingPlayer.disableActionBar(id: String) {
     }
 }
 
+/** Enable a [xyz.devcmb.tumblers.ui.actionbar.HandledActionBar] on the [TumblingPlayer] of the attached player by its ID **/
 fun Player.enableActionBar(id: String) = this.tumblingPlayer.enableActionBar(id)
+
+/** Disable a [xyz.devcmb.tumblers.ui.actionbar.HandledActionBar] on the [TumblingPlayer] of the attached player by its ID **/
 fun Player.disableActionBar(id: String) = this.tumblingPlayer.disableActionBar(id)
 
+/** Give a player all items in a [Kit.KitDefinition] **/
 fun Player.giveKit(kit: Kit.KitDefinition) {
     Kit.giveKit(this, kit)
 }
 
+/** Teleports a player and their nametag to a location **/
 fun Player.tp(location: Location) {
     // isn't needed for same-dimension teleports
     if(this.location.world == location.world) {
@@ -140,7 +156,8 @@ fun Player.tp(location: Location) {
     NametagController.createPlayerTags(this)
 }
 
-val teleportingPlayers: ArrayList<Player> = ArrayList()
+private val teleportingPlayers: ArrayList<Player> = ArrayList()
+/** Teleports a player to a location with a fade of 4 ticks up, 3 ticks stay, and 4 ticks down **/
 fun Player.fadeTp(location: Location, force: Boolean = false) {
     if(this in teleportingPlayers && !force) return
     teleportingPlayers.add(this)
@@ -168,12 +185,14 @@ fun Player.fadeTp(location: Location, force: Boolean = false) {
 fun Player.teleport() {
 }
 
+/** Converts a [Location] to one where the X and Z components are centered on the block **/
 fun Location.toCenterXZLocation(): Location {
     val center = this.toCenterLocation()
     center.y = this.y
     return center
 }
 
+/** Gets all players that are the specified locations from [heightDown] to [heightUp] if the [condition] is true (if provided) **/
 fun List<Location>.getPlayers(heightUp: Int, heightDown: Int, condition: ((player: Player) -> Boolean)? = null): List<Player> {
     return Bukkit.getOnlinePlayers().filter { condition?.invoke(it) ?: true }.filter { player ->
         val playerLocation = player.location
@@ -194,6 +213,7 @@ fun runTaskLater(delay: Long, runnable: Runnable) =
 fun runTaskTimer(delay: Long, period: Long, runnable: Runnable) =
     Bukkit.getScheduler().runTaskTimer(TreeTumblers.plugin, runnable, delay, period)
 
+/** Unpack a list of doubles into a location **/
 fun List<Double>.unpackCoordinates(world: World): Location {
     return Location(
         world,
@@ -205,11 +225,13 @@ fun List<Double>.unpackCoordinates(world: World): Location {
     )
 }
 
+/** Valides all the elements of a list are of type [T] **/
 inline fun <reified T> List<*>.validateList(): List<T>? {
     if (!all { it is T }) return null
     return map { it as T }
 }
 
+/** Converts a list of [Number] into a location assuming it is valid and resolves to a valid location **/
 fun List<*>.validateLocation(world: World): Location? {
     val list = this.map {
         if(it !is Number) return@validateLocation null
@@ -219,12 +241,14 @@ fun List<*>.validateLocation(world: World): Location? {
     return list.unpackCoordinates(world)
 }
 
+/** Checks if the attached [Location] is inside the boundaries [bound1] and [bound2] **/
 fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
     return this.blockX >= min(bound1.blockX, bound2.blockX) && this.blockY >= min(bound1.blockY, bound2.blockY)
         && this.blockZ >= min(bound1.blockZ, bound2.blockZ) && this.blockX <= max(bound1.blockX, bound2.blockX)
         && this.blockY <= max(bound1.blockY, bound2.blockY) && this.blockZ <= max(bound1.blockZ, bound2.blockZ)
 }
 
+/** Executes lambda [execute] on every location in between [this] and [other] **/
 fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
     for(x in min(this.x, other.x).toInt()..max(this.x, other.x).toInt())
     for(y in min(this.y, other.y).toInt()..max(this.y, other.y).toInt())
@@ -233,16 +257,19 @@ fun Location.forEachRegion(other: Location, execute: (block: Block) -> Unit) {
     }
 }
 
+/** Returns [this] with the Y value set to [y] **/
 fun Location.withY(y: Double): Location {
     val loc = this.clone()
     loc.y = y
     return loc
 }
 
+/** Converts the location to a [BlockVector3] **/
 fun Location.toBlockVector3(): BlockVector3 {
     return BlockVector3.at(this.x, this.y, this.z)
 }
 
+/** Picks a random location between [this] and [other] **/
 fun Location.randomBetween(other: Location): Location {
     val x = (min(this.x.toInt(), other.x.toInt())..max(this.x.toInt(), other.x.toInt())).random()
     val y = (min(this.y.toInt(), other.y.toInt())..max(this.y.toInt(), other.y.toInt())).random()
@@ -251,14 +278,17 @@ fun Location.randomBetween(other: Location): Location {
     return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
 }
 
+/** Gets the minimum location of [this] and [other] **/
 fun Location.minOf(other: Location): Location {
     return Location(this.world, min(this.x, other.x), min(this.y, other.y), min(this.z, other.z))
 }
 
+/** Gets the maximum location of [this] and [other] **/
 fun Location.maxOf(other: Location): Location {
     return Location(this.world, max(this.x, other.x), max(this.y, other.y), max(this.z, other.z))
 }
 
+/** Fill from [location1] to [location2] with [material] **/
 fun World.fill(location1: Location, location2: Location, material: Material) {
     val xRange = (min(location1.x.toInt(), location2.x.toInt())..max(location1.x.toInt(), location2.x.toInt()))
     val yRange = (min(location1.y.toInt(), location2.y.toInt())..max(location1.y.toInt(), location2.y.toInt()))
@@ -273,19 +303,23 @@ fun World.fill(location1: Location, location2: Location, material: Material) {
     }
 }
 
+/** Get the amount of seconds in [this] amount of ticks **/
 val Long.tickSeconds: Double
     get() {
         return ((this / 20.0) * 10.0).roundToInt() / 10.0
     }
 
+/** Plays a [Sound.UI_BUTTON_CLICK] sound effect **/
 fun Player.buttonClickSound() {
     player!!.playSound(player!!.location, Sound.UI_BUTTON_CLICK, 10f, 1f)
 }
 
+/** Playes [sound] to the player **/
 fun Player.sound(sound: Sound) {
     player!!.playSound(player!!.location, sound, 10f, 1f)
 }
 
+/** Hides a player to all players **/
 fun Player.hideToAll() {
     PlayerController.hiddenPlayers.add(this)
     Bukkit.getOnlinePlayers().forEach {
@@ -295,6 +329,7 @@ fun Player.hideToAll() {
     }
 }
 
+/** Shows a player to all players **/
 fun Player.showToAll() {
     PlayerController.hiddenPlayers.remove(this)
     Bukkit.getOnlinePlayers().forEach {
@@ -304,10 +339,12 @@ fun Player.showToAll() {
     }
 }
 
+/** Brings a suspending function call back onto the main bukkit thread to execute [task] **/
 suspend fun <T> suspendSync(task: () -> T): T = withContext(BukkitDispatcher) {
     task.invoke()
 }
 
+/** Spawns a firework at [location] with the firework effect [effect], and a detonation delay of [detonationDelay] **/
 fun spawnFirework(location: Location, effect: FireworkEffect, detonationDelay: Long = 2L) {
     val world = location.world
 
@@ -323,6 +360,7 @@ fun spawnFirework(location: Location, effect: FireworkEffect, detonationDelay: L
     }
 }
 
+/** Spawns a firework at the [player]'s location with the firework effect [effect], and a detonation delay of [detonationDelay] **/
 fun spawnFirework(player: Player, effect: FireworkEffect, detonationDelay: Long = 2L) =
     spawnFirework(player.location.clone(), effect, detonationDelay)
 
@@ -372,6 +410,7 @@ object VoidGenerator : ChunkGenerator() {
 private val values = listOf(1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1)
 private val symbols = listOf("M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I")
 
+/** Converts an integer to roman numerals **/
 fun intToRoman(num: Int): String {
     var result = ""
     var n = num
@@ -384,6 +423,8 @@ fun intToRoman(num: Int): String {
     return result
 }
 
+/** Wraps a text component onto multiple lines **/
+// FIXME: This doesn't preserve the styling of the component, and never has
 fun wrapComponent(component: Component, width: Int): List<Component> {
     val text = PlainTextComponentSerializer.plainText().serialize(component)
     val style = component.style()
@@ -410,6 +451,7 @@ fun wrapComponent(component: Component, width: Int): List<Component> {
     return lines
 }
 
+/** Check if a given [item] is an armor piece */
 fun isArmor(item: ItemStack): Boolean {
     return when (item.type.equipmentSlot) {
         EquipmentSlot.HEAD,
@@ -420,6 +462,7 @@ fun isArmor(item: ItemStack): Boolean {
     }
 }
 
+/** Formats [seconds] in the format M:SS **/
 fun formatToMSS(seconds: Int): String {
     val duration = Duration.ofSeconds(seconds.toLong())
     val totalSeconds = duration.seconds
@@ -428,6 +471,7 @@ fun formatToMSS(seconds: Int): String {
     return String.format("%d:%02d", minutes, seconds)
 }
 
+/** Formats [ms] in the format M:SS.mmm **/
 fun formatMsTime(ms: Long): String {
     val minutes: Long = ms / 1000 / 60
     val seconds: Long = (ms / 1000) % 60
@@ -435,6 +479,7 @@ fun formatMsTime(ms: Long): String {
     return String.format("%d:%02d.%03d", minutes, seconds, millis)
 }
 
+/** Gets the ordinal suffix for [num] **/
 fun getOrdinalSuffix(num: Int): String {
     if (num % 100 in 11..13) {
         return "th"
@@ -447,6 +492,7 @@ fun getOrdinalSuffix(num: Int): String {
     }
 }
 
+/** Calculates placements of a sorted list including ties **/
 fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): ArrayList<Pair<T, Int>> {
     val placements = ArrayList<Pair<T, Int>>()
     var placement = 1
@@ -463,6 +509,7 @@ fun <T> calculatePlacements(sortedList: List<MutableMap.MutableEntry<T, Int>>): 
     return placements
 }
 
+/** Gets a random point along a circle's circumfrence with a [radius] and [center] */
 fun getRandomCirclePoint(center: Location, radius: Double): Location {
     val angle = Random.nextDouble(0.0, Math.PI * 2)
     return Location(
@@ -473,6 +520,7 @@ fun getRandomCirclePoint(center: Location, radius: Double): Location {
     )
 }
 
+/** Add multiple components to an objective */
 fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component>): ArrayList<Score> {
     val scores: ArrayList<Score> = ArrayList()
     lines.forEachIndexed { index, text ->
@@ -485,6 +533,7 @@ fun addScoreboardObjectiveLines(objective: Objective, lines: ArrayList<Component
     return scores
 }
 
+/** Does a title countdown for [audience], starting at [length] and counting down **/
 suspend fun titleCountdown(audience: Audience, subtitle: Component, length: Int) {
     repeat(length) {
         val color = when(length - it) {
@@ -505,6 +554,7 @@ suspend fun titleCountdown(audience: Audience, subtitle: Component, length: Int)
     }
 }
 
+/** Does a subtitle countdown for [audience], starting at [length] and counting down **/
 suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int) {
     repeat(length) {
         val color = when(length - it) {
@@ -525,6 +575,7 @@ suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int)
     }
 }
 
+/** Gets a configurable value of type [T] from [path] */
 inline fun <reified T> configurable(path: String): T {
     val cfg = TreeTumblers.plugin.config
     if(!cfg.contains(path)) throw TumblingConfigKeyMissingException(path)
@@ -553,6 +604,7 @@ inline fun <reified T> configurable(path: String): T {
     return value as T
 }
 
+/** Runs [action] for every element in a grid of [rows] and [columns], and provides an index */
 fun forEachInGridIndexed(rows: Int, columns: Int, action: (index: Int, row: Int, col: Int) -> Unit) {
     var index = 0
     for(row in 0 until rows) {
@@ -563,6 +615,7 @@ fun forEachInGridIndexed(rows: Int, columns: Int, action: (index: Int, row: Int,
     }
 }
 
+/** Converts [loc] to a world [Location] of where it was pasted given a [pasteLocation] */
 fun Clipboard.getPostPasteLocation(
     loc: BlockVector3,
     pasteLocation: Location
@@ -578,6 +631,7 @@ fun Clipboard.getPostPasteLocation(
     )
 }
 
+/** Gets the boundaries of a clipboard after it has been pasted into the world at [loadPosition] */
 fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Location> {
     val nonAirBlocks = region
         .asSequence()
@@ -619,10 +673,12 @@ fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Locatio
     )
 }
 
+/** Checks if a playercheck is currently active in a game **/
 fun isPlayercheckActive(): Boolean {
     return GameController.activeGame?.playerCheckActive != true
 }
 
+/** Gives the splash potion of a [PotionEffect] with the item name being set to [name] */
 fun PotionEffect.splashPotion(name: String): ItemStack {
     return ItemStack.of(Material.SPLASH_POTION).apply {
         editMeta(PotionMeta::class.java) { meta ->
@@ -633,11 +689,11 @@ fun PotionEffect.splashPotion(name: String): ItemStack {
     }
 }
 
+/** Checks if an interaction entity overlaps [location] */
 fun Interaction.contains(location: Location): Boolean {
     val box = this.boundingBox
     return box.contains(location.toVector())
 }
 
-fun Interaction.contains(player: Player): Boolean {
-    return contains(player.location)
-}
+/** Checks if an interaction entity overlaps with the bounding box of [player] **/
+fun Interaction.contains(player: Player) = contains(player.location)

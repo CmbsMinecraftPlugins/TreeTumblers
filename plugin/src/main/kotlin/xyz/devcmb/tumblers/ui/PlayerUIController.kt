@@ -314,6 +314,7 @@ class PlayerUIController(val player: Player) {
 
         if(activeActionBars.contains(id)) return
 
+        actionbar.enable()
         activeActionBars.add(id)
     }
 
@@ -323,6 +324,7 @@ class PlayerUIController(val player: Player) {
 
         if(!activeActionBars.contains(id)) return
 
+        actionbar.disable()
         activeActionBars.remove(id)
     }
 }
