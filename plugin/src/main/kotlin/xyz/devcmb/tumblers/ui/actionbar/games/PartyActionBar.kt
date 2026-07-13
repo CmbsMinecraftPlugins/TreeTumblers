@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.ui.actionbar.games
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
 import org.bukkit.entity.Player
+import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController.PartyGameType
@@ -30,9 +30,9 @@ class PartyActionBar(val player: Player) : HandledActionBar {
             player !in party.inGamePlayers ->
                 Format.mm("<aqua>Waiting for a match...</aqua>")
 
-            else -> null
+            else -> return
         }
 
-        ctx.drawAligned(message, 0.5f)
+        ctx.drawAligned(message, TextDrawContext.Alignment.CENTER)
     }
 }

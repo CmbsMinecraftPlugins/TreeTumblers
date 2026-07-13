@@ -1,6 +1,6 @@
 package xyz.devcmb.tumblers.ui.actionbar
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
+import xyz.devcmb.fui.draw.TextDrawContext
 
 interface HandledActionBar {
     val id: String

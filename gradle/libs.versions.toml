@@ -26,7 +26,7 @@ commonsio = { group = "commons-io", name = "commons-io", version = "2.14.0" }
 litecommands-bukkit = { group = "dev.rollczi", name = "litecommands-bukkit", version.ref = "litecommands" }
 litecommands-adventure = { group = "dev.rollczi", name = "litecommands-adventure", version.ref = "litecommands" }
 
-tinsel = { group = "me.lucyydotp.tinsel", name = "tinsel-api", version = "0.1.0" }
+fui = { group = "com.github.29cmb", name = "f-UI", version = "1.0.1" }
 
 ktor-client-core = { group = "io.ktor", name = "ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { group = "io.ktor", name = "ktor-client-cio", version.ref = "ktor" }

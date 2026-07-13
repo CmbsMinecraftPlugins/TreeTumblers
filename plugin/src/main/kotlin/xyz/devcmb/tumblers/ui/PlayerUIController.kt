@@ -5,7 +5,6 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.bossbar.BossBar
 import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.Style
 import org.bukkit.Bukkit
 import org.bukkit.entity.Player
 import org.bukkit.scheduler.BukkitTask
@@ -16,6 +15,8 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.UIController
 import xyz.devcmb.tumblers.ui.actionbar.*
+import xyz.devcmb.tumblers.ui.actionbar.event.PreEventActionBar
+import xyz.devcmb.tumblers.ui.actionbar.event.VotingDisplayActionBar
 import xyz.devcmb.tumblers.ui.actionbar.games.*
 import xyz.devcmb.tumblers.ui.bossbar.*
 import xyz.devcmb.tumblers.ui.bossbar.games.breach.ScoreBossbar
@@ -114,9 +115,9 @@ class PlayerUIController(val player: Player) {
                 scoreboard.update(playerScoreboard)
             }
 
-            val bar = UIController.tinsel.draw(255, Style.empty()) {
+            val bar = UIController.fUI.draw(255) {
                 activeActionBars.toList().forEach { id ->
-                    var (cX, cY) = it.cursorX() to it.cursorY()
+                    var (cX, cY) = it.cursorX to it.cursorY
 
                     val actionbar = actionbars.find { entry -> entry.id == id }!!
                     actionbar.draw(it)

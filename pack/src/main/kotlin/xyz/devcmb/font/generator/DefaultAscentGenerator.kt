@@ -1,35 +1,24 @@
 package xyz.devcmb.font.generator
 
+import xyz.devcmb.font.DefaultFontWithAscent
 import xyz.devcmb.font.FontGenerator
-import xyz.devcmb.font.FontProvider
 import xyz.devcmb.font.GeneratedFont
 import xyz.devcmb.pack.ResourcePackBuilder
-import xyz.devcmb.util.ConstantPackValues
 import xyz.devcmb.util.IdentifiedResource
 import xyz.devcmb.util.Namespace
 import xyz.devcmb.util.ResourcePath
 
 object DefaultAscentGenerator : FontGenerator {
     val ascents = listOf(
-        5,
-        -5,
-        -65,
-        -86
+        -4, 4, -8, 8, -12, 12, -16, 16, -20, 20, -24, 24, -28, 28, -32, 32, -36, 36, -40, 40, 44, -44, 48, -48
     )
 
     override fun generateFonts(builder: ResourcePackBuilder): Iterable<GeneratedFont> {
         return ascents.map {
-            GeneratedFont(IdentifiedResource(Namespace.TUMBLING, ResourcePath("default_shift", "ascent_$it")), listOf(
-                FontProvider.BitmapFontProvider(
-                    IdentifiedResource(Namespace.MINECRAFT, ResourcePath("font", "ascii.png")),
-                    if(it > 4) 8 else 4,
-                    it,
-                    ConstantPackValues.defaultMinecraftAsciiCharacters
-                ),
-                FontProvider.ReferenceFontProvider(
-                    IdentifiedResource(Namespace.MINECRAFT, ResourcePath("include", "space"))
-                )
-            ))
+            GeneratedFont(
+                IdentifiedResource(Namespace.TUMBLING, ResourcePath("offset", "default_offset_$it")),
+                DefaultFontWithAscent(it).providers
+            )
         }
     }
 }

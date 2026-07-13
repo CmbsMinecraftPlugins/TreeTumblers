@@ -53,7 +53,7 @@ class GeneratedResourcePack(
                 saveModels(tempRoot)
                 saveItems(tempRoot)
                 saveSounds(tempRoot)
-                saveTinselAssets(tempRoot)
+                saveFontUIAssets(tempRoot)
 
                 ZipOutputStream(tempZip.outputStream().buffered()).use { zip ->
                     tempRoot.listFiles()?.forEach { child ->
@@ -280,16 +280,19 @@ class GeneratedResourcePack(
         Logger.success("Saved all sounds successfully")
     }
 
-    private fun saveTinselAssets(root: File) {
-        Logger.info("Saving tinsel files...")
-        val overridesResource = object {}.javaClass.getResource("/pack/tinsel")
+    private fun saveFontUIAssets(root: File) {
+        Logger.info("Saving font UI files...")
+        val overridesResource = object {}.javaClass.getResource("/pack/font_ui")
         val overridesPath = overridesResource!!.toURI().path
         val sourceDir = File(overridesPath)
 
-        val targetDir = File(Path(root.toString(), "assets", "tinsel").toString())
+        val targetDir = File(Path(root.toString(), "assets", "tumbling", "textures", "font").toString())
         targetDir.mkdirs()
 
-        sourceDir.copyRecursively(targetDir, overwrite = true)
-        Logger.success("Saved tinsel files successfully")
+        sourceDir.listFiles().forEach {
+            if(it.isDirectory) return@forEach
+            it.copyTo(targetDir.resolve(it.name))
+        }
+        Logger.success("Saved font UI files successfully")
     }
 }

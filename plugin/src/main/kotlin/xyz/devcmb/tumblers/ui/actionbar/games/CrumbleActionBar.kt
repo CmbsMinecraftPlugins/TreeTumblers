@@ -1,8 +1,8 @@
 package xyz.devcmb.tumblers.ui.actionbar.games
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
 import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.entity.Player
+import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.ui.actionbar.HandledActionBar
@@ -14,6 +14,9 @@ class CrumbleActionBar(val player: Player) : HandledActionBar {
     override fun draw(ctx: TextDrawContext) {
         val crumble = GameController.activeGame as? CrumbleController ?: return
         val kit = crumble.playerKits[player.tumblingPlayer] ?: return
-        ctx.drawAligned(Format.mm("<glyph:icon/crumble/${kit.id}>").shadowColor(ShadowColor.shadowColor(0)), 0.5f)
+        ctx.drawAligned(
+            Format.mm("<glyph:icon/crumble/${kit.id}>").shadowColor(ShadowColor.shadowColor(0)),
+            TextDrawContext.Alignment.CENTER
+        )
     }
 }

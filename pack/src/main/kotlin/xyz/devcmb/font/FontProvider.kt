@@ -27,6 +27,6 @@ sealed interface FontProvider {
     @Serializable
     @SerialName("space")
     class SpaceFontProvider(
-        val advances: Map<String, Int>
+        val advances: Map<Char, Double>
     ): FontProvider
 }

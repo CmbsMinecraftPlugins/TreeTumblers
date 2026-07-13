@@ -1,7 +1,7 @@
 package xyz.devcmb.tumblers.ui.actionbar.games
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
 import org.bukkit.entity.Player
+import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController
 import xyz.devcmb.tumblers.ui.actionbar.HandledActionBar
@@ -20,6 +20,6 @@ class FloodEscapeActionBar(val player: Player) : HandledActionBar {
         val distance = floodEscape.currentWaterMovementDirection!!.axisDifference(floodEscape.water!!.location, player.location)
         ctx.drawAligned(Format.mm(
             "<white><aqua>Water Distance:</aqua> ${distance.roundToInt()}</white>"
-        ), 0.5f)
+        ), TextDrawContext.Alignment.CENTER)
     }
 }

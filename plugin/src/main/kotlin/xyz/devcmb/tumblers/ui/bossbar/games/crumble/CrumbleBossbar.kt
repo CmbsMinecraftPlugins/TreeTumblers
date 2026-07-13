@@ -1,11 +1,10 @@
 package xyz.devcmb.tumblers.ui.bossbar.games.crumble
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.format.ShadowColor
-import net.kyori.adventure.text.format.Style
 import org.bukkit.entity.Player
+import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
 import xyz.devcmb.tumblers.controllers.player.UIController
@@ -33,37 +32,38 @@ class CrumbleBossbar(
         val enemyTeam = if(friendlyTeam == matchup.first) matchup.second else matchup.first
 
         return Component.empty()
-            .append(UserInterfaceUtility.negativeSpace(4))
-            .append(UIController.tinsel.draw(175, Style.empty()) { ctx ->
-                ctx.drawAligned(Font.getGlyph("hud/crumble/matchup_bossbar").shadowColor(ShadowColor.shadowColor(0)), 0.5f)
-                ctx.drawAligned(Format.mm("Round ${crumble.currentRound}"), 0.5f)
+            .append(UserInterfaceUtility.positiveSpace(3))
+            .append(UIController.fUI.draw(175) { ctx ->
+                ctx.drawAligned(
+                    Font.getGlyph("hud/crumble/matchup_bossbar").shadowColor(ShadowColor.shadowColor(0)),
+                    TextDrawContext.Alignment.CENTER
+                )
+                ctx.drawAligned(Format.mm("Round ${crumble.currentRound}"), TextDrawContext.Alignment.CENTER)
 
-                ctx.drawAligned(Format.mm(""), 0f)
-                ctx.drawWithWidth(friendlyTeam.formattedIcon, 7)
-                ctx.moveCursor(ctx.cursorX() + 4, ctx.cursorY())
-
+                ctx.moveCursor(0, 0)
+                ctx.drawWithWidth(friendlyTeam.formattedIcon, 7.0)
                 displaySide(friendlyTeam.getAllPlayers(), ctx)
-                ctx.moveCursor(122, ctx.cursorY())
+                ctx.moveCursor(109, 0)
                 displaySide(enemyTeam.getAllPlayers(), ctx)
-
-                ctx.moveCursor(ctx.cursorX() + 2, ctx.cursorY())
-                ctx.drawAligned(Format.mm(""), 1f)
-                ctx.moveCursor(ctx.cursorX() + 3, ctx.cursorY())
-                ctx.draw(enemyTeam.formattedIcon, 1f)
+                ctx.moveCursor(ctx.cursorX + 7, 0)
+                ctx.draw(enemyTeam.formattedIcon, TextDrawContext.Alignment.RIGHT)
             })
     }
 
     private fun displaySide(players: Set<TumblingPlayer>, ctx: TextDrawContext) {
         val crumble = GameController.activeGame as CrumbleController
+        var sideComponent = Component.empty()
         repeat(4) {
             val enemyPlayer = players.take(4).getOrNull(it) ?: return@repeat
 
-            var component = Format.mm("<head:${enemyPlayer.uuid}>")
+            var component = Format.mm("<head:${enemyPlayer.uuid}> ")
             if(enemyPlayer !in crumble.alivePlayers[enemyPlayer.team]!!) {
                 component = component.color(NamedTextColor.DARK_GRAY)
             }
-            ctx.drawWithWidth(component, 8)
-            ctx.moveCursor(ctx.cursorX() + 2, ctx.cursorY())
+            sideComponent = sideComponent.append(component)
+            ctx.moveCursor(ctx.cursorX + 1, ctx.cursorY)
         }
+
+        ctx.draw(sideComponent, TextDrawContext.Alignment.LEFT)
     }
 }

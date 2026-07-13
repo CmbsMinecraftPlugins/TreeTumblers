@@ -7,21 +7,17 @@ import xyz.devcmb.pack.ResourcePackBuilder
 import xyz.devcmb.util.IdentifiedResource
 import xyz.devcmb.util.Namespace
 import xyz.devcmb.util.ResourcePath
-import xyz.devcmb.util.toUnicode
 
 object SpacesGenerator : FontGenerator {
     val advances = buildMap {
-        var advance = -1
-
-        (0..100).forEach {
-            put((it + 0xF000).toUnicode(), advance)
-            advance = if (advance == -1) -5 else advance - 5
+        put('\uE000', 0.5)
+        for (i in 1..11) {
+            put('\uE000' + i, (1 shl (i - 1)).toDouble())
         }
 
-        advance = 1
-        (0..100).forEach {
-            put((it + 0xE000).toUnicode(), advance)
-            advance = if (advance == 1) 5 else advance + 5
+        put('\uF000', -0.5)
+        for (i in 1..11) {
+            put('\uF000' + i, -(1 shl (i - 1)).toDouble())
         }
     }
 

@@ -22,14 +22,15 @@ repositories {
     maven("https://repo.codemc.io/repository/maven-releases/")
     maven("https://maven.noxcrew.com/public")
     maven("https://repo.viaversion.com")
+    maven("https://jitpack.io")
 }
 
 dependencies {
     compileOnly(libs.paper.api)
     compileOnly(libs.bundles.plugins)
     implementation(libs.bundles.libraries)
-    implementation(libs.tinsel) {
-        isTransitive = false
+    implementation(libs.fui) {
+        isTransitive = true
     }
     implementation(kotlin("reflect"))
 }

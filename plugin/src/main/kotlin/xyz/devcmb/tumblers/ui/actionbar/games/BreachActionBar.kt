@@ -1,8 +1,8 @@
 package xyz.devcmb.tumblers.ui.actionbar.games
 
-import me.lucyydotp.tinsel.layout.TextDrawContext
 import org.bukkit.Sound
 import org.bukkit.entity.Player
+import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.breach.BreachController
 import xyz.devcmb.tumblers.ui.actionbar.HandledActionBar
@@ -30,6 +30,6 @@ class BreachActionBar(val player: Player) : HandledActionBar {
         component = component.append(Format.mm("<white>] ${(progress * 100.0).toInt()}%</white>"))
 
         player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_PLING, 5f, 0.5f + progress.toFloat())
-        ctx.drawAligned(component, 0.5f)
+        ctx.drawAligned(component, TextDrawContext.Alignment.CENTER)
     }
 }
