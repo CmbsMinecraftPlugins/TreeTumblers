@@ -14,6 +14,7 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingException
 import xyz.devcmb.tumblers.controllers.server.WorldController
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.buttonClickSound
@@ -29,7 +30,7 @@ class HubNavigationInventory : HandledInventory {
     val practiceCoursesNavigationPosition: List<Int> = configurable("lobby.navigator.practice_courses")
 
     override val inventory = buildChestInterface {
-        titleSupplier = { Component.text("Hub Navigator", NamedTextColor.WHITE) }
+        titleSupplier = { UserInterfaceUtility.centerInventoryTitle(Component.text("Hub Navigator", NamedTextColor.WHITE)) }
         rows = 1
 
         hubNavigationEntry(GridPoint(0,0), ItemStack.of(Material.OAK_LOG).apply {
@@ -48,7 +49,7 @@ class HubNavigationInventory : HandledInventory {
     }
 
     private fun ChestInterfaceBuilder.hubNavigationEntry(point: GridPoint, stack: ItemStack, location: Location) {
-        withTransform { pane, view ->
+        withTransform { pane, _ ->
             pane[point] = StaticElement(drawable(stack)) {
                 val player = it.player
                 player.buttonClickSound()

@@ -27,7 +27,7 @@ class BreachKitSelector : HandledInventory {
     override val id: String = "breachKitSelector"
 
     override val inventory: ChestInterface = buildChestInterface {
-        titleSupplier = { Format.mm("<white>Pick your Weapon</white>") }
+        titleSupplier = { UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Pick your Weapon</white>")) }
         rows = 3
 
         withTransform { pane, view ->

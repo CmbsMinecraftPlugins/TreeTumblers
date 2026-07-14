@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.ui
 import com.noxcrew.noxesium.core.registry.CommonItemComponentTypes
 import com.noxcrew.noxesium.paper.component.setNoxesiumComponent
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer
 import org.bukkit.Material
@@ -156,7 +157,7 @@ object UserInterfaceUtility {
             .append(negativeSpace(8))
             .append(overlay)
             .append(negativeSpace(FULL_INVENTORY_NEGATIVE_ADVANCE))
-            .append(title)
+            .append(centerInventoryTitle(title))
     }
 
     // this kinda works?
@@ -193,5 +194,12 @@ object UserInterfaceUtility {
             "<color:${MiniMessagePlaceholders.Event.EVENT_COLOR}><white>${game.currentTimer?.title ?: "Timer"}:</white> <timer></color>",
             Placeholder.component("timer", game.currentTimer?.format() ?: Component.text("0:00"))
         )
+    }
+
+    fun centerInventoryTitle(title: Component): Component {
+        val length = UIController.fUI.fontMeasurer.measureComponent(title)
+        return Component.empty()
+            .append(positiveSpace(81 - (length / 2).roundToInt()))
+            .append(title.shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F)).font(NamespacedKey(TreeTumblers.NAMESPACE, "offset/default_offset_-3")))
     }
 }
