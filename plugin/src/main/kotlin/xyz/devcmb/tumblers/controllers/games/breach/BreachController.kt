@@ -844,7 +844,7 @@ class BreachController: AbstractGame(BreachData) {
         }
     }
 
-    override fun overrideTabList(): Component {
+    override fun overrideTabList(player: Player): Component {
         var component = Component.empty()
 
         playingTeams.toList().forEachIndexed { index, team ->

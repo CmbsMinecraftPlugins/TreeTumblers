@@ -43,6 +43,7 @@ import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.GameOperatorException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.games.crumble.kits.*
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -670,6 +671,39 @@ class CrumbleController : RoundedGame(
         }
 
         Bukkit.broadcast(gameMessage(Component.text("Round started!")))
+    }
+
+    override fun overrideTabList(player: Player): Component? {
+        if(!player.tumblingPlayer.team.playingTeam) return null
+
+        val playerMatchup = getCurrentMatchup(player) ?: return null
+        val teams =
+            if((teamScores[playerMatchup.first] ?: 0) >= (teamScores[playerMatchup.second] ?: 0)) playerMatchup.first to playerMatchup.second
+            else playerMatchup.second to playerMatchup.first
+
+        val otherTeams = Team.entries
+            .filter { it.playingTeam && it != teams.first && it != teams.second }
+            .sortedWith(
+                compareBy<Team> { teamScores[it] ?: 0 }
+                    .thenBy { it.priority }
+            )
+
+        val matchupsComponent = Format.mm(
+            "<team1><team2>",
+            Placeholder.component("team1", EventController.getTeamComponent(this, teams.first)),
+            Placeholder.component("team2", EventController.getTeamComponent(this, teams.second))
+        )
+
+        var otherTeamsComponent = Component.empty()
+        otherTeams.forEach {
+            otherTeamsComponent = otherTeamsComponent.append(EventController.getTeamComponent(this, it))
+        }
+
+        return Format.mm(
+            "<green>Current Matchup</green><br><matchups><br><green><line:40></green><br><others>",
+            Placeholder.component("matchups", matchupsComponent),
+            Placeholder.component("others", otherTeamsComponent)
+        )
     }
 
     fun sendMatchupMessage(player: TumblingPlayer, message: (receiver: Player) -> Component) {

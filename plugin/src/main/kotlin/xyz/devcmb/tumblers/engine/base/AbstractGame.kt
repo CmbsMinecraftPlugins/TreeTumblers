@@ -659,7 +659,7 @@ abstract class AbstractGame(
      *
      * By default, this is null and uses the default behavior
      */
-    open fun overrideTabList(): Component? {
+    open fun overrideTabList(player: Player): Component? {
         return null
     }
 

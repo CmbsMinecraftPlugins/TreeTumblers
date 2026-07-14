@@ -48,7 +48,7 @@ object UIController : IController {
     }
 
     @EventHandler
-    fun onOpen(event: InventoryOpenEvent) {
+    fun inventoryOpenEvent(event: InventoryOpenEvent) {
         val text = when (event.inventory.holder) {
             is Chest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Small Chest</white>"))
             is DoubleChest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Large Chest</white>"))

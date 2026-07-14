@@ -34,6 +34,7 @@ import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
+import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.controllers.server.WorldController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
@@ -124,13 +125,15 @@ object EventController : IController {
         topbarRunnable = object : BukkitRunnable() {
             override fun run() {
                 if(GameController.activeGame != null) {
-                    sendGameTopbar()
+                    Bukkit.getOnlinePlayers().forEach {
+                        sendGameTopbar(it)
+                    }
                 } else {
                     sendDefaultTopbar()
                 }
             }
         }
-        topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 20)
+        topbarRunnable.runTaskTimer(TreeTumblers.plugin, 0, 5)
     }
 
     fun startEvent(finale: Boolean, skipIntro: Boolean) {
@@ -630,82 +633,88 @@ object EventController : IController {
         }
     }
 
-    fun sendGameTopbar() {
+    fun sendGameTopbar(player: Player) {
         val game = GameController.activeGame ?: return
-        val component = game.overrideTabList() ?: getTopbarPlayersComponent(game)
+        val component = game.overrideTabList(player) ?: getTopbarPlayersComponent(game)
 
-        Bukkit.getOnlinePlayers().forEach {
-            it.sendPlayerListHeader(
-                Component.empty()
-                    .appendNewline()
-                    .append(game.data.tabLogo)
-                    .appendNewline()
-                    .appendNewline()
-                    .appendNewline()
-                    .appendNewline()
-                    .append(Format.mm("<green>Game ${this.game}/$totalGames</green>"))
-                    .appendNewline()
-                    .append(Format.mm("<green><line:40></green>"))
-                    .appendNewline()
-                    .append(component)
-                    .appendNewline()
-                    .append(Format.mm("<green><line:40></green>"))
-            )
+        player.sendPlayerListHeader(
+            Component.empty()
+                .appendNewline()
+                .append(game.data.tabLogo)
+                .appendNewline()
+                .appendNewline()
+                .appendNewline()
+                .appendNewline()
+                .append(Format.mm("<green>Game ${this.game}/$totalGames</green>"))
+                .appendNewline()
+                .append(Format.mm("<green><line:40></green>"))
+                .appendNewline()
+                .append(component)
+                .appendNewline()
+                .append(Format.mm("<green><line:40></green>"))
+        )
 
-            it.sendPlayerListFooter(
-                Format.mm(
-                "<aqua>Ping: <white>${it.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
-            ))
-        }
+        player.sendPlayerListFooter(
+            Format.mm(
+            "<aqua>Ping: <white>${player.ping}ms</white></aqua><br><aqua>Online Players: <white>${Bukkit.getOnlinePlayers().size}</white></aqua><br>"
+        ))
     }
 
     fun getTopbarPlayersComponent(game: AbstractGame? = null): Component {
         var teamComponent = Component.empty()
 
         val placements = game?.getTeamPlacements() ?: getEventTeamPlacements()
+
+        placements.forEachIndexed { _, it ->
+            teamComponent = teamComponent.append(getTeamComponent(game, it.first))
+        }
+
+        return teamComponent
+    }
+
+    fun getTeamComponent(game: AbstractGame?, team: Team): Component {
+        val placements = game?.getTeamPlacements() ?: getEventTeamPlacements()
         val scores = game?.teamScores ?: teamScores
 
+        var teamComponent = Component.empty()
         if(scoresHidden) {
-            repeat(Team.entries.filter { it.playingTeam }.size) {
-                var playersComponent = Component.text(" ")
-                repeat(4) { index ->
-                    val uuid = "606e2ff0-ed77-4842-9d6c-e1d3321c7838"
-                    var name = Component.empty()
-                    if(index != 0) {
-                        name = name.append(Component.text(" • ", NamedTextColor.WHITE))
-                    }
-
-                    name = name.append(Format.mm("<white><head:$uuid></white> <dark_gray><obf>Player</obf><dark_gray>"))
-
-                    playersComponent = playersComponent.append(name)
+            var playersComponent = Component.text(" ")
+            repeat(4) { index ->
+                val uuid = "606e2ff0-ed77-4842-9d6c-e1d3321c7838"
+                var name = Component.empty()
+                if(index != 0) {
+                    name = name.append(Component.text(" • ", NamedTextColor.WHITE))
                 }
-                playersComponent = playersComponent.append(Component.text(" "))
 
-                teamComponent = teamComponent.append(
-                    Format.mm(
-                        " <br><white>#?</white> <team><shift>${" ".repeat(60)}<gray>?????</gray> <br><players><br>",
-                        Placeholder.parsed("team", "<white><font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
-                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("????????") + 11)),
-                        Placeholder.component("players", playersComponent)
-                    )
-                )
+                name = name.append(Format.mm("<white><head:$uuid></white> <dark_gray><obf>Player</obf><dark_gray>"))
+
+                playersComponent = playersComponent.append(name)
             }
+            playersComponent = playersComponent.append(Component.text(" "))
+
+            teamComponent = teamComponent.append(
+                Format.mm(
+                    " <br><white>#?</white> <team><shift>${" ".repeat(60)}<gray>?????</gray> <br><players><br>",
+                    Placeholder.parsed("team", "<white><font:${TreeTumblers.NAMESPACE}:icons>\uE007</font></white> <dark_gray>????????</dark_gray>"),
+                    // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth("????????") + 11)),
+                    Placeholder.component("players", playersComponent)
+                )
+            )
         } else {
-            placements.forEachIndexed { _, it ->
-                var playersComponent = getTeamPlayersComponent(it.first)
-                playersComponent = playersComponent.append(Component.text(" "))
+            var playersComponent = getTeamPlayersComponent(team)
+            playersComponent = playersComponent.append(Component.text(" "))
 
-                teamComponent = teamComponent.append(
-                    Format.mm(
-                        " <br><white>#${it.second}</white> <team><shift>${" ".repeat(60)}<gold>${scores[it.first]!!}</gold> <br><players><br>",
-                        Placeholder.component("team", it.first.formattedName),
-                        // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
-                        Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(it.first.teamName) + 11)),
-                        Placeholder.component("players", playersComponent)
-                    )
+            val teamPlacement = placements.find { it.first == team } ?: return Component.empty()
+            teamComponent = teamComponent.append(
+                Format.mm(
+                    " <br><white>#${teamPlacement.second}</white> <team><shift>${" ".repeat(60)}<gold>${scores[teamPlacement.first]!!}</gold> <br><players><br>",
+                    Placeholder.component("team", teamPlacement.first.formattedName),
+                    // By negative spacing, I don't need to do any math for the repetition (and don't need to use periods)
+                    Placeholder.component("shift", UserInterfaceUtility.negativeSpace(UserInterfaceUtility.getPixelWidth(teamPlacement.first.teamName) + 11)),
+                    Placeholder.component("players", playersComponent)
                 )
-            }
+            )
         }
 
         return teamComponent
@@ -721,10 +730,14 @@ object EventController : IController {
                 name = name.append(Component.text(" •", NamedTextColor.WHITE))
             }
 
-            name = name.append(Format.mm(" <color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
-                if(onlinePlayer != null) Component.text(onlinePlayer.name, team.color)
-                else Component.text(player.name, NamedTextColor.GRAY)
-            )
+            name = if(onlinePlayer != null && onlinePlayer in SpectatorController.spectators) {
+                name.append(Format.mm(" <white><glyph:icon/skull></white> <gray>${player.name}</gray>"))
+            } else {
+                name.append(Format.mm(" <color:${if(onlinePlayer != null) "white" else "dark_gray"}><head:$uuid></color> ")).append(
+                    if(onlinePlayer != null) Component.text(onlinePlayer.name, team.color)
+                    else Component.text(player.name, NamedTextColor.DARK_GRAY)
+                )
+            }
 
             playersComponent = playersComponent.append(name)
         }
