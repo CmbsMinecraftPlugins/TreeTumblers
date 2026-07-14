@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.player.UIController
 import xyz.devcmb.tumblers.ui.actionbar.*
+import xyz.devcmb.tumblers.ui.actionbar.event.EventTeamActionBar
 import xyz.devcmb.tumblers.ui.actionbar.event.PreEventActionBar
 import xyz.devcmb.tumblers.ui.actionbar.event.VotingDisplayActionBar
 import xyz.devcmb.tumblers.ui.actionbar.games.*
@@ -200,6 +201,7 @@ class PlayerUIController(val player: Player) {
         registerActionBar(PartyActionBar(player))
         registerActionBar(FloodEscapeActionBar(player))
         registerActionBar(BreachActionBar(player))
+        registerActionBar(EventTeamActionBar(player))
     }
 
     fun cleanup() {

@@ -15,6 +15,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.base.AbstractGame
@@ -22,6 +23,7 @@ import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.disableActionBar
 
 @Controller(Controller.Priority.HIGH)
 object GameController : IController {
@@ -73,6 +75,9 @@ object GameController : IController {
         activeGame = game
         Bukkit.getServer().pluginManager.registerEvents(game, TreeTumblers.plugin)
 
+        PlayerController.players.forEach {
+            it.disableActionBar("eventTeamActionBar")
+        }
         game.load(true)
         game.finishLoading()
         if(!skipCutscenes) game.runCutscene()

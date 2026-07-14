@@ -23,6 +23,7 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.fadeTp
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.validateLocation
@@ -64,6 +65,7 @@ object HubController : IController {
 
     fun spawnHub(player: Player, teleport: Boolean = true) {
         if(teleport) player.tp(getLobbyPosition())
+        player.enableActionBar("eventTeamActionBar")
         player.inventory.addItem(compass.build())
         BadgeController.giveCollection(player)
     }
