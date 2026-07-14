@@ -17,6 +17,7 @@ fun createPackBuilder(): ResourcePackBuilder {
         addFontGenerator(IconsGenerator)
         addFontGenerator(SpacesGenerator)
         addFontGenerator(HudAssetGenerator)
+        addFontGenerator(VanillaBitmapOverridesGenerator)
 
         addModelGenerator(PredefinedModelGenerator)
         addModelGenerator(IconItemModelGenerator)
