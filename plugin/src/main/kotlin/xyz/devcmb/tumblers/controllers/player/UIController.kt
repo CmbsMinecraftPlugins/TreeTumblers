@@ -1,11 +1,22 @@
 package xyz.devcmb.tumblers.controllers.player
 
+import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.NamespacedKey
+import org.bukkit.block.Barrel
+import org.bukkit.block.BlastFurnace
+import org.bukkit.block.Chest
+import org.bukkit.block.DoubleChest
+import org.bukkit.block.Furnace
+import org.bukkit.block.Smoker
+import org.bukkit.event.EventHandler
+import org.bukkit.event.inventory.InventoryOpenEvent
 import xyz.devcmb.fui.FontUI
 import xyz.devcmb.fui.builder.buildFontUI
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.ui.UserInterfaceUtility
+import xyz.devcmb.tumblers.util.Format
 import java.io.File
 
 @Controller
@@ -34,5 +45,25 @@ object UIController : IController {
                 }
             }, NamespacedKey(TreeTumblers.NAMESPACE, "spaces"))
         }
+    }
+
+    @EventHandler
+    fun onOpen(event: InventoryOpenEvent) {
+        val text = when (event.inventory.holder) {
+            is Chest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Small Chest</white>"))
+            is DoubleChest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Large Chest</white>"))
+
+            is BlastFurnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Blast Furnace</font></white>")
+                .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
+            is Smoker -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Smoker</font></white>")
+                .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
+            is Furnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Furnace</font></white>")
+                .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
+
+            is Barrel -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Barrel</white>"))
+            else -> return
+        }
+
+        event.titleOverride(text)
     }
 }
