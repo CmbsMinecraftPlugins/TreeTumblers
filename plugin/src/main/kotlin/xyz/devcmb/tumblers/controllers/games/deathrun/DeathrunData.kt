@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.deathrun
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Color
 import org.bukkit.Material
 import org.bukkit.entity.ArmorStand
@@ -125,10 +124,6 @@ object DeathrunData : GameData(
         DeathrunScoreSource.TRAP_KILL to 40,
         DeathrunScoreSource.TRAP_DAMAGE to 20
     ),
-    icon = Format.mm("<glyph:game/deathrun_icon>"),
-    logo = Format.mm("<glyph:game/deathrun_logo>"),
-    tabLogo = Format.mm("<glyph:game/deathrun_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scoreboard = DeathrunScoreboard::class,
     listed = false
 )

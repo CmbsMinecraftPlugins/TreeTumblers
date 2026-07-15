@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.sniffer_caretaker
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
 import org.bukkit.Sound
 import org.bukkit.block.data.Levelled
@@ -184,10 +183,6 @@ object SnifferCaretakerData : GameData(
         SnifferCaretakerScoreSource.TASK_4_STAR to 80,
         SnifferCaretakerScoreSource.TASK_5_STAR to 120
     ),
-    icon = Format.mm("<glyph:game/sniffer_caretaker_icon>"),
-    logo = Format.mm("<glyph:game/sniffer_caretaker_logo>"),
-    tabLogo = Format.mm("<glyph:game/sniffer_caretaker_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scoreboard = SnifferCaretakerScoreboard::class,
     name = "Sniffer Caretaker"
 )

@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.brawl
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
@@ -49,10 +48,6 @@ object BrawlData : GameData(
         CommonScoreSource.OUTLAST to 10,
         BrawlController.BrawlScoreSource.SURVIVE_ONE_MINUTE to 120,
     ),
-    icon = Format.mm("<glyph:game/brawl_icon>"),
-    logo = Format.mm("<glyph:game/brawl_logo>"),
-    tabLogo = Format.mm("<glyph:game/brawl_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     spawns = BrawlSpawn.entries,
     scoreboard = BrawlScoreboard::class,
 )
