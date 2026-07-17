@@ -106,6 +106,7 @@ templates:
   party_games: "&/templates/party"
   dioramas: "&/templates/dioramas"
   flood_escape_obstacles: "&/templates/flood_escape"
+  tower_ascent_templates: "&/templates/tower_ascent"
 
 lobby:
   # The hub world
@@ -606,7 +607,16 @@ games:
             start: [-14.5, 132.5, 7.5, -120.0, 25.0]
   tower_ascent:
     worlds_folder: "tower_ascent"
+    rooms: 8
+
     maps:
       tower:
         world: "tower"
         data:
+          placement_axis: z
+          pivots:
+            - [-1,64,3]
+          rooms:
+            - id: testing_room
+              # The material name that will replace all diamond and redstone blocks in the build
+              pivot_replacement_material: BLACKSTONE

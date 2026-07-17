@@ -5,9 +5,7 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
-import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
-import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.launch
@@ -43,6 +41,7 @@ import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.getPivot
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
 import xyz.devcmb.tumblers.util.hidePlayerAndTag
@@ -207,10 +206,10 @@ class FloodEscapeController : RoundedGame(
             reader.read()
         }
 
-        clipboard.origin = getPivot(clipboard, BlockTypes.REDSTONE_BLOCK!!)
+        clipboard.origin = clipboard.getPivot(BlockTypes.REDSTONE_BLOCK!!)
             ?: throw GameControllerException("A pivot line of 5 redstone blocks was not found in the schematic")
 
-        val endPivot = getPivot(clipboard, BlockTypes.DIAMOND_BLOCK!!)
+        val endPivot = clipboard.getPivot(BlockTypes.DIAMOND_BLOCK!!)
             ?: throw GameControllerException("A pivot line of 5 diamond blocks was not found in the schematic")
 
         clipboard.region.forEach { pos ->
@@ -237,33 +236,6 @@ class FloodEscapeController : RoundedGame(
         session.flushQueue()
 
         return clipboard to clipboard.getPostPasteLocation(endPivot, location)
-    }
-
-    fun getPivot(clipboard: Clipboard, type: BlockType): BlockVector3? {
-        clipboard.region.forEach { origin ->
-            if (clipboard.getBlock(origin).blockType != type) return@forEach
-
-            fun check(dx: Int, dz: Int): BlockVector3? {
-                for (i in -2..2) {
-                    val pos = BlockVector3.at(
-                        origin.x() + dx * i,
-                        origin.y(),
-                        origin.z() + dz * i
-                    )
-
-                    if (!clipboard.region.contains(pos)) return null
-                    if (clipboard.getBlock(pos).blockType != type) return null
-                }
-                return origin
-            }
-
-            val xCheck = check(1,0)
-            val zCheck = check(0,1)
-
-            if(xCheck != null || zCheck != null) return xCheck ?: zCheck
-        }
-
-        return null
     }
 
     data class LoadedObstacle(

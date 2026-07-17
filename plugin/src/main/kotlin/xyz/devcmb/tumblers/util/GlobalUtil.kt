@@ -2,6 +2,7 @@ package xyz.devcmb.tumblers.util
 
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
@@ -239,6 +240,15 @@ fun List<*>.validateLocation(world: World): Location? {
     }
 
     return list.unpackCoordinates(world)
+}
+
+/** Checks if certain values in a hashmap are valid given a condition */
+fun HashMap<*, *>.validateElements(values: HashMap<*, ((param: Any) -> Boolean)>): Boolean {
+    values.forEach { (key, validate) ->
+        if(this[key] == null || !validate.invoke(this[key]!!)) return@validateElements false
+    }
+
+    return true
 }
 
 /** Checks if the attached [Location] is inside the boundaries [bound1] and [bound2] **/
@@ -697,3 +707,34 @@ fun Interaction.contains(location: Location): Boolean {
 
 /** Checks if an interaction entity overlaps with the bounding box of [player] **/
 fun Interaction.contains(player: Player) = contains(player.location)
+
+/** Gets a location in between a line of [length] blocks of [type] on either the X or Z axis */
+fun Clipboard.getPivot(type: BlockType, length: Int = 5): BlockVector3? {
+    require(length % 2 == 1) { "Pivot length must be an odd number" }
+
+    val sideLength = (length - 1)/2
+    this.region.forEach { origin ->
+        if (this.getBlock(origin).blockType != type) return@forEach
+
+        fun check(dx: Int, dz: Int): BlockVector3? {
+            for (i in -sideLength..sideLength) {
+                val pos = BlockVector3.at(
+                    origin.x() + dx * i,
+                    origin.y(),
+                    origin.z() + dz * i
+                )
+
+                if (!this.region.contains(pos)) return null
+                if (this.getBlock(pos).blockType != type) return null
+            }
+            return origin
+        }
+
+        val xCheck = check(1,0)
+        val zCheck = check(0,1)
+
+        if(xCheck != null || zCheck != null) return xCheck ?: zCheck
+    }
+
+    return null
+}

@@ -1,14 +1,19 @@
 package xyz.devcmb.tumblers.controllers.games.tower_ascent
 
 import xyz.devcmb.tumblers.engine.GameData
+import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
+import xyz.devcmb.tumblers.engine.map.Map
 
 object TowerAscentData : GameData(
     id = "tower_ascent",
     name = "Tower Ascent",
     votable = true,
-    maps = setOf(),
-    cutsceneSteps = arrayListOf(),
+    maps = setOf(Map("tower")),
+    cutsceneSteps = arrayListOf(
+        CutsceneStep.GLHF
+    ),
     flags = setOf(),
     scores = hashMapOf(),
-    scoreboard = TowerAscentScoreboard::class
+    scoreboard = TowerAscentScoreboard::class,
+    spawns = TowerAscentSpawn.entries
 )
