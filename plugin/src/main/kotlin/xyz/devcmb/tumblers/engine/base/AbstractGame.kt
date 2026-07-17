@@ -174,7 +174,7 @@ abstract class AbstractGame(
     /**
      * The method that is invoked once the coroutine stops yielding
      *
-     * Can be overridden if necessary, but I doubt it's necessary
+     * Can be overridden if necessary, but I doubt it
      */
     open suspend fun finishLoading() {
         Bukkit.getOnlinePlayers().forEach {

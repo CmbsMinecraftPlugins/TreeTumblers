@@ -10,7 +10,6 @@ class TowerAscentScoreboard(
     val player: Player,
     gameData: GameData
 ) : HandledScoreboard.GameScoreboard(gameData, NamedTextColor.LIGHT_PURPLE) {
-    override val id: String = "towerAscentScoreboard"
     override fun getLines(): ArrayList<Component> {
         return arrayListOf()
     }

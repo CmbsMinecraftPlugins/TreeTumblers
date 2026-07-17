@@ -78,17 +78,21 @@ object GameController : IController {
         PlayerController.players.forEach {
             it.disableActionBar("eventTeamActionBar")
         }
-        game.load(true)
-        game.finishLoading()
-        if(!skipCutscenes) game.runCutscene()
-        game.pregame()
 
         var exception = false
         activeGameJob = TreeTumblers.pluginScope.launch {
             try {
+                game.load(true)
+                game.finishLoading()
+                if(!skipCutscenes) {
+                    game.runCutscene()
+                }
+                game.pregame()
                 game.gameMain()
             } catch (e: Throwable) {
                 exception = true
+                if(game.currentState == AbstractGame.State.LOADING) game.finishLoading()
+
                 DebugUtil.severe("Game encountered an exception during execution: ${e.javaClass.simpleName} ${e.message} (${e.stackTrace[0]})")
 
                 Bukkit.broadcast(Format.error("An error has occurred that requires this game to be cancelled. Scores will not be changed and the server may require a restart."))
