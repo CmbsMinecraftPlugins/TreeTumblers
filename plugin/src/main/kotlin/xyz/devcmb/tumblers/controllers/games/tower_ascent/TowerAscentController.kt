@@ -4,19 +4,27 @@ import com.sk89q.worldedit.WorldEdit
 import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.math.transform.AffineTransform
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockTypes
+import com.sun.tools.javac.tree.TreeInfo.endPos
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
+import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPivot
+import xyz.devcmb.tumblers.util.getPostPasteBounds
+import xyz.devcmb.tumblers.util.getPostPasteLocation
+import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.validateElements
 import xyz.devcmb.tumblers.util.validateList
@@ -50,6 +58,15 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         val map = loadMap(data.maps.random(), 1)
         val mapTemplates = File(templatesDirectory, map.id)
 
+        val mapEndingElevator = loadSchematic(File(mapTemplates, "elevator_end.schem"))
+        val mapStartingElevator = loadSchematic(File(mapTemplates, "elevator_start.schem"))
+
+        mapStartingElevator.origin = mapStartingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)
+            ?: throw GameControllerException("Starting elevator for map ${map.id} does not have a diamond block origin line")
+
+        mapEndingElevator.origin = mapEndingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)
+            ?: throw GameControllerException("Ending elevator for map ${map.id} does not have a diamond block origin line")
+
         val mapRooms = map.data.getList("rooms")?.mapIndexed { index, room ->
             if(
                 room !is HashMap<*, *>
@@ -70,20 +87,19 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                 reader.read()
             }
 
-            val startPivot = clipboard
-                .getPivot(BlockTypes.DIAMOND_BLOCK!!)
+            val startPivot = clipboard.getPivot(BlockTypes.DIAMOND_BLOCK!!)
                 ?: throw GameControllerException("Room $id does not contain a start pivot of 5 diamond blocks")
 
-            val endPivot = clipboard
-                .getPivot(BlockTypes.REDSTONE_BLOCK!!)
+            clipboard.getPivot(BlockTypes.REDSTONE_BLOCK!!)
                 ?: throw GameControllerException("Room $id does not contain an end pivot of 5 redstone blocks")
 
+            clipboard.origin = startPivot
+
+            val pivotReplacementMaterial = Material.valueOf((room["pivot_replacement_material"] as String).uppercase())
             RoomDefinition(
                 id,
-                Material.valueOf((room["pivot_replacement_material"] as String).uppercase()),
+                pivotReplacementMaterial,
                 clipboard,
-                startPivot,
-                endPivot
             )
         } ?: throw GameControllerException("Map data does not contain room data")
 
@@ -108,33 +124,77 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         val rooms = (0..<roomCount).map { mapRooms.random() }
         pivots.forEach { pivot ->
             var startPos = pivot
-            rooms.forEachIndexed { index, definition ->
-                val room = mapRooms.random()
-                val holder = ClipboardHolder(room.clipboard)
+            rooms.forEachIndexed { index, room ->
+                if(index != 0) {
+                    val startingElevatorHolder = ClipboardHolder(mapStartingElevator)
 
-                if(index % 2 == 1) {
-                    holder.transform = AffineTransform().rotateY(180.0)
+                    val startingElevatorOperation = startingElevatorHolder
+                        .createPaste(editSession)
+                        .to(startPos.toBlockVector3())
+                        .ignoreAirBlocks(true)
+                        .build()
+                    Operations.complete(startingElevatorOperation)
+
+                    val pivot = mapStartingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)!!
+                    startPos = mapStartingElevator.getPostPasteLocation(
+                        pivot,
+                        startPos
+                    )
                 }
 
-                val operation = holder
+                val roomOperation = ClipboardHolder(room.clipboard)
                     .createPaste(editSession)
                     .to(startPos.toBlockVector3())
+                    .ignoreAirBlocks(true)
                     .build()
+                DebugUtil.info("Loading room at $startPos")
 
-                // TODO: Complete the operation and spawn the elevator
+                val roomEndPivot = room.clipboard.getPivot(BlockTypes.REDSTONE_BLOCK!!)!!
+                val endPosWorld = room.clipboard.getPostPasteLocation(roomEndPivot, startPos)
+
+                val elevatorOperation = ClipboardHolder(mapEndingElevator)
+                    .createPaste(editSession)
+                    .to(endPosWorld.toBlockVector3())
+                    .ignoreAirBlocks(true)
+                    .build()
+                DebugUtil.info("Loading elevator at $endPosWorld")
+
+                Operations.complete(roomOperation)
+                Operations.complete(elevatorOperation)
+                editSession.flushQueue()
+
+                val bounds = room.clipboard.getPostPasteBounds(startPos)
+                suspendSync {
+                    bounds.first.forEachRegion(bounds.second) {
+                        if(it.type == Material.REDSTONE_BLOCK || it.type == Material.DIAMOND_BLOCK)
+                            it.type = room.pivotReplacementMaterial
+                    }
+                }
+
+                startPos = startPos.add(
+                    60.0 * placementAxis.xIncrease,
+                    0.0,
+                    60.0 * placementAxis.zIncrease
+                )
             }
         }
+
+        editSession.close()
+    }
+
+    fun loadSchematic(file: File): Clipboard {
+        return ClipboardFormats.findByFile(file)?.getReader(file.inputStream())?.use { reader ->
+            reader.read()
+        } ?: throw GameControllerException("Failed to load ${file.name} to a clipboard")
     }
 
     data class RoomDefinition(
         val id: String,
         val pivotReplacementMaterial: Material,
-        val clipboard: Clipboard,
-        val startPivot: BlockVector3,
-        val endPivot: BlockVector3,
+        val clipboard: Clipboard
     )
 
-    enum class Axis(val xIncrease: Int, val yIncrease: Int) {
+    enum class Axis(val xIncrease: Int, val zIncrease: Int) {
         X(1, 0),
         Z(0, 1)
     }

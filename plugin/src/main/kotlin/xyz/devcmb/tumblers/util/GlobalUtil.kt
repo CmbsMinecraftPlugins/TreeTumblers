@@ -1,7 +1,11 @@
 package xyz.devcmb.tumblers.util
 
+import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard
 import com.sk89q.worldedit.extent.clipboard.Clipboard
+import com.sk89q.worldedit.function.operation.ForwardExtentCopy
+import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
