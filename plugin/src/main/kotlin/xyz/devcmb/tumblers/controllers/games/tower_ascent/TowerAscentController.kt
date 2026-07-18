@@ -7,8 +7,14 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockTypes
+import io.papermc.paper.util.Tick
+import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextColor
+import net.kyori.adventure.text.format.TextDecoration
+import net.kyori.adventure.title.Title
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -23,12 +29,14 @@ import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.getPivot
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.toBlockVector3
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import xyz.devcmb.tumblers.util.validateElements
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
@@ -283,7 +291,29 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      * The method to invoke after the game has ended
      */
     override suspend fun postGame() {
-        TODO("Not yet implemented")
+        val placements = getTeamPlacements()
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach { plr ->
+            val teamPlacement = placements.find { it.first == plr.tumblingPlayer.team }!!.second
+
+            val color = when(teamPlacement) {
+                1 -> NamedTextColor.GOLD
+                2 -> TextColor.fromHexString("#E0E0E0")
+                3 -> TextColor.fromHexString("#CE8946")
+                else -> NamedTextColor.AQUA
+            }
+
+            plr.showTitle(Title.title(
+                Component.text("Game Over!", NamedTextColor.RED).decorate(TextDecoration.BOLD),
+                Format.mm("<white>Team <color:${color!!.asHexString()}>$teamPlacement${getOrdinalSuffix(teamPlacement)}</color> place!"),
+                Title.Times.times(Tick.of(3), Tick.of(90), Tick.of(3))
+            ))
+            plr.sendMessage(gameMessage(Component.text("Game Over!")))
+        }
+
+        delay(5000)
+        announceTeamScores()
+        announceIndivScores()
+        announceOverallTeamScores()
     }
 
     /**
