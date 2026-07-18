@@ -93,7 +93,11 @@ object GameController : IController {
                 exception = true
                 if(game.currentState == AbstractGame.State.LOADING) game.finishLoading()
 
-                DebugUtil.severe("Game encountered an exception during execution: ${e.javaClass.simpleName} ${e.message} (${e.stackTrace[0]})")
+                DebugUtil.severe("Game encountered an exception during execution: ${e.javaClass.simpleName} ${e.message}\n${
+                    e.stackTrace.joinToString(
+                        "\n"
+                    ) { it.toString() }
+                }")
 
                 Bukkit.broadcast(Format.error("An error has occurred that requires this game to be cancelled. Scores will not be changed and the server may require a restart."))
                 delay(5000)

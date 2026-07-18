@@ -3,6 +3,6 @@
 # 
 # For more information, see https://docs.papermc.io/paper/reference/configuration/#per-world-configuration
 # 
-# World: minecraft:tower
+# World: minecraft:temp_tower
 
 _version: 31

@@ -5,26 +5,29 @@ import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
-import com.sk89q.worldedit.math.BlockVector3
-import com.sk89q.worldedit.math.transform.AffineTransform
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockTypes
-import com.sun.tools.javac.tree.TreeInfo.endPos
+import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.text.Component
+import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Player
-import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
+import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.DebugUtil
+import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPivot
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
 import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.validateElements
 import xyz.devcmb.tumblers.util.validateList
@@ -32,6 +35,8 @@ import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
 import java.util.HashMap
 import kotlin.io.path.Path
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 @EventGame
 class TowerAscentController : AbstractGame(TowerAscentData) {
@@ -46,6 +51,9 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                 return field.replace("&", TreeTumblers.plugin.dataPath.toString())
             }
     }
+
+    val loadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
+    val teamRoomSetIndexes: HashMap<Team, Int> = HashMap()
 
     /**
      * The load sequence that each individual game should do
@@ -122,9 +130,11 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             ?: throw GameControllerException("Map room pivots were not provided")
 
         val rooms = (0..<roomCount).map { mapRooms.random() }
+        val loadedRooms: ArrayList<LoadedRoom> = ArrayList()
         pivots.forEach { pivot ->
             var startPos = pivot
             rooms.forEachIndexed { index, room ->
+                var startingElevatorBounds: Pair<Location, Location>? = null
                 if(index != 0) {
                     val startingElevatorHolder = ClipboardHolder(mapStartingElevator)
 
@@ -140,6 +150,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                         pivot,
                         startPos
                     )
+                    startingElevatorBounds = mapStartingElevator.getPostPasteBounds(startPos)
                 }
 
                 val roomOperation = ClipboardHolder(room.clipboard)
@@ -163,9 +174,9 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                 Operations.complete(elevatorOperation)
                 editSession.flushQueue()
 
-                val bounds = room.clipboard.getPostPasteBounds(startPos)
+                val roomBounds = room.clipboard.getPostPasteBounds(startPos)
                 suspendSync {
-                    bounds.first.forEachRegion(bounds.second) {
+                    roomBounds.first.forEachRegion(roomBounds.second) {
                         if(it.type == Material.REDSTONE_BLOCK || it.type == Material.DIAMOND_BLOCK)
                             it.type = room.pivotReplacementMaterial
                     }
@@ -176,9 +187,20 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                     0.0,
                     60.0 * placementAxis.zIncrease
                 )
+
+                val endingElevatorBounds: Pair<Location, Location> = mapEndingElevator
+                    .getPostPasteBounds(endPosWorld)
+
+                loadedRooms.add(LoadedRoom(
+                    room,
+                    roomBounds,
+                    startingElevatorBounds,
+                    endingElevatorBounds
+                ))
             }
         }
 
+        this.loadedRooms.add(loadedRooms)
         editSession.close()
     }
 
@@ -194,6 +216,13 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         val clipboard: Clipboard
     )
 
+    data class LoadedRoom(
+        val room: RoomDefinition,
+        val roomBounds: Pair<Location, Location>,
+        val startingElevatorBounds: Pair<Location, Location>?,
+        val endingElevatorBounds: Pair<Location, Location>,
+    )
+
     enum class Axis(val xIncrease: Int, val zIncrease: Int) {
         X(1, 0),
         Z(0, 1)
@@ -207,7 +236,34 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      * @param cycle The stage where the players are spawned
      */
     override suspend fun spawn(cycle: SpawnCycle) {
-        TODO("Not yet implemented")
+        if(cycle != SpawnCycle.PREGAME) return
+
+        suspendSync {
+            Team.nonPlayingTeams.forEach {
+                spawnPlayers(map, it.getOnlinePlayers(), TowerAscentSpawn.SET_1)
+            }
+
+            Team.playingTeams.forEachIndexed { index, team ->
+                teamRoomSetIndexes[team] = index
+                spawnPlayers(map, team.getOnlinePlayers(), TowerAscentSpawn.valueOf("SET_${index + 1}"))
+            }
+        }
+    }
+
+    override suspend fun gamePregame() {
+        timer(Timer(20.seconds) {
+            id = "tower_ascent_game_start"
+            title = "Game Start"
+            joined = true
+
+            timeExecution(10) {
+                titleCountdown(
+                    Audience.audience(gamePlayers.mapNotNull { it.bukkitPlayer }),
+                    Format.mm("Game starts in"),
+                    10
+                )
+            }
+        })
     }
 
     /**
@@ -216,7 +272,11 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      * This should contain any kind of game-specific logic, and round handling if applicable
      */
     override suspend fun gameOn() {
-        TODO("Not yet implemented")
+        timer(Timer(12.minutes) {
+            id = "tower_ascent_game_on"
+            title = "Game Over"
+            joined = true
+        })
     }
 
     /**

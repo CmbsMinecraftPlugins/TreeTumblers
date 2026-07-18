@@ -94,6 +94,13 @@ enum class Team(
         false
     );
 
+    companion object {
+        val playingTeams
+            get() = Team.entries.filter { it.playingTeam }
+        val nonPlayingTeams
+            get() = Team.entries.filter { !it.playingTeam }
+    }
+
     val iconGlyph: String = Font.getGlyphString("icon/team/${this.name.lowercase()}")
     val formattedIcon: Component = Font.getGlyph("icon/team/${this.name.lowercase()}")
 
