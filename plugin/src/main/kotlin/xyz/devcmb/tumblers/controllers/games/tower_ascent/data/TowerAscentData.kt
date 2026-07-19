@@ -1,5 +1,6 @@
-package xyz.devcmb.tumblers.controllers.games.tower_ascent
+package xyz.devcmb.tumblers.controllers.games.tower_ascent.data
 
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentScoreboard
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map

@@ -614,10 +614,39 @@ games:
         world: "tower"
         data:
           placement_axis: z
+          loadouts:
+            - { id: weak_ranged, armor: [], weapon: base_bow }
+            - { id: weak_melee, armor: [], weapon: stone_sword }
+
+            - { id: medium_1_ranged, armor: [base_iron_chestplate], weapon: base_bow }
+            - { id: medium_1_melee, armor: [base_iron_chestplate], weapon: iron_sword }
+            - { id: medium_2_ranged, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: base_bow }
+            - { id: medium_2_melee, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: iron_sword }
+          spawn_groups:
+            # Weak
+            - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged }
+            - { id: stray_weak, mob: stray, loadout: weak_ranged }
+            - { id: zombie_weak, mob: zombie, loadout: weak_ranged }
+            - { id: husk_weak, mob: husk, loadout: weak_ranged }
+
+            # Medium
+            - { id: skeleton_medium_1, mob: skeleton, loadout: medium_1_ranged }
+            - { id: stray_medium_1, mob: stray, loadout: medium_1_ranged }
+            - { id: zombie_medium_1, mob: zombie, loadout: medium_1_melee }
+            - { id: husk_medium_1, mob: husk, loadout: medium_1_melee }
+
+            - { id: skeleton_medium_2, mob: skeleton, loadout: medium_2_ranged }
+            - { id: stray_medium_2, mob: stray, loadout: medium_2_ranged }
+            - { id: zombie_medium_2, mob: zombie, loadout: medium_2_melee }
+            - { id: husk_medium_2, mob: husk, loadout: medium_2_melee }
           spawns:
             - pivot: [-1,64,3]
+              # x1,y1,z1,x2,y2,z2
               wall: [0, 69, 6, 0, 65, 0]
           rooms:
             - id: testing_room
               # The material name that will replace all diamond and redstone blocks in the build
               pivot_replacement_material: BLACKSTONE
+              mob_sets:
+                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_weak, amount: 6 }]
+                - [{ group: skeleton_weak, amount: 4 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]

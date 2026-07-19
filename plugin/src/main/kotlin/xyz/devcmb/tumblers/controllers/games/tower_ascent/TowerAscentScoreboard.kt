@@ -13,7 +13,7 @@ class TowerAscentScoreboard(
     gameData: GameData
 ) : HandledScoreboard.GameScoreboard(gameData, NamedTextColor.LIGHT_PURPLE) {
     override fun getLines(): ArrayList<Component> {
-        val game = GameController.activeGame as TowerAscentController
+        val game = GameController.activeGame as? TowerAscentController ?: return arrayListOf()
         return arrayListOf(
             Component.empty(),
             UserInterfaceUtility.timer(game),

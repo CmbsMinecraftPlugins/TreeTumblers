@@ -1,4 +1,4 @@
-package xyz.devcmb.tumblers.controllers.games.tower_ascent
+package xyz.devcmb.tumblers.controllers.games.tower_ascent.data
 
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 
