@@ -61,6 +61,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     }
 
     val loadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
+    val mapSpawns: ArrayList<MapSpawn> = ArrayList()
     val teamRoomSetIndexes: HashMap<Team, Int> = HashMap()
 
     /**
@@ -130,17 +131,35 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             .fastMode(true)
             .build()
 
-        val pivots = map.data.getList("pivots")
-            ?.validateList<List<*>>()
-            ?.map {
-                it.validateLocation(map.world) ?: throw GameControllerException("Map room pivot is not a valid location")
-            }
-            ?: throw GameControllerException("Map room pivots were not provided")
+        val spawns = map.data.getList("spawns")?.mapIndexed { index, spawn ->
+            if(
+                spawn !is HashMap<*, *>
+                || !spawn.validateElements(hashMapOf(
+                    "pivot" to { it is List<*> && it.validateLocation(map.world) != null },
+                    "wall" to {
+                        it is List<*>
+                        && it.take(3).validateLocation(map.world) != null
+                        && it.takeLast(3).validateLocation(map.world) != null
+                    }
+                ))
+            ) throw GameControllerException("Spawn $index is not formatted properly")
+
+            val wall = spawn["wall"] as List<*>
+            MapSpawn(
+                (spawn["pivot"] as List<*>).validateLocation(map.world)!!,
+                Pair(
+                    wall.take(3).validateLocation(map.world)!!,
+                    wall.takeLast(3).validateLocation(map.world)!!
+                )
+            )
+        } ?: throw GameControllerException("Spawns list not provided for map ${map.id}")
 
         val rooms = (0..<roomCount).map { mapRooms.random() }
         val loadedRooms: ArrayList<LoadedRoom> = ArrayList()
-        pivots.forEach { pivot ->
-            var startPos = pivot
+        spawns.forEach { spawn ->
+            mapSpawns.add(spawn)
+
+            var startPos = spawn.pivot
             rooms.forEachIndexed { index, room ->
                 var startingElevatorBounds: Pair<Location, Location>? = null
                 if(index != 0) {
@@ -231,6 +250,11 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         val endingElevatorBounds: Pair<Location, Location>,
     )
 
+    data class MapSpawn(
+        val pivot: Location,
+        val wallBounds: Pair<Location, Location>,
+    )
+
     enum class Axis(val xIncrease: Int, val zIncrease: Int) {
         X(1, 0),
         Z(0, 1)
@@ -253,6 +277,13 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
 
             Team.playingTeams.forEachIndexed { index, team ->
                 teamRoomSetIndexes[team] = index
+
+                mapSpawns.getOrNull(index)?.let {
+                    it.wallBounds.first.forEachRegion(it.wallBounds.second) { block ->
+                        block.type = team.glass
+                    }
+                }
+
                 spawnPlayers(map, team.getOnlinePlayers(), TowerAscentSpawn.valueOf("SET_${index + 1}"))
             }
         }
@@ -272,6 +303,14 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                 )
             }
         })
+
+        suspendSync {
+            mapSpawns.forEach {
+                it.wallBounds.first.forEachRegion(it.wallBounds.second) { block ->
+                    block.type = Material.AIR
+                }
+            }
+        }
     }
 
     /**

@@ -18,6 +18,7 @@ enum class Team(
     val color: TextColor,
     val namedColor: NamedTextColor,
     val concrete: Material,
+    val glass: Material,
     val priority: Int,
     val playingTeam: Boolean = true
 ) {
@@ -26,6 +27,7 @@ enum class Team(
         NamedTextColor.RED,
         NamedTextColor.RED,
         Material.RED_CONCRETE,
+        Material.RED_STAINED_GLASS,
         1
     ),
     ORANGE(
@@ -33,6 +35,7 @@ enum class Team(
         TextColor.fromHexString("#ff9100")!!,
         NamedTextColor.GOLD,
         Material.ORANGE_CONCRETE,
+        Material.ORANGE_STAINED_GLASS,
         2
     ),
     YELLOW(
@@ -40,6 +43,7 @@ enum class Team(
         NamedTextColor.YELLOW,
         NamedTextColor.YELLOW,
         Material.YELLOW_CONCRETE,
+        Material.YELLOW_STAINED_GLASS,
         3
     ),
     GREEN(
@@ -47,18 +51,21 @@ enum class Team(
         NamedTextColor.GREEN,
         NamedTextColor.GREEN,
         Material.LIME_CONCRETE,
+        Material.LIME_STAINED_GLASS,
         4
     ),
     AQUA("Aqua Alpacas",
         NamedTextColor.AQUA,
         NamedTextColor.AQUA,
         Material.LIGHT_BLUE_CONCRETE,
+        Material.LIGHT_BLUE_STAINED_GLASS,
         5
     ),
     BLUE("Blue Boars",
         NamedTextColor.BLUE,
         NamedTextColor.BLUE,
         Material.BLUE_CONCRETE,
+        Material.BLUE_STAINED_GLASS,
         6
     ),
     PURPLE(
@@ -66,6 +73,7 @@ enum class Team(
         TextColor.fromHexString("#bb00ff")!!,
         NamedTextColor.DARK_PURPLE,
         Material.PURPLE_CONCRETE,
+        Material.PURPLE_STAINED_GLASS,
         7
     ),
     PINK(
@@ -73,6 +81,7 @@ enum class Team(
         TextColor.fromHexString("#ff5cd9")!!,
         NamedTextColor.LIGHT_PURPLE,
         Material.PINK_CONCRETE,
+        Material.PINK_STAINED_GLASS,
         8
     ),
 
@@ -82,6 +91,7 @@ enum class Team(
         NamedTextColor.GRAY,
         NamedTextColor.GRAY,
         Material.GRAY_CONCRETE,
+        Material.GRAY_STAINED_GLASS,
         9,
         false
     ),
@@ -90,6 +100,7 @@ enum class Team(
         TextColor.fromHexString("#00c8ff")!!,
         NamedTextColor.AQUA,
         Material.CYAN_CONCRETE,
+        Material.CYAN_STAINED_GLASS,
         10,
         false
     );
