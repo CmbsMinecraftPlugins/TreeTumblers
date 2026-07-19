@@ -1,11 +1,7 @@
 package xyz.devcmb.tumblers.util
 
-import com.sk89q.worldedit.extent.clipboard.BlockArrayClipboard
 import com.sk89q.worldedit.extent.clipboard.Clipboard
-import com.sk89q.worldedit.function.operation.ForwardExtentCopy
-import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
-import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
@@ -28,6 +24,7 @@ import org.bukkit.block.Block
 import org.bukkit.configuration.MemorySection
 import org.bukkit.entity.Firework
 import org.bukkit.entity.Interaction
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -292,6 +289,22 @@ fun Location.randomBetween(other: Location): Location {
     return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
 }
 
+fun Location.randomBetween(other: Location, predicate: (block: Block) -> Boolean): Location? {
+    val locations = arrayListOf<Block>()
+    forEachRegion(other) {
+        if(predicate(it)) {
+            locations.add(it)
+        }
+    }
+
+    if(locations.isEmpty()) {
+        DebugUtil.warning("Predicate for randomBetween did not leave any valid locations")
+        return null
+    }
+
+    return locations.random().location
+}
+
 /** Gets the minimum location of [this] and [other] **/
 fun Location.minOf(other: Location): Location {
     return Location(this.world, min(this.x, other.x), min(this.y, other.y), min(this.z, other.z))
@@ -476,6 +489,20 @@ fun isArmor(item: ItemStack): Boolean {
     }
 }
 
+fun LivingEntity.equipArmor(armor: Iterable<ItemStack>) {
+    val equipment = equipment ?: return
+
+    armor.forEach { item ->
+        when (item.type.equipmentSlot) {
+            EquipmentSlot.HEAD -> equipment.setHelmet(item)
+            EquipmentSlot.CHEST -> equipment.setChestplate(item)
+            EquipmentSlot.LEGS -> equipment.setLeggings(item)
+            EquipmentSlot.FEET -> equipment.setBoots(item)
+            else -> throw IllegalArgumentException("Unexpected equipment slot: ${item.type.equipmentSlot}")
+        }
+    }
+}
+
 /** Formats [seconds] in the format M:SS **/
 fun formatToMSS(seconds: Int): String {
     val duration = Duration.ofSeconds(seconds.toLong())
@@ -593,7 +620,7 @@ suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int)
 inline fun <reified T> configurable(path: String): T {
     val cfg = TreeTumblers.plugin.config
     if(!cfg.contains(path)) throw TumblingConfigKeyMissingException(path)
-    if(!cfg.isSet(path)) DebugUtil.warning("Config path $path is not set! Defaulting to default value.")
+    if(!cfg.isSet(path)) DebugUtil.warning("Config path $path is not set! Using default value instead.")
 
     val value = when(T::class) {
         Int::class -> cfg.getInt(path)
@@ -741,4 +768,14 @@ fun Clipboard.getPivot(type: BlockType, length: Int = 5): BlockVector3? {
     }
 
     return null
+}
+
+val Long.ticks
+    get() = Tick.of(this)
+
+val Int.ticks
+    get() = this.toLong().ticks
+
+fun Location.isEnclosed(): Boolean {
+    return this.world.getHighestBlockYAt(this) > this.y
 }

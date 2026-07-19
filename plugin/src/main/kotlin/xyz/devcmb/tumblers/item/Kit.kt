@@ -70,7 +70,7 @@ object Kit {
             }
         }
 
-        class TeamConcreteItem(val droppableOverride: Boolean?) : KitItem {
+        class TeamConcreteItem(val droppableOverride: Boolean? = null) : KitItem {
             override fun getStack(kit: KitDefinition, player: Player): ItemStack {
                 return AdvancedItemStack(ItemStack.of(player.tumblingPlayer.team.concrete)) {
                     returnOnPlace = true

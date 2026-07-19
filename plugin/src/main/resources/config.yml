@@ -626,8 +626,8 @@ games:
             # Weak
             - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged }
             - { id: stray_weak, mob: stray, loadout: weak_ranged }
-            - { id: zombie_weak, mob: zombie, loadout: weak_ranged }
-            - { id: husk_weak, mob: husk, loadout: weak_ranged }
+            - { id: zombie_weak, mob: zombie, loadout: weak_melee }
+            - { id: husk_weak, mob: husk, loadout: weak_melee }
 
             # Medium
             - { id: skeleton_medium_1, mob: skeleton, loadout: medium_1_ranged }
@@ -648,5 +648,7 @@ games:
               # The material name that will replace all diamond and redstone blocks in the build
               pivot_replacement_material: BLACKSTONE
               mob_sets:
-                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_weak, amount: 6 }]
-                - [{ group: skeleton_weak, amount: 4 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
+                # TODO: Remove, this is just for debug
+                - [{ group: zombie_weak, amount: 1 }]
+#                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
+#                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]

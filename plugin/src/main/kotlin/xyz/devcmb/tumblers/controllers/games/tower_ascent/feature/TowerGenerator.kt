@@ -7,8 +7,16 @@ import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
 import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockTypes
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.entity.Husk
+import org.bukkit.entity.Mob
+import org.bukkit.entity.Skeleton
+import org.bukkit.entity.Stray
+import org.bukkit.entity.Zombie
+import org.bukkit.event.HandlerList
+import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
@@ -22,6 +30,7 @@ import xyz.devcmb.tumblers.util.getPostPasteLocation
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.validateElements
+import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
 import java.io.File
 import java.util.HashMap
@@ -35,6 +44,11 @@ class TowerGenerator(
 ) {
     val loadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
     val mapSpawns: ArrayList<MapSpawn> = ArrayList()
+
+    val loadouts: ArrayList<MobLoadout> = ArrayList()
+    val spawnGroups: ArrayList<SpawnGroup> = ArrayList()
+    val towerHandlers: ArrayList<TowerHandler> = ArrayList()
+
     val roomCount: Int = configurable("${controller.configRoot}.rooms")
 
     val templatesDirectory: String = configurable("templates.tower_ascent_templates")
@@ -43,6 +57,8 @@ class TowerGenerator(
         }
 
     suspend fun generateTowers() {
+        loadMobSets()
+
         val mapTemplates = File(templatesDirectory, map.id)
 
         val mapEndingElevator = loadSchematic(File(mapTemplates, "elevator_end.schem"))
@@ -141,6 +157,10 @@ class TowerGenerator(
             }
         }
 
+        val handler = TowerHandler(map, loadouts, spawnGroups, loadedRooms)
+        Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
+        towerHandlers.add(handler)
+
         this.loadedRooms.add(loadedRooms)
         editSession.close()
     }
@@ -152,7 +172,13 @@ class TowerGenerator(
                 room !is HashMap<*, *>
                 || !room.validateElements(hashMapOf(
                     "id" to { it is String },
-                    "pivot_replacement_material" to { it is String && Material.entries.any { entry -> entry.name.equals(it, true) } }
+                    "pivot_replacement_material" to { it is String && Material.entries.any { entry -> entry.name.equals(it, true) } },
+                    "mob_sets" to { it is List<*> && it.all { setEntry ->
+                        setEntry is List<*>
+                        && setEntry.all { groupEntry ->
+                            groupEntry is HashMap<*,*> && groupEntry["group"] is String && groupEntry["amount"] is Int
+                        }
+                    } }
                 ))
             ) throw GameControllerException("Room definition $index is not formatted properly")
 
@@ -179,6 +205,13 @@ class TowerGenerator(
             RoomDefinition(
                 id,
                 pivotReplacementMaterial,
+                (room["mob_sets"] as List<*>).map {
+                    val list = it as List<*>
+                    list.map { listEntry ->
+                        val map = listEntry as HashMap<*, *>
+                        MobSet(map["group"] as String, map["amount"] as Int)
+                    }
+                },
                 clipboard,
             )
         } ?: throw GameControllerException("Map data does not contain room data")
@@ -215,6 +248,62 @@ class TowerGenerator(
         } ?: throw GameControllerException("Failed to load ${file.name} to a clipboard")
     }
 
+    private fun loadMobSets() {
+        val mapLoadouts = map.data.getList("loadouts")?.mapIndexed { index, loadout ->
+            if(
+                loadout !is HashMap<*, *>
+                || !loadout.validateElements(hashMapOf(
+                    "id" to { it is String },
+                    "armor" to {
+                        it is List<*>
+                                && it.validateList<String>() != null
+                                && it.all { entry ->
+                            MobArmorItem.entries.any { armorEntry -> armorEntry.id.equals((entry as String), true) }
+                        }
+                    },
+                    "weapon" to { it is String && MobWeaponItem.entries.any { entry -> entry.id.equals(it, true) } }
+                ))
+            ) throw GameControllerException("Loadout $index is not properly formatted")
+
+            MobLoadout(
+                loadout["id"] as String,
+                (loadout["armor"] as List<*>).map {
+                    MobArmorItem.entries.find { entry -> entry.id.equals(it as String, true) }!!
+                },
+                MobWeaponItem.entries.find { entry -> entry.id.equals(loadout["weapon"] as String, true) }!!
+            )
+        } ?: throw GameControllerException("Map loadouts for ${map.id} were not provided")
+
+        val mapSpawnGroups = map.data.getList("spawn_groups")?.mapIndexed { index, group ->
+            if(
+                group !is HashMap<*, *>
+                || !group.validateElements(hashMapOf(
+                    "id" to { it is String },
+                    "mob" to { it is String && SpawnableMob.entries.any { entry -> entry.id.equals(it, true)} },
+                    "loadout" to { it is String && mapLoadouts.any { entry -> entry.id.equals(it, true) } }
+                ))
+            ) throw GameControllerException("Spawn group $index is not properly formatted")
+
+            SpawnGroup(
+                group["id"] as String,
+                SpawnableMob.entries.find { it.id.equals(group["mob"] as String, true) }!!,
+                group["loadout"] as String,
+            )
+        } ?: throw GameControllerException("Spawn groups for map ${map.id} were not provided")
+
+        loadouts.addAll(mapLoadouts)
+        spawnGroups.addAll(mapSpawnGroups)
+
+        DebugUtil.info("Loaded the following loadouts: $mapLoadouts")
+        DebugUtil.info("Loaded the following spawn groups: $mapSpawnGroups")
+    }
+
+    fun cleanup() {
+        towerHandlers.forEach {
+            HandlerList.unregisterAll(it)
+        }
+    }
+
     enum class Axis(val xIncrease: Int, val zIncrease: Int) {
         X(1, 0),
         Z(0, 1)
@@ -223,8 +312,12 @@ class TowerGenerator(
     data class RoomDefinition(
         val id: String,
         val pivotReplacementMaterial: Material,
+        val mobSets: List<List<MobSet>>,
+
         val clipboard: Clipboard
     )
+
+    data class MobSet(val group: String, val amount: Int)
 
     data class LoadedRoom(
         val room: RoomDefinition,
@@ -237,4 +330,37 @@ class TowerGenerator(
         val pivot: Location,
         val wallBounds: Pair<Location, Location>,
     )
+
+    data class SpawnGroup(
+        val id: String,
+        val mob: SpawnableMob,
+        /** Relational to a [MobLoadout.id] */
+        val loadout: String
+    )
+
+    data class MobLoadout(
+        val id: String,
+        val armor: List<MobArmorItem>,
+        val weapon: MobWeaponItem
+    )
+
+    enum class SpawnableMob(val id: String, val entity: Class<out Mob>) {
+        SKELETON("skeleton", Skeleton::class.java),
+        STRAY("stray", Stray::class.java),
+        ZOMBIE("zombie", Zombie::class.java),
+        HUSK("husk", Husk::class.java)
+    }
+
+    enum class MobWeaponItem(val id: String, val item: ItemStack) {
+        BASE_BOW("base_bow", ItemStack(Material.BOW)),
+        STONE_SWORD("stone_sword", ItemStack(Material.STONE_SWORD)),
+        IRON_SWORD("iron_sword", ItemStack(Material.IRON_SWORD)),
+    }
+
+    enum class MobArmorItem(val id: String, val item: ItemStack) {
+        BASE_IRON_CHESTPLATE("base_iron_chestplate", ItemStack(Material.IRON_CHESTPLATE)),
+        BASE_GOLD_HELMET("base_gold_helmet", ItemStack(Material.GOLDEN_HELMET)),
+        BASE_LEATHER_CHESTPLATE("base_leather_chestplate", ItemStack(Material.LEATHER_CHESTPLATE)),
+        BASE_IRON_BOOTS("base_iron_boots", ItemStack(Material.IRON_BOOTS)),
+    }
 }
