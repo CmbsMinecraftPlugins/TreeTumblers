@@ -1,17 +1,20 @@
 package xyz.devcmb.tumblers.controllers.games.tower_ascent
 
 import net.kyori.adventure.audience.Audience
+import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentData
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreSource
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentSpawn
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
+import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
@@ -34,6 +37,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     val teamRooms: HashMap<Team, Int>
         get() = HashMap(generator.towerHandlers.associate { it.team to it.currentRoomIndex })
     val teamCompletedRooms: HashMap<Team, Int> = HashMap()
+    val teamsFinished: ArrayList<Team> = ArrayList()
 
     val playerKit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
@@ -49,6 +53,15 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         override val defaultDropability: Boolean = true
         override val uuid: UUID = UUID.randomUUID()
     }
+
+    override val scoreMessages: kotlin.collections.HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+        TowerAscentScoreSource.COMPLETE_ROOM to {
+            gameMessage(Format.mm("Completed room <gold>[+$it]</gold>"))
+        },
+        TowerAscentScoreSource.COMPLETE_TOWER to {
+            gameMessage(Format.mm("Completed tower <gold>[+$it]</gold>"))
+        }
+    )
 
     /**
      * The load sequence that each individual game should do

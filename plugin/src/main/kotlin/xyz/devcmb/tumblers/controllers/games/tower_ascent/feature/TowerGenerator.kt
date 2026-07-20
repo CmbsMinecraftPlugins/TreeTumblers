@@ -32,6 +32,7 @@ import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.validateElements
 import xyz.devcmb.tumblers.util.validateList
 import xyz.devcmb.tumblers.util.validateLocation
+import xyz.devcmb.tumblers.util.withY
 import java.io.File
 import java.util.HashMap
 import kotlin.collections.take
@@ -42,7 +43,6 @@ class TowerGenerator(
     private val controller: TowerAscentController,
     private val map: LoadedMap
 ) {
-    val loadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
     val mapSpawns: ArrayList<MapSpawn> = ArrayList()
 
     val loadouts: ArrayList<MobLoadout> = ArrayList()
@@ -63,12 +63,16 @@ class TowerGenerator(
 
         val mapEndingElevator = loadSchematic(File(mapTemplates, "elevator_end.schem"))
         val mapStartingElevator = loadSchematic(File(mapTemplates, "elevator_start.schem"))
+        val mapEndRoom = loadSchematic(File(mapTemplates, "ending.schem"))
 
         mapStartingElevator.origin = mapStartingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)
             ?: throw GameControllerException("Starting elevator for map ${map.id} does not have a diamond block origin line")
 
         mapEndingElevator.origin = mapEndingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)
             ?: throw GameControllerException("Ending elevator for map ${map.id} does not have a diamond block origin line")
+
+        mapEndRoom.origin = mapEndRoom.getPivot(BlockTypes.DIAMOND_BLOCK!!)
+            ?: throw GameControllerException("Map ending room for map ${map.id} does not have a diamond block origin line")
 
         val mapRooms = getRooms()
         val spawns = getSpawns()
@@ -155,13 +159,50 @@ class TowerGenerator(
                     endingElevatorBounds
                 ))
             }
+
+            val endingRoomElevatorOperation = ClipboardHolder(mapStartingElevator)
+                .createPaste(editSession)
+                .to(startPos.toBlockVector3())
+                .ignoreAirBlocks(true)
+                .build()
+
+            val pivot = mapStartingElevator.getPivot(BlockTypes.DIAMOND_BLOCK!!)!!
+            val startingElevatorBounds = mapStartingElevator.getPostPasteBounds(startPos)
+            startPos = mapStartingElevator.getPostPasteLocation(
+                pivot,
+                startPos
+            )
+
+            val endingRoomOperation = ClipboardHolder(mapEndRoom)
+                .createPaste(editSession)
+                .to(startPos.toBlockVector3())
+                .ignoreAirBlocks(true)
+                .build()
+
+            Operations.complete(endingRoomElevatorOperation)
+            Operations.complete(endingRoomOperation)
+            editSession.flushQueue()
+
+            val roomBounds = mapEndRoom.getPostPasteBounds(startPos)
+            val endingBlocks: ArrayList<org.bukkit.util.Vector> = ArrayList()
+            roomBounds.first.forEachRegion(roomBounds.second) {
+                if(it.type == Material.WHITE_CONCRETE || it.type == Material.BLACK_CONCRETE) {
+                    repeat(5) { index ->
+                        endingBlocks.add(it.location.clone().withY(it.location.y + index).toBlockLocation().toVector())
+                    }
+                }
+            }
+
+            val endingRoom = LoadedEndingRoom(
+                endingBlocks,
+                startingElevatorBounds
+            )
+
+            val handler = TowerHandler(controller, map, loadouts, spawnGroups, loadedRooms, endingRoom)
+            Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
+            towerHandlers.add(handler)
         }
 
-        val handler = TowerHandler(controller, map, loadouts, spawnGroups, loadedRooms)
-        Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
-        towerHandlers.add(handler)
-
-        this.loadedRooms.add(loadedRooms)
         editSession.close()
     }
 
@@ -324,6 +365,11 @@ class TowerGenerator(
         val roomBounds: Pair<Location, Location>,
         val startingElevatorBounds: Pair<Location, Location>?,
         val endingElevatorBounds: Pair<Location, Location>,
+    )
+
+    data class LoadedEndingRoom(
+        val finish: List<org.bukkit.util.Vector>,
+        val startingElevatorBounds: Pair<Location, Location>
     )
 
     data class MapSpawn(

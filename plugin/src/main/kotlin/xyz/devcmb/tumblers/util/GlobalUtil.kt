@@ -780,41 +780,32 @@ fun Location.isEnclosed(): Boolean {
     return this.world.getHighestBlockYAt(this) > this.y
 }
 
+// ai code
 fun Pair<Location, Location>.getTeleportLocation(
     otherBoundary: Pair<Location, Location>,
     playerLocation: Location
 ): Location {
-    // Calculate center points of both room boundaries
-    val currentCenter = Location(
-        playerLocation.world,
-        (first.x + second.x) / 2,
-        (first.y + second.y) / 2,
-        (first.z + second.z) / 2
-    )
+    fun Pair<Location, Location>.center(): Triple<Double, Double, Double> {
+        return Triple(
+            (first.blockX + second.blockX + 1) / 2.0,
+            (first.blockY + second.blockY + 1) / 2.0,
+            (first.blockZ + second.blockZ + 1) / 2.0
+        )
+    }
 
-    val otherCenter = Location(
-        playerLocation.world,
-        (otherBoundary.first.x + otherBoundary.second.x) / 2,
-        (otherBoundary.first.y + otherBoundary.second.y) / 2,
-        (otherBoundary.first.z + otherBoundary.second.z) / 2
-    )
+    val (currentX, currentY, currentZ) = center()
+    val (otherX, otherY, otherZ) = otherBoundary.center()
 
-    // Calculate player's offset from current room center
-    val offsetX = playerLocation.x - currentCenter.x
-    val offsetY = playerLocation.y - currentCenter.y
-    val offsetZ = playerLocation.z - currentCenter.z
+    val offsetX = playerLocation.x - currentX
+    val offsetY = playerLocation.y - currentY
+    val offsetZ = playerLocation.z - currentZ
 
-    // Rotate offset 180° around y-axis (negate x and z)
-    val rotatedX = -offsetX
-    val rotatedZ = -offsetZ
-
-    // Apply rotated offset to other room's center
     return Location(
         playerLocation.world,
-        otherCenter.x + rotatedX,
-        otherCenter.y + offsetY,
-        otherCenter.z + rotatedZ,
-        (playerLocation.yaw + 180) % 360,  // Rotate yaw 180°
-        playerLocation.pitch               // Keep pitch the same
+        otherX - offsetX,
+        otherY + offsetY,
+        otherZ - offsetZ,
+        playerLocation.yaw + 180f,
+        playerLocation.pitch
     )
 }

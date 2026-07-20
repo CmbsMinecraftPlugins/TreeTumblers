@@ -19,12 +19,14 @@ import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreSource
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.equipArmor
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.formattedName
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.getTeleportLocation
 import xyz.devcmb.tumblers.util.isEnclosed
@@ -43,7 +45,8 @@ class TowerHandler(
     private val map: LoadedMap,
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
-    private val rooms: ArrayList<TowerGenerator.LoadedRoom>
+    private val rooms: ArrayList<TowerGenerator.LoadedRoom>,
+    private val endingRoom: TowerGenerator.LoadedEndingRoom
 ) : Listener {
     lateinit var team: Team
     var currentRoomIndex = 0
@@ -102,6 +105,7 @@ class TowerHandler(
 
                 val placement = controller.teamCompletedRooms.filter { it.value > currentRoomIndex }.size + 1
                 controller.teamCompletedRooms[team]?.inc()
+                controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_ROOM)
 
                 Bukkit.broadcast(controller.gameMessage(
                     Format.mm(
@@ -155,23 +159,29 @@ class TowerHandler(
     }
 
     fun advanceRoom() {
-        currentRoomIndex++
-        team.getOnlinePlayers().forEach {
-            val lastRoom = rooms[currentRoomIndex - 1]
+        val lastRoom = currentRoom
 
+        val isFinalRoom = currentRoomIndex == controller.generator.roomCount - 1
+        if(!isFinalRoom) currentRoomIndex++
+
+        val nextRoomStartingElevatorBounds =
+            if(isFinalRoom) endingRoom.startingElevatorBounds
+            else currentRoom.startingElevatorBounds!!
+
+        team.getOnlinePlayers().forEach {
             val newLoc = lastRoom.endingElevatorBounds.getTeleportLocation(
-                currentRoom.startingElevatorBounds!!,
+                nextRoomStartingElevatorBounds,
                 it.location
             )
             it.tp(newLoc)
         }
 
         runTaskLater(25) {
-            currentRoom.startingElevatorBounds!!.first.forEachRegion(currentRoom.startingElevatorBounds!!.second) {
+            nextRoomStartingElevatorBounds.first.forEachRegion(nextRoomStartingElevatorBounds.second) {
                 if(it.type == Material.IRON_BLOCK) it.type = Material.AIR
             }
 
-            TreeTumblers.pluginScope.launch {
+            if(!isFinalRoom) TreeTumblers.pluginScope.launch {
                 delay(300)
                 startRoom(currentRoom)
             }
@@ -190,7 +200,7 @@ class TowerHandler(
     fun playerEndingElevatorEvent(event: PlayerMoveEvent) {
         val player = event.player
         val team = player.tumblingPlayer.team
-        if(!gameOn || !team.playingTeam || SpectatorController.spectators.contains(player) || !elevatorOpen) return
+        if(!gameOn || !team.playingTeam || team != this.team || SpectatorController.spectators.contains(player) || !elevatorOpen) return
 
         val bounds = currentRoom.endingElevatorBounds
         val checkBounds =
@@ -214,6 +224,42 @@ class TowerHandler(
 
             runTaskLater(25) {
                 advanceRoom()
+            }
+        }
+    }
+
+    val completedPlayers: ArrayList<Player> = ArrayList()
+    @EventHandler
+    fun playerCompleteTowerEvent(event: PlayerMoveEvent) {
+        val player = event.player
+        val team = player.tumblingPlayer.team
+        if(
+            !team.playingTeam
+            || !gameOn
+            || this.team != team
+            || currentRoomIndex != (controller.generator.roomCount - 1)
+            || player in completedPlayers
+        ) return
+
+        if(event.to.toBlockLocation().toVector() in endingRoom.finish) {
+            completedPlayers.add(player)
+            controller.makeSpectator(player)
+            player.sendMessage(controller.gameMessage(Format.mm(
+                "<green><player>, you've completed the tower!</green>",
+                Placeholder.component("player", player.formattedName)
+            )))
+
+            if(team.getOnlinePlayers().all { it in completedPlayers }) {
+                controller.teamsFinished.add(team)
+                val placement = controller.teamsFinished.size
+                Bukkit.broadcast(controller.gameMessage(Format.mm(
+                    "<green><team> are the <white>$placement${getOrdinalSuffix(placement)}</white> team to complete the tower!</green>",
+                    Placeholder.component("team", team.formattedName)
+                )))
+
+                val scoreAmount = controller.getScoreSource(TowerAscentScoreSource.COMPLETE_TOWER) *
+                        ((Team.playingTeams.size - controller.teamsFinished.size) + 1)
+                controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_TOWER, scoreAmount)
             }
         }
     }
