@@ -624,21 +624,21 @@ games:
             - { id: medium_2_melee, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: iron_sword }
           spawn_groups:
             # Weak
-            - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged }
-            - { id: stray_weak, mob: stray, loadout: weak_ranged }
-            - { id: zombie_weak, mob: zombie, loadout: weak_melee }
-            - { id: husk_weak, mob: husk, loadout: weak_melee }
+            - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged, gold: 7 }
+            - { id: stray_weak, mob: stray, loadout: weak_ranged, gold: 7 }
+            - { id: zombie_weak, mob: zombie, loadout: weak_melee, gold: 5 }
+            - { id: husk_weak, mob: husk, loadout: weak_melee, gold: 5 }
 
             # Medium
-            - { id: skeleton_medium_1, mob: skeleton, loadout: medium_1_ranged }
-            - { id: stray_medium_1, mob: stray, loadout: medium_1_ranged }
-            - { id: zombie_medium_1, mob: zombie, loadout: medium_1_melee }
-            - { id: husk_medium_1, mob: husk, loadout: medium_1_melee }
+            - { id: skeleton_medium_1, mob: skeleton, loadout: medium_1_ranged, gold: 15 }
+            - { id: stray_medium_1, mob: stray, loadout: medium_1_ranged, gold: 15 }
+            - { id: zombie_medium_1, mob: zombie, loadout: medium_1_melee, gold: 12 }
+            - { id: husk_medium_1, mob: husk, loadout: medium_1_melee, gold: 12 }
 
-            - { id: skeleton_medium_2, mob: skeleton, loadout: medium_2_ranged }
-            - { id: stray_medium_2, mob: stray, loadout: medium_2_ranged }
-            - { id: zombie_medium_2, mob: zombie, loadout: medium_2_melee }
-            - { id: husk_medium_2, mob: husk, loadout: medium_2_melee }
+            - { id: skeleton_medium_2, mob: skeleton, loadout: medium_2_ranged, gold: 15 }
+            - { id: stray_medium_2, mob: stray, loadout: medium_2_ranged, gold: 15 }
+            - { id: zombie_medium_2, mob: zombie, loadout: medium_2_melee, gold: 12 }
+            - { id: husk_medium_2, mob: husk, loadout: medium_2_melee, gold: 12 }
           spawns:
             - pivot: [-1,64,3]
               # x1,y1,z1,x2,y2,z2

@@ -8,7 +8,7 @@ interface HandledActionBar {
      * Called every tick with a passed in [TextDrawContext]
      *
      * When invoked, the cursor will always be set at the origin position
-     **/
+     */
     fun draw(ctx: TextDrawContext)
 
     /** Called when the action bar is enabld **/

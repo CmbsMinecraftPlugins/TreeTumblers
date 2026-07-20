@@ -10,13 +10,16 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Ageable
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerMoveEvent
+import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreSource
@@ -48,6 +51,10 @@ class TowerHandler(
     private val rooms: ArrayList<TowerGenerator.LoadedRoom>,
     private val endingRoom: TowerGenerator.LoadedEndingRoom
 ) : Listener {
+    companion object {
+        val goldRewardKey = NamespacedKey(TreeTumblers.NAMESPACE, "gold_reward")
+    }
+
     lateinit var team: Team
     var currentRoomIndex = 0
     val currentRoom: TowerGenerator.LoadedRoom
@@ -152,6 +159,12 @@ class TowerHandler(
 
                         mob.equipArmor(loadout.armor.map { armorItem -> armorItem.item.clone() })
                         mob.equipment.setItemInMainHand(loadout.weapon.item.clone())
+
+                        mob.persistentDataContainer.set(
+                            goldRewardKey,
+                            PersistentDataType.INTEGER,
+                            setGroup.gold
+                        )
                     }
                 }
             }
@@ -190,7 +203,23 @@ class TowerHandler(
 
     @EventHandler
     fun entityDeathEvent(event: EntityDeathEvent) {
-        if(event.entity in remainingSetMobs) {
+        val entity = event.entity
+        if(entity in remainingSetMobs) {
+            val lastDamageSource = entity.lastDamageCause
+            if(lastDamageSource is EntityDamageByEntityEvent) {
+                val player = lastDamageSource.damager as? Player
+                if(player != null) {
+                    val reward = event.entity.persistentDataContainer.get(goldRewardKey, PersistentDataType.INTEGER) ?: 0
+                    controller.playerGoldCounts[player.tumblingPlayer] = (controller.playerGoldCounts[player.tumblingPlayer] ?: 0) + reward
+
+                    player.showTitle(Title.title(
+                        Component.empty(),
+                        Format.mm("<gold>[+${reward} <white><sprite:items:item/gold_ingot></white>]</gold>"),
+                        Title.Times.times(5.ticks, 30.ticks, 5.ticks)
+                    ))
+                }
+            }
+
             remainingSetMobs.remove(event.entity)
             event.drops.clear()
         }

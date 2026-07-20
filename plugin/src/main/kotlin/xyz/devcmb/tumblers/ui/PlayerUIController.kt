@@ -116,7 +116,7 @@ class PlayerUIController(val player: Player) {
                 scoreboard.update(playerScoreboard)
             }
 
-            val bar = UIController.fUI.draw(255) {
+            val bar = UIController.fUI.draw(182) {
                 activeActionBars.toList().forEach { id ->
                     var (cX, cY) = it.cursorX to it.cursorY
 
@@ -202,6 +202,7 @@ class PlayerUIController(val player: Player) {
         registerActionBar(FloodEscapeActionBar(player))
         registerActionBar(BreachActionBar(player))
         registerActionBar(EventTeamActionBar(player))
+        registerActionBar(TowerAscentActionBar(player))
     }
 
     fun cleanup() {

@@ -11,17 +11,19 @@ import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreS
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentSpawn
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
 import xyz.devcmb.tumblers.data.Team
+import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.disableActionBar
+import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.titleCountdown
-import java.util.HashMap
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -54,7 +56,9 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         override val uuid: UUID = UUID.randomUUID()
     }
 
-    override val scoreMessages: kotlin.collections.HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
+    val playerGoldCounts: HashMap<TumblingPlayer, Int> = HashMap()
+
+    override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         TowerAscentScoreSource.COMPLETE_ROOM to {
             gameMessage(Format.mm("Completed room <gold>[+$it]</gold>"))
         },
@@ -112,6 +116,10 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     }
 
     override suspend fun gamePregame() {
+        gameParticipants.forEach {
+            it.enableActionBar("towerAscentActionBar")
+        }
+
         timer(Timer(20.seconds) {
             id = "tower_ascent_game_start"
             title = "Game Start"
@@ -154,6 +162,9 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
 
     override suspend fun cleanup() {
         generator.cleanup()
+        gameParticipants.forEach {
+            it.disableActionBar("towerAscentActionBar")
+        }
         super.cleanup()
     }
 

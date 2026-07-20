@@ -321,7 +321,8 @@ class TowerGenerator(
                 || !group.validateElements(hashMapOf(
                     "id" to { it is String },
                     "mob" to { it is String && SpawnableMob.entries.any { entry -> entry.id.equals(it, true)} },
-                    "loadout" to { it is String && mapLoadouts.any { entry -> entry.id.equals(it, true) } }
+                    "loadout" to { it is String && mapLoadouts.any { entry -> entry.id.equals(it, true) } },
+                    "gold" to { it is Int && it > 0 }
                 ))
             ) throw GameControllerException("Spawn group $index is not properly formatted")
 
@@ -329,6 +330,7 @@ class TowerGenerator(
                 group["id"] as String,
                 SpawnableMob.entries.find { it.id.equals(group["mob"] as String, true) }!!,
                 group["loadout"] as String,
+                group["gold"] as Int,
             )
         } ?: throw GameControllerException("Spawn groups for map ${map.id} were not provided")
 
@@ -381,7 +383,8 @@ class TowerGenerator(
         val id: String,
         val mob: SpawnableMob,
         /** Relational to a [MobLoadout.id] */
-        val loadout: String
+        val loadout: String,
+        val gold: Int
     )
 
     data class MobLoadout(
