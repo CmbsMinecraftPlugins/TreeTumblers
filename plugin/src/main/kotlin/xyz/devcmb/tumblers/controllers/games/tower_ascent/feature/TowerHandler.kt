@@ -5,7 +5,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.time.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Ageable
@@ -16,12 +18,15 @@ import org.bukkit.event.Listener
 import org.bukkit.event.entity.EntityDeathEvent
 import org.bukkit.event.player.PlayerMoveEvent
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.equipArmor
 import xyz.devcmb.tumblers.util.forEachRegion
+import xyz.devcmb.tumblers.util.getOrdinalSuffix
+import xyz.devcmb.tumblers.util.getTeleportLocation
 import xyz.devcmb.tumblers.util.isEnclosed
 import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.randomBetween
@@ -34,6 +39,7 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class TowerHandler(
+    private val controller: TowerAscentController,
     private val map: LoadedMap,
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
@@ -55,7 +61,7 @@ class TowerHandler(
 
     suspend fun startRoom(loadedRoom: TowerGenerator.LoadedRoom) {
         Audience.audience(team.getOnlinePlayers()).showTitle(Title.title(
-            Format.mm("<yellow>Room ${currentRoomIndex + 1}</yellow>"),
+            Format.mm("<yellow><b>Room ${currentRoomIndex + 1}</b></yellow>"),
             Component.empty(),
             Title.Times.times(10.ticks, 50.ticks, 5.ticks)
         ))
@@ -63,7 +69,7 @@ class TowerHandler(
         delay(50.ticks)
         subtitleCountdown(
             Audience.audience(team.getOnlinePlayers()),
-            Format.mm("<yellow>Room ${currentRoomIndex + 1}</yellow>"),
+            Format.mm("<yellow><b>Room ${currentRoomIndex + 1}</b></yellow>"),
             5
         )
 
@@ -93,6 +99,16 @@ class TowerHandler(
                     Component.empty(),
                     Title.Times.times(10.ticks, 40.ticks, 10.ticks)
                 ))
+
+                val placement = controller.teamCompletedRooms.filter { it.value > currentRoomIndex }.size + 1
+                controller.teamCompletedRooms[team]?.inc()
+
+                Bukkit.broadcast(controller.gameMessage(
+                    Format.mm(
+                        "<green><team> are the <white>${placement}${getOrdinalSuffix(placement)}</white> team to clear room <white>${currentRoomIndex + 1}</white>!</green>",
+                        Placeholder.component("team", team.formattedName)
+                    ))
+                )
 
                 suspendSync {
                     room.endingElevatorBounds.first.forEachRegion(room.endingElevatorBounds.second) {
@@ -141,13 +157,12 @@ class TowerHandler(
     fun advanceRoom() {
         currentRoomIndex++
         team.getOnlinePlayers().forEach {
-            val newLoc = currentRoom.startingElevatorBounds!!.first.randomBetween(currentRoom.startingElevatorBounds!!.second) { block ->
-                block.type != Material.AIR
-                && block.location.isEnclosed()
-                && block.location.clone().add(0.0,1.0,0.0).block.type == Material.AIR
-                && block.location.clone().add(0.0, 2.0, 0.0).block.type == Material.AIR
-                && !block.location.isInRegion(currentRoom.roomBounds.first, currentRoom.roomBounds.second)
-            }!!.add(0.0,1.0,0.0).toCenterXZLocation()
+            val lastRoom = rooms[currentRoomIndex - 1]
+
+            val newLoc = lastRoom.endingElevatorBounds.getTeleportLocation(
+                currentRoom.startingElevatorBounds!!,
+                it.location
+            )
             it.tp(newLoc)
         }
 
@@ -178,7 +193,9 @@ class TowerHandler(
         if(!gameOn || !team.playingTeam || SpectatorController.spectators.contains(player) || !elevatorOpen) return
 
         val bounds = currentRoom.endingElevatorBounds
-        val checkBounds = bounds.first.clone().add(2.0,0.0,2.0) to bounds.second.clone().add(-2.0,0.0,-2.0)
+        val checkBounds =
+            bounds.first.clone().add(2.0,0.0,2.0) to bounds.second.clone().add(-2.0,0.0,-2.0)
+
         val predicate = { it: Player ->
             it.location.isInRegion(checkBounds.first, checkBounds.second)
             && !it.location.isInRegion(

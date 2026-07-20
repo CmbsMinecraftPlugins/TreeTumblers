@@ -39,7 +39,7 @@ import kotlin.collections.takeLast
 import kotlin.io.path.Path
 
 class TowerGenerator(
-    controller: TowerAscentController,
+    private val controller: TowerAscentController,
     private val map: LoadedMap
 ) {
     val loadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
@@ -157,7 +157,7 @@ class TowerGenerator(
             }
         }
 
-        val handler = TowerHandler(map, loadouts, spawnGroups, loadedRooms)
+        val handler = TowerHandler(controller, map, loadouts, spawnGroups, loadedRooms)
         Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
         towerHandlers.add(handler)
 
