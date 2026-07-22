@@ -62,10 +62,13 @@ class TowerHandler(
 
     var gameOn = false
 
-    fun startGame() {
+    suspend fun startGame() {
         gameOn = true
         rooms.forEach {
-            it.roomController?.let { c -> c.handler = this }
+            it.roomController?.let { c ->
+                c.handler = this
+                suspendSync(c::load)
+            }
         }
 
         TreeTumblers.pluginScope.launch {

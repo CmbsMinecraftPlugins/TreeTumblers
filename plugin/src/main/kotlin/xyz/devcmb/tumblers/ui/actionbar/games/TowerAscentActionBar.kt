@@ -23,5 +23,18 @@ class TowerAscentActionBar(val player: Player) : HandledActionBar {
         ctx.drawAligned(Format.mm("<glyph:hud/tower_ascent/gold_counter>").shadowColor(ShadowColor.shadowColor(0)), TextDrawContext.Alignment.RIGHT)
         ctx.moveCursor(0, 22)
         ctx.drawAligned(Format.mm("${controller.playerGoldCounts[player.tumblingPlayer] ?: 0} "), TextDrawContext.Alignment.RIGHT)
+
+//        ctx.moveCursor(0, 0)
+//        val handler = controller.generator.towerHandlers.find { it.team == player.tumblingPlayer.team } ?: return
+//        val roomController = handler.currentRoom.roomController
+//        if(roomController is ShopRoom) {
+//            val itemIndex = roomController.playerCurrentShopItems[player] ?: return
+//            val item = roomController.shopItems[itemIndex]
+//
+//            ctx.drawAligned(Format.mm(
+//                "<white><item> <dark_gray>-</dark_gray> <gold>${item.shopItem.price}</white>",
+//                Placeholder.component("item", item.entity.itemStack.effectiveName())
+//            ), TextDrawContext.Alignment.CENTER)
+//        }
     }
 }

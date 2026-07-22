@@ -186,7 +186,6 @@ class TowerGenerator(
 
                 controller?.let {
                     it.room = loadedRoom
-                    suspendSync(it::load)
                 }
 
                 loadedRooms.add(loadedRoom)

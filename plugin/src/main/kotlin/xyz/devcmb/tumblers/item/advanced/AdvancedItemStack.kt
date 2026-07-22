@@ -12,6 +12,8 @@ open class AdvancedItemStack(val material: Material, val init: AdvancedItemStack
         init()
     })
 
+    constructor(material: Material) : this(material, {})
+
     val context: AdvancedItemStackContext = AdvancedItemStackContext(material)
     init {
         context.init()

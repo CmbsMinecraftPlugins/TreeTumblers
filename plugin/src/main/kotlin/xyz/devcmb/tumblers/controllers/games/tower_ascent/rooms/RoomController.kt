@@ -11,7 +11,7 @@ interface RoomController : Listener {
     var room: TowerGenerator.LoadedRoom
     var handler: TowerHandler
 
-    /** Called right after the [TowerGenerator.LoadedRoom] has been created **/
+    /** Called right after the [TowerHandler] has been created **/
     fun load()
     /** Called when players are teleported into the starting elevator */
     fun teleport()
