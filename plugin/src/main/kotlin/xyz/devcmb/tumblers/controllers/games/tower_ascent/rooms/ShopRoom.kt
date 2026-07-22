@@ -4,10 +4,8 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
-import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerHandler
-import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 
@@ -32,7 +30,7 @@ class ShopRoom : RoomController {
         handler.elevatorBlocks.addAll(elevatorBlocks)
 
         Bukkit.broadcast(handler.controller.gameMessage(Format.mm(
-            "<yellow><team> have arrived at a shop at room <white>${handler.currentRoom}</white></yellow>",
+            "<yellow><team> have arrived at a shop at room <white>${handler.currentRoomIndex + 1}</white></yellow>",
             Placeholder.component("team", handler.team.formattedName)
         )))
     }

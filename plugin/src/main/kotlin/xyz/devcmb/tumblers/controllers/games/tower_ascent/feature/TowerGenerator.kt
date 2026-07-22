@@ -130,7 +130,7 @@ class TowerGenerator(
                 val roomOperation = ClipboardHolder(room.clipboard)
                     .createPaste(editSession)
                     .to(startPos.toBlockVector3())
-                    .ignoreAirBlocks(true)
+                    .copyEntities(true)
                     .build()
                 DebugUtil.info("Loading room at $startPos")
 
