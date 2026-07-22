@@ -607,7 +607,7 @@ games:
             start: [-14.5, 132.5, 7.5, -120.0, 25.0]
   tower_ascent:
     worlds_folder: "tower_ascent"
-    rooms: 1
+    rooms: 9
 
     maps:
       tower:
@@ -652,3 +652,7 @@ games:
                 - [{ group: zombie_weak, amount: 1 }]
 #                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
 #                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
+            - id: shop
+              pivot_replacement_material: BLACKSTONE
+              mob_sets: []
+              controller: shop_room

@@ -44,7 +44,7 @@ import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class TowerHandler(
-    private val controller: TowerAscentController,
+    val controller: TowerAscentController,
     private val map: LoadedMap,
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
@@ -64,6 +64,10 @@ class TowerHandler(
 
     fun startGame() {
         gameOn = true
+        rooms.forEach {
+            it.roomController?.let { c -> c.handler = this }
+        }
+
         TreeTumblers.pluginScope.launch {
             startRoom(rooms.first())
         }
@@ -83,6 +87,7 @@ class TowerHandler(
             5
         )
 
+        currentRoom.roomController?.start()
         spawnMobs(loadedRoom, loadedRoom.room.mobSets)
     }
 
@@ -189,14 +194,19 @@ class TowerHandler(
             it.tp(newLoc)
         }
 
+        lastRoom.roomController?.cleanup()
+        currentRoom.roomController?.teleport()
+
         runTaskLater(25) {
             nextRoomStartingElevatorBounds.first.forEachRegion(nextRoomStartingElevatorBounds.second) {
                 if(it.type == Material.IRON_BLOCK) it.type = Material.AIR
             }
 
-            if(!isFinalRoom) TreeTumblers.pluginScope.launch {
-                delay(300)
-                startRoom(currentRoom)
+            if(!isFinalRoom && currentRoom.roomController?.noDefaultBehavior != true) {
+                TreeTumblers.pluginScope.launch {
+                    delay(300)
+                    startRoom(currentRoom)
+                }
             }
         }
     }

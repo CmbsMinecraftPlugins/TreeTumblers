@@ -20,6 +20,8 @@ import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.RoomController
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.ShopRoom
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
@@ -38,6 +40,8 @@ import java.util.HashMap
 import kotlin.collections.take
 import kotlin.collections.takeLast
 import kotlin.io.path.Path
+import kotlin.reflect.KClass
+import kotlin.reflect.full.primaryConstructor
 
 class TowerGenerator(
     private val controller: TowerAscentController,
@@ -50,6 +54,8 @@ class TowerGenerator(
     val towerHandlers: ArrayList<TowerHandler> = ArrayList()
 
     val roomCount: Int = configurable("${controller.configRoot}.rooms")
+    val roomControllerRegistry: HashMap<String, KClass<out RoomController>> = HashMap()
+    val roomControllers: ArrayList<RoomController> = ArrayList()
 
     val templatesDirectory: String = configurable("templates.tower_ascent_templates")
         get() {
@@ -58,6 +64,7 @@ class TowerGenerator(
 
     suspend fun generateTowers() {
         loadMobSets()
+        loadRoomHandlers()
 
         val mapTemplates = File(templatesDirectory, map.id)
 
@@ -88,7 +95,13 @@ class TowerGenerator(
             .fastMode(true)
             .build()
 
-        val rooms = (0..<roomCount).map { mapRooms.random() }
+        // TODO: Maybe figure out a better way to do shop rooms
+        val rooms = (0..<roomCount).mapIndexed { index, _ ->
+            mapRooms.filter {
+                if((index + 1) % 3 == 0) it.controller == "shop_room"
+                else it.controller != "shop_room"
+            }.random()
+        }
         val loadedRooms: ArrayList<LoadedRoom> = ArrayList()
         spawns.forEach { spawn ->
             mapSpawns.add(spawn)
@@ -152,12 +165,31 @@ class TowerGenerator(
                 val endingElevatorBounds: Pair<Location, Location> = mapEndingElevator
                     .getPostPasteBounds(endPosWorld)
 
-                loadedRooms.add(LoadedRoom(
+                val controller = room.controller?.let {
+                    val controllerClass = roomControllerRegistry[it]
+                        ?: throw IllegalStateException("Room $index does not have a valid attached room controller")
+
+                    val controller = controllerClass.primaryConstructor!!.call()
+                    roomControllers.add(controller)
+                    Bukkit.getPluginManager().registerEvents(controller, TreeTumblers.plugin)
+
+                    controller
+                }
+
+                val loadedRoom = LoadedRoom(
                     room,
                     roomBounds,
                     startingElevatorBounds,
-                    endingElevatorBounds
-                ))
+                    endingElevatorBounds,
+                    controller
+                )
+
+                controller?.let {
+                    it.room = loadedRoom
+                    suspendSync(it::load)
+                }
+
+                loadedRooms.add(loadedRoom)
             }
 
             val endingRoomElevatorOperation = ClipboardHolder(mapStartingElevator)
@@ -219,7 +251,7 @@ class TowerGenerator(
                         && setEntry.all { groupEntry ->
                             groupEntry is HashMap<*,*> && groupEntry["group"] is String && groupEntry["amount"] is Int
                         }
-                    } }
+                    } },
                 ))
             ) throw GameControllerException("Room definition $index is not formatted properly")
 
@@ -253,6 +285,7 @@ class TowerGenerator(
                         MobSet(map["group"] as String, map["amount"] as Int)
                     }
                 },
+                room["controller"]?.let { it as String },
                 clipboard,
             )
         } ?: throw GameControllerException("Map data does not contain room data")
@@ -341,8 +374,16 @@ class TowerGenerator(
         DebugUtil.info("Loaded the following spawn groups: $mapSpawnGroups")
     }
 
+    private fun loadRoomHandlers() {
+        roomControllerRegistry["shop_room"] = ShopRoom::class
+    }
+
     fun cleanup() {
         towerHandlers.forEach {
+            HandlerList.unregisterAll(it)
+        }
+
+        roomControllers.forEach {
             HandlerList.unregisterAll(it)
         }
     }
@@ -356,6 +397,7 @@ class TowerGenerator(
         val id: String,
         val pivotReplacementMaterial: Material,
         val mobSets: List<List<MobSet>>,
+        val controller: String?,
 
         val clipboard: Clipboard
     )
@@ -367,6 +409,7 @@ class TowerGenerator(
         val roomBounds: Pair<Location, Location>,
         val startingElevatorBounds: Pair<Location, Location>?,
         val endingElevatorBounds: Pair<Location, Location>,
+        val roomController: RoomController?
     )
 
     data class LoadedEndingRoom(
