@@ -17,6 +17,7 @@ import org.bukkit.entity.Stray
 import org.bukkit.entity.Zombie
 import org.bukkit.event.HandlerList
 import org.bukkit.inventory.ItemStack
+import org.bukkit.util.Vector
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
@@ -150,7 +151,14 @@ class TowerGenerator(
 
                 val roomBounds = room.clipboard.getPostPasteBounds(startPos)
                 suspendSync {
+                    val loadedChunks: ArrayList<Pair<Int, Int>> = ArrayList()
                     roomBounds.first.forEachRegion(roomBounds.second) {
+                        if((it.chunk.x to it.chunk.z) !in loadedChunks) {
+                            it.chunk.load()
+                            it.chunk.isForceLoaded = true
+                            loadedChunks.add(it.chunk.x to it.chunk.z)
+                        }
+
                         if(it.type == Material.REDSTONE_BLOCK || it.type == Material.DIAMOND_BLOCK)
                             it.type = room.pivotReplacementMaterial
                     }
@@ -215,7 +223,7 @@ class TowerGenerator(
             editSession.flushQueue()
 
             val roomBounds = mapEndRoom.getPostPasteBounds(startPos)
-            val endingBlocks: ArrayList<org.bukkit.util.Vector> = ArrayList()
+            val endingBlocks: ArrayList<Vector> = ArrayList()
             roomBounds.first.forEachRegion(roomBounds.second) {
                 if(it.type == Material.WHITE_CONCRETE || it.type == Material.BLACK_CONCRETE) {
                     repeat(5) { index ->
@@ -413,7 +421,7 @@ class TowerGenerator(
     )
 
     data class LoadedEndingRoom(
-        val finish: List<org.bukkit.util.Vector>,
+        val finish: List<Vector>,
         val startingElevatorBounds: Pair<Location, Location>
     )
 

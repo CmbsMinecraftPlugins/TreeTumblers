@@ -27,6 +27,7 @@ import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerHandler
 import xyz.devcmb.tumblers.controllers.player.UIController
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.item.custom.scroll.ScrollItem
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.isInRegion
@@ -154,6 +155,7 @@ class ShopRoom : RoomController {
     }
 
     override fun cleanup() {
+        DebugUtil.info("Cleaning up shop room")
         shopDisplayTask?.cancel()
     }
 
