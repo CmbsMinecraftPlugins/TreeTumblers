@@ -39,6 +39,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     val teamRooms: HashMap<Team, Int>
         get() = HashMap(generator.towerHandlers.associate { it.team to it.currentRoomIndex })
     val teamCompletedRooms: HashMap<Team, Int> = HashMap()
+    val teamRoomPlacements: HashMap<Team, ArrayList<Int>> = HashMap()
     val teamsFinished: ArrayList<Team> = ArrayList()
 
     val playerKit: Kit.KitDefinition = object : Kit.KitDefinition {
@@ -99,6 +100,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             Team.playingTeams.forEachIndexed { index, team ->
                 teamRoomSetIndexes[team] = index
                 teamCompletedRooms[team] = 0
+                teamRoomPlacements[team] = arrayListOf()
 
                 generator.towerHandlers.getOrNull(index)?.team = team
                 generator.mapSpawns.getOrNull(index)?.let {

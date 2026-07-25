@@ -119,7 +119,8 @@ class TowerHandler(
                 ))
 
                 val placement = controller.teamCompletedRooms.filter { it.value > currentRoomIndex }.size + 1
-                controller.teamCompletedRooms[team]?.inc()
+                controller.teamCompletedRooms[team] = controller.teamCompletedRooms[team]!! + 1
+                controller.teamRoomPlacements[team]!!.add(placement)
                 controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_ROOM)
 
                 Bukkit.broadcast(controller.gameMessage(
