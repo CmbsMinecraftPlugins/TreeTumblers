@@ -383,6 +383,7 @@ class TowerGenerator(
         }
 
         roomControllers.forEach {
+            it.cleanup()
             HandlerList.unregisterAll(it)
         }
     }
