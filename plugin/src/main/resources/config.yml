@@ -643,15 +643,34 @@ games:
             - pivot: [-1,64,3]
               # x1,y1,z1,x2,y2,z2
               wall: [0, 69, 6, 0, 65, 0]
+
+            - pivot: [-140, 64, 3]
+              wall: [-140, 69, 0, -140, 65, 6]
+
+            - pivot: [-280, 64, 3]
+              wall: [-280, 69, 0, -280, 65, 6]
+
+            - pivot: [-420, 64, 3]
+              wall: [-420, 69, 0, -420, 65, 6]
+
+            - pivot: [-560, 64, 3]
+              wall: [-560, 69, 0, -560, 65, 6]
+
+            - pivot: [-700, 64, 3]
+              wall: [-700, 69, 0, -700, 65, 6]
+
+            - pivot: [-840, 64, 3]
+              wall: [-840, 69, 0, -840, 65, 6]
+
+            - pivot: [-980, 64, 3]
+              wall: [-980, 69, 0, -980, 65, 6]
           rooms:
             - id: testing_room
               # The material name that will replace all diamond and redstone blocks in the build
               pivot_replacement_material: BLACKSTONE
-              mob_sets: []
-                # TODO: Remove, this is just for debug
-#                - [{ group: zombie_weak, amount: 1 }]
-#                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
-#                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
+              mob_sets:
+                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
+                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
             - id: shop
               pivot_replacement_material: BLACKSTONE
               mob_sets: []

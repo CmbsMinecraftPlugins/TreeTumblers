@@ -103,8 +103,9 @@ class TowerGenerator(
                 else it.controller != "shop_room"
             }.random()
         }
-        val loadedRooms: ArrayList<LoadedRoom> = ArrayList()
         spawns.forEach { spawn ->
+            val loadedRooms: ArrayList<LoadedRoom> = ArrayList()
+
             mapSpawns.add(spawn)
 
             var startPos = spawn.pivot
