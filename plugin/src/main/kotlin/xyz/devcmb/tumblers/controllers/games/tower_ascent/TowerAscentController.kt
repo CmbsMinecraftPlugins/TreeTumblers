@@ -7,6 +7,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.entity.PlayerDeathEvent
@@ -20,6 +21,7 @@ import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentSpawn
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
 import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
@@ -67,6 +69,10 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         )
         override val defaultDropability: Boolean = true
         override val uuid: UUID = UUID.randomUUID()
+
+        // since you can get new items and move around your old ones
+        // allowing you to save it would make your sword or something randomly move
+        override val saveLoadout: Boolean = false
     }
 
     val playerGoldCounts: HashMap<TumblingPlayer, Int> = HashMap()
@@ -79,6 +85,20 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             gameMessage(Format.mm("Completed tower <gold>[+$it]</gold>"))
         }
     )
+
+    override val debugToolkit: DebugToolkit = object : DebugToolkit() {
+        override val events: HashMap<String, (sender: CommandSender) -> Unit> = hashMapOf(
+            "infinite_gold" to event@{ sender ->
+                if(sender !is Player) {
+                    sender.sendMessage(Format.error("This event can only be executed by players!"))
+                    return@event
+                }
+
+                playerGoldCounts[sender.tumblingPlayer] = Integer.MAX_VALUE
+                sender.sendMessage(Format.success("Gave infinite gold successfully!"))
+            }
+        )
+    }
 
     /**
      * The load sequence that each individual game should do

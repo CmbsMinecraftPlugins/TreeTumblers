@@ -136,7 +136,10 @@ class ShopRoom : RoomController {
         player.showTitle(Title.title(
             Component.empty(),
             UIController.fUI.draw(200) { ctx ->
-                val itemName = PlainTextComponentSerializer.plainText().serialize(item.entity.itemStack.effectiveName())
+                var itemName = PlainTextComponentSerializer.plainText().serialize(item.entity.itemStack.effectiveName())
+                val amount = item.shopItem.item.build().amount
+                if(amount != 1) itemName = "$itemName <gray>[x$amount]</gray>"
+
                 val priceComponent = Format.mm(
                     "<white>$itemName</white> <dark_gray>-</dark_gray> <gold>${item.shopItem.price}</gold><sprite:items:item/gold_ingot>",
                 )
@@ -167,8 +170,13 @@ class ShopRoom : RoomController {
 
     enum class ShopItem(val price: Int, val item: AdvancedItemStack) {
         DIAMOND_SWORD(80, AdvancedItemStack(Material.DIAMOND_SWORD)),
+        IRON_AXE(80, AdvancedItemStack(Material.IRON_AXE)),
+        DIAMOND_AXE(140, AdvancedItemStack(Material.DIAMOND_AXE)),
         DIAMOND_LEGGINGS(65, AdvancedItemStack(Material.DIAMOND_LEGGINGS)),
-        SPEED_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.SPEED).build())
+        SPEED_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.SPEED).build()),
+        JUMP_BOOST_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.JUMP_BOOST).build()),
+        GOLDEN_APPLE(35, AdvancedItemStack(Material.GOLDEN_APPLE)),
+        STEAK_8X(30, AdvancedItemStack(Material.COOKED_BEEF) { count(8) })
     }
 
     val cooldowns: HashMap<Player, Long> = HashMap()

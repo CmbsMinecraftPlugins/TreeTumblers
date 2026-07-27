@@ -303,10 +303,20 @@ class TowerHandler(
         if(event.to.toBlockLocation().toVector() in endingRoom.finish) {
             completedPlayers.add(player)
             controller.makeSpectator(player)
+
             player.sendMessage(controller.gameMessage(Format.mm(
                 "<green><player>, you've completed the tower!</green>",
                 Placeholder.component("player", player.formattedName)
             )))
+
+            val playerGold = (controller.playerGoldCounts[player.tumblingPlayer] ?: 0)
+            val goldBankScore = playerGold / 5
+
+            controller.grantScore(player, TowerAscentScoreSource.BANK_GOLD, goldBankScore)
+            player.sendMessage(controller.gameMessage(
+                Format.mm("<white>Banked $playerGold <sprite:items:item/gold_ingot> <gold>[+$goldBankScore]</gold></white>"))
+            )
+            controller.playerGoldCounts[player.tumblingPlayer] = 0
 
             if(team.getOnlinePlayers().all { it in completedPlayers }) {
                 controller.teamsFinished.add(team)
@@ -318,7 +328,12 @@ class TowerHandler(
 
                 val scoreAmount = controller.getScoreSource(TowerAscentScoreSource.COMPLETE_TOWER) *
                         ((Team.playingTeams.size - controller.teamsFinished.size) + 1)
+
                 controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_TOWER, scoreAmount)
+
+                if(controller.teamsFinished.size == Team.playingTeams.size) {
+                    TreeTumblers.pluginScope.launch { controller.currentTimer?.end() }
+                }
             }
         }
     }

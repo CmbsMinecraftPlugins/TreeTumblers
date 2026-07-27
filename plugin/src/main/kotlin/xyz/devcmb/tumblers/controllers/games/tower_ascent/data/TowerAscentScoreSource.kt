@@ -5,4 +5,5 @@ import xyz.devcmb.tumblers.engine.score.ScoreSource
 enum class TowerAscentScoreSource(override val id: String) : ScoreSource {
     COMPLETE_TOWER("tower_ascent_complete_tower"),
     COMPLETE_ROOM("tower_ascent_complete_room"),
+    BANK_GOLD("tower_ascent_bank_gold"),
 }

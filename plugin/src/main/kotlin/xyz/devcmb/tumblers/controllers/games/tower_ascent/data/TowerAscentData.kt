@@ -17,7 +17,10 @@ object TowerAscentData : GameData(
     flags = setOf(
         Flag.ENABLE_HUNGER
     ),
-    scores = hashMapOf(),
+    scores = hashMapOf(
+        TowerAscentScoreSource.COMPLETE_ROOM to 120,
+        TowerAscentScoreSource.COMPLETE_TOWER to 300,
+    ),
     scoreboard = TowerAscentScoreboard::class,
     spawns = TowerAscentSpawn.entries
 )
