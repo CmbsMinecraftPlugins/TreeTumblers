@@ -665,7 +665,7 @@ abstract class AbstractGame(
     fun makeSpectator(player: Player, participating: Boolean = true) {
         if(participating) participatingSpectators.add(player)
         gameSpectators.add(player)
-        SpectatorController.makeSpectator(player)
+        SpectatorController.makeSpectator(player, data.flags.contains(Flag.RESET_MOB_TARGETS_ON_DEATH))
     }
 
     /**

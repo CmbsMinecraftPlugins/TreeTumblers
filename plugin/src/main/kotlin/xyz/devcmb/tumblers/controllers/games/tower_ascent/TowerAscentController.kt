@@ -54,7 +54,9 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         get() = HashMap(generator.towerHandlers.associate { it.team to it.currentRoomIndex })
     val teamCompletedRooms: HashMap<Team, Int> = HashMap()
     val teamRoomPlacements: HashMap<Team, ArrayList<Int>> = HashMap()
+
     val teamsFinished: ArrayList<Team> = ArrayList()
+    val completedPlayers: ArrayList<TumblingPlayer> = ArrayList()
 
     val playerKit: Kit.KitDefinition = object : Kit.KitDefinition {
         override val items: ArrayList<Kit.KitItem> = arrayListOf(
@@ -263,6 +265,13 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
 
         val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
             ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+
+        if(player.tumblingPlayer in completedPlayers) {
+            makeSpectator(player)
+            player.tp(handler.endingRoom.startingElevatorBounds.center())
+            player.sendMessage(Format.warning("You've already completed the tower and are waiting for the game to end."))
+            return
+        }
 
         if(!handler.roomActive) {
             respawnPlayer(player.tumblingPlayer)

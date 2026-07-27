@@ -151,7 +151,7 @@ class PlayerUIController(val player: Player) {
 
     fun playerLeave(plr: Player) {
         playerTeam.removeEntry(plr.name)
-        otherTeams[plr.tumblingPlayer.team]!!.removeEntry(plr.name)
+        otherTeams[plr.tumblingPlayer.team]?.removeEntry(plr.name)
     }
 
     fun registerInventories() {

@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.controllers.player
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
@@ -25,6 +26,7 @@ import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.showToAll
+import kotlin.math.pow
 
 @Controller(Controller.Priority.MEDIUM)
 object SpectatorController : IController {
@@ -33,7 +35,7 @@ object SpectatorController : IController {
     override fun init() {
     }
 
-    fun makeSpectator(player: Player) {
+    fun makeSpectator(player: Player, retargetMobs: Boolean = false) {
         spectators.add(player)
 
         runTask {
@@ -41,7 +43,18 @@ object SpectatorController : IController {
                 .filterIsInstance<Mob>()
                 .filter { it.target == player }
                 .forEach { mob ->
-                    mob.target = null
+                    if(!retargetMobs) {
+                        mob.target = null
+                        return@forEach
+                    }
+
+                    val playersInRange = Bukkit.getOnlinePlayers().filter {
+                        it.location.world == mob.location.world
+                        && it !in spectators
+                        && mob.location.distanceSquared(it.location) <= 8.0.pow(2.0)
+                    }
+
+                    mob.target = if(playersInRange.isNotEmpty()) playersInRange.random() else null
                 }
         }
 

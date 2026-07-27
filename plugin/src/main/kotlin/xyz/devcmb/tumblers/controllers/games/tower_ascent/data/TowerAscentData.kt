@@ -15,7 +15,8 @@ object TowerAscentData : GameData(
         CutsceneStep.GLHF
     ),
     flags = setOf(
-        Flag.ENABLE_HUNGER
+        Flag.ENABLE_HUNGER,
+        Flag.RESET_MOB_TARGETS_ON_DEATH
     ),
     scores = hashMapOf(
         TowerAscentScoreSource.COMPLETE_ROOM to 120,

@@ -49,7 +49,7 @@ class TowerHandler(
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
     val rooms: ArrayList<TowerGenerator.LoadedRoom>,
-    private val endingRoom: TowerGenerator.LoadedEndingRoom
+    val endingRoom: TowerGenerator.LoadedEndingRoom
 ) : Listener {
     companion object {
         val goldRewardKey = NamespacedKey(TreeTumblers.NAMESPACE, "gold_reward")
@@ -287,7 +287,6 @@ class TowerHandler(
         }
     }
 
-    val completedPlayers: ArrayList<Player> = ArrayList()
     @EventHandler
     fun playerCompleteTowerEvent(event: PlayerMoveEvent) {
         val player = event.player
@@ -297,11 +296,11 @@ class TowerHandler(
             || !gameOn
             || this.team != team
             || currentRoomIndex != (controller.generator.roomCount - 1)
-            || player in completedPlayers
+            || player.tumblingPlayer in controller.completedPlayers
         ) return
 
         if(event.to.toBlockLocation().toVector() in endingRoom.finish) {
-            completedPlayers.add(player)
+            controller.completedPlayers.add(player.tumblingPlayer)
             controller.makeSpectator(player)
 
             player.sendMessage(controller.gameMessage(Format.mm(
@@ -318,8 +317,10 @@ class TowerHandler(
             )
             controller.playerGoldCounts[player.tumblingPlayer] = 0
 
-            if(team.getOnlinePlayers().all { it in completedPlayers }) {
+            if(team.getOnlinePlayers().all { it.tumblingPlayer in controller.completedPlayers }) {
+                controller.completedPlayers.addAll(team.getAllPlayers().filter { it !in controller.completedPlayers })
                 controller.teamsFinished.add(team)
+
                 val placement = controller.teamsFinished.size
                 Bukkit.broadcast(controller.gameMessage(Format.mm(
                     "<green><team> are the <white>$placement${getOrdinalSuffix(placement)}</white> team to complete the tower!</green>",
