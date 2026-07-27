@@ -80,6 +80,8 @@ class ShopRoom : RoomController {
         shopDisplayTask = object : BukkitRunnable() {
             override fun run() {
                 handler.team.getOnlinePlayers().forEach {
+                    if(it.location.world != handler.controller.map.world) return@forEach
+
                     val result = handler.controller.map.world.rayTraceEntities(
                         it.eyeLocation,
                         it.eyeLocation.direction,

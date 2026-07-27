@@ -25,6 +25,7 @@ import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.item.Kit
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.center
 import xyz.devcmb.tumblers.util.disableActionBar
@@ -131,6 +132,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     override suspend fun gamePregame() {
         gameParticipants.forEach {
             it.enableActionBar("towerAscentActionBar")
+            alivePlayers.add(it)
         }
 
         timer(Timer(20.seconds) {
@@ -181,41 +183,37 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         super.cleanup()
     }
 
-    val deadPlayers: ArrayList<TumblingPlayer> = ArrayList()
+    val alivePlayers: ArrayList<TumblingPlayer> = ArrayList()
     fun playerDeath(player: TumblingPlayer) {
         Bukkit.broadcast(Format.mm(
             "<gray>(<white><glyph:icon/skull></white>) <player> was lost in the tower</gray>",
             Placeholder.component("player", player.formattedName)
         ))
 
-        deadPlayers.add(player)
+        alivePlayers.remove(player)
         playerGoldCounts[player] = 0
 
         if(player.isOnline) {
             player.bukkitPlayer!!.sendMessage(Format.warning("You will be respawned when the room is cleared or when your entire team has been eliminated."))
         }
 
-        if(player.team.getAllPlayers().all { it in deadPlayers }) {
+        val aliveTeamPlayers = alivePlayers.filter { it.team == player.team }
+        if(aliveTeamPlayers.isEmpty()) {
             Bukkit.broadcast(Format.mm(
                 "<red>(<white><glyph:icon/skull></white>) <team> <b>were lost in the tower</b></red>",
                 Placeholder.component("team", player.team.formattedName)
             ))
-            TreeTumblers.pluginScope.launch {
-                delay(2.seconds)
-                titleCountdown(player.team.audience, Format.mm("Respawning in..."), 10)
-
-                suspendSync {
-                    player.team.getOnlinePlayers().forEach {
-                        respawnPlayer(it.tumblingPlayer)
-                    }
-                }
-            }
+            respawnTeam(player.team)
         }
     }
 
     fun respawnPlayer(player: TumblingPlayer) {
-        deadPlayers.remove(player)
-        if(!player.isOnline) return
+        if(!player.isOnline) {
+            DebugUtil.info("Player ${player.name} is not online to respawn")
+            return
+        }
+
+        alivePlayers.add(player)
 
         val bukkitPlayer = player.bukkitPlayer!!
         val handler = generator.towerHandlers.find { it.team == player.team }
@@ -238,13 +236,18 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
-        if(player.tumblingPlayer !in deadPlayers) {
+        if(!player.tumblingPlayer.team.playingTeam) {
+            spawnPlayers(map, listOf(player), TowerAscentSpawn.SET_1)
+            return
+        }
+
+        val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
+            ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+
+        if(!handler.roomActive) {
             respawnPlayer(player.tumblingPlayer)
         } else {
             makeSpectator(player)
-
-            val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
-                ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
 
             val currentRoom = handler.currentRoom
             val startingLocation = currentRoom.startingElevatorBounds?.center()
@@ -252,6 +255,28 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
 
             player.tp(startingLocation)
             player.sendMessage(Format.warning("You've joined while a room is active and will be respawned whenever the room is cleared, or if your entire team is eliminated."))
+
+            if(alivePlayers.none { it.team == player.tumblingPlayer.team })
+                respawnTeam(player.tumblingPlayer.team)
+        }
+    }
+
+    val respawningTeams: ArrayList<Team> = ArrayList()
+    private fun respawnTeam(team: Team) {
+        if(team in respawningTeams) return
+
+        respawningTeams.add(team)
+        TreeTumblers.pluginScope.launch {
+            delay(2.seconds)
+            titleCountdown(team.audience, Format.mm("Respawning in..."), 10)
+
+            suspendSync {
+                team.getOnlinePlayers().forEach {
+                    DebugUtil.info("Respawning ${it.name}")
+                    respawnPlayer(it.tumblingPlayer)
+                }
+            }
+            respawningTeams.remove(team)
         }
     }
 
@@ -260,9 +285,13 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      */
     override fun playerLeave(player: Player) {
         val plr = player.tumblingPlayer
-        if(plr in gameParticipants) {
-            playerDeath(plr)
-        }
+        if(!plr.team.playingTeam) return
+
+        val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
+            ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+        if(!handler.roomActive || plr !in alivePlayers) return
+
+        playerDeath(plr)
     }
 
     @EventHandler

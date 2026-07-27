@@ -61,6 +61,7 @@ class TowerHandler(
         get() = rooms[currentRoomIndex]
 
     var gameOn = false
+    var roomActive = false
 
     suspend fun startGame() {
         gameOn = true
@@ -91,7 +92,7 @@ class TowerHandler(
         )
 
         suspendSync {
-            team.getAllPlayers().filter { !it.isOnline }.forEach {
+            controller.alivePlayers.filter { it.team == team && !it.isOnline }.forEach {
                 controller.playerDeath(it)
             }
         }
@@ -106,6 +107,8 @@ class TowerHandler(
     val elevatorBlocks: ArrayList<Location> = ArrayList()
     var elevatorOpen: Boolean = false
     suspend fun spawnMobs(room: TowerGenerator.LoadedRoom, sets: List<List<TowerGenerator.MobSet>>) {
+        roomActive = true
+
         while(true) {
             if(remainingSetMobs.isNotEmpty()) {
                 delay(300)
@@ -123,14 +126,17 @@ class TowerHandler(
                     Component.empty(),
                     Title.Times.times(10.ticks, 40.ticks, 10.ticks)
                 ))
+                roomActive = false
 
                 val placement = controller.teamCompletedRooms.filter { it.value > currentRoomIndex }.size + 1
                 controller.teamCompletedRooms[team] = controller.teamCompletedRooms[team]!! + 1
                 controller.teamRoomPlacements[team]!!.add(placement)
                 controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_ROOM)
 
-                controller.deadPlayers.filter { it.team == team && it.isOnline }.forEach {
-                    controller.respawnPlayer(it)
+                suspendSync {
+                    controller.gameParticipants.filter { it.team == team && it !in controller.alivePlayers }.forEach {
+                        controller.respawnPlayer(it)
+                    }
                 }
 
                 Bukkit.broadcast(controller.gameMessage(

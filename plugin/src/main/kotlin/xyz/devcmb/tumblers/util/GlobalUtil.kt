@@ -90,7 +90,7 @@ fun Player.showPlayerAndTag(other: Player) {
 fun TumblingPlayer.enableBossBar(id: String) {
     this.currentBossbars.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.enableBossBar(id)
+        PlayerController.playerUIControllers[it]?.enableBossBar(id)
     }
 }
 
@@ -98,7 +98,7 @@ fun TumblingPlayer.enableBossBar(id: String) {
 fun TumblingPlayer.disableBossBar(id: String) {
     this.currentBossbars.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.disableBossBar(id)
+        PlayerController.playerUIControllers[it]?.disableBossBar(id)
     }
 }
 
@@ -106,7 +106,7 @@ fun TumblingPlayer.disableBossBar(id: String) {
 fun TumblingPlayer.activateScoreboard(id: String) {
     this.currentScoreboards.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.activateScoreboard(id)
+        PlayerController.playerUIControllers[it]?.activateScoreboard(id)
     }
 }
 
@@ -114,7 +114,7 @@ fun TumblingPlayer.activateScoreboard(id: String) {
 fun TumblingPlayer.deactivateScoreboard(id: String) {
     this.currentScoreboards.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.deactivateScoreboard(id)
+        PlayerController.playerUIControllers[it]?.deactivateScoreboard(id)
     }
 }
 
@@ -122,7 +122,7 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
 fun TumblingPlayer.enableActionBar(id: String) {
     this.currentActionBars.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.enableActionBar(id)
+        PlayerController.playerUIControllers[it]?.enableActionBar(id)
     }
 }
 
@@ -130,7 +130,7 @@ fun TumblingPlayer.enableActionBar(id: String) {
 fun TumblingPlayer.disableActionBar(id: String) {
     this.currentActionBars.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.disableActionBar(id)
+        PlayerController.playerUIControllers[it]?.disableActionBar(id)
     }
 }
 
