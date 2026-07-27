@@ -182,6 +182,7 @@ class TowerHandler(
                         (mob as? Ageable)?.setAdult()
                         remainingSetMobs.add(mob)
 
+                        mob.removeWhenFarAway = false
                         mob.equipArmor(loadout.armor.map { armorItem -> armorItem.item.clone() })
                         mob.equipment.setItemInMainHand(loadout.weapon.item.clone())
 
