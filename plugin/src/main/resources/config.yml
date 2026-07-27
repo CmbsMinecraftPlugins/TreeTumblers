@@ -607,13 +607,18 @@ games:
             start: [-14.5, 132.5, 7.5, -120.0, 25.0]
   tower_ascent:
     worlds_folder: "tower_ascent"
-    rooms: 4
+    rooms: 10
 
     maps:
       tower:
         world: "tower"
         data:
           placement_axis: z
+          cutscene:
+            start: [3.5, 66.0, 3.5, 90.0, 0.0]
+            first: [-2.5, 66.0, -2.5, 54.4, 8.7]
+            shop: [-2.5, 65.0, 123.5, 90.0, 0.0]
+            end: [-8.5, 65.0, 603.5, 90.0, 0.0]
           loadouts:
             - { id: weak_ranged, armor: [], weapon: base_bow }
             - { id: weak_melee, armor: [], weapon: stone_sword }

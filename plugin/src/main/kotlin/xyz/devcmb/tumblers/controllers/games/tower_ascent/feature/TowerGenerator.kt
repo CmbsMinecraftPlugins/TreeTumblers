@@ -98,6 +98,10 @@ class TowerGenerator(
 
         // TODO: Maybe figure out a better way to do shop rooms
         val rooms = (0..<roomCount).mapIndexed { index, _ ->
+            // This is to keep the first room/shop consistent for cutscene purposes
+            if(index == 0) return@mapIndexed mapRooms.first { it.controller != "shop_room" }
+            if(index == 2) return@mapIndexed mapRooms.first { it.controller == "shop_room" }
+
             mapRooms.filter {
                 if((index + 1) % 3 == 0) it.controller == "shop_room"
                 else it.controller != "shop_room"
@@ -225,10 +229,19 @@ class TowerGenerator(
 
             val roomBounds = mapEndRoom.getPostPasteBounds(startPos)
             val endingBlocks: ArrayList<Vector> = ArrayList()
-            roomBounds.first.forEachRegion(roomBounds.second) {
-                if(it.type == Material.WHITE_CONCRETE || it.type == Material.BLACK_CONCRETE) {
-                    repeat(5) { index ->
-                        endingBlocks.add(it.location.clone().withY(it.location.y + index).toBlockLocation().toVector())
+            val loadedChunks: ArrayList<Pair<Int, Int>> = ArrayList()
+            suspendSync {
+                roomBounds.first.forEachRegion(roomBounds.second) {
+                    if(it.chunk.x to it.chunk.z !in loadedChunks) {
+                        it.chunk.load()
+                        it.chunk.isForceLoaded = true
+                        loadedChunks.add(it.chunk.x to it.chunk.z)
+                    }
+
+                    if(it.type == Material.WHITE_CONCRETE || it.type == Material.BLACK_CONCRETE) {
+                        repeat(5) { index ->
+                            endingBlocks.add(it.location.clone().withY(it.location.y + index).toBlockLocation().toVector())
+                        }
                     }
                 }
             }
