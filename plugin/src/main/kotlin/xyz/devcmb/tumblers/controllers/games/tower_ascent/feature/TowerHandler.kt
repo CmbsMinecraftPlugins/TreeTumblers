@@ -48,7 +48,7 @@ class TowerHandler(
     private val map: LoadedMap,
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
-    private val rooms: ArrayList<TowerGenerator.LoadedRoom>,
+    val rooms: ArrayList<TowerGenerator.LoadedRoom>,
     private val endingRoom: TowerGenerator.LoadedEndingRoom
 ) : Listener {
     companion object {
@@ -90,6 +90,12 @@ class TowerHandler(
             5
         )
 
+        suspendSync {
+            team.getAllPlayers().filter { !it.isOnline }.forEach {
+                controller.playerDeath(it)
+            }
+        }
+
         currentRoom.roomController?.start()
         spawnMobs(loadedRoom, loadedRoom.room.mobSets)
     }
@@ -122,6 +128,10 @@ class TowerHandler(
                 controller.teamCompletedRooms[team] = controller.teamCompletedRooms[team]!! + 1
                 controller.teamRoomPlacements[team]!!.add(placement)
                 controller.grantTeamScore(team, TowerAscentScoreSource.COMPLETE_ROOM)
+
+                controller.deadPlayers.filter { it.team == team && it.isOnline }.forEach {
+                    controller.respawnPlayer(it)
+                }
 
                 Bukkit.broadcast(controller.gameMessage(
                     Format.mm(

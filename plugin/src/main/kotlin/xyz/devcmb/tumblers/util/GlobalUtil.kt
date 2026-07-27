@@ -809,3 +809,18 @@ fun Pair<Location, Location>.getTeleportLocation(
         playerLocation.pitch
     )
 }
+
+// ai code because im lazy
+fun Pair<Location, Location>.center(): Location {
+    val (a, b) = this
+
+    require(a.world == b.world) {
+        "Locations must be in the same world"
+    }
+
+    return a.clone().apply {
+        x = (a.x + b.x) / 2.0
+        y = (a.y + b.y) / 2.0
+        z = (a.z + b.z) / 2.0
+    }
+}

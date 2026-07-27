@@ -23,6 +23,7 @@ import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.showToAll
 
 @Controller(Controller.Priority.MEDIUM)
@@ -35,18 +36,20 @@ object SpectatorController : IController {
     fun makeSpectator(player: Player) {
         spectators.add(player)
 
+        runTask {
+            player.world.entities
+                .filterIsInstance<Mob>()
+                .filter { it.target == player }
+                .forEach { mob ->
+                    mob.target = null
+                }
+        }
+
         player.hideToAll()
         player.heal(20.0)
         player.inventory.clear()
         player.allowFlight = true
         player.isFlying = true
-        player.world.entities
-            .filterIsInstance<Mob>()
-            .forEach { mob ->
-                if (mob.target == player) {
-                    mob.target = null
-                }
-            }
         player.enableActionBar("spectatorActionBar")
 
         NametagController.updateTagVisibility(player)
@@ -80,10 +83,14 @@ object SpectatorController : IController {
         if(player in spectators) event.isCancelled = true
     }
 
-    @EventHandler
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun spectatorTargetEvent(event: EntityTargetLivingEntityEvent) {
         val player = event.target as? Player ?: return
-        if(player in spectators) event.isCancelled = true
+
+        if (player in spectators) {
+            event.isCancelled = true
+        }
     }
 
     @EventHandler
@@ -102,7 +109,7 @@ object SpectatorController : IController {
         unSpectate(event.player)
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
         val currentGame = GameController.activeGame
         if(Flag.CUSTOM_DEATH_SYSTEM in (currentGame?.data?.flags ?: emptyList())) return

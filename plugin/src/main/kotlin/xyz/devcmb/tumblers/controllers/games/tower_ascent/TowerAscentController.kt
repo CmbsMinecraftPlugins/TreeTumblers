@@ -1,10 +1,18 @@
 package xyz.devcmb.tumblers.controllers.games.tower_ascent
 
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
+import org.bukkit.event.EventHandler
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.EventGame
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentData
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreSource
@@ -18,12 +26,15 @@ import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
 import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.center
 import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.titleCountdown
+import xyz.devcmb.tumblers.util.tp
+import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -170,17 +181,96 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         super.cleanup()
     }
 
+    val deadPlayers: ArrayList<TumblingPlayer> = ArrayList()
+    fun playerDeath(player: TumblingPlayer) {
+        Bukkit.broadcast(Format.mm(
+            "<gray>(<white><glyph:icon/skull></white>) <player> was lost in the tower</gray>",
+            Placeholder.component("player", player.formattedName)
+        ))
+
+        deadPlayers.add(player)
+        playerGoldCounts[player] = 0
+
+        if(player.isOnline) {
+            player.bukkitPlayer!!.sendMessage(Format.warning("You will be respawned when the room is cleared or when your entire team has been eliminated."))
+        }
+
+        if(player.team.getAllPlayers().all { it in deadPlayers }) {
+            Bukkit.broadcast(Format.mm(
+                "<red>(<white><glyph:icon/skull></white>) <team> <b>were lost in the tower</b></red>",
+                Placeholder.component("team", player.team.formattedName)
+            ))
+            TreeTumblers.pluginScope.launch {
+                delay(2.seconds)
+                titleCountdown(player.team.audience, Format.mm("Respawning in..."), 10)
+
+                suspendSync {
+                    player.team.getOnlinePlayers().forEach {
+                        respawnPlayer(it.tumblingPlayer)
+                    }
+                }
+            }
+        }
+    }
+
+    fun respawnPlayer(player: TumblingPlayer) {
+        deadPlayers.remove(player)
+        if(!player.isOnline) return
+
+        val bukkitPlayer = player.bukkitPlayer!!
+        val handler = generator.towerHandlers.find { it.team == player.team }
+            ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+
+        val currentRoom = handler.currentRoom
+
+        unSpectate(bukkitPlayer)
+        bukkitPlayer.foodLevel = 20
+        bukkitPlayer.saturation = 3f
+        bukkitPlayer.giveKit(playerKit)
+
+        val startingLocation = currentRoom.startingElevatorBounds?.center()
+            ?: getSpawns(map, TowerAscentSpawn.valueOf("SET_${player.team.ordinal + 1}")).random()
+
+        bukkitPlayer.tp(startingLocation)
+    }
+
     /**
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
-        TODO("Not yet implemented")
+        if(player.tumblingPlayer !in deadPlayers) {
+            respawnPlayer(player.tumblingPlayer)
+        } else {
+            makeSpectator(player)
+
+            val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
+                ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+
+            val currentRoom = handler.currentRoom
+            val startingLocation = currentRoom.startingElevatorBounds?.center()
+                ?: getSpawns(map, TowerAscentSpawn.valueOf("SET_${player.tumblingPlayer.team.ordinal + 1}")).random()
+
+            player.tp(startingLocation)
+            player.sendMessage(Format.warning("You've joined while a room is active and will be respawned whenever the room is cleared, or if your entire team is eliminated."))
+        }
     }
 
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
     override fun playerLeave(player: Player) {
-        TODO("Not yet implemented")
+        val plr = player.tumblingPlayer
+        if(plr in gameParticipants) {
+            playerDeath(plr)
+        }
+    }
+
+    @EventHandler
+    fun towerAscentPlayerDeathEvent(event: PlayerDeathEvent) {
+        val player = event.player
+        val tumblingPlayer = player.tumblingPlayer
+        if(tumblingPlayer !in gameParticipants) return
+
+        playerDeath(tumblingPlayer)
     }
 }
