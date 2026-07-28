@@ -182,7 +182,7 @@ class TowerGenerator(
                     val controllerClass = roomControllerRegistry[it]
                         ?: throw IllegalStateException("Room $index does not have a valid attached room controller")
 
-                    val controller = controllerClass.primaryConstructor!!.call()
+                    val controller = controllerClass.primaryConstructor!!.call(index)
                     roomControllers.add(controller)
                     Bukkit.getPluginManager().registerEvents(controller, TreeTumblers.plugin)
 

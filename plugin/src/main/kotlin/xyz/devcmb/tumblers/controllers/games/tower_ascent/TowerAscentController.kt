@@ -19,6 +19,7 @@ import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentData
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentScoreSource
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.data.TowerAscentSpawn
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.ShopRoom
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -78,6 +79,11 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
     }
 
     val playerGoldCounts: HashMap<TumblingPlayer, Int> = HashMap()
+    val globalShopItems: List<List<ShopRoom.ShopItem>> = buildList {
+        repeat(5) {
+            add(ArrayList((0..15).map { ShopRoom.ShopItem.entries.random() }))
+        }
+    }
 
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         TowerAscentScoreSource.COMPLETE_ROOM to {
@@ -326,7 +332,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         if(!plr.team.playingTeam || !isGameOver) return
 
         val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
-            ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")
+            ?: throw GameControllerException("Attempted to eliminate a player that does not have a tower handler for their team")
         if(!handler.roomActive || plr !in alivePlayers) return
 
         playerDeath(plr)

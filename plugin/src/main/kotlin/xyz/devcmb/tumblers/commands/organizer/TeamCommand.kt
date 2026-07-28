@@ -45,7 +45,7 @@ class TeamCommand {
     @Execute(name = "list")
     fun executeList(@Context sender: CommandSender) {
         var teams = Component.empty()
-        Team.entries.forEach { it ->
+        Team.entries.forEach {
             teams = teams.appendNewline().append(it.formattedName)
         }
         sender.sendMessage(Component.text("Here are all the teams: ", NamedTextColor.AQUA).append(teams))

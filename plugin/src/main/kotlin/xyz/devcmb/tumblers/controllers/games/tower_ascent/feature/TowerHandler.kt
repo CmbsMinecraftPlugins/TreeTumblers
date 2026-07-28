@@ -319,7 +319,7 @@ class TowerHandler(
             )))
 
             val playerGold = (controller.playerGoldCounts[player.tumblingPlayer] ?: 0)
-            val goldBankScore = playerGold / 5
+            val goldBankScore = playerGold / 2
 
             controller.grantScore(player, TowerAscentScoreSource.BANK_GOLD, goldBankScore)
             player.sendMessage(controller.gameMessage(

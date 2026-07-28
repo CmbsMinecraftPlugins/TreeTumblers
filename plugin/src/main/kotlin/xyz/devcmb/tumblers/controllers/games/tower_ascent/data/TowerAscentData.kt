@@ -78,13 +78,13 @@ object TowerAscentData : GameData(
             delay(6000)
         },
         CutsceneStep(
-            Format.mm("<white>However, <color:${Team.ORANGE.color.asHexString()}>Be Careful!</color> If you <red>die</red> in the tower, you'll lose all your <green>purchased items</green> and all your <gold>gold</gold></white>"),
+            Format.mm("<white>However, <color:${Team.ORANGE.color.asHexString()}>be careful!</color> If you <red>die</red> in the tower, you'll lose all your <green>purchased items</green> and all your <gold>gold</gold></white>"),
             "cutscene.shop"
         ) {
             delay(6000)
         },
         CutsceneStep(
-            Format.mm("<white>The <gold>faster</gold> you complete the tower, the <aqua>more score</aqua> you'll earn!"),
+            Format.mm("<white>The <green>faster</green> you complete the tower, the <aqua>more score</aqua> you'll earn!<br>You'll also earn a <gold>bonus</gold> for any gold you keep until the end of the run."),
             "cutscene.end"
         ) {
             delay(4000)

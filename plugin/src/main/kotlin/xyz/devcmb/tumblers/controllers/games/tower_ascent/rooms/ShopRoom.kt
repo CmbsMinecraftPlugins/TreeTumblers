@@ -34,7 +34,7 @@ import xyz.devcmb.tumblers.util.ticks
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.awt.Color
 
-class ShopRoom : RoomController {
+class ShopRoom(val roomIndex: Int) : RoomController {
     override val noDefaultBehavior: Boolean = true
     override lateinit var handler: TowerHandler
     override lateinit var room: TowerGenerator.LoadedRoom
@@ -53,14 +53,15 @@ class ShopRoom : RoomController {
         handler.controller.map.world.entities
             .filter { it.location.isInRegion(room.roomBounds.first, room.roomBounds.second) }
             .filterIsInstance<ItemDisplay>()
-            .forEach {
-                val shopItem = ShopItem.entries.random()
+            .forEachIndexed { index, display ->
+                val allItems = handler.controller.globalShopItems[((roomIndex + 1) / 3) - 1]
+                val shopItem = allItems[index]
                 val item = shopItem.item.build()
 
-                it.setItemStack(item)
-                it.setNoxesiumComponent(CommonEntityComponentTypes.GLOW_COLOR, Color(0, 255, 0))
+                display.setItemStack(item)
+                display.setNoxesiumComponent(CommonEntityComponentTypes.GLOW_COLOR, Color(0, 255, 0))
                 shopItems.add(PurchasableShopItem(
-                    it,
+                    display,
                     shopItem
                 ))
             }
@@ -175,7 +176,9 @@ class ShopRoom : RoomController {
         DIAMOND_LEGGINGS(65, AdvancedItemStack(Material.DIAMOND_LEGGINGS)),
         SPEED_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.SPEED).build()),
         JUMP_BOOST_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.JUMP_BOOST).build()),
-        GOLDEN_APPLE(35, AdvancedItemStack(Material.GOLDEN_APPLE)),
+        REGENERATION_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.REGENERATION).build()),
+        STRENGTH_SCROLL(45, ScrollItem(ScrollItem.ScrollEffect.STRENGTH).build()),
+        GOLDEN_APPLE_2X(30, AdvancedItemStack(Material.GOLDEN_APPLE) { count(2) }),
         STEAK_8X(30, AdvancedItemStack(Material.COOKED_BEEF) { count(8) })
     }
 
