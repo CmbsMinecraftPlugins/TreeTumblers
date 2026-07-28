@@ -197,6 +197,13 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         })
     }
 
+    var isGameOver = false
+    override suspend fun postGame() {
+        isGameOver = true
+        generator.towerHandlers.forEach { it.endGame() }
+        super.postGame()
+    }
+
     override suspend fun cleanup() {
         generator.cleanup()
         gameParticipants.forEach {
@@ -258,6 +265,8 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      * The method that gets called when a player joins the game during the [State.GAME_ON] and [State.PREGAME] states
      */
     override fun playerJoin(player: Player) {
+        if(isGameOver) return
+
         if(!player.tumblingPlayer.team.playingTeam) {
             spawnPlayers(map, listOf(player), TowerAscentSpawn.SET_1)
             return
@@ -314,7 +323,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
      */
     override fun playerLeave(player: Player) {
         val plr = player.tumblingPlayer
-        if(!plr.team.playingTeam) return
+        if(!plr.team.playingTeam || !isGameOver) return
 
         val handler = generator.towerHandlers.find { it.team == player.tumblingPlayer.team }
             ?: throw GameControllerException("Attempted to respawn a player that does not have a tower handler for their team")

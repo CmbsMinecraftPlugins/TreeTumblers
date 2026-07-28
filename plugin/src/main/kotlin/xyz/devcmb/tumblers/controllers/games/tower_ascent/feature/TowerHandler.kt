@@ -77,6 +77,13 @@ class TowerHandler(
         }
     }
 
+    suspend fun endGame() {
+        gameOn = false
+        suspendSync {
+            remainingSetMobs.forEach { it.remove() }
+        }
+    }
+
     suspend fun startRoom(loadedRoom: TowerGenerator.LoadedRoom) {
         Audience.audience(team.getOnlinePlayers()).showTitle(Title.title(
             Format.mm("<yellow><b>Room ${currentRoomIndex + 1}</b></yellow>"),
@@ -110,6 +117,8 @@ class TowerHandler(
         roomActive = true
 
         while(true) {
+            if(!gameOn) break
+
             if(remainingSetMobs.isNotEmpty()) {
                 delay(300)
                 continue
