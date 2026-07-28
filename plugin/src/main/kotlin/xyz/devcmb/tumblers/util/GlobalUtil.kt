@@ -1,5 +1,7 @@
 package xyz.devcmb.tumblers.util
 
+import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.wrapper.PacketWrapper
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.world.block.BlockType
@@ -823,4 +825,8 @@ fun Pair<Location, Location>.center(): Location {
         y = (a.y + b.y) / 2.0
         z = (a.z + b.z) / 2.0
     }
+}
+
+fun Player.sendPacket(packet: PacketWrapper<*>) {
+    PacketEvents.getAPI().playerManager.sendPacket(this, packet)
 }

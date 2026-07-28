@@ -11,6 +11,7 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Color
 import org.bukkit.FireworkEffect
+import org.bukkit.FluidCollisionMode
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
@@ -783,7 +784,10 @@ class BreachController: AbstractGame(BreachData) {
             }
 
             if (team2droppedStar != null) {
-                if (it.location.distance(team2droppedStar!!.location) < 2) {
+                if (
+                    it.location.distance(team2droppedStar!!.location) < 2
+                    && !isBehindWall(team2droppedStar!!, it)
+                ) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.first, team2droppedStar!!.location)
@@ -807,7 +811,10 @@ class BreachController: AbstractGame(BreachData) {
             }
 
             if (team1droppedStar != null) {
-                if (it.location.distance(team1droppedStar!!.location) < 2) {
+                if (
+                    it.location.distance(team1droppedStar!!.location) < 2
+                    && !isBehindWall(team1droppedStar!!, it)
+                ) {
                     starPickupTimes[it] = starPickupTimes.getOrDefault(it, 0) + 1
                     if (starPickupTimes[it]!! > starPickupTicks) {
                         roundEnd(playingTeams.second, team1droppedStar!!.location)
@@ -842,6 +849,20 @@ class BreachController: AbstractGame(BreachData) {
         Bukkit.getOnlinePlayers().forEach {
             it.sendMessage(message)
         }
+    }
+
+    private fun isBehindWall(item: Item, player: Player): Boolean {
+        val eye = player.eyeLocation
+        val direction = item.location.toVector().subtract(eye.toVector())
+        val distance = direction.length()
+
+        return player.world.rayTraceBlocks(
+            eye,
+            direction.normalize(),
+            distance,
+            FluidCollisionMode.NEVER,
+            true
+        ) != null
     }
 
     override fun overrideTabList(player: Player): Component {

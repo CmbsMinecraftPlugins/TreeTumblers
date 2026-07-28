@@ -1,5 +1,8 @@
 package xyz.devcmb.tumblers.engine.base
 
+import com.github.retrooper.packetevents.protocol.entity.data.EntityData
+import com.github.retrooper.packetevents.protocol.entity.data.EntityDataTypes
+import com.github.retrooper.packetevents.wrapper.play.server.WrapperPlayServerEntityMetadata
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -55,6 +58,7 @@ import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.getOrdinalSuffix
 import xyz.devcmb.tumblers.util.runTaskLater
+import xyz.devcmb.tumblers.util.sendPacket
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -318,6 +322,19 @@ abstract class AbstractGame(
      */
     suspend fun gameMain() {
         currentState = State.GAME_ON
+        gameParticipants.mapNotNull { it.bukkitPlayer }.forEach {
+            val team = it.tumblingPlayer.team
+            if(!data.flags.contains(Flag.DISABLE_TEAM_GLOW)) {
+                team.getOnlinePlayers().filter { plr -> plr != it }.forEach { plr ->
+                    val packet = WrapperPlayServerEntityMetadata(
+                        plr.entityId,
+                        listOf(EntityData(0, EntityDataTypes.BYTE, 0x40))
+                    )
+                    it.sendPacket(packet)
+                }
+            }
+        }
+
         gameOn()
     }
 

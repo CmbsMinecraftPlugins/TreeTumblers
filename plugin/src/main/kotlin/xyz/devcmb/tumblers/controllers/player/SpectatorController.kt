@@ -86,8 +86,9 @@ object SpectatorController : IController {
         player.inventory.remove(Material.COMPASS)
         player.isFlying = false
         player.allowFlight = false
+        player.fireTicks = 0
         player.disableActionBar("spectatorActionBar")
-        NametagController.updateTagVisibility(player)
+        NametagController.refreshPlayerTags(player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
