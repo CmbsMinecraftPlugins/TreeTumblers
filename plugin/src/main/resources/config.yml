@@ -106,6 +106,7 @@ templates:
   party_games: "&/templates/party"
   dioramas: "&/templates/dioramas"
   flood_escape_obstacles: "&/templates/flood_escape"
+  tower_ascent_templates: "&/templates/tower_ascent"
 
 lobby:
   # The hub world
@@ -604,3 +605,78 @@ games:
             - [9,97,-43,17,96,-52]
           cutscene:
             start: [-14.5, 132.5, 7.5, -120.0, 25.0]
+  tower_ascent:
+    worlds_folder: "tower_ascent"
+    rooms: 10
+
+    maps:
+      tower:
+        world: "tower"
+        data:
+          placement_axis: z
+          cutscene:
+            start: [3.5, 66.0, 3.5, 90.0, 0.0]
+            first: [-2.5, 66.0, -2.5, 54.4, 8.7]
+            shop: [-2.5, 65.0, 123.5, 90.0, 0.0]
+            end: [-8.5, 65.0, 603.5, 90.0, 0.0]
+          loadouts:
+            - { id: weak_ranged, armor: [], weapon: base_bow }
+            - { id: weak_melee, armor: [], weapon: stone_sword }
+
+            - { id: medium_1_ranged, armor: [base_iron_chestplate], weapon: base_bow }
+            - { id: medium_1_melee, armor: [base_iron_chestplate], weapon: iron_sword }
+            - { id: medium_2_ranged, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: base_bow }
+            - { id: medium_2_melee, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: iron_sword }
+          spawn_groups:
+            # Weak
+            - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged, gold: 7 }
+            - { id: stray_weak, mob: stray, loadout: weak_ranged, gold: 7 }
+            - { id: zombie_weak, mob: zombie, loadout: weak_melee, gold: 5 }
+            - { id: husk_weak, mob: husk, loadout: weak_melee, gold: 5 }
+
+            # Medium
+            - { id: skeleton_medium_1, mob: skeleton, loadout: medium_1_ranged, gold: 15 }
+            - { id: stray_medium_1, mob: stray, loadout: medium_1_ranged, gold: 15 }
+            - { id: zombie_medium_1, mob: zombie, loadout: medium_1_melee, gold: 12 }
+            - { id: husk_medium_1, mob: husk, loadout: medium_1_melee, gold: 12 }
+
+            - { id: skeleton_medium_2, mob: skeleton, loadout: medium_2_ranged, gold: 15 }
+            - { id: stray_medium_2, mob: stray, loadout: medium_2_ranged, gold: 15 }
+            - { id: zombie_medium_2, mob: zombie, loadout: medium_2_melee, gold: 12 }
+            - { id: husk_medium_2, mob: husk, loadout: medium_2_melee, gold: 12 }
+          spawns:
+            - pivot: [-1,64,3]
+              # x1,y1,z1,x2,y2,z2
+              wall: [0, 69, 6, 0, 65, 0]
+
+            - pivot: [-140, 64, 3]
+              wall: [-140, 69, 0, -140, 65, 6]
+
+            - pivot: [-280, 64, 3]
+              wall: [-280, 69, 0, -280, 65, 6]
+
+            - pivot: [-420, 64, 3]
+              wall: [-420, 69, 0, -420, 65, 6]
+
+            - pivot: [-560, 64, 3]
+              wall: [-560, 69, 0, -560, 65, 6]
+
+            - pivot: [-700, 64, 3]
+              wall: [-700, 69, 0, -700, 65, 6]
+
+            - pivot: [-840, 64, 3]
+              wall: [-840, 69, 0, -840, 65, 6]
+
+            - pivot: [-980, 64, 3]
+              wall: [-980, 69, 0, -980, 65, 6]
+          rooms:
+            - id: testing_room
+              # The material name that will replace all diamond and redstone blocks in the build
+              pivot_replacement_material: BLACKSTONE
+              mob_sets:
+                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
+                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
+            - id: shop
+              pivot_replacement_material: BLACKSTONE
+              mob_sets: []
+              controller: shop_room

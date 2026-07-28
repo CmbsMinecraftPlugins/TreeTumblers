@@ -41,7 +41,7 @@ object DebugUtil {
             if(logLevel.level >= level.level) {
                 player.sendMessage(
                     Component.text("[")
-                        .append(logLevel.icon())
+                        .append(level.icon())
                         .append(Component.text(" TreeTumblers] "))
                         .color(level.color)
                         .hoverEvent(HoverEvent.showText(

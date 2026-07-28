@@ -59,35 +59,23 @@ class WhitelistCommand {
 
     @Execute(name = "remove")
     fun executeWhitelistRemove(@Context executor: CommandSender, @Arg whitelistedPlayer: TumblingPlayer) {
-        val name = whitelistedPlayer.name
-
         if(GameController.activeGame != null) {
             executor.sendMessage(Format.error("Cannot remove from whitelist while a game is active."))
             return
         }
 
-        if(name.length > 16) {
-            executor.sendMessage(Format.error("Player does not exist!"))
-            return
-        }
-
         TreeTumblers.pluginScope.launch {
-            val profile = Bukkit.createProfile(name)
-            if (profile.complete(false)) {
-                try {
-                    if(!DatabaseController.isWhitelisted(profile.id.toString())) {
-                        executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
-                        return@launch
-                    }
-
-                    DatabaseController.unwhitelistPlayer(profile)
-                    executor.sendMessage(Format.success("Unwhitelisted $name successfully!"))
-                } catch (e: Exception) {
-                    executor.sendMessage(Format.error("An error occurred while attempting to un-whitelist!"))
-                    DebugUtil.severe("Failed to un-whitelist $name: ${e.message ?: "Unknown Error"}")
+            try {
+                if(!DatabaseController.isWhitelisted(whitelistedPlayer.uuid.toString())) {
+                    executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
+                    return@launch
                 }
-            } else {
-                executor.sendMessage(Format.error("Player does not exist (or the request failed)!"))
+
+                DatabaseController.unwhitelistPlayer(whitelistedPlayer)
+                executor.sendMessage(Format.success("Unwhitelisted ${whitelistedPlayer.name} successfully!"))
+            } catch (e: Exception) {
+                executor.sendMessage(Format.error("An error occurred while attempting to un-whitelist!"))
+                DebugUtil.severe("Failed to un-whitelist ${whitelistedPlayer.name}: ${e.message ?: "Unknown Error"}")
             }
         }
     }

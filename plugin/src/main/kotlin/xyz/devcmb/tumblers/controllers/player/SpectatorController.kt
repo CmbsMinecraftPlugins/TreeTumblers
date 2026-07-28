@@ -3,6 +3,7 @@ package xyz.devcmb.tumblers.controllers.player
 import io.papermc.paper.util.Tick
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Player
@@ -23,7 +24,9 @@ import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
+import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.showToAll
+import kotlin.math.pow
 
 @Controller(Controller.Priority.MEDIUM)
 object SpectatorController : IController {
@@ -32,21 +35,34 @@ object SpectatorController : IController {
     override fun init() {
     }
 
-    fun makeSpectator(player: Player) {
+    fun makeSpectator(player: Player, retargetMobs: Boolean = false) {
         spectators.add(player)
+
+        runTask {
+            player.world.entities
+                .filterIsInstance<Mob>()
+                .filter { it.target == player }
+                .forEach { mob ->
+                    if(!retargetMobs) {
+                        mob.target = null
+                        return@forEach
+                    }
+
+                    val playersInRange = Bukkit.getOnlinePlayers().filter {
+                        it.location.world == mob.location.world
+                        && it !in spectators
+                        && mob.location.distanceSquared(it.location) <= 8.0.pow(2.0)
+                    }
+
+                    mob.target = if(playersInRange.isNotEmpty()) playersInRange.random() else null
+                }
+        }
 
         player.hideToAll()
         player.heal(20.0)
         player.inventory.clear()
         player.allowFlight = true
         player.isFlying = true
-        player.world.entities
-            .filterIsInstance<Mob>()
-            .forEach { mob ->
-                if (mob.target == player) {
-                    mob.target = null
-                }
-            }
         player.enableActionBar("spectatorActionBar")
 
         NametagController.updateTagVisibility(player)
@@ -70,8 +86,9 @@ object SpectatorController : IController {
         player.inventory.remove(Material.COMPASS)
         player.isFlying = false
         player.allowFlight = false
+        player.fireTicks = 0
         player.disableActionBar("spectatorActionBar")
-        NametagController.updateTagVisibility(player)
+        NametagController.refreshPlayerTags(player)
     }
 
     @EventHandler(priority = EventPriority.LOWEST)
@@ -80,10 +97,14 @@ object SpectatorController : IController {
         if(player in spectators) event.isCancelled = true
     }
 
-    @EventHandler
+
+    @EventHandler(priority = EventPriority.HIGHEST, ignoreCancelled = false)
     fun spectatorTargetEvent(event: EntityTargetLivingEntityEvent) {
         val player = event.target as? Player ?: return
-        if(player in spectators) event.isCancelled = true
+
+        if (player in spectators) {
+            event.isCancelled = true
+        }
     }
 
     @EventHandler
@@ -102,7 +123,7 @@ object SpectatorController : IController {
         unSpectate(event.player)
     }
 
-    @EventHandler(priority = EventPriority.LOW)
+    @EventHandler(priority = EventPriority.HIGHEST)
     fun playerSpectateDeathEvent(event: PlayerDeathEvent) {
         val currentGame = GameController.activeGame
         if(Flag.CUSTOM_DEATH_SYSTEM in (currentGame?.data?.flags ?: emptyList())) return

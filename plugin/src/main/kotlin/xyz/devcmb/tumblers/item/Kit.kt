@@ -17,6 +17,8 @@ object Kit {
         val items: ArrayList<KitItem>
         val defaultDropability: Boolean
             get() = false
+        val saveLoadout: Boolean
+            get() = true
         val uuid: UUID
     }
 
@@ -70,7 +72,7 @@ object Kit {
             }
         }
 
-        class TeamConcreteItem(val droppableOverride: Boolean?) : KitItem {
+        class TeamConcreteItem(val droppableOverride: Boolean? = null) : KitItem {
             override fun getStack(kit: KitDefinition, player: Player): ItemStack {
                 return AdvancedItemStack(ItemStack.of(player.tumblingPlayer.team.concrete)) {
                     returnOnPlace = true
@@ -82,7 +84,12 @@ object Kit {
     }
 
     val loadouts: ArrayList<KitLoadout> = ArrayList()
+    val shouldntSaveLoadout: ArrayList<UUID> = ArrayList()
     fun giveKit(player: Player, kit: KitDefinition) {
+        if(!kit.saveLoadout && !shouldntSaveLoadout.contains(kit.uuid)) {
+            shouldntSaveLoadout.add(kit.uuid)
+        }
+
         player.inventory.clear()
 
         val loadout = loadouts.find { it.player == player.tumblingPlayer && it.id == kit.uuid }
@@ -123,7 +130,9 @@ object Kit {
                 PersistentDataType.STRING
             ).takeIf { it != null }
         } ?: return
+
         val kitUUID = UUID.fromString(kitID)
+        if(kitUUID in shouldntSaveLoadout) return
 
         val currentLayout = loadouts.find { it.player == player.tumblingPlayer && it.id == kitUUID }?.loadout ?: hashMapOf()
         val newLayout: HashMap<Int, Int> = HashMap()

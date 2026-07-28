@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.crumble
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
@@ -94,10 +93,6 @@ object CrumbleData : GameData(
         CommonScoreSource.TEAM_ROUND_WIN to 480,
         CommonScoreSource.TEAM_ROUND_DRAW to 240,
     ),
-    icon = Format.mm("<glyph:game/crumble_icon>"),
-    logo = Format.mm("<glyph:game/crumble_logo>"),
-    tabLogo = Format.mm("<glyph:game/crumble_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scoreboard = CrumbleScoreboard::class,
     badges = CrumbleBadge.entries,
     spawns = CrumbleSpawn.entries,

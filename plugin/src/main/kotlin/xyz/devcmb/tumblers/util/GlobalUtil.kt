@@ -1,7 +1,10 @@
 package xyz.devcmb.tumblers.util
 
+import com.github.retrooper.packetevents.PacketEvents
+import com.github.retrooper.packetevents.wrapper.PacketWrapper
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.world.block.BlockType
 import com.sk89q.worldedit.world.block.BlockTypes
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.delay
@@ -23,6 +26,7 @@ import org.bukkit.block.Block
 import org.bukkit.configuration.MemorySection
 import org.bukkit.entity.Firework
 import org.bukkit.entity.Interaction
+import org.bukkit.entity.LivingEntity
 import org.bukkit.entity.Player
 import org.bukkit.generator.BiomeProvider
 import org.bukkit.generator.ChunkGenerator
@@ -88,7 +92,7 @@ fun Player.showPlayerAndTag(other: Player) {
 fun TumblingPlayer.enableBossBar(id: String) {
     this.currentBossbars.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.enableBossBar(id)
+        PlayerController.playerUIControllers[it]?.enableBossBar(id)
     }
 }
 
@@ -96,7 +100,7 @@ fun TumblingPlayer.enableBossBar(id: String) {
 fun TumblingPlayer.disableBossBar(id: String) {
     this.currentBossbars.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.disableBossBar(id)
+        PlayerController.playerUIControllers[it]?.disableBossBar(id)
     }
 }
 
@@ -104,7 +108,7 @@ fun TumblingPlayer.disableBossBar(id: String) {
 fun TumblingPlayer.activateScoreboard(id: String) {
     this.currentScoreboards.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.activateScoreboard(id)
+        PlayerController.playerUIControllers[it]?.activateScoreboard(id)
     }
 }
 
@@ -112,7 +116,7 @@ fun TumblingPlayer.activateScoreboard(id: String) {
 fun TumblingPlayer.deactivateScoreboard(id: String) {
     this.currentScoreboards.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.deactivateScoreboard(id)
+        PlayerController.playerUIControllers[it]?.deactivateScoreboard(id)
     }
 }
 
@@ -120,7 +124,7 @@ fun TumblingPlayer.deactivateScoreboard(id: String) {
 fun TumblingPlayer.enableActionBar(id: String) {
     this.currentActionBars.add(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.enableActionBar(id)
+        PlayerController.playerUIControllers[it]?.enableActionBar(id)
     }
 }
 
@@ -128,7 +132,7 @@ fun TumblingPlayer.enableActionBar(id: String) {
 fun TumblingPlayer.disableActionBar(id: String) {
     this.currentActionBars.remove(id)
     this.bukkitPlayer?.let {
-        PlayerController.playerUIControllers[it]!!.disableActionBar(id)
+        PlayerController.playerUIControllers[it]?.disableActionBar(id)
     }
 }
 
@@ -241,6 +245,15 @@ fun List<*>.validateLocation(world: World): Location? {
     return list.unpackCoordinates(world)
 }
 
+/** Checks if certain values in a hashmap are valid given a condition */
+fun HashMap<*, *>.validateElements(values: HashMap<*, ((param: Any) -> Boolean)>): Boolean {
+    values.forEach { (key, validate) ->
+        if(this[key] == null || !validate.invoke(this[key]!!)) return@validateElements false
+    }
+
+    return true
+}
+
 /** Checks if the attached [Location] is inside the boundaries [bound1] and [bound2] **/
 fun Location.isInRegion(bound1: Location, bound2: Location): Boolean {
     return this.blockX >= min(bound1.blockX, bound2.blockX) && this.blockY >= min(bound1.blockY, bound2.blockY)
@@ -276,6 +289,22 @@ fun Location.randomBetween(other: Location): Location {
     val z = (min(this.z.toInt(), other.z.toInt())..max(this.z.toInt(), other.z.toInt())).random()
 
     return Location(this.world, x.toDouble(), y.toDouble(), z.toDouble())
+}
+
+fun Location.randomBetween(other: Location, predicate: (block: Block) -> Boolean): Location? {
+    val locations = arrayListOf<Block>()
+    forEachRegion(other) {
+        if(predicate(it)) {
+            locations.add(it)
+        }
+    }
+
+    if(locations.isEmpty()) {
+        DebugUtil.warning("Predicate for randomBetween did not leave any valid locations")
+        return null
+    }
+
+    return locations.random().location
 }
 
 /** Gets the minimum location of [this] and [other] **/
@@ -462,6 +491,20 @@ fun isArmor(item: ItemStack): Boolean {
     }
 }
 
+fun LivingEntity.equipArmor(armor: Iterable<ItemStack>) {
+    val equipment = equipment ?: return
+
+    armor.forEach { item ->
+        when (item.type.equipmentSlot) {
+            EquipmentSlot.HEAD -> equipment.setHelmet(item)
+            EquipmentSlot.CHEST -> equipment.setChestplate(item)
+            EquipmentSlot.LEGS -> equipment.setLeggings(item)
+            EquipmentSlot.FEET -> equipment.setBoots(item)
+            else -> throw IllegalArgumentException("Unexpected equipment slot: ${item.type.equipmentSlot}")
+        }
+    }
+}
+
 /** Formats [seconds] in the format M:SS **/
 fun formatToMSS(seconds: Int): String {
     val duration = Duration.ofSeconds(seconds.toLong())
@@ -579,7 +622,7 @@ suspend fun subtitleCountdown(audience: Audience, title: Component, length: Int)
 inline fun <reified T> configurable(path: String): T {
     val cfg = TreeTumblers.plugin.config
     if(!cfg.contains(path)) throw TumblingConfigKeyMissingException(path)
-    if(!cfg.isSet(path)) DebugUtil.warning("Config path $path is not set! Defaulting to default value.")
+    if(!cfg.isSet(path)) DebugUtil.warning("Config path $path is not set! Using default value instead.")
 
     val value = when(T::class) {
         Int::class -> cfg.getInt(path)
@@ -697,3 +740,93 @@ fun Interaction.contains(location: Location): Boolean {
 
 /** Checks if an interaction entity overlaps with the bounding box of [player] **/
 fun Interaction.contains(player: Player) = contains(player.location)
+
+/** Gets a location in between a line of [length] blocks of [type] on either the X or Z axis */
+fun Clipboard.getPivot(type: BlockType, length: Int = 5): BlockVector3? {
+    require(length % 2 == 1) { "Pivot length must be an odd number" }
+
+    val sideLength = (length - 1)/2
+    this.region.forEach { origin ->
+        if (this.getBlock(origin).blockType != type) return@forEach
+
+        fun check(dx: Int, dz: Int): BlockVector3? {
+            for (i in -sideLength..sideLength) {
+                val pos = BlockVector3.at(
+                    origin.x() + dx * i,
+                    origin.y(),
+                    origin.z() + dz * i
+                )
+
+                if (!this.region.contains(pos)) return null
+                if (this.getBlock(pos).blockType != type) return null
+            }
+            return origin
+        }
+
+        val xCheck = check(1,0)
+        val zCheck = check(0,1)
+
+        if(xCheck != null || zCheck != null) return xCheck ?: zCheck
+    }
+
+    return null
+}
+
+val Long.ticks
+    get() = Tick.of(this)
+
+val Int.ticks
+    get() = this.toLong().ticks
+
+fun Location.isEnclosed(): Boolean {
+    return this.world.getHighestBlockYAt(this) > this.y
+}
+
+// ai code
+fun Pair<Location, Location>.getTeleportLocation(
+    otherBoundary: Pair<Location, Location>,
+    playerLocation: Location
+): Location {
+    fun Pair<Location, Location>.center(): Triple<Double, Double, Double> {
+        return Triple(
+            (first.blockX + second.blockX + 1) / 2.0,
+            (first.blockY + second.blockY + 1) / 2.0,
+            (first.blockZ + second.blockZ + 1) / 2.0
+        )
+    }
+
+    val (currentX, currentY, currentZ) = center()
+    val (otherX, otherY, otherZ) = otherBoundary.center()
+
+    val offsetX = playerLocation.x - currentX
+    val offsetY = playerLocation.y - currentY
+    val offsetZ = playerLocation.z - currentZ
+
+    return Location(
+        playerLocation.world,
+        otherX - offsetX,
+        otherY + offsetY,
+        otherZ - offsetZ,
+        playerLocation.yaw + 180f,
+        playerLocation.pitch
+    )
+}
+
+// ai code because im lazy
+fun Pair<Location, Location>.center(): Location {
+    val (a, b) = this
+
+    require(a.world == b.world) {
+        "Locations must be in the same world"
+    }
+
+    return a.clone().apply {
+        x = (a.x + b.x) / 2.0
+        y = (a.y + b.y) / 2.0
+        z = (a.z + b.z) / 2.0
+    }
+}
+
+fun Player.sendPacket(packet: PacketWrapper<*>) {
+    PacketEvents.getAPI().playerManager.sendPacket(this, packet)
+}

@@ -10,7 +10,7 @@ import xyz.devcmb.util.ResourcePath
 
 object DefaultAscentGenerator : FontGenerator {
     val ascents = listOf(
-        -3, 3, -4, 4, -8, 8, -12, 12, -16, 16, -20, 20, -24, 24, -28, 28, -32, 32, -36, 36, -40, 40, 44, -44, 48, -48
+        -3, 3, -4, 4, -8, 8, -12, 12, -16, 16, -20, 20, -22, 22, -24, 24, -28, 28, -32, 32, -36, 36, -40, 40, 44, -44, 48, -48
     )
 
     override fun generateFonts(builder: ResourcePackBuilder): Iterable<GeneratedFont> {

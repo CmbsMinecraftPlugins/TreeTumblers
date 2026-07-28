@@ -60,5 +60,6 @@ class ScrollItem(
         REGENERATION("Regeneration", PotionEffectType.REGENERATION, 3 * 20, 2),
         INVISIBILITY("Invisibility", PotionEffectType.INVISIBILITY, 70, 0),
         SPEED("Speed", PotionEffectType.SPEED, 5 * 20, 1),
+        STRENGTH("Strength", PotionEffectType.STRENGTH, 7 * 20, 0),
     }
 }

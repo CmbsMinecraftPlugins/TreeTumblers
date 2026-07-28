@@ -171,9 +171,7 @@ object DatabaseController : IController {
         PlayerController.registerTumblingPlayer(profile.id!!, profile.name!!, team, score.getInt("score"))
     }
 
-    suspend fun unwhitelistPlayer(profile: PlayerProfile) = withContext(Dispatchers.IO) {
-        require(profile.id != null) { "PlayerProfile does not have a UUID" }
-
+    suspend fun unwhitelistPlayer(player: TumblingPlayer) = withContext(Dispatchers.IO) {
         val statement = connection.prepareStatement(
             """
                 UPDATE tumbling_players
@@ -182,9 +180,9 @@ object DatabaseController : IController {
             """.trimIndent()
         )
 
-        statement.setString(1, profile.id.toString())
+        statement.setString(1, player.uuid.toString())
 
-        PlayerController.unregisterTumblingPlayer(profile.id!!)
+        PlayerController.unregisterTumblingPlayer(player.uuid)
         statement.executeUpdate()
     }
 

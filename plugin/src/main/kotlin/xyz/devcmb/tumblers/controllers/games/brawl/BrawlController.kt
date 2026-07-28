@@ -38,7 +38,7 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getRandomCirclePoint
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
-import xyz.devcmb.tumblers.util.disableBossBar
+import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.suspendSync
@@ -249,7 +249,7 @@ class BrawlController : RoundedGame(
 
     override suspend fun postGame() {
         gameParticipants.forEach {
-            it.disableBossBar("brawlActionBar")
+            it.disableActionBar("brawlActionBar")
         }
         super.postGame()
     }

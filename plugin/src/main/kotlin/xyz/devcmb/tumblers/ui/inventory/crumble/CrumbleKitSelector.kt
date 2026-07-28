@@ -41,7 +41,9 @@ class CrumbleKitSelector : HandledInventory {
             val crumble = GameController.activeGame as? CrumbleController ?:
                 throw TumblingUIException("Attempted to open the crumble kit selector while crumble was not active.")
 
-            if(crumble.playerKits.filter { item -> item.value.id == kit.id }.size >= CrumbleController.maxPlayersPerKit) {
+            if(crumble.playerKits
+                .filter { item -> item.value.id == kit.id && item.key.team == player.tumblingPlayer.team }
+                .size >= CrumbleController.maxPlayersPerKit) {
                 player.sendMessage(Format.error("This kit has too many players!"))
                 return@onSelect
             }

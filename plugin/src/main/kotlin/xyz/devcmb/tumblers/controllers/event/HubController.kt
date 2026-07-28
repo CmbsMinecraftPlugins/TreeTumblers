@@ -18,6 +18,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.server.WorldController
+import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.fadeTp
@@ -32,7 +33,7 @@ import xyz.devcmb.tumblers.util.validateLocation
 object HubController : IController {
     val isHub: Boolean
         get() {
-            return GameController.activeGame == null
+            return GameController.activeGame == null || GameController.activeGame!!.currentState == AbstractGame.State.LOADING
         }
 
     val isVoting: Boolean

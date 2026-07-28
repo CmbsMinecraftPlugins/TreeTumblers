@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.breach
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import org.bukkit.Material
 import org.bukkit.entity.Item
 import org.bukkit.inventory.ItemStack
@@ -132,10 +131,6 @@ object BreachData : GameData(
         Flag.CUSTOM_DEATH_SYSTEM,
         Flag.HIDE_HEALTH_INDICATOR
     ),
-    icon = Format.mm("<glyph:game/breach_icon>"),
-    logo = Format.mm("<glyph:game/breach_logo>"),
-    tabLogo = Format.mm("<glyph:game/breach_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scores = hashMapOf(),
     scoreboard = BreachScoreboard::class
 )

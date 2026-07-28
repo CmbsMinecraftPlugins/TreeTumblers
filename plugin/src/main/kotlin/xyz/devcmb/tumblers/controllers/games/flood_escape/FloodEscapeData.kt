@@ -5,7 +5,6 @@ import kotlinx.coroutines.delay
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import xyz.devcmb.tumblers.GameControllerException
@@ -120,10 +119,6 @@ object FloodEscapeData : GameData(
         Flag.DISABLE_NATURAL_REGENERATION,
         Flag.HIDE_HEALTH_INDICATOR
     ),
-    icon = Format.mm("<glyph:game/flood_escape_icon>"),
-    logo = Format.mm("<glyph:game/flood_escape_logo>"),
-    tabLogo = Format.mm("<glyph:game/flood_escape_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scores = hashMapOf(
         FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 2,
         FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25

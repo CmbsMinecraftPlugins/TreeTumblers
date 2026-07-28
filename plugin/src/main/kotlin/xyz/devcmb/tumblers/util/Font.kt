@@ -17,12 +17,18 @@ object Font {
     }
 
     fun getGlyphString(path: String): String {
-        val value = findValue(path) ?: return "?"
+        val value = findValue(path)
+            ?: findValue("icon/missing")
+            ?: throw IllegalStateException("Missing icon not included in font resource index")
+
         return value.second
     }
 
     fun getGlyph(path: String, shouldColor: Boolean = true): Component {
-        val value = findValue(path) ?: return Component.text("?")
+        val value = findValue(path)
+            ?: findValue("icon/missing")
+            ?: throw IllegalStateException("Missing icon not included in font resource index")
+
         var component = Component.empty()
             .append(Component.text(value.second).font(NamespacedKey(TreeTumblers.NAMESPACE, value.first)))
         if(shouldColor) component = component.color(NamedTextColor.WHITE)

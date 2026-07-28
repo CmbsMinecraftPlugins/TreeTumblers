@@ -34,6 +34,7 @@ fun main() {
 
     val outDirs: HashMap<File, Boolean> = hashMapOf(File(System.getProperty("buildDir")) to false)
     val envOutput = System.getenv("RESOURCE_PACK_BUILD_LOCATION")
+
     if(envOutput != null) {
         val outputDirs = envOutput.split(';')
         outDirs.putAll(outputDirs.map { File(it) to false })

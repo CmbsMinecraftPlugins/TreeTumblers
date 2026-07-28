@@ -28,7 +28,9 @@ class GlobalSpectateInventory : HandledInventory {
     override val id: String = "spectateInventory"
 
     override val inventory = buildChestInterface {
-        titleSupplier = { Component.text("Spectate", NamedTextColor.WHITE) }
+        titleSupplier = { UserInterfaceUtility.centerInventoryTitle(
+            Component.text("Spectate", NamedTextColor.WHITE)
+        ) }
         rows = 5
 
         withTransform { pane, view ->

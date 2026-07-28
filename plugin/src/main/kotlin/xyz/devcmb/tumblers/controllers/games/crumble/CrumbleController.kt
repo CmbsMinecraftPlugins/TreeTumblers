@@ -271,6 +271,10 @@ class CrumbleController : RoundedGame(
                         val spawnSet1 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_1")
                         val spawnSet2 = CrumbleSpawn.valueOf("ARENA_${arena}_SET_2")
 
+                        (matchup.first.getOnlinePlayers() + matchup.second.getOnlinePlayers()).forEach {
+                            it.fireTicks = 0
+                        }
+
                         spawnPlayers(currentMap, matchup.first.getOnlinePlayers().toSet(), spawnSet1)
                         spawnPlayers(currentMap, matchup.second.getOnlinePlayers().toSet(), spawnSet2)
                     }

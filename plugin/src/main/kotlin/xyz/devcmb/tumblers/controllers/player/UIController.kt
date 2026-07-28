@@ -29,7 +29,10 @@ object UIController : IController {
             registerFont(NamespacedKey(TreeTumblers.NAMESPACE, "containers"))
             registerFont(NamespacedKey(TreeTumblers.NAMESPACE, "games"))
 
-            registerDefaultAscents(3, -3, -4, 4, -8, 8, -12, 12, -16, 16, -20, 20, -24, 24, -28, 28, -32, 32, -36, 36, -40, 40, 44, -44, 48, -48) {
+            // TODO: Pipe in this data directly from the resource pack instead of hardcoding
+            registerDefaultAscents(
+                -3, 3, -4, 4, -8, 8, -12, 12, -16, 16, -20, 20, -22, 22, -24, 24, -28, 28, -32, 32, -36, 36, -40, 40, 44, -44, 48, -48
+            ) {
                 NamespacedKey(TreeTumblers.NAMESPACE, "offset/default_offset_$it")
             }
 

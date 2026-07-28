@@ -10,6 +10,7 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import org.bukkit.Material
 import org.bukkit.NamespacedKey
+import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.EventController
@@ -39,6 +40,12 @@ class ReadyCheckInventory : HandledInventory {
         confirmationButton(0, 6, ConfirmationButtonType.NO) {
             it.view.close(TreeTumblers.pluginScope)
             EventController.markNotReady(it.view.player)
+        }
+
+        addCloseHandler { reason, view ->
+            if(reason != InventoryCloseEvent.Reason.UNKNOWN) {
+                EventController.markNotReady(view.player)
+            }
         }
 
         withTransform { pane, _ ->

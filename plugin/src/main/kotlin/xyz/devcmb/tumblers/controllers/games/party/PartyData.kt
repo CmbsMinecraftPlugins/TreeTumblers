@@ -3,7 +3,6 @@ package xyz.devcmb.tumblers.controllers.games.party
 import kotlinx.coroutines.delay
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.ShadowColor
 import xyz.devcmb.tumblers.controllers.games.party.PartyController.PartyScoreSource
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
@@ -70,9 +69,5 @@ object PartyData : GameData(
         Flag.DISABLE_BLOCK_BREAKING,
         Flag.DISABLE_NATURAL_REGENERATION
     ),
-    icon = Format.mm("<glyph:game/party_icon>"),
-    logo = Format.mm("<glyph:game/party_logo>"),
-    tabLogo = Format.mm("<glyph:game/party_logo_14a_45h>")
-        .shadowColor(ShadowColor.none()),
     scoreboard = PartyScoreboard::class
 )
