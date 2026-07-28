@@ -220,7 +220,8 @@ class PartyController : AbstractGame(PartyData) {
 
         player.tp(spawn)
         if(!preGame) {
-            makeSpectator(player)
+            if(player in gameSpectators) unSpectate(player)
+            makeSpectator(player, enableActionBar = false)
         }
     }
 
@@ -276,6 +277,8 @@ class PartyController : AbstractGame(PartyData) {
                 Format.MessageFormatter.GAME_MESSAGE
             ) {
                 currentGameType = PartyGameType.DISABLED
+                disabledGameWaitingPlayers.addAll(waitingIndividualPlayers)
+                waitingIndividualPlayers.clear()
             }
 
             onComplete { early ->

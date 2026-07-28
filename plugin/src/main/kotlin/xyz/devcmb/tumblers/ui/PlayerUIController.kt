@@ -169,7 +169,7 @@ class PlayerUIController(val player: Player) {
     fun registerBossBars() {
         registerBossBar(CrumbleBossbar(player))
         registerBossBar(CooldownBossbar(player))
-        registerBossBar(ScoreBossbar())
+        registerBossBar(ScoreBossbar(player))
         registerBossBar(DebugBossbar())
 
         if(Constants.IS_DEVELOPMENT) {

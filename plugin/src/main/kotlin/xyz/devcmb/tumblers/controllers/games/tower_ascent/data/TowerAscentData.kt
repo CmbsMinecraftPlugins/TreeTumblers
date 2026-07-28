@@ -9,11 +9,11 @@ import org.bukkit.entity.Skeleton
 import org.bukkit.entity.Zombie
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentScoreboard
-import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.isEnclosed
 import xyz.devcmb.tumblers.util.randomBetween
@@ -46,7 +46,7 @@ object TowerAscentData : GameData(
             "cutscene.first"
         ) {
             val towerAscent = game as TowerAscentController
-            val viewingRoom = towerAscent.generator.towerHandlers.first().rooms.first()
+            val viewingRoom = towerAscent.generator.mapLoadedRooms.first().first()
 
             val mobs: ArrayList<Entity> = ArrayList()
             suspendSync {
@@ -78,7 +78,7 @@ object TowerAscentData : GameData(
             delay(6000)
         },
         CutsceneStep(
-            Format.mm("<white>However, <color:${Team.ORANGE.color.asHexString()}>be careful!</color> If you <red>die</red> in the tower, you'll lose all your <green>purchased items</green> and all your <gold>gold</gold></white>"),
+            Format.mm("<white>However, <color:${MiniMessagePlaceholders.ORANGE}>be careful!</color> If you <red>die</red> in the tower, you'll lose all your <green>purchased items</green> and all your <gold>gold</gold></white>"),
             "cutscene.shop"
         ) {
             delay(6000)

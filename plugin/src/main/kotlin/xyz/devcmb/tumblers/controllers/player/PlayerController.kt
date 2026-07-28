@@ -77,6 +77,7 @@ object PlayerController : IController {
     val hiddenPlayers: MutableSet<Player> = HashSet()
     lateinit var players: ArrayList<TumblingPlayer>
     var isChatMuted = false
+    val readyPlayers: ArrayList<Player> = ArrayList()
 
     override fun init() {
         TreeTumblers.pluginScope.launch {
@@ -117,6 +118,12 @@ object PlayerController : IController {
         player.level = 0
         player.exp = 1f
         player.clearActivePotionEffects()
+
+        Bukkit.getOnlinePlayers().forEach {
+            player.unlistPlayer(it)
+            it.unlistPlayer(player)
+        }
+
         player.hideToAll()
 
         player.vehicle?.let {
@@ -126,11 +133,6 @@ object PlayerController : IController {
 
         player.getAttribute(Attribute.MAX_HEALTH)?.baseValue = 20.0
         player.health = 20.0
-
-        Bukkit.getOnlinePlayers().forEach {
-            player.unlistPlayer(it)
-            it.unlistPlayer(player)
-        }
 
         event.joinMessage(null)
         playerUIControllers.forEach { it.value.playerJoin(player) }
@@ -178,7 +180,7 @@ object PlayerController : IController {
     @EventHandler
     fun playerReady(event: LoggedOnTumblingPlayerReadyEvent) {
         val player = event.bukkitPlayer
-
+        readyPlayers.add(player)
         player.showToAll()
 
         runTaskLater(40) {
@@ -213,6 +215,8 @@ object PlayerController : IController {
     @EventHandler
     fun playerQuit(event: PlayerQuitEvent) {
         val player = event.player
+        readyPlayers.remove(player)
+
         val tumblingPlayer = player.tumblingPlayer
 
         hiddenPlayers.remove(player)

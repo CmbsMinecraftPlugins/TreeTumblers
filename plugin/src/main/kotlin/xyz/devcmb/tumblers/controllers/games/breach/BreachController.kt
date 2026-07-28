@@ -922,8 +922,8 @@ class BreachController: AbstractGame(BreachData) {
         if (
             (action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK) &&
             (bow.type == Material.BOW || bow.type == Material.CROSSBOW || bow.type == Material.TRIDENT) &&
-            gameState == GameState.KIT_SELECT)
-        {
+            gameState == GameState.KIT_SELECT
+        ) {
             event.isCancelled = true
         }
     }

@@ -84,7 +84,7 @@ class BreachKitSelector : HandledInventory {
                         meta.itemName(Format.mm("<dark_purple>You hold the Star"))
                         meta.lore(
                             listOf(
-                                Format.mm("<aqua>Keep it, and yourself safe."),
+                                Format.mm("<aqua>Keep it, and yourself, safe."),
                                 Format.mm("<aqua>Your victory depends on it.")
                             )
                         )

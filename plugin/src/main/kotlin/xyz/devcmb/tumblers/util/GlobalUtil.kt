@@ -59,6 +59,11 @@ val Player.tumblingPlayer: TumblingPlayer
         return PlayerController.players.find { it.uuid == this.uniqueId }!!
     }
 
+val Player.isReady: Boolean
+    get() {
+        return this in PlayerController.readyPlayers
+    }
+
 /** Gets the formatted player name from the [Format.formatPlayerName] method **/
 val Player.formattedName: Component
     get() {
@@ -149,12 +154,6 @@ fun Player.giveKit(kit: Kit.KitDefinition) {
 
 /** Teleports a player and their nametag to a location **/
 fun Player.tp(location: Location) {
-    // isn't needed for same-dimension teleports
-    if(this.location.world == location.world) {
-        this.teleport(location)
-        return
-    }
-
     NametagController.removePlayerTags(this)
     this.teleport(location)
     NametagController.createPlayerTags(this)
@@ -718,7 +717,7 @@ fun Clipboard.getPostPasteBounds(loadPosition: Location): Pair<Location, Locatio
 
 /** Checks if a playercheck is currently active in a game **/
 fun isPlayercheckActive(): Boolean {
-    return GameController.activeGame?.playerCheckActive != true
+    return GameController.activeGame?.playerCheckActive == true
 }
 
 /** Gives the splash potion of a [PotionEffect] with the item name being set to [name] */

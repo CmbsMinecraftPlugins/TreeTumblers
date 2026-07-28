@@ -284,9 +284,9 @@ object EventController : IController {
 
         PlayerController.muteChat()
         Bukkit.broadcast(
-            Format.mm("<green><line:30></green><br>" +
+            Format.mm("<green><line:30></green><br><br>" +
                 "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
-                "Now it's time to see who moves on to the finale!</white><br>" +
+                "Now it's time to see who moves on to the finale!</white><br><br>" +
                 "<green><line:30></green>"
         ))
 

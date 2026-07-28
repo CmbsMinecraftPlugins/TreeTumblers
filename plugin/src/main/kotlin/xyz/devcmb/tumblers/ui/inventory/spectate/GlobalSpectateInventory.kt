@@ -64,7 +64,7 @@ class GlobalSpectateInventory : HandledInventory {
                         if (!SpectatorController.spectators.contains(player)) return@StaticElement
 
                         if (SpectatorController.spectators.contains(plr)) {
-                            plr.sendMessage(Format.warning("This player can't be spectated right now."))
+                            player.sendMessage(Format.warning("This player can't be spectated right now."))
                             return@StaticElement
                         }
 

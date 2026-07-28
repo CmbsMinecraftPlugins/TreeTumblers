@@ -9,11 +9,11 @@ import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController.MovementDirection
-import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
+import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.suspendSync
 
@@ -73,7 +73,7 @@ object FloodEscapeData : GameData(
             Format.mm(
                 "Each obstacle has a <yellow>type</yellow>, giving you a different set of items whenever you reach it.<br>" +
                     "As you go further, the <red>difficulty</red> of the obstacles will steadily increase, " +
-                        "from <green>easy</green>, to <yellow>medium</yellow>, to <color:${Team.ORANGE.color}>hard</color>, and finally to <red>extreme</red>."),
+                        "from <green>easy</green>, to <yellow>medium</yellow>, to <color:${MiniMessagePlaceholders.ORANGE}>hard</color>, and finally to <red>extreme</red>."),
             "cutscene.third"
         ) {
             var currentType: FloodEscapeController.ObstacleType? = null

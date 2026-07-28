@@ -159,9 +159,9 @@ class ShopRoom(val roomIndex: Int) : RoomController {
     override fun start() {
     }
 
-    override fun cleanup() {
-        handler.controller.teamCompletedRooms[handler.team] = handler.controller.teamCompletedRooms[handler.team]!! + 1
+    override fun cleanup(gameOver: Boolean) {
         shopDisplayTask?.cancel()
+        if(!gameOver) handler.controller.teamCompletedRooms[handler.team] = handler.controller.teamCompletedRooms[handler.team]!! + 1
     }
 
     data class PurchasableShopItem(

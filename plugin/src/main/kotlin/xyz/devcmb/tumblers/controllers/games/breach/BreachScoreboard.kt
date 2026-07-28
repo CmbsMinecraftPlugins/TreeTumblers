@@ -1,11 +1,10 @@
 package xyz.devcmb.tumblers.controllers.games.breach
 
 import net.kyori.adventure.text.Component
+import net.kyori.adventure.text.format.TextColor
 import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.GameData
-import xyz.devcmb.tumblers.engine.base.AbstractGame
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard
@@ -15,7 +14,7 @@ import xyz.devcmb.tumblers.util.tumblingPlayer
 class BreachScoreboard(
     val player: Player,
     gameData: GameData,
-) : HandledScoreboard.GameScoreboard(gameData, Team.ORANGE.color) {
+) : HandledScoreboard.GameScoreboard(gameData, TextColor.fromHexString(MiniMessagePlaceholders.ORANGE)!!) {
     override fun getLines(): ArrayList<Component> {
         val activeGame = GameController.activeGame
         if(activeGame !is BreachController) return arrayListOf()

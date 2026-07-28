@@ -142,7 +142,8 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
                 teamCompletedRooms[team] = 0
                 teamRoomPlacements[team] = arrayListOf()
 
-                generator.towerHandlers.getOrNull(index)?.team = team
+                generator.setupTeam(team, index)
+
                 generator.mapSpawns.getOrNull(index)?.let {
                     it.wallBounds.first.forEachRegion(it.wallBounds.second) { block ->
                         block.type = team.glass

@@ -126,7 +126,7 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
                 try {
                     clipboard = playerSession.clipboard.clipboards.lastOrNull()
                         ?: throw IllegalStateException("No clipboard loaded for this session")
-                } catch(e: Exception) {
+                } catch(_: Exception) {
                     sender.sendMessage(Format.error("Your worldedit clipboard is empty!"))
                     return@to
                 }
@@ -1025,9 +1025,9 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
         }
 
         if (event.clickedInventory?.holder is Player && event.inventory.type == InventoryType.FURNACE &&
-            (event.currentItem?.type == Material.BOWL || event.currentItem?.type == Material.WOODEN_SWORD) ||
+            ((event.currentItem?.type == Material.BOWL || event.currentItem?.type == Material.WOODEN_SWORD) ||
             (event.cursor.type == Material.BOWL || event.cursor.type == Material.WOODEN_SWORD)
-            ) {
+            )) {
             event.isCancelled = true
         }
     }

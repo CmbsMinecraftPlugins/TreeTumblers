@@ -23,6 +23,7 @@ import org.bukkit.event.EventPriority
 import org.bukkit.event.Listener
 import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.EntityDamageByEntityEvent
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityRegainHealthEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.player.PlayerQuitEvent
@@ -346,6 +347,8 @@ abstract class AbstractGame(
     abstract suspend fun gameOn()
 
     suspend fun basePostGame() {
+        currentState = State.POST_GAME
+
         gameTimers.toList().forEach {
             if(it.isRunning) {
                 it.end()
@@ -679,10 +682,10 @@ abstract class AbstractGame(
      * @param player The player to enable spectator for
      * @param participating If the player will be added to the [participatingSpectators] pool
      */
-    fun makeSpectator(player: Player, participating: Boolean = true) {
+    fun makeSpectator(player: Player, participating: Boolean = true, retargetMobsOverride: Boolean? = null, enableActionBar: Boolean = true) {
         if(participating) participatingSpectators.add(player)
         gameSpectators.add(player)
-        SpectatorController.makeSpectator(player, data.flags.contains(Flag.RESET_MOB_TARGETS_ON_DEATH))
+        SpectatorController.makeSpectator(player, retargetMobsOverride ?: data.flags.contains(Flag.RESET_MOB_TARGETS_ON_DEATH), enableActionBar)
     }
 
     /**
@@ -833,6 +836,12 @@ abstract class AbstractGame(
     }
 
     @EventHandler
+    fun playerDamageEvent(event: EntityDamageEvent) {
+        if(event.entity !is Player) return
+        if(currentState == State.POST_GAME && !data.flags.contains(Flag.DONT_PREVENT_DAMAGE_POSTGAME)) event.isCancelled = true
+    }
+
+    @EventHandler
     fun blockBreakEvent(event: BlockBreakEvent) {
         if(data.flags.contains(Flag.DISABLE_BLOCK_BREAKING))
             event.isCancelled = true
@@ -857,6 +866,7 @@ abstract class AbstractGame(
         CUTSCENE,
         PREGAME,
         GAME_ON,
+        POST_GAME
     }
 
     enum class SpawnCycle {

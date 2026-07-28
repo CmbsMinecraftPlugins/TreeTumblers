@@ -30,52 +30,52 @@ enum class Team(
         Material.RED_STAINED_GLASS,
         1
     ),
-    ORANGE(
-        "Orange Orcas",
-        TextColor.fromHexString("#ff9100")!!,
-        NamedTextColor.GOLD,
-        Material.ORANGE_CONCRETE,
-        Material.ORANGE_STAINED_GLASS,
-        2
-    ),
-    YELLOW(
-        "Yellow Yaks",
-        NamedTextColor.YELLOW,
-        NamedTextColor.YELLOW,
-        Material.YELLOW_CONCRETE,
-        Material.YELLOW_STAINED_GLASS,
-        3
-    ),
-    GREEN(
-        "Green Grasshoppers",
-        NamedTextColor.GREEN,
-        NamedTextColor.GREEN,
-        Material.LIME_CONCRETE,
-        Material.LIME_STAINED_GLASS,
-        4
-    ),
-    AQUA("Aqua Alpacas",
-        NamedTextColor.AQUA,
-        NamedTextColor.AQUA,
-        Material.LIGHT_BLUE_CONCRETE,
-        Material.LIGHT_BLUE_STAINED_GLASS,
-        5
-    ),
-    BLUE("Blue Boars",
-        NamedTextColor.BLUE,
-        NamedTextColor.BLUE,
-        Material.BLUE_CONCRETE,
-        Material.BLUE_STAINED_GLASS,
-        6
-    ),
-    PURPLE(
-        "Purple Pufferfish",
-        TextColor.fromHexString("#bb00ff")!!,
-        NamedTextColor.DARK_PURPLE,
-        Material.PURPLE_CONCRETE,
-        Material.PURPLE_STAINED_GLASS,
-        7
-    ),
+//    ORANGE(
+//        "Orange Orcas",
+//        TextColor.fromHexString("#ff9100")!!,
+//        NamedTextColor.GOLD,
+//        Material.ORANGE_CONCRETE,
+//        Material.ORANGE_STAINED_GLASS,
+//        2
+//    ),
+//    YELLOW(
+//        "Yellow Yaks",
+//        NamedTextColor.YELLOW,
+//        NamedTextColor.YELLOW,
+//        Material.YELLOW_CONCRETE,
+//        Material.YELLOW_STAINED_GLASS,
+//        3
+//    ),
+//    GREEN(
+//        "Green Grasshoppers",
+//        NamedTextColor.GREEN,
+//        NamedTextColor.GREEN,
+//        Material.LIME_CONCRETE,
+//        Material.LIME_STAINED_GLASS,
+//        4
+//    ),
+//    AQUA("Aqua Alpacas",
+//        NamedTextColor.AQUA,
+//        NamedTextColor.AQUA,
+//        Material.LIGHT_BLUE_CONCRETE,
+//        Material.LIGHT_BLUE_STAINED_GLASS,
+//        5
+//    ),
+//    BLUE("Blue Boars",
+//        NamedTextColor.BLUE,
+//        NamedTextColor.BLUE,
+//        Material.BLUE_CONCRETE,
+//        Material.BLUE_STAINED_GLASS,
+//        6
+//    ),
+//    PURPLE(
+//        "Purple Pufferfish",
+//        TextColor.fromHexString("#bb00ff")!!,
+//        NamedTextColor.DARK_PURPLE,
+//        Material.PURPLE_CONCRETE,
+//        Material.PURPLE_STAINED_GLASS,
+//        7
+//    ),
     PINK(
         "Pink Parrots",
         TextColor.fromHexString("#ff5cd9")!!,

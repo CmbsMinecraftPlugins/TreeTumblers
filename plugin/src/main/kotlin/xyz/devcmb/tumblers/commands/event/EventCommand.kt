@@ -27,7 +27,7 @@ class EventCommand {
 
         if(!confirm) {
             var ready = true
-            Team.entries.forEach {
+            Team.playingTeams.forEach {
                 if(it.getOnlinePlayers().size != it.getAllPlayers().size) {
                     sender.sendMessage(Format.mm("<yellow><team:${it.name}:name> have offline players!</yellow>"))
                     ready = false

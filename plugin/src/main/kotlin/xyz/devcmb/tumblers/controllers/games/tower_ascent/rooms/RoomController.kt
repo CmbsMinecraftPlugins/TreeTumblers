@@ -18,5 +18,5 @@ interface RoomController : Listener {
     /** Called when the mobs start spawning */
     fun start()
     /** Called when players are teleported to the next room */
-    fun cleanup()
+    fun cleanup(gameOver: Boolean)
 }

@@ -49,13 +49,13 @@ class TowerHandler(
     private val loadouts: ArrayList<TowerGenerator.MobLoadout>,
     private val spawnGroups: ArrayList<TowerGenerator.SpawnGroup>,
     val rooms: ArrayList<TowerGenerator.LoadedRoom>,
-    val endingRoom: TowerGenerator.LoadedEndingRoom
+    val endingRoom: TowerGenerator.LoadedEndingRoom,
+    val team: Team
 ) : Listener {
     companion object {
         val goldRewardKey = NamespacedKey(TreeTumblers.NAMESPACE, "gold_reward")
     }
 
-    lateinit var team: Team
     var currentRoomIndex = 0
     val currentRoom: TowerGenerator.LoadedRoom
         get() = rooms[currentRoomIndex]
@@ -224,7 +224,7 @@ class TowerHandler(
             it.tp(newLoc)
         }
 
-        lastRoom.roomController?.cleanup()
+        lastRoom.roomController?.cleanup(false)
         currentRoom.roomController?.teleport()
 
         runTaskLater(25) {

@@ -23,6 +23,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.RoomController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.ShopRoom
+import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
@@ -49,6 +50,9 @@ class TowerGenerator(
     private val map: LoadedMap
 ) {
     val mapSpawns: ArrayList<MapSpawn> = ArrayList()
+
+    val mapLoadedRooms: ArrayList<ArrayList<LoadedRoom>> = ArrayList()
+    val mapEndingRooms: ArrayList<LoadedEndingRoom> = ArrayList()
 
     val loadouts: ArrayList<MobLoadout> = ArrayList()
     val spawnGroups: ArrayList<SpawnGroup> = ArrayList()
@@ -251,12 +255,20 @@ class TowerGenerator(
                 startingElevatorBounds
             )
 
-            val handler = TowerHandler(controller, map, loadouts, spawnGroups, loadedRooms, endingRoom)
-            Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
-            towerHandlers.add(handler)
+            mapLoadedRooms.add(loadedRooms)
+            mapEndingRooms.add(endingRoom)
         }
 
         editSession.close()
+    }
+
+    fun setupTeam(team: Team, index: Int) {
+        val loadedRooms = mapLoadedRooms[index]
+        val endingRoom = mapEndingRooms[index]
+
+        val handler = TowerHandler(controller, map, loadouts, spawnGroups, loadedRooms, endingRoom, team)
+        Bukkit.getPluginManager().registerEvents(handler, TreeTumblers.plugin)
+        towerHandlers.add(handler)
     }
 
     private fun getRooms(): List<RoomDefinition> {
@@ -405,7 +417,7 @@ class TowerGenerator(
         }
 
         roomControllers.forEach {
-            it.cleanup()
+            it.cleanup(true)
             HandlerList.unregisterAll(it)
         }
     }

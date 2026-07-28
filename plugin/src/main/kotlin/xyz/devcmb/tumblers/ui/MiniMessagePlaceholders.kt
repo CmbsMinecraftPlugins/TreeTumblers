@@ -105,4 +105,6 @@ object MiniMessagePlaceholders {
          */
         const val EVENT_SCOREBOARD_GAME = "<white>Game: <color:$EVENT_COLOR><current>/<max></color></white>"
     }
+
+    const val ORANGE = "#ff9100"
 }

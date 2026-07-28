@@ -24,6 +24,7 @@ import xyz.devcmb.tumblers.events.LoggedOnTumblingPlayerReadyEvent
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.formattedName
+import xyz.devcmb.tumblers.util.isReady
 import xyz.devcmb.tumblers.util.runTask
 import xyz.devcmb.tumblers.util.toCenterXZLocation
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -208,7 +209,9 @@ object NametagController : IController {
     @EventHandler
     fun playerDamageEvent(event: EntityDamageEvent) {
         val player = event.entity as? Player ?: return
-        updateHealthBar(player)
+        runTask {
+            updateHealthBar(player)
+        }
     }
 
     @EventHandler
@@ -220,8 +223,12 @@ object NametagController : IController {
     @EventHandler
     fun playerEffectEvent(event: EntityPotionEffectEvent) {
         val player = event.entity as? Player ?: return
+        if(!player.isReady) return
+
         if((event.newEffect?.type == PotionEffectType.INVISIBILITY || event.oldEffect?.type == PotionEffectType.INVISIBILITY)) {
-            updateTagVisibility(player)
+            runTask {
+                updateTagVisibility(player)
+            }
         }
     }
 

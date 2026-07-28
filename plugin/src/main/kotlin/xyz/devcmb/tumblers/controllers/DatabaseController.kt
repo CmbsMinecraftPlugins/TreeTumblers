@@ -237,9 +237,10 @@ object DatabaseController : IController {
             val username = resultSet.getString("username")
 
             val team = Team.entries.find { it.name.equals(teamColumn, ignoreCase = true) }
-            if(team == null) {
-                throw TumblingDatabaseException("Could not find a team with value $teamColumn")
-            }
+                ?: run {
+                    DebugUtil.warning("Could not find team $teamColumn, reassigning player to be on the spectators team.")
+                    Team.SPECTATORS
+                }
 
             val uuid = UUID.fromString(uuidColumn)
             val tumblingPlayer = TumblingPlayer(uuid)
@@ -288,7 +289,9 @@ object DatabaseController : IController {
         while(resultSet.next()) {
             val name = resultSet.getString("name")
             val score = resultSet.getInt("score")
-            map[Team.entries.find { it.name.equals(name, ignoreCase = true) }!!] = score
+
+            val team = Team.entries.find { it.name.equals(name, ignoreCase = true) } ?: continue
+            map[team] = score
         }
 
         map
@@ -350,8 +353,12 @@ object DatabaseController : IController {
             val stateJson: String = resultSet.getString("state")
             val timestamp: Timestamp = resultSet.getTimestamp("created_at")
 
-            val eventState: EventController.EventState = Json.decodeFromString(stateJson)
-            recoveryStates.add(EventRecoveryState(id, eventState, timestamp))
+            try {
+                val eventState: EventController.EventState = Json.decodeFromString(stateJson)
+                recoveryStates.add(EventRecoveryState(id, eventState, timestamp))
+            } catch(e: Exception) {
+                DebugUtil.severe("Failed to load recovery state $id: ${e.message}")
+            }
         }
     }
 

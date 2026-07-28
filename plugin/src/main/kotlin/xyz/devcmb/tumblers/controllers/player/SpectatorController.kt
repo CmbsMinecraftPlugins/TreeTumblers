@@ -35,7 +35,7 @@ object SpectatorController : IController {
     override fun init() {
     }
 
-    fun makeSpectator(player: Player, retargetMobs: Boolean = false) {
+    fun makeSpectator(player: Player, retargetMobs: Boolean = false, enableActionBar: Boolean = true) {
         spectators.add(player)
 
         runTask {
@@ -63,7 +63,7 @@ object SpectatorController : IController {
         player.inventory.clear()
         player.allowFlight = true
         player.isFlying = true
-        player.enableActionBar("spectatorActionBar")
+        if(enableActionBar) player.enableActionBar("spectatorActionBar")
 
         NametagController.updateTagVisibility(player)
 
