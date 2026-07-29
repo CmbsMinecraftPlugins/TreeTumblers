@@ -50,16 +50,6 @@ In game, each kit has a little section describing the ability and kill power.
 
 The game was originally designed by [MatMart](https://www.youtube.com/@MatMart), coded by [BlackilyKat](https://blackilykat.dev/), and funded by [GD Cob](https://www.youtube.com/@Cobgd), who gave us permission to use the concepts in the game!
 
-### ![Deathrun](./docs/deathrun_logo.png)
-*Coded by DevCmb (@29cmb)*
-
-Deathrun is a parkour face-off where a team of trappers faces off against the rest of the game as runners. Trappers have access to traps which can kill or make the path harder to traverse. 
-
-Scoring for trappers is based on damage and kill, while runner score is solely based on completion placement (better placement = more score)
-
-There are 8 rounds, 1 for each team, where each gets a chance as the trappers. Trappers can trigger traps that aren't on cooldown, and every trap has a cooldown of about 15s (depends on the trap).
-
-
 ### ![Sniffer Caretaker](./docs/sniffer_caretaker_logo.png)
 *Coded by Nibbl_z (@Nibbl-z)*
 
@@ -81,6 +71,35 @@ Party is a fast-paced minigames game where you fight in solo and team minigames.
 For the first 5m of the game, players will fight head-to-head in individual minigames (1v1). After these finish, for the last 5m of the game, you will fight in team minigames against an opposing team.
 
 This game uses a matchmaker to give players new matches as quick as possible (while trying to minimize playing against the same person twice)
+
+## ![Flood Escape](./docs/flood_escape_logo.png)
+*Coded by DevCmb (@29cmb)*
+
+Flood Escape is a parkour challenge game where you have to escape an incoming flood with a variety of tools at your disposal.
+
+With a randomly generated obstacle course before you, where each obstacle can give you either an elytra, riptide trident, or nothing at all, will you be able to outrun the flood?
+
+Whoever can survive the longest is declared the winner.
+
+## ![Brawl](./docs/brawl_logo.png)
+*Coded by DevCmb (@29cmb)*
+
+Brawl is a kit-based team battle game where the goal is to simply survive.
+
+Before each round, you'll be given a compass to choose between 4 randomly selected kits. Each kit brings a unique playstyle, from support to offensive.
+
+You'll have to watch out for a border thats constantly shrinking around you, slowly pushing teams towards the center of the arena.
+
+Whichever team has players alive at the end is the winner of the round.
+
+## ![Tower Ascent](./docs/tower_ascent_logo.png) 
+*Coded by DevCmb (@29cmb)*
+
+Tower Ascent is a game where you have to climb to the top of a tower while fighting hoards of monsters in the various rooms you'll stumble across.
+
+Killing these monsters gives you gold which can be used to buy things in a shop room, as well as being bankable at the end of the game for some bonus points. The shop items can improve your run in the long-term, but if you die once, you lose it all, so be careful!
+
+Scoring is based on how fast your team completes the tower, so you can play it risky and try speedrunning, or play it safe and take your time.
 
 ### ![Breach](./docs/breach_logo.png)
 *Coded by Nibbl_z (@Nibbl-z)*
