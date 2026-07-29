@@ -251,7 +251,7 @@ games:
             arena4: [464.5,103.0,-536.5]
             cutscene: [464.5,103.0,463.5]
           cutscene:
-            # X,Y,Z,pitch,yaw
+            # x,y,z,yaw,pitch
             start: [474.5,107.5,473.5,134.3,36.5]
             crumble_demonstration: [438.5,102.5,489.5,45.0,33.0]
             credit: [464.4,90.3,471.4,62.3,13.6]
@@ -408,7 +408,7 @@ games:
         world: "facility"
         data:
           cutscene:
-            # x,y,z,pitch,yaw
+            # x,y,z,yaw,pitch
             start: [6.7, 71.1, 4.0, 131.0, 26.0]
             tasks: [-3.0, 67.5, 8.0, 0.0, 0.0]
             farm: [-4.5, 66.7, -3.0, 50.0, 37.0]
@@ -493,7 +493,7 @@ games:
           # The position where players spawn in the pregame
           pregame_spawn: [0.5,72.0,-0.5]
           cutscene:
-            # x, y, z, pitch, yaw
+            # x, y, z, yaw, pitch
             start: [-0.5,74.5,-7.5,27.8,5.5]
             first: [-7.8,163.2,496.7,-59.4,7.7]
             second: [-9.6, 38.5, 13.1, 1.3, 4.9]
@@ -510,7 +510,7 @@ games:
         world: "stadium"
         data:
           cutscene:
-            # x,y,z,pitch,yaw
+            # x,y,z,yaw,pitch
             start: [-32.5, 75.0, 44.3, -135.0, 35.0]
             preround: [-0.2, 65.0, 12.2, 45.0, -5.0]
             star: [-14.1, 65.2, 30.0, 45.0, 15.0]
@@ -606,19 +606,31 @@ games:
           cutscene:
             start: [-14.5, 132.5, 7.5, -120.0, 25.0]
   tower_ascent:
+    # The path where all the maps are contained
+    # This path is relative to the `world_root` config value
     worlds_folder: "tower_ascent"
+    
+    # The amount of rooms that will be generated
+    # Keep in mind that every 3rd room is a shop room
     rooms: 10
 
     maps:
       tower:
         world: "tower"
         data:
+          # The axis that all obstacles generate along
           placement_axis: z
+          
           cutscene:
+            # x,y,z,yaw,pitch
             start: [3.5, 66.0, 3.5, 90.0, 0.0]
             first: [-2.5, 66.0, -2.5, 54.4, 8.7]
             shop: [-2.5, 65.0, 123.5, 90.0, 0.0]
             end: [-8.5, 65.0, 603.5, 90.0, 0.0]
+
+          # The loadouts that a mob can have
+          # These each contain a list of armor and a weapon
+          # These values are relational to an ID field in either `TowerGenerator.MobArmorItem` or `TowerGenerator.MobWeaponItem`
           loadouts:
             - { id: weak_ranged, armor: [], weapon: base_bow }
             - { id: weak_melee, armor: [], weapon: stone_sword }
@@ -627,6 +639,10 @@ games:
             - { id: medium_1_melee, armor: [base_iron_chestplate], weapon: iron_sword }
             - { id: medium_2_ranged, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: base_bow }
             - { id: medium_2_melee, armor: [base_gold_helmet, base_leather_chestplate, base_iron_boots], weapon: iron_sword }
+
+          # The different mobs that can spawn and their properties
+          # `mob` is relational to `TowerGenerator.SpawnableMob`
+          # `loadout` is relational to an id in the above table
           spawn_groups:
             # Weak
             - { id: skeleton_weak, mob: skeleton, loadout: weak_ranged, gold: 7 }
@@ -644,9 +660,12 @@ games:
             - { id: stray_medium_2, mob: stray, loadout: medium_2_ranged, gold: 15 }
             - { id: zombie_medium_2, mob: zombie, loadout: medium_2_melee, gold: 12 }
             - { id: husk_medium_2, mob: husk, loadout: medium_2_melee, gold: 12 }
+
+          # The different spawn locations
+          # The pivot should be the block right outside the glass wall that the schematics start generating on
+          # The wall is formatted in [x1, y1, z1, x2, y2, z2] format and will be replaced with air when the game starts
           spawns:
             - pivot: [-1,64,3]
-              # x1,y1,z1,x2,y2,z2
               wall: [0, 69, 6, 0, 65, 0]
 
             - pivot: [-140, 64, 3]
@@ -669,14 +688,23 @@ games:
 
             - pivot: [-980, 64, 3]
               wall: [-980, 69, 0, -980, 65, 6]
+
+          # The different rooms that can be generated
           rooms:
             - id: testing_room
               # The material name that will replace all diamond and redstone blocks in the build
               pivot_replacement_material: BLACKSTONE
+
+              # A list of mob sets to spawn when the room begins
+              # Each entry in this list will need to be fully killed to spawn the next set
+              # When all sets are cleared, the room is considered cleared
               mob_sets:
                 - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
                 - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
             - id: shop
               pivot_replacement_material: BLACKSTONE
               mob_sets: []
+
+              # Relates to a registered RoomController instance that gets instansiated when the room is loaded
+              # In this specific instance, whenever the game tried to spawn a shop room, it'll filter for rooms with this controller id
               controller: shop_room
