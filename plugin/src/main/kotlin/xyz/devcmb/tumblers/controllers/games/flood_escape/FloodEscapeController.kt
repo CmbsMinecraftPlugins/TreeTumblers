@@ -80,6 +80,8 @@ class FloodEscapeController : RoundedGame(
     val playerPlacements: ArrayList<HashMap<TumblingPlayer, Int>> = ArrayList()
     val playerObstacles: HashMap<TumblingPlayer, Int> = HashMap()
 
+    val allowSoloPlay: Boolean = configurable("games.flood_escape.allow_solo_play")
+
     override val scoreMessages: HashMap<ScoreSource, (score: Int) -> Component> = hashMapOf(
         FloodEscapeScoreSource.COMPLETE_OBSTACLE to {
             gameMessage(Format.mm("<white>Completed obstacle</white> <gold>[+$it]</gold>"))
@@ -267,7 +269,7 @@ class FloodEscapeController : RoundedGame(
         TRIDENT(Format.mm("<white><sprite:items:item/trident></white>")) {
             override fun give(player: Player) {
                 player.inventory.addItem(ItemStack.of(Material.TRIDENT).apply {
-                    addEnchantment(Enchantment.RIPTIDE, 2)
+                    addEnchantment(Enchantment.RIPTIDE, 1)
                 })
             }
         };
@@ -491,7 +493,7 @@ class FloodEscapeController : RoundedGame(
             }
         }
 
-        if(alivePlayers.size <= 1) {
+        if(alivePlayers.size <= 1 && !allowSoloPlay) {
             if(alivePlayers.size == 1) playerPlacements[roundIndex][alivePlayers.first()] = 1
             endRound()
         }

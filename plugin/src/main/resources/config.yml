@@ -544,6 +544,9 @@ games:
     # The starting speed of the flood in blocks per second
     starting_speed: 3.5
 
+    # Determines if the game will end when all players are eliminated
+    allow_solo_play: false
+
     maps:
       sewer:
         world: "sewer"
