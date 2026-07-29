@@ -142,7 +142,6 @@ class TowerGenerator(
                     .to(startPos.toBlockVector3())
                     .copyEntities(true)
                     .build()
-                DebugUtil.info("Loading room at $startPos")
 
                 val roomEndPivot = room.clipboard.getPivot(BlockTypes.REDSTONE_BLOCK!!)!!
                 val endPosWorld = room.clipboard.getPostPasteLocation(roomEndPivot, startPos)
@@ -152,7 +151,6 @@ class TowerGenerator(
                     .to(endPosWorld.toBlockVector3())
                     .ignoreAirBlocks(true)
                     .build()
-                DebugUtil.info("Loading elevator at $endPosWorld")
 
                 Operations.complete(roomOperation)
                 Operations.complete(elevatorOperation)

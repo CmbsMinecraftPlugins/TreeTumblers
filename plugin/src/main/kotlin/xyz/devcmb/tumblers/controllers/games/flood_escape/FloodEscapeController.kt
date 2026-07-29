@@ -167,7 +167,7 @@ class FloodEscapeController : RoundedGame(
         if(!obstaclePoolDir.exists() || !obstaclePoolDir.isDirectory)
             throw GameControllerException("Obstacle pool for ${map.id} (difficulty $difficulty and type $type) does not have a corresponding folder")
 
-        val selectedObstacleFile = obstaclePoolDir.listFiles().random()
+        val selectedObstacleFile = obstaclePoolDir.listFiles()!!.random()
         val (clipboard, endPivotWorld) = loadSchematic(selectedObstacleFile, startLocation, map)
 
         return LoadedObstacle(
@@ -184,7 +184,7 @@ class FloodEscapeController : RoundedGame(
         val mapBridges = File(Path(obstaclesDirectory, map.id, "bridge").toString())
         if(!mapBridges.exists() || !mapBridges.isDirectory) throw GameControllerException("Map ${map.id} does not have a valid bridges folder")
 
-        val selectedBridgeFile = mapBridges.listFiles().random()
+        val selectedBridgeFile = mapBridges.listFiles()!!.random()
         val (clipboard, endPivotWorld) = loadSchematic(selectedBridgeFile, startLocation, map)
 
         val regionSpawn = clipboard.region.first {

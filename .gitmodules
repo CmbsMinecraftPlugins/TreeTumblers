@@ -1,3 +1,6 @@
 [submodule "pack/src/main/resources/pack"]
 	path = pack/src/main/resources/pack
 	url = https://github.com/CmbsMinecraftPlugins/TreeTumblersResources
+[submodule "plugin/run/plugins/TreeTumblers/templates"]
+	path = plugin/run/plugins/TreeTumblers/templates
+	url = https://github.com/CmbsMinecraftPlugins/TreeTumblersTemplates
