@@ -115,7 +115,7 @@ class FloodEscapeController : RoundedGame(
 
         suspendSync {
             gamePlayers.filter { it.isOnline && !it.team.playingTeam }.forEach {
-                makeSpectator(it.bukkitPlayer!!, participating = false)
+                makeSpectator(it.bukkitPlayer!!, participating = false, enableActionBar = false)
             }
 
             spawnPlayers(
@@ -448,7 +448,7 @@ class FloodEscapeController : RoundedGame(
         if(!player.tumblingPlayer.team.playingTeam) return
 
         if(!preRound) {
-            makeSpectator(player)
+            makeSpectator(player, enableActionBar = false)
             player.sendMessage(Format.warning("You've joined while the round is active and have been placed into spectator. You will be put into the game next round."))
         } else {
             if(countdownActive) {

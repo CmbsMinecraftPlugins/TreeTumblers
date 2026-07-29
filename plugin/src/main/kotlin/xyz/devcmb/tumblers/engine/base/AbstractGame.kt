@@ -682,10 +682,13 @@ abstract class AbstractGame(
      * @param player The player to enable spectator for
      * @param participating If the player will be added to the [participatingSpectators] pool
      */
-    fun makeSpectator(player: Player, participating: Boolean = true, retargetMobsOverride: Boolean? = null, enableActionBar: Boolean = true) {
+    fun makeSpectator(player: Player, participating: Boolean = true, retargetMobsOverride: Boolean? = null, enableActionBar: Boolean? = null) {
         if(participating) participatingSpectators.add(player)
         gameSpectators.add(player)
-        SpectatorController.makeSpectator(player, retargetMobsOverride ?: data.flags.contains(Flag.RESET_MOB_TARGETS_ON_DEATH), enableActionBar)
+        SpectatorController.makeSpectator(
+            player, retargetMobsOverride ?: data.flags.contains(Flag.RESET_MOB_TARGETS_ON_DEATH),
+            enableActionBar ?: !data.flags.contains(Flag.DEFAULT_NO_SPECTATOR_ACTIONBAR)
+        )
     }
 
     /**

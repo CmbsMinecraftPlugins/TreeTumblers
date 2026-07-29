@@ -117,11 +117,12 @@ object FloodEscapeData : GameData(
         Flag.DISABLE_FALL_DAMAGE,
         Flag.DISABLE_PVP,
         Flag.DISABLE_NATURAL_REGENERATION,
-        Flag.HIDE_HEALTH_INDICATOR
+        Flag.HIDE_HEALTH_INDICATOR,
+        Flag.DEFAULT_NO_SPECTATOR_ACTIONBAR
     ),
     scores = hashMapOf(
-        FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 2,
-        FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 25
+        FloodEscapeController.FloodEscapeScoreSource.COMPLETE_OBSTACLE to 10,
+        FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 50
     ),
     scoreboard = FloodEscapeScoreboard::class,
     spawns = FloodEscapeSpawn.entries
