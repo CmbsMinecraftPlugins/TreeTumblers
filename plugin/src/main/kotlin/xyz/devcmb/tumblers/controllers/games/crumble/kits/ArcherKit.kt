@@ -83,8 +83,7 @@ class ArcherKit(
         val shooter = entity.shooter
         if(
             shooter !is Player
-            || player?.isOnline != true
-            || player.bukkitPlayer != shooter
+            || player?.bukkitPlayer != shooter
             || !abilityActive
         ) return
 

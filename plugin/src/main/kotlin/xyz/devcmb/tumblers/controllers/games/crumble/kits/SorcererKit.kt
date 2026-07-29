@@ -17,6 +17,7 @@ import xyz.devcmb.tumblers.controllers.games.crumble.Kit
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tickSeconds
+import xyz.devcmb.tumblers.util.tumblingPlayer
 
 class SorcererKit(
     override val player: TumblingPlayer?,
@@ -83,7 +84,8 @@ class SorcererKit(
         if(
             damager !is Player
             || damaged !is Player
-            || damager != player
+            || damager != player?.bukkitPlayer
+            || damager.tumblingPlayer.team == player.team
             || !abilityActive
         ) return
 

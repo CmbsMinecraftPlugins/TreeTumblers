@@ -69,8 +69,7 @@ class WarriorKit(
         if(
             damager !is Player
             || damaged !is Player
-            || player?.isOnline != true
-            || damager != player.bukkitPlayer!!
+            || damager != player?.bukkitPlayer
         ) return
 
         val sword = damager.inventory.itemInMainHand

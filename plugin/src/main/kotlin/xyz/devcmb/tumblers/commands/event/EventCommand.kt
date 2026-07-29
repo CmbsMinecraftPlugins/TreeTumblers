@@ -96,7 +96,12 @@ class EventCommand {
     fun executeRecover(@Context sender: CommandSender) {
         var component = Format.mm("<green>Here's a list of recovery states for the event:</green>")
         DatabaseController.recoveryStates.forEachIndexed { index, state ->
-            component = component.append(Format.mm("<br><white><yellow><click:run_command:/event recovery state ${state.id}>[${state.id}]</click></yellow> - ${SimpleDateFormat("hh:mm:ss EEE MMM d").format(state.timestamp.time)}${if(index == 0) " <gold>(latest)</gold>" else ""}</white>"))
+            component = component.append(Format.mm(
+                "<br><white>" +
+                        "<yellow><click:run_command:/event recovery state ${state.id}>[${state.id}]</click></yellow>" +
+                        " - ${SimpleDateFormat("hh:mm:ss EEE MMM d").format(state.timestamp.time)}" +
+                        "${if(index == DatabaseController.recoveryStates.size - 1) " <gold>(latest)</gold>" else ""}</white>"
+            ))
         }
 
         sender.sendMessage(component)

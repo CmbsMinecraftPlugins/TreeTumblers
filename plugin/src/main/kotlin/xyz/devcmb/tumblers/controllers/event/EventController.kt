@@ -1215,7 +1215,7 @@ object EventController : IController {
 
         refreshLeaderboards()
 
-        runBlocking {
+        TreeTumblers.pluginScope.launch {
             eventState.votingQuadrantGames.forEach {
                 VotingController.placeGame(it.key, GameController.games.find { game -> game.data.id == it.value }!!, null)
             }

@@ -101,7 +101,7 @@ class WorkerKit(
     @EventHandler
     fun playerMineEvent(event: BlockBreakEvent) {
         val player = event.player
-        if(player != this.player) return
+        if(player != this.player?.bukkitPlayer) return
 
         val item = player.inventory.itemInMainHand
         val origin = event.block

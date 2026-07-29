@@ -137,10 +137,7 @@ class NinjaKit(
     @EventHandler
     fun onSmokeBombThrow(event: PlayerInteractEvent) {
         val player = event.player
-        if(
-            this.player?.isOnline != true
-            || player !== this.player.bukkitPlayer!!
-        ) return
+        if(player != this.player?.bukkitPlayer) return
 
         val item = event.item ?: return
         val container = item.persistentDataContainer

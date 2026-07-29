@@ -270,6 +270,9 @@ object VotingController : IController {
     var votingOpen = false
     suspend fun startVoting(): String {
         MusicController.playMusic(MusicController.Music.VOTING)
+        PlayerController.players.forEach {
+            it.disableActionBar("eventTeamActionBar")
+        }
 
         suspendSync {
             Bukkit.getOnlinePlayers().forEach {

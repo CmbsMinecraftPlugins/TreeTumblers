@@ -115,8 +115,7 @@ class FisherKit(
         val player = trident.shooter
         if (
             player !is Player
-            || this.player?.isOnline != true
-            || player != this.player.bukkitPlayer
+            || player != this.player?.bukkitPlayer
             || !abilityActive
         ) return
 

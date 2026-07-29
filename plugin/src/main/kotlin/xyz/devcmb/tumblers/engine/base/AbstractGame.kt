@@ -836,7 +836,7 @@ abstract class AbstractGame(
     }
 
     @EventHandler
-    fun playerDamageEvent(event: EntityDamageEvent) {
+    fun playerPostGameDamageEvent(event: EntityDamageEvent) {
         if(event.entity !is Player) return
         if(currentState == State.POST_GAME && !data.flags.contains(Flag.DONT_PREVENT_DAMAGE_POSTGAME)) event.isCancelled = true
     }
