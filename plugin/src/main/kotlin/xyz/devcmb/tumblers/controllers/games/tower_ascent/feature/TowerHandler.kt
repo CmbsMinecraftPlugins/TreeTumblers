@@ -185,6 +185,8 @@ class TowerHandler(
                         && block.location.clone().add(0.0,1.0,0.0).block.type == Material.AIR
                         && block.location.clone().add(0.0, 2.0, 0.0).block.type == Material.AIR
                         && block.location.isEnclosed()
+                        && !block.location.isInRegion(room.endingElevatorBounds.first, room.endingElevatorBounds.second)
+                        && room.noSpawnRegions.all { bound -> !block.location.isInRegion(bound.first, bound.second) }
                     }!!.add(0.0,1.0,0.0).toCenterXZLocation()
 
                     map.world.spawn(location, setGroup.mob.entity) { mob ->
@@ -250,13 +252,7 @@ class TowerHandler(
                 val player = lastDamageSource.damager as? Player
                 if(player != null) {
                     val reward = event.entity.persistentDataContainer.get(goldRewardKey, PersistentDataType.INTEGER) ?: 0
-                    controller.playerGoldCounts[player.tumblingPlayer] = (controller.playerGoldCounts[player.tumblingPlayer] ?: 0) + reward
-
-                    player.showTitle(Title.title(
-                        Component.empty(),
-                        Format.mm("<gold>[+${reward} <white><sprite:items:item/gold_ingot></white>]</gold>"),
-                        Title.Times.times(5.ticks, 30.ticks, 5.ticks)
-                    ))
+                    controller.givePlayerGold(player, reward)
                 }
             }
 
@@ -277,10 +273,6 @@ class TowerHandler(
 
         val predicate = { it: Player ->
             it.location.isInRegion(checkBounds.first, checkBounds.second)
-            && !it.location.isInRegion(
-                currentRoom.roomBounds.first.clone(),
-                currentRoom.roomBounds.second.clone()
-            )
             && it.location.toBlockLocation() !in elevatorBlocks
         }
 

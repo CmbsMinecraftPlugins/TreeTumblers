@@ -11,6 +11,7 @@ import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
 import org.bukkit.entity.Husk
+import org.bukkit.entity.ItemDisplay
 import org.bukkit.entity.Mob
 import org.bukkit.entity.Skeleton
 import org.bukkit.entity.Stray
@@ -23,6 +24,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.TowerAscentController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.RoomController
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.ShopRoom
+import xyz.devcmb.tumblers.controllers.games.tower_ascent.rooms.StaircaseOfDoomRoom
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -31,6 +33,7 @@ import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.getPivot
 import xyz.devcmb.tumblers.util.getPostPasteBounds
 import xyz.devcmb.tumblers.util.getPostPasteLocation
+import xyz.devcmb.tumblers.util.isInRegion
 import xyz.devcmb.tumblers.util.suspendSync
 import xyz.devcmb.tumblers.util.toBlockVector3
 import xyz.devcmb.tumblers.util.validateElements
@@ -191,12 +194,38 @@ class TowerGenerator(
                     controller
                 }
 
+                val noSpawnRegions: ArrayList<Pair<Location, Location>> = ArrayList()
+                suspendSync {
+                    this.controller.map.world.entities
+                        .filter { it.location.isInRegion(roomBounds.first, roomBounds.second) }
+                        .filterIsInstance<ItemDisplay>()
+                        .filter { it.itemStack.type == Material.RED_STAINED_GLASS }
+                        .forEach {
+                            val scale = it.transformation.scale
+                            val center = it.location
+
+                            val halfX = scale.x / 2.0
+                            val halfY = scale.y / 2.0
+                            val halfZ = scale.z / 2.0
+
+                            val bounds =
+                                center.clone().subtract(halfX, halfY, halfZ) to
+                                        center.clone().add(halfX, halfY, halfZ)
+
+                            DebugUtil.info(bounds.toString())
+                            noSpawnRegions.add(bounds)
+
+                            it.remove()
+                        }
+                }
+
                 val loadedRoom = LoadedRoom(
                     room,
                     roomBounds,
                     startingElevatorBounds,
                     endingElevatorBounds,
-                    controller
+                    controller,
+                    noSpawnRegions
                 )
 
                 controller?.let {
@@ -407,6 +436,7 @@ class TowerGenerator(
 
     private fun loadRoomHandlers() {
         roomControllerRegistry["shop_room"] = ShopRoom::class
+        roomControllerRegistry["staircase_of_doom"] = StaircaseOfDoomRoom::class
     }
 
     fun cleanup() {
@@ -441,7 +471,8 @@ class TowerGenerator(
         val roomBounds: Pair<Location, Location>,
         val startingElevatorBounds: Pair<Location, Location>?,
         val endingElevatorBounds: Pair<Location, Location>,
-        val roomController: RoomController?
+        val roomController: RoomController?,
+        val noSpawnRegions: List<Pair<Location, Location>>
     )
 
     data class LoadedEndingRoom(

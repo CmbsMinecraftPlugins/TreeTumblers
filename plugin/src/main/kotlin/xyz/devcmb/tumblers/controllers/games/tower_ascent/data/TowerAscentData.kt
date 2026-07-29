@@ -93,7 +93,8 @@ object TowerAscentData : GameData(
     ),
     flags = setOf(
         Flag.ENABLE_HUNGER,
-        Flag.RESET_MOB_TARGETS_ON_DEATH
+        Flag.RESET_MOB_TARGETS_ON_DEATH,
+        Flag.SURVIVAL_MODE
     ),
     scores = hashMapOf(
         TowerAscentScoreSource.COMPLETE_ROOM to 120,

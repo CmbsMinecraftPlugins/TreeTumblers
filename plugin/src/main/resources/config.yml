@@ -694,16 +694,16 @@ games:
 
           # The different rooms that can be generated
           rooms:
-            - id: testing_room
-              # The material name that will replace all diamond and redstone blocks in the build
-              pivot_replacement_material: BLACKSTONE
-
-              # A list of mob sets to spawn when the room begins
-              # Each entry in this list will need to be fully killed to spawn the next set
-              # When all sets are cleared, the room is considered cleared
-              mob_sets:
-                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
-                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
+#            - id: testing_room
+#              # The material name that will replace all diamond and redstone blocks in the build
+#              pivot_replacement_material: BLACKSTONE
+#
+#              # A list of mob sets to spawn when the room begins
+#              # Each entry in this list will need to be fully killed to spawn the next set
+#              # When all sets are cleared, the room is considered cleared
+#              mob_sets:
+#                - [{ group: skeleton_weak, amount: 1 }, { group: zombie_weak, amount: 3 }]
+#                - [{ group: skeleton_weak, amount: 2 }, { group: zombie_medium_1, amount: 2 }, { group: zombie_medium_2, amount: 2 }]
             - id: shop
               pivot_replacement_material: BLACKSTONE
               mob_sets: []
@@ -711,3 +711,8 @@ games:
               # Relates to a registered RoomController instance that gets instansiated when the room is loaded
               # In this specific instance, whenever the game tried to spawn a shop room, it'll filter for rooms with this controller id
               controller: shop_room
+            - id: staircase_of_doom
+              pivot_replacement_material: BLACKSTONE
+              controller: staircase_of_doom
+              mob_sets:
+                - [{ group: skeleton_weak, amount: 3}, { group: zombie_weak, amount: 4 }, { group: zombie_medium_1, amount: 1 }, { group: zombie_medium_2, amount: 2 }]

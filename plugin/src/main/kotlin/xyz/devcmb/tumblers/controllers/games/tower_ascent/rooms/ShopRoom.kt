@@ -13,12 +13,14 @@ import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Location
 import org.bukkit.Material
+import org.bukkit.NamespacedKey
 import org.bukkit.entity.Entity
 import org.bukkit.entity.ItemDisplay
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block.Action
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.persistence.PersistentDataType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.fui.draw.TextDrawContext
 import xyz.devcmb.tumblers.TreeTumblers
@@ -41,6 +43,10 @@ class ShopRoom(val roomIndex: Int) : RoomController {
 
     val elevatorBlocks: ArrayList<Location> = ArrayList()
     val shopItems: ArrayList<PurchasableShopItem> = ArrayList()
+
+    companion object {
+        val rustedKey = NamespacedKey(TreeTumblers.NAMESPACE, "rusted_key_item")
+    }
 
     override fun load() {
         room.endingElevatorBounds.first.forEachRegion(room.endingElevatorBounds.second) {
@@ -179,7 +185,15 @@ class ShopRoom(val roomIndex: Int) : RoomController {
         REGENERATION_SCROLL(30, ScrollItem(ScrollItem.ScrollEffect.REGENERATION).build()),
         STRENGTH_SCROLL(45, ScrollItem(ScrollItem.ScrollEffect.STRENGTH).build()),
         GOLDEN_APPLE_2X(30, AdvancedItemStack(Material.GOLDEN_APPLE) { count(2) }),
-        STEAK_8X(30, AdvancedItemStack(Material.COOKED_BEEF) { count(8) })
+        STEAK_8X(30, AdvancedItemStack(Material.COOKED_BEEF) { count(8) }),
+        RUSTED_KEY(40, AdvancedItemStack(Material.ECHO_SHARD) {
+            name(Format.mm("<color:#632e21>Rusted Key</color>"))
+            model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/tower_ascent/rusted_key"))
+
+            persistentDataContainer {
+                set(rustedKey, PersistentDataType.BOOLEAN, true)
+            }
+        })
     }
 
     val cooldowns: HashMap<Player, Long> = HashMap()

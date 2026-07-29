@@ -5,11 +5,13 @@ import kotlinx.coroutines.launch
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
+import net.kyori.adventure.title.Title
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
+import org.bukkit.event.block.BlockBreakEvent
 import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.GameControllerException
@@ -36,10 +38,12 @@ import xyz.devcmb.tumblers.util.enableActionBar
 import xyz.devcmb.tumblers.util.forEachRegion
 import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.suspendSync
+import xyz.devcmb.tumblers.util.ticks
 import xyz.devcmb.tumblers.util.titleCountdown
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
 import java.util.UUID
+import kotlin.collections.set
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -69,6 +73,8 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             Kit.KitItem.ArmorItem(ItemStack.of(Material.IRON_CHESTPLATE)),
             Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_LEGGINGS)),
             Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_BOOTS)),
+
+            Kit.KitItem.AdvancedItem(ShopRoom.ShopItem.RUSTED_KEY.item)
         )
         override val defaultDropability: Boolean = true
         override val uuid: UUID = UUID.randomUUID()
@@ -163,6 +169,8 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             it.enableActionBar("towerAscentActionBar")
             alivePlayers.add(it)
         }
+
+        playerCheck()
 
         timer(Timer(20.seconds) {
             id = "tower_ascent_game_start"
@@ -325,6 +333,16 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         }
     }
 
+    fun givePlayerGold(player: Player, gold: Int) {
+        playerGoldCounts[player.tumblingPlayer] = (playerGoldCounts[player.tumblingPlayer] ?: 0) + gold
+
+        player.showTitle(Title.title(
+            Component.empty(),
+            Format.mm("<gold>[+${gold} <white><sprite:items:item/gold_ingot></white>]</gold>"),
+            Title.Times.times(5.ticks, 30.ticks, 5.ticks)
+        ))
+    }
+
     /**
      * The method that gets called when a player leaves the game during the [State.GAME_ON] and [State.PREGAME] state
      */
@@ -346,5 +364,18 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
         if(tumblingPlayer !in gameParticipants) return
 
         playerDeath(tumblingPlayer)
+    }
+
+    @EventHandler
+    fun towerAscentGoldBlockBreakEvent(event: BlockBreakEvent) {
+        val player = event.player
+        if(player.tumblingPlayer !in gameParticipants) return
+        if(event.block.type != Material.GOLD_BLOCK) {
+            event.isCancelled = true
+            return
+        }
+
+        event.isDropItems = false
+        givePlayerGold(player, 9)
     }
 }
