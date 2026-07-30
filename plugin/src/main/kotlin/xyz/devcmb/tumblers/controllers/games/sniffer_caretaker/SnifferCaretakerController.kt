@@ -940,9 +940,11 @@ class SnifferCaretakerController : AbstractGame(SnifferCaretakerData) {
     @EventHandler
     fun playerBucketFillEvent(event: PlayerBucketFillEvent) {
         if(event.itemStack == null) return
-
         event.isCancelled = true
-        event.player.inventory.setItem(event.hand, event.itemStack!!.clone())
+
+        if(event.itemStack!!.type != Material.POWDER_SNOW_BUCKET) {
+            event.player.inventory.setItem(event.hand, event.itemStack!!.clone())
+        }
     }
 
     @EventHandler

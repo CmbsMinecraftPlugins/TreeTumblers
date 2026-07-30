@@ -796,6 +796,10 @@ abstract class AbstractGame(
                     playerJoin(player)
                 }
 
+                State.POST_GAME -> {
+                    HubController.spawnHub(player)
+                }
+
                 else -> return@runTaskLater
             }
         }
