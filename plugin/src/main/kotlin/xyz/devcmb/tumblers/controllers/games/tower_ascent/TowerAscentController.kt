@@ -72,9 +72,7 @@ class TowerAscentController : AbstractGame(TowerAscentData) {
             Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_HELMET)),
             Kit.KitItem.ArmorItem(ItemStack.of(Material.IRON_CHESTPLATE)),
             Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_LEGGINGS)),
-            Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_BOOTS)),
-
-            Kit.KitItem.AdvancedItem(ShopRoom.ShopItem.RUSTED_KEY.item)
+            Kit.KitItem.ArmorItem(ItemStack.of(Material.LEATHER_BOOTS))
         )
         override val defaultDropability: Boolean = true
         override val uuid: UUID = UUID.randomUUID()

@@ -47,7 +47,7 @@ object WorldController : IController {
     override fun cleanup() = cleanupTempWorlds()
 
     fun cleanupTempWorlds() {
-        getDimensions().listFiles().forEach { file ->
+        getDimensions()?.listFiles()?.forEach { file ->
             if(file.isDirectory && (file.name.contains("temp_") || file.name == lobbyWorld)) {
                 if(Bukkit.getWorld(file.name) !== null) {
                     Bukkit.unloadWorld(file.name, false)
@@ -210,8 +210,10 @@ object WorldController : IController {
     }
 
     @Suppress("UnstableApiUsage")
-    fun getDimensions(): File {
-        return File(Bukkit.getServer().levelDirectory.toString(), "dimensions/minecraft")
+    fun getDimensions(): File? {
+        val file = File(Bukkit.getServer().levelDirectory.toString(), "dimensions/minecraft")
+        if(!file.exists() || !file.isDirectory) return null
+        return file
     }
 
     data class LoadableTemplate(val file: File)
