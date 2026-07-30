@@ -15,11 +15,10 @@ Not wanting to play with event mode? Just use the `/game start <name>` command t
 
 You need a lot of setup to use this plugin properly, so you can find an example server in the [releases tab!](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases) (all default config keys are for this)
 
-If you want to go through setting up the plugin yourself, The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases).
+If you want to go through setting up the plugin yourself, The plugin can be found on many distribution websites, including the [github releases tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/releases). Each config key has a comment above it that shows what it changes, and for templates, refer to the template server.
 
 An in-dev build for the current commit can also be found in the [actions tab](https://github.com/CmbsMinecraftPlugins/TreeTumblers/actions)
 
-- [Hangar](https://hangar.papermc.io/DevCmb/tree-tumblers)
 - [Modrinth](https://modrinth.com/plugin/tree-tumblers)
 
 ## Developing
@@ -28,6 +27,21 @@ If you wish to contribute to the project, you're more than welcome to do so!
 The project uses gradle as its build system, and sets up all the plugins using the `runServer` task, so all you need to do is import the project, run the `runServer` gradle task, and it'll host a local server for you to develop on.
 
 This project also has support hot-swap debugging (although after errors it may not be as useful), running the debugger on the `runServer` task will allow you to make edits that get applied immediately.
+
+## Commands
+When playing while you have op, you can use the following commands to control the games
+
+`/game start <name>` - starts an individual game that **does not** advance the event state
+
+`/event start [--confirm]` - starts the overall event loop that runs games. If you just want to mess around with the games, don't use this
+
+`/game playercheck [skip | permaskip | unpermaskip]` - skips for one round or permanently skips the "Waiting for Players" dialog
+
+`/game timer [number]` - Set the time on the current timer
+
+`/timer pause [id]` - Pauses a timer by its ID (useful for games that have multiple timers)
+
+`/event timer [pause | unpause | set]` - Interacts with the overall event in one of 3 ways
 
 ## Games
 
