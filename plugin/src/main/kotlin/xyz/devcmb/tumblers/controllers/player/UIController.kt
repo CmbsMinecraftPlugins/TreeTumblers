@@ -10,6 +10,7 @@ import org.bukkit.block.Furnace
 import org.bukkit.block.Smoker
 import org.bukkit.event.EventHandler
 import org.bukkit.event.inventory.InventoryOpenEvent
+import org.bukkit.event.inventory.InventoryType
 import xyz.devcmb.fui.FontUI
 import xyz.devcmb.fui.builder.buildFontUI
 import xyz.devcmb.tumblers.TreeTumblers
@@ -52,18 +53,24 @@ object UIController : IController {
 
     @EventHandler
     fun inventoryOpenEvent(event: InventoryOpenEvent) {
-        val text = when (event.inventory.holder) {
-            is Chest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Small Chest</white>"))
-            is DoubleChest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Large Chest</white>"))
+        val text = when {
+            event.inventory.holder is Chest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Small Chest</white>"))
+            event.inventory.holder is DoubleChest -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Large Chest</white>"))
 
-            is BlastFurnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Blast Furnace</font></white>")
+            event.inventory.holder is BlastFurnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Blast Furnace</font></white>")
                 .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
-            is Smoker -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Smoker</font></white>")
+            event.inventory.holder is Smoker -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Smoker</font></white>")
                 .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
-            is Furnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Furnace</font></white>")
+            event.inventory.holder is Furnace -> Format.mm("<white><font:tumbling:offset/default_offset_-3>Furnace</font></white>")
                 .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
 
-            is Barrel -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Barrel</white>"))
+            event.inventory.holder is Barrel -> UserInterfaceUtility.centerInventoryTitle(Format.mm("<white>Barrel</white>"))
+
+            event.inventory.type == InventoryType.WORKBENCH -> Format.mm("<white>Crafting</white>")
+                .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
+            event.inventory.type == InventoryType.ANVIL -> Format.mm("<white>Repair & Name</white>")
+                .shadowColor(ShadowColor.shadowColor(0x3F, 0x3F, 0x3F, 0x3F))
+
             else -> return
         }
 
