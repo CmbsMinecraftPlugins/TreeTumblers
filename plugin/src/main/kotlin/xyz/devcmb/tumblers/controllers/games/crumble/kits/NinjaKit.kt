@@ -65,7 +65,7 @@ class NinjaKit(
         }
 
         override val abilityName: String = "Stealth"
-        override val abilityDescription: String = "Become the stealth master you've always wanted to be. Turns you invisible for ${invisibilityDuration.toLong().tickSeconds}s and creates a dummy in your place."
+        override val abilityDescription: String = "Turns you invisible for ${invisibilityDuration.toLong().tickSeconds}s and creates a dummy in your place."
         override val killPowerName: String = "Vanish"
         override val killPowerDescription: String = "Gives you a smoke bomb"
 

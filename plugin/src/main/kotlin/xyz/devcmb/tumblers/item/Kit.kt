@@ -99,17 +99,19 @@ object Kit {
             val itemStack = item.getStack(kit, player)
             itemStack.apply {
                 editMeta {
-                    it.persistentDataContainer.set(
-                        NamespacedKey(TreeTumblers.NAMESPACE, "kit"),
-                        PersistentDataType.STRING,
-                        kit.uuid.toString()
-                    )
+                    if(kit.saveLoadout) {
+                        it.persistentDataContainer.set(
+                            NamespacedKey(TreeTumblers.NAMESPACE, "kit"),
+                            PersistentDataType.STRING,
+                            kit.uuid.toString()
+                        )
 
-                    it.persistentDataContainer.set(
-                        NamespacedKey(TreeTumblers.NAMESPACE, "kit_item_index"),
-                        PersistentDataType.INTEGER,
-                        index
-                    )
+                        it.persistentDataContainer.set(
+                            NamespacedKey(TreeTumblers.NAMESPACE, "kit_item_index"),
+                            PersistentDataType.INTEGER,
+                            index
+                        )
+                    }
 
                     itemSlots[index] = slot
                 }

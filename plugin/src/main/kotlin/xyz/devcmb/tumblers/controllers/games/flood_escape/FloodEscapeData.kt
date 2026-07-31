@@ -1,21 +1,38 @@
 package xyz.devcmb.tumblers.controllers.games.flood_escape
 
+import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
+import com.sk89q.worldedit.world.block.BlockTypes
+import dev.rollczi.litecommands.annotations.argument.Arg
+import dev.rollczi.litecommands.annotations.command.Command
+import dev.rollczi.litecommands.annotations.context.Context
+import dev.rollczi.litecommands.annotations.execute.Execute
 import io.papermc.paper.util.Tick
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
+import org.bukkit.entity.Player
 import xyz.devcmb.tumblers.GameControllerException
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController.MovementDirection
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
 import xyz.devcmb.tumblers.engine.cutscene.CutsceneStep
 import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.ui.MiniMessagePlaceholders
+import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
+import xyz.devcmb.tumblers.util.clipboard
+import xyz.devcmb.tumblers.util.getPivot
 import xyz.devcmb.tumblers.util.suspendSync
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.io.path.Path
 
 object FloodEscapeData : GameData(
     id = "flood_escape",
@@ -125,5 +142,71 @@ object FloodEscapeData : GameData(
         FloodEscapeController.FloodEscapeScoreSource.OUTLAST_OPPONENT to 50
     ),
     scoreboard = FloodEscapeScoreboard::class,
-    spawns = FloodEscapeSpawn.entries
+    spawns = FloodEscapeSpawn.entries,
+    builderCommands =
+        @Command(name = "btools flood_escape")
+        object {
+            @Execute(name = "save_obstacle")
+            fun saveObstacle(
+                @Context player: Player,
+                @Arg map: Map,
+                @Arg difficulty: FloodEscapeController.ObstacleDifficulty,
+                @Arg type: FloodEscapeController.ObstacleType,
+                @Arg("name") name: String
+            ) {
+                val clipboard = player.clipboard
+                if(clipboard == null) {
+                    player.sendMessage(Format.error("Worldedit clipboard is empty!"))
+                    return
+                }
+
+                if(clipboard.region.volume == 0L) {
+                    player.sendMessage(Format.error("Worldedit clipboard is empty!"))
+                    return
+                }
+
+                // Why.
+                // Why Past DevCmb.
+                // Did you flip the formula
+                // It Used to be Diamond Start, Redstone End
+                // For Shame.
+                if(clipboard.getPivot(BlockTypes.REDSTONE_BLOCK!!) == null) {
+                    player.sendMessage(Format.error("Clipboard is missing a straight line of 5 redstone blocks as the starting pivot!"))
+                    return
+                }
+
+                if(clipboard.getPivot(BlockTypes.DIAMOND_BLOCK!!) == null) {
+                    player.sendMessage(Format.error("Clipboard is missing a straight line of 5 diamond blocks as the ending pivot!"))
+                    return
+                }
+
+                player.sendMessage(Format.info("Started flood escape template save job..."))
+                val file = File(Path(
+                    FloodEscapeController.obstaclesDirectory,
+                    map.id,
+                    difficulty.name.lowercase(),
+                    type.name.lowercase(),
+                    "$name.schem"
+                ).toString())
+                val parent = file.parentFile
+
+                if(!parent.exists() && !parent.mkdirs()) {
+                    player.sendMessage(Format.error("Directory setup failed!"))
+                    return
+                }
+
+                TreeTumblers.pluginScope.launch {
+                    withContext(Dispatchers.IO) {
+                        FileOutputStream(file).use {
+                            BuiltInClipboardFormat.FAST_V3
+                                .getWriter(it)
+                                .use { writer -> writer.write(clipboard) }
+                        }
+
+                        DebugUtil.success("Flood escape template saved to ${file.absolutePath} successfully")
+                        player.sendMessage(Format.success("Flood escape template saved successfully!"))
+                    }
+                }
+            }
+        }
 )

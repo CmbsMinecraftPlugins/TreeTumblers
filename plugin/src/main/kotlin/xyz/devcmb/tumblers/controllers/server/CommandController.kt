@@ -14,6 +14,7 @@ import xyz.devcmb.tumblers.commands.arguments.CustomItemArgument
 import xyz.devcmb.tumblers.commands.arguments.DebugLogLevelArgument
 import xyz.devcmb.tumblers.commands.arguments.DebuggingEventArgument
 import xyz.devcmb.tumblers.commands.arguments.GameArgument
+import xyz.devcmb.tumblers.commands.arguments.GameMapArgument
 import xyz.devcmb.tumblers.commands.arguments.PartyGameArgument
 import xyz.devcmb.tumblers.commands.arguments.PartyGameSchematicArgument
 import xyz.devcmb.tumblers.commands.arguments.QibTypeArgument
@@ -50,6 +51,7 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.Timer
+import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.item.custom.ItemRegistry
 import xyz.devcmb.tumblers.util.DebugUtil
@@ -59,25 +61,33 @@ import xyz.devcmb.tumblers.util.Format
 object CommandController : IController {
     lateinit var liteCommands: LiteCommands<CommandSender>
     override fun init() {
+        val commands = arrayListOf(
+            DebugCommand(),
+            WhitelistCommand(),
+            TeamCommand(),
+            GameCommand(),
+            WorldCommand(),
+            ScoreCommand(),
+            TimerCommand(),
+            EventCommand(),
+            PartyCommand(),
+            SpectateCommand(),
+            ChatCommand(),
+            NametagCommand(),
+            QibCommand(),
+            BadgeCommand(),
+            ItemCommand(),
+            PackCommand()
+        )
+
+        GameController.games.forEach {
+            it.data.builderCommands?.let { command ->
+                commands.add(command)
+            }
+        }
+
         liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.plugin)
-            .commands(
-                DebugCommand(),
-                WhitelistCommand(),
-                TeamCommand(),
-                GameCommand(),
-                WorldCommand(),
-                ScoreCommand(),
-                TimerCommand(),
-                EventCommand(),
-                PartyCommand(),
-                SpectateCommand(),
-                ChatCommand(),
-                NametagCommand(),
-                QibCommand(),
-                BadgeCommand(),
-                ItemCommand(),
-                PackCommand()
-            )
+            .commands(commands)
             .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
             .argument(Team::class.java, TeamArgument())
             .argument(GameController.RegisteredGame::class.java, GameArgument())
@@ -93,6 +103,7 @@ object CommandController : IController {
             .argument(BadgeController.Badge::class.java, BadgeArgument())
             .argument(SpawnLocation::class.java, SpawnLocationArgument())
             .argument(ItemRegistry.CustomItemDefinition::class.java, CustomItemArgument())
+            .argument(Map::class.java, GameMapArgument())
             .extension(LiteAdventureExtension()) { config ->
                 config.serializer(Format.miniMessage)
             }

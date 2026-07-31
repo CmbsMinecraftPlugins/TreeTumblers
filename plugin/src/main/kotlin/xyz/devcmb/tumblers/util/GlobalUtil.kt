@@ -2,6 +2,8 @@ package xyz.devcmb.tumblers.util
 
 import com.github.retrooper.packetevents.PacketEvents
 import com.github.retrooper.packetevents.wrapper.PacketWrapper
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
 import com.sk89q.worldedit.extent.clipboard.Clipboard
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.world.block.BlockType
@@ -829,3 +831,16 @@ fun Pair<Location, Location>.center(): Location {
 fun Player.sendPacket(packet: PacketWrapper<*>) {
     PacketEvents.getAPI().playerManager.sendPacket(this, packet)
 }
+
+val Player.clipboard: Clipboard?
+    get() {
+        val worldEdit = WorldEdit.getInstance()
+        val sessionManager = worldEdit.sessionManager
+        val playerSession = sessionManager.get(BukkitAdapter.adapt(player))
+
+        return try {
+            playerSession.clipboard.clipboards.lastOrNull()
+        } catch(_: Exception) {
+            null
+        }
+    }

@@ -23,6 +23,10 @@ import kotlin.reflect.KClass
  * @param scores A [HashMap] of [ScoreSource]s to the amount of score they give
  * @param scoreboard The id of a [xyz.devcmb.tumblers.ui.scoreboard.HandledScoreboard]
  * @param badges The list of badges a game has that are displayed in the collection
+ * @param spawns An optional [List] of [SpawnLocation]s that a map of the game can use
+ * @param listed If the game appears in the badge collection
+ * @param spectateInventory The inventory ID of the spectate menu this game will use
+ * @param builderCommands A list of LiteCommands
  */
 open class GameData(
     val id: String,
@@ -37,6 +41,8 @@ open class GameData(
     val spawns: List<SpawnLocation>? = null,
     val listed: Boolean = true,
     val spectateInventory: String = "spectateInventory",
+
+    val builderCommands: Any? = null,
 
     val icon: Component = Format.mm("<glyph:game/${id}_icon>"),
     val logo: Component = Format.mm("<glyph:game/${id}_logo>"),
