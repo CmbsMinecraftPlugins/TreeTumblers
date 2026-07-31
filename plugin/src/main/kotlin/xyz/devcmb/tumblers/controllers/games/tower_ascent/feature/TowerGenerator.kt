@@ -65,10 +65,12 @@ class TowerGenerator(
     val roomControllerRegistry: HashMap<String, KClass<out RoomController>> = HashMap()
     val roomControllers: ArrayList<RoomController> = ArrayList()
 
-    val templatesDirectory: String = configurable("templates.tower_ascent_templates")
-        get() {
-            return field.replace("&", TreeTumblers.plugin.dataPath.toString())
-        }
+    companion object {
+        val templatesDirectory: String = configurable("templates.tower_ascent_templates")
+            get() {
+                return field.replace("&", TreeTumblers.plugin.dataPath.toString())
+            }
+    }
 
     suspend fun generateTowers() {
         loadMobSets()

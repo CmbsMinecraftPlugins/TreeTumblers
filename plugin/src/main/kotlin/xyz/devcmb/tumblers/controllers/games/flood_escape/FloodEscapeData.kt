@@ -6,6 +6,7 @@ import dev.rollczi.litecommands.annotations.argument.Arg
 import dev.rollczi.litecommands.annotations.command.Command
 import dev.rollczi.litecommands.annotations.context.Context
 import dev.rollczi.litecommands.annotations.execute.Execute
+import dev.rollczi.litecommands.annotations.permission.Permission
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -145,6 +146,7 @@ object FloodEscapeData : GameData(
     spawns = FloodEscapeSpawn.entries,
     builderCommands =
         @Command(name = "btools flood_escape")
+        @Permission("tumbling.dev")
         object {
             @Execute(name = "save_obstacle")
             fun saveObstacle(
@@ -152,7 +154,8 @@ object FloodEscapeData : GameData(
                 @Arg map: Map,
                 @Arg difficulty: FloodEscapeController.ObstacleDifficulty,
                 @Arg type: FloodEscapeController.ObstacleType,
-                @Arg("name") name: String
+                @Arg("name") name: String,
+                @dev.rollczi.litecommands.annotations.flag.Flag("--confirm") confirm: Boolean,
             ) {
                 val clipboard = player.clipboard
                 if(clipboard == null) {
@@ -180,7 +183,6 @@ object FloodEscapeData : GameData(
                     return
                 }
 
-                player.sendMessage(Format.info("Started flood escape template save job..."))
                 val file = File(Path(
                     FloodEscapeController.obstaclesDirectory,
                     map.id,
@@ -188,8 +190,14 @@ object FloodEscapeData : GameData(
                     type.name.lowercase(),
                     "$name.schem"
                 ).toString())
-                val parent = file.parentFile
+                if(file.exists() && !confirm) {
+                    player.sendMessage(Format.warning("This obstacle already exists! Re-run with --confirm to continue anyways."))
+                    return
+                }
 
+                player.sendMessage(Format.info("Starting flood escape template save job..."))
+
+                val parent = file.parentFile
                 if(!parent.exists() && !parent.mkdirs()) {
                     player.sendMessage(Format.error("Directory setup failed!"))
                     return
@@ -208,5 +216,7 @@ object FloodEscapeData : GameData(
                     }
                 }
             }
+
+            // TODO: Add load command
         }
 )

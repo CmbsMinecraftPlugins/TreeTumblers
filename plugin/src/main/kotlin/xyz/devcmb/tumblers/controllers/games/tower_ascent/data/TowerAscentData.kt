@@ -101,5 +101,6 @@ object TowerAscentData : GameData(
         TowerAscentScoreSource.COMPLETE_TOWER to 300,
     ),
     scoreboard = TowerAscentScoreboard::class,
-    spawns = TowerAscentSpawn.entries
+    spawns = TowerAscentSpawn.entries,
+    builderCommands = TowerAscentBuilderCommand
 )

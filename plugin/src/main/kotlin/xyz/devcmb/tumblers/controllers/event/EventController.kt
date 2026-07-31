@@ -170,9 +170,9 @@ object EventController : IController {
     val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
         Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
         Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><red>Programmer</red> • <light_purple>Composer</light_purple> • <aqua>Builder</aqua></white>"),
+        Format.mm("<red>10khp</red>") to Format.mm("<aqua>Builder</aqua> • <color:${MiniMessagePlaceholders.ORANGE}>Tester</color>"),
         Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
-        Format.mm("<red>10khp</red>") to Format.mm("<aqua>Builder</aqua> • <color:${MiniMessagePlaceholders.ORANGE}>Tester</color>")
     )
     val eventName: String = configurable("event.title")
     suspend fun eventStartSequence() {

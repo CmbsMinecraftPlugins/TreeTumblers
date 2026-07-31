@@ -8,38 +8,12 @@ import org.bukkit.command.CommandSender
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.commands.InvalidUsageHandler
-import xyz.devcmb.tumblers.commands.arguments.BadgeArgument
-import xyz.devcmb.tumblers.commands.arguments.ChatChannelArgument
-import xyz.devcmb.tumblers.commands.arguments.CustomItemArgument
-import xyz.devcmb.tumblers.commands.arguments.DebugLogLevelArgument
-import xyz.devcmb.tumblers.commands.arguments.DebuggingEventArgument
-import xyz.devcmb.tumblers.commands.arguments.GameArgument
-import xyz.devcmb.tumblers.commands.arguments.GameMapArgument
-import xyz.devcmb.tumblers.commands.arguments.PartyGameArgument
-import xyz.devcmb.tumblers.commands.arguments.PartyGameSchematicArgument
-import xyz.devcmb.tumblers.commands.arguments.QibTypeArgument
-import xyz.devcmb.tumblers.commands.arguments.RecoveryStateArgument
-import xyz.devcmb.tumblers.commands.arguments.SpawnLocationArgument
-import xyz.devcmb.tumblers.commands.arguments.TeamArgument
-import xyz.devcmb.tumblers.commands.arguments.TemplateWorldArgument
-import xyz.devcmb.tumblers.commands.arguments.TimerArgument
-import xyz.devcmb.tumblers.commands.arguments.TumblingPlayerArgument
-import xyz.devcmb.tumblers.commands.dev.DebugCommand
-import xyz.devcmb.tumblers.commands.dev.ItemCommand
-import xyz.devcmb.tumblers.commands.dev.NametagCommand
-import xyz.devcmb.tumblers.commands.dev.PackCommand
-import xyz.devcmb.tumblers.commands.dev.PartyCommand
-import xyz.devcmb.tumblers.commands.dev.QibCommand
-import xyz.devcmb.tumblers.commands.dev.SpectateCommand
-import xyz.devcmb.tumblers.commands.dev.TimerCommand
-import xyz.devcmb.tumblers.commands.dev.WorldCommand
-import xyz.devcmb.tumblers.commands.event.EventCommand
-import xyz.devcmb.tumblers.commands.games.BadgeCommand
-import xyz.devcmb.tumblers.commands.games.GameCommand
-import xyz.devcmb.tumblers.commands.misc.ChatCommand
-import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
-import xyz.devcmb.tumblers.commands.organizer.TeamCommand
-import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
+import xyz.devcmb.tumblers.commands.arguments.*
+import xyz.devcmb.tumblers.commands.dev.*
+import xyz.devcmb.tumblers.commands.event.*
+import xyz.devcmb.tumblers.commands.games.*
+import xyz.devcmb.tumblers.commands.misc.*
+import xyz.devcmb.tumblers.commands.organizer.*
 import xyz.devcmb.tumblers.controllers.IController
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.BadgeController
@@ -70,7 +44,6 @@ object CommandController : IController {
             ScoreCommand(),
             TimerCommand(),
             EventCommand(),
-            PartyCommand(),
             SpectateCommand(),
             ChatCommand(),
             NametagCommand(),

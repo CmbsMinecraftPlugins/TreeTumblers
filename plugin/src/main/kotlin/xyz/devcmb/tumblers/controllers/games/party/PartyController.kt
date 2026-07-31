@@ -828,7 +828,6 @@ class PartyController : AbstractGame(PartyData) {
         ) event.isCancelled = true
     }
 
-    // todo: investigate this, opposing team players can't attack eachother
     @EventHandler
     fun entityDamageEvent(event: EntityDamageByEntityEvent) {
         val victim = event.entity as? Player ?: return
