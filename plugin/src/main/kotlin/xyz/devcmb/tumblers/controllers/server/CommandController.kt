@@ -19,8 +19,8 @@ import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.party.PartyController
+import xyz.devcmb.tumblers.controllers.player.ChatController
 import xyz.devcmb.tumblers.controllers.player.NoxesiumController
-import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.engine.DebugToolkit
@@ -54,7 +54,7 @@ object CommandController : IController {
         )
 
         GameController.games.forEach {
-            it.data.builderCommands?.let { command ->
+            it.data.builderCommand?.let { command ->
                 commands.add(command)
             }
         }
@@ -69,7 +69,7 @@ object CommandController : IController {
             .argument(Timer::class.java, TimerArgument())
             .argument(PartyController.PartyGameIdentifier::class.java, PartyGameArgument())
             .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
-            .argument(PlayerController.ChatChannel::class.java, ChatChannelArgument())
+            .argument(ChatController.ChatChannel::class.java, ChatChannelArgument())
             .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
             .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
             .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())

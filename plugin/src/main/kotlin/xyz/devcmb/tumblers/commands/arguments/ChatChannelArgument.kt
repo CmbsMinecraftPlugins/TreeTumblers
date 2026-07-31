@@ -8,16 +8,16 @@ import dev.rollczi.litecommands.suggestion.SuggestionContext
 import dev.rollczi.litecommands.suggestion.SuggestionResult
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import xyz.devcmb.tumblers.controllers.player.PlayerController
+import xyz.devcmb.tumblers.controllers.player.ChatController
 import xyz.devcmb.tumblers.util.Format
 
-class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.ChatChannel>() {
+class ChatChannelArgument : ArgumentResolver<CommandSender, ChatController.ChatChannel>() {
     override fun parse(
         invocation: Invocation<CommandSender>,
-        context: Argument<PlayerController.ChatChannel>,
+        context: Argument<ChatController.ChatChannel>,
         argument: String
-    ): ParseResult<PlayerController.ChatChannel> {
-        val channels = PlayerController.ChatChannel.entries
+    ): ParseResult<ChatController.ChatChannel> {
+        val channels = ChatController.ChatChannel.entries
         val channel = channels
             .filter { if(invocation.sender() is Player) it.canSend(invocation.sender() as Player) else true }
             .find { it.name.equals(argument, ignoreCase = true) }
@@ -31,10 +31,10 @@ class ChatChannelArgument : ArgumentResolver<CommandSender, PlayerController.Cha
 
     override fun suggest(
         invocation: Invocation<CommandSender>,
-        argument: Argument<PlayerController.ChatChannel>,
+        argument: Argument<ChatController.ChatChannel>,
         context: SuggestionContext
     ): SuggestionResult {
-        return PlayerController.ChatChannel.entries
+        return ChatController.ChatChannel.entries
             .filter { if(invocation.sender() is Player) it.canSend(invocation.sender() as Player) else true }
             .map { it.name.lowercase() }
             .stream()

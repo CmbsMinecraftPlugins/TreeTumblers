@@ -33,6 +33,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.event.EventController
 import xyz.devcmb.tumblers.controllers.event.HubController
+import xyz.devcmb.tumblers.controllers.player.ChatController
 import xyz.devcmb.tumblers.controllers.player.NametagController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
@@ -214,7 +215,7 @@ abstract class AbstractGame(
      */
     open suspend fun runCutscene() {
         currentState = State.CUTSCENE
-        PlayerController.muteChat()
+        ChatController.muteChat()
 
         currentCutscene = Cutscene(data.cutsceneSteps)
         currentCutscene!!.run(
@@ -236,7 +237,7 @@ abstract class AbstractGame(
      */
     suspend fun pregame() {
         currentState = State.PREGAME
-        PlayerController.unmuteChat()
+        ChatController.unmuteChat()
 
         suspendSync {
             gamePlayers

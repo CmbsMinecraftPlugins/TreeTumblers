@@ -32,6 +32,7 @@ import xyz.devcmb.tumblers.annotations.Controller
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.IController
+import xyz.devcmb.tumblers.controllers.player.ChatController
 import xyz.devcmb.tumblers.controllers.player.PlayerController
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.controllers.server.WorldController
@@ -168,9 +169,9 @@ object EventController : IController {
     }
 
     val attribution: ArrayList<Pair<Component, Component>> = arrayListOf(
-        Format.mm("<red><b>DevCmb</b></red>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
+        Format.mm("<aqua><b>DevCmb</b></aqua>") to Format.mm("<white><yellow>Project Lead</yellow> • <red>Lead Programmer</red> • <light_purple>Art</light_purple></white>"),
         Format.mm("<light_purple><b>Nibbl_z</b></light_purple>") to Format.mm("<white><red>Programmer</red> • <light_purple>Composer</light_purple> • <aqua>Builder</aqua></white>"),
-        Format.mm("<red>10khp</red>") to Format.mm("<aqua>Builder</aqua> • <color:${MiniMessagePlaceholders.ORANGE}>Tester</color>"),
+        Format.mm("<red>10kHP</red>") to Format.mm("<aqua>Builder</aqua> • <color:${MiniMessagePlaceholders.ORANGE}>Tester</color>"),
         Format.mm("<b><red>Mat</red><white>Mart</white></b>") to Format.mm("<white><color:#ff9100>Game Design</color> • <aqua>Builder</aqua></white>"),
         Format.mm("<color:#ff5cd9><b>TheMasked_Panda</b></color>") to Format.mm("<white><aqua>Builder</aqua> • <light_purple>Art</light_purple></white>"),
     )
@@ -227,7 +228,7 @@ object EventController : IController {
                 "Let's meet our <aqua>teams!</aqua><br><br>" +
                 "<green><line:30></green></white>"
         ))
-        PlayerController.muteChat()
+        ChatController.muteChat()
         delay(2500)
         VotingController.announceTeamPlayers()
         delay(1000)
@@ -236,7 +237,7 @@ object EventController : IController {
                 "<green><line:30></green></white>"
         ))
         delay(1000)
-        PlayerController.unmuteChat()
+        ChatController.unmuteChat()
     }
 
     fun cleanupEvent() {
@@ -282,7 +283,7 @@ object EventController : IController {
         }
         eventTimer!!.start()
 
-        PlayerController.muteChat()
+        ChatController.muteChat()
         Bukkit.broadcast(
             Format.mm("<green><line:30></green><br><br>" +
                 "<white>That's all for this <b><green>Tree Tumblers</green></b> event!<br>" +
@@ -392,7 +393,7 @@ object EventController : IController {
         ))
 
 
-        PlayerController.unmuteChat()
+        ChatController.unmuteChat()
         eventTimer = Timer(60) {
             id = "event_finale_countdown"
             joined = true

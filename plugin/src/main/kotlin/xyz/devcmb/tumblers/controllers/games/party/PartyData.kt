@@ -94,7 +94,7 @@ object PartyData : GameData(
         Flag.DISABLE_NATURAL_REGENERATION
     ),
     scoreboard = PartyScoreboard::class,
-    builderCommands =
+    builderCommand =
         @Command(name = "btools party")
         @Permission("tumbling.dev")
         object {

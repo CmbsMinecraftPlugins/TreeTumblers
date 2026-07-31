@@ -9,16 +9,10 @@ import com.noxcrew.noxesium.paper.component.noxesiumPlayer
 import io.github.retrooper.packetevents.util.SpigotConversionUtil
 import io.papermc.paper.connection.PlayerLoginConnection
 import io.papermc.paper.event.connection.PlayerConnectionValidateLoginEvent
-import io.papermc.paper.event.player.AsyncChatEvent
 import kotlinx.coroutines.launch
-import net.kyori.adventure.audience.Audience
 import net.kyori.adventure.resource.ResourcePackInfo
 import net.kyori.adventure.resource.ResourcePackRequest
 import net.kyori.adventure.resource.ResourcePackStatus
-import net.kyori.adventure.text.Component
-import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextColor
-import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
 import org.bukkit.Material
@@ -336,37 +330,6 @@ object PlayerController : IController {
         }
     }
 
-    val channels: HashMap<Player, ChatChannel> = HashMap()
-    @EventHandler
-    fun playerMessageEvent(event: AsyncChatEvent) {
-        event.isCancelled = true
-
-        if(isChatMuted) {
-            event.player.sendMessage(Format.error("The chat is currently muted!"))
-            return
-        }
-
-        val channel = channels[event.player] ?: ChatChannel.LOCAL
-
-        val viewers = Bukkit.getOnlinePlayers().filter {
-            channel.canSee(event.player, it)
-        }
-
-        Audience.audience(viewers).sendMessage(
-            channel.format(event.player, event.message())
-        )
-    }
-
-    fun muteChat() {
-        isChatMuted = true
-        Bukkit.broadcast(Format.info("The chat has been muted!"))
-    }
-
-    fun unmuteChat() {
-        isChatMuted = false
-        Bukkit.broadcast(Format.info("The chat has been unmuted!"))
-    }
-
     @EventHandler
     fun playerEffectEvent(event: EntityPotionEffectEvent) {
         val player = event.entity as? Player ?: return
@@ -399,81 +362,5 @@ object PlayerController : IController {
                 PacketEvents.getAPI().playerManager.sendPacket(it, packet)
             }
         }
-    }
-
-    enum class ChatChannel(val channelName: String, val color: TextColor) {
-        LOCAL("Local", NamedTextColor.WHITE) {
-            override fun canSee(sender: Player?, receiver: Player): Boolean {
-                return true
-            }
-
-            override fun canSend(player: Player): Boolean {
-                return true
-            }
-
-            override fun format(sender: Player, message: Component): Component {
-                return Format.mm(
-                    "<color:${color.asHexString()}><sender>: <message></color>",
-                    Placeholder.component("sender", sender.formattedName),
-                    Placeholder.component("message", message)
-                )
-            }
-        },
-        TEAM("Team", TextColor.fromHexString("#34d031")!!) {
-            override fun canSee(sender: Player?, receiver: Player): Boolean {
-                return sender?.tumblingPlayer?.team == receiver.tumblingPlayer.team
-            }
-
-            override fun canSend(player: Player): Boolean {
-                return player.tumblingPlayer.team.playingTeam
-            }
-
-            override fun format(sender: Player, message: Component): Component {
-                return Format.mm(
-                    "<color:${color.asHexString()}>[Team] <sender>: <message></color>",
-                    Placeholder.component("sender", sender.formattedName),
-                    Placeholder.component("message", message)
-                )
-            }
-        },
-        STAFF("Staff", TextColor.fromHexString("#2aceff")!!) {
-            override fun canSee(sender: Player?, receiver: Player): Boolean {
-                return receiver.hasPermission("tumbling.dev") || receiver.hasPermission("tumbling.organizer")
-            }
-
-            override fun canSend(player: Player): Boolean {
-                return canSee(null, player)
-            }
-
-            override fun format(sender: Player, message: Component): Component {
-                return Format.mm(
-                    "<color:${color.asHexString()}>[Staff] <sender>: <message></color>",
-                    Placeholder.component("sender", sender.formattedName),
-                    Placeholder.component("message", message)
-                )
-            }
-        },
-        // maybe add some protection so you're not wc-ing the announcement channel
-        ANNOUNCEMENT("Announcement", NamedTextColor.GOLD) {
-            override fun canSee(sender: Player?, receiver: Player): Boolean {
-                return true
-            }
-
-            override fun canSend(player: Player): Boolean {
-                return player.hasPermission("tumbling.dev") || player.hasPermission("tumbling.organizer")
-            }
-
-            override fun format(sender: Player, message: Component): Component {
-                return Format.mm(
-                    "<green><line:30></green><br><br><br><sender>: <message><br><br><br><green><line:30></green>",
-                    Placeholder.component("sender", sender.formattedName),
-                    Placeholder.component("message", message)
-                )
-            }
-        };
-
-        abstract fun canSee(sender: Player?, receiver: Player): Boolean
-        abstract fun canSend(player: Player): Boolean
-        abstract fun format(sender: Player, message: Component): Component
     }
 }

@@ -144,7 +144,7 @@ object FloodEscapeData : GameData(
     ),
     scoreboard = FloodEscapeScoreboard::class,
     spawns = FloodEscapeSpawn.entries,
-    builderCommands =
+    builderCommand =
         @Command(name = "btools flood_escape")
         @Permission("tumbling.dev")
         object {
