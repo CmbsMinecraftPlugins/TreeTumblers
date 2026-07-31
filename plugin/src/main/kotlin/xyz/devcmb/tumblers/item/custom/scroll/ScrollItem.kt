@@ -6,6 +6,7 @@ import org.bukkit.NamespacedKey
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.events.UseScrollEvent
 import xyz.devcmb.tumblers.item.custom.CustomItem
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
@@ -37,6 +38,9 @@ class ScrollItem(
             ).map { it.decoration(TextDecoration.ITALIC, false) })
 
             click {
+                val event = UseScrollEvent(this)
+                if(!event.callEvent()) return@click
+
                 amount -= 1
                 it.addPotionEffect(PotionEffect(
                     scrollEffect.effect,

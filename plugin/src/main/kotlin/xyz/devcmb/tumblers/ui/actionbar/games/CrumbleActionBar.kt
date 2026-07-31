@@ -15,7 +15,7 @@ class CrumbleActionBar(val player: Player) : HandledActionBar {
         val crumble = GameController.activeGame as? CrumbleController ?: return
         val kit = crumble.playerKits[player.tumblingPlayer] ?: return
         ctx.drawAligned(
-            Format.mm("<glyph:icon/crumble/${kit.id}>").shadowColor(ShadowColor.shadowColor(0)),
+            Format.mm("<glyph:icon/crumble/${kit.companion.id}>").shadowColor(ShadowColor.shadowColor(0)),
             TextDrawContext.Alignment.CENTER
         )
     }

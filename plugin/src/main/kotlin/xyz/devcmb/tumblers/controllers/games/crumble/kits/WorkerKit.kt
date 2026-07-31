@@ -16,40 +16,49 @@ import org.bukkit.event.player.PlayerMoveEvent
 import org.bukkit.inventory.ItemStack
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
+import java.util.UUID
 
 class WorkerKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController
-) : Kit {
-    val megaMineDuration: Long = configurable("games.crumble.kits.worker.megamine_duration")
-    val efficiencyDuration: Long = configurable("games.crumble.kits.worker.efficiency_duration")
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
+        val megaMineDuration: Long = configurable("games.crumble.kits.worker.megamine_duration")
+        val efficiencyDuration: Long = configurable("games.crumble.kits.worker.efficiency_duration")
 
-    override val id: String = "worker"
-    override val name: String = "Worker"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.STONE_SWORD),
-        ItemStack(Material.WOODEN_AXE),
-        ItemStack(Material.IRON_PICKAXE),
-        ItemStack(Material.IRON_SHOVEL),
-        ItemStack(Material.LEATHER_BOOTS)
-    )
+        override val id: String = "worker"
+        override val name: String = "Worker"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD)),
+                Kit.KitItem.StandardItem(ItemStack(Material.WOODEN_AXE)),
+                Kit.KitItem.StandardItem(ItemStack(Material.IRON_PICKAXE)),
+                Kit.KitItem.StandardItem(ItemStack(Material.IRON_SHOVEL)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
+            )
+            override val uuid: UUID = UUID.randomUUID()
+        }
 
-    override val abilityName: String = "Megamine"
-    override val abilityDescription: String = "You yearn for the mines' TNT but just can't get it. Lets your pickaxe mine a 3x3x3 volume for ${megaMineDuration.tickSeconds}s"
-    override val killPowerName: String = "Efficiency"
-    override val killPowerDescription: String = "Gives you efficiency II on your tools for ${efficiencyDuration.tickSeconds}s"
+        override val abilityName: String = "Megamine"
+        override val abilityDescription: String = "You yearn for the mines' TNT but just can't get it. Lets your pickaxe mine a 3x3x3 volume for ${megaMineDuration.tickSeconds}s"
+        override val killPowerName: String = "Efficiency"
+        override val killPowerDescription: String = "Gives you efficiency II on your tools for ${efficiencyDuration.tickSeconds}s"
 
-    override val kitDisplayTextLength: Double = 48.5
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = WorkerKit(this, player, crumble)
+    }
 
     var kills: Int = 0
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-
         val stacks: ArrayList<ItemStack> = ArrayList()
         killed.inventory.forEach {
             try {
@@ -73,10 +82,8 @@ class WorkerKit(
 
     var abilityActive = false
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
 
-        val pick = player.bukkitPlayer!!.inventory.first { it.type == items[2].type }
+        val pick = player.bukkitPlayer!!.inventory.first { it.type == kit.items[2].getStack(WarriorKit.kit, player.bukkitPlayer!!).type }
         pick.itemMeta = pick.itemMeta.also {
             it.setEnchantmentGlintOverride(true)
             it.lore(arrayListOf(
@@ -101,12 +108,12 @@ class WorkerKit(
     @EventHandler
     fun playerMineEvent(event: BlockBreakEvent) {
         val player = event.player
-        if(player != this.player?.bukkitPlayer) return
+        if(player != this.player.bukkitPlayer) return
 
         val item = player.inventory.itemInMainHand
         val origin = event.block
 
-        if (item.type != items[2].type || !abilityActive) return
+        if (item.type != kit.items[2].getStack(WarriorKit.kit, player).type || !abilityActive) return
         if (!processingBlocks.add(origin)) return
 
         val originLocation = origin.location
@@ -142,8 +149,8 @@ class WorkerKit(
         val player = event.entity as? Player ?: return
         val lastPosition = lastPlayerStandingBlocks[player] ?: return
 
-        if(lastPosition in brokenBlocks && player != this.player?.bukkitPlayer) {
-            crumble.grantBadge(this.player!!, CrumbleBadge.BATTLE_WORKER)
+        if(lastPosition in brokenBlocks && player != this.player.bukkitPlayer) {
+            crumble.grantBadge(this.player, CrumbleBadge.BATTLE_WORKER)
         }
     }
 

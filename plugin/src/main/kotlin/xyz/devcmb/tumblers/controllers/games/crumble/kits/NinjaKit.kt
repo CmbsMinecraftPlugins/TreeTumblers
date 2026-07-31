@@ -24,46 +24,58 @@ import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
+import xyz.devcmb.tumblers.item.custom.scroll.ScrollItem
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.runTaskLater
 import xyz.devcmb.tumblers.util.tickSeconds
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import java.util.UUID
 import kotlin.random.Random
 
 class NinjaKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController
-) : Kit {
-    val invisibilityDuration: Int = configurable("games.crumble.kits.ninja.invisibility_duration")
-    val smokeDuration: Int = configurable("games.crumble.kits.ninja.smoke_duration")
-    val smokeSize: Double = configurable("games.crumble.kits.ninja.smoke_size")
-
-    override val id: String = "ninja"
-    override val name: String = "Ninja"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.STONE_SWORD),
-        ItemStack(Material.STONE_PICKAXE),
-        ItemStack(Material.LEATHER_BOOTS)
-    )
-
-    override val abilityName: String = "Stealth"
-    override val abilityDescription: String = "Become the stealth master you've always wanted to be. Turns you invisible for ${invisibilityDuration.toLong().tickSeconds}s and creates a dummy in your place."
-    override val killPowerName: String = "Vanish"
-    override val killPowerDescription: String = "Gives you a smoke bomb"
-
-    override val kitDisplayTextLength: Double = 38.5
-
-    companion object {
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
         val ninjaOwnerKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_owner")
         val ninjaSmokeBombKey = NamespacedKey(TreeTumblers.NAMESPACE, "ninja_smoke_bomb")
+
+        val invisibilityDuration: Int = configurable("games.crumble.kits.ninja.invisibility_duration")
+        val smokeDuration: Int = configurable("games.crumble.kits.ninja.smoke_duration")
+        val smokeSize: Double = configurable("games.crumble.kits.ninja.smoke_size")
+
+        override val id: String = "ninja"
+        override val name: String = "Ninja"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD)),
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_PICKAXE)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
+                Kit.KitItem.AdvancedItem(ScrollItem(ScrollItem.ScrollEffect.SPEED).build().apply {
+                    context.count(2)
+                }),
+                Kit.KitItem.AdvancedItem(ScrollItem(ScrollItem.ScrollEffect.JUMP_BOOST).build()),
+                Kit.KitItem.AdvancedItem(ScrollItem(ScrollItem.ScrollEffect.INVISIBILITY).build())
+            )
+            override val uuid: UUID = UUID.randomUUID()
+        }
+
+        override val abilityName: String = "Stealth"
+        override val abilityDescription: String = "Become the stealth master you've always wanted to be. Turns you invisible for ${invisibilityDuration.toLong().tickSeconds}s and creates a dummy in your place."
+        override val killPowerName: String = "Vanish"
+        override val killPowerDescription: String = "Gives you a smoke bomb"
+
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = NinjaKit(this, player, crumble)
     }
 
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         player.bukkitPlayer!!.inventory.addItem(ItemStack.of(Material.FIRE_CHARGE).apply {
             itemMeta = itemMeta.also {
                 it.itemName(Component.text("Smoke Bomb", NamedTextColor.GOLD))
@@ -78,9 +90,6 @@ class NinjaKit(
 
     var abilityZombie: Zombie? = null
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         DisguiseAPI.disguiseNextEntity(PlayerDisguise(player.bukkitPlayer!!).setNameVisible(false))
 
         val zombie = player.bukkitPlayer!!.world.spawn(player.bukkitPlayer!!.location, Zombie::class.java)
@@ -131,13 +140,13 @@ class NinjaKit(
         if(entity.uniqueId != abilityZombie?.uniqueId) return
 
         val targetTeam = target.tumblingPlayer.team
-        if(targetTeam == player?.team) event.isCancelled = true
+        if(targetTeam == player.team) event.isCancelled = true
     }
 
     @EventHandler
     fun onSmokeBombThrow(event: PlayerInteractEvent) {
         val player = event.player
-        if(player != this.player?.bukkitPlayer) return
+        if(player != this.player.bukkitPlayer) return
 
         val item = event.item ?: return
         val container = item.persistentDataContainer

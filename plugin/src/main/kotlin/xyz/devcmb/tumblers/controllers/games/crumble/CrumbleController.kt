@@ -54,6 +54,7 @@ import xyz.devcmb.tumblers.engine.base.RoundedGame
 import xyz.devcmb.tumblers.engine.score.CommonScoreSource
 import xyz.devcmb.tumblers.engine.map.LoadedMap
 import xyz.devcmb.tumblers.engine.score.ScoreSource
+import xyz.devcmb.tumblers.events.UseScrollEvent
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
@@ -65,6 +66,7 @@ import xyz.devcmb.tumblers.util.isArmor
 import xyz.devcmb.tumblers.item.advanced.AdvancedItemStack
 import xyz.devcmb.tumblers.util.disableActionBar
 import xyz.devcmb.tumblers.util.enableActionBar
+import xyz.devcmb.tumblers.util.giveKit
 import xyz.devcmb.tumblers.util.openHandledInventory
 import xyz.devcmb.tumblers.util.tp
 import xyz.devcmb.tumblers.util.tumblingPlayer
@@ -121,9 +123,8 @@ class CrumbleController : RoundedGame(
     val alivePlayers: HashMap<Team, ArrayList<TumblingPlayer>> = HashMap()
     val matchResults: ArrayList<HashMap<Team, RoundResult>> = ArrayList()
 
-    val registeredKits: HashMap<String, Class<out Kit>> = HashMap()
-    val kitTemplates: HashMap<String, Kit> = HashMap()
-    val playerKits: HashMap<TumblingPlayer, Kit> = HashMap()
+    val registeredKits: HashMap<String, CrumbleKit.Companion> = HashMap()
+    val playerKits: HashMap<TumblingPlayer, CrumbleKit> = HashMap()
     val abilitiesUsed: ArrayList<TumblingPlayer> = ArrayList()
 
     var currentCrumbleRadius: Double = 0.0
@@ -239,18 +240,17 @@ class CrumbleController : RoundedGame(
     }
 
     fun registerKits() {
-        registerKit("archer", ArcherKit::class.java)
-        registerKit("bomber", BomberKit::class.java)
-        registerKit("fisher", FisherKit::class.java)
-        registerKit("hunter", HunterKit::class.java)
-        registerKit("ninja", NinjaKit::class.java)
-        registerKit("sorcerer", SorcererKit::class.java)
-        registerKit("warrior", WarriorKit::class.java)
-        registerKit("worker", WorkerKit::class.java)
+        registerKit("archer", ArcherKit)
+        registerKit("bomber", BomberKit)
+        registerKit("fisher", FisherKit)
+        registerKit("hunter", HunterKit)
+        registerKit("ninja", NinjaKit)
+        registerKit("sorcerer", SorcererKit)
+        registerKit("warrior", WarriorKit)
+        registerKit("worker", WorkerKit)
     }
 
-    fun registerKit(id: String, kit: Class<out Kit>) {
-        kitTemplates[id] = kit.getConstructor(TumblingPlayer::class.java, CrumbleController::class.java).newInstance(null, this)
+    fun registerKit(id: String, kit: CrumbleKit.Companion) {
         registeredKits[id] = kit
     }
 
@@ -384,7 +384,7 @@ class CrumbleController : RoundedGame(
                     selectKit(
                         it,
                         registeredKits.keys.filter { registeredKit ->
-                            playerKits.filter { kit -> kit.value.id == registeredKit && kit.key.team == it.team }.size < maxPlayersPerKit
+                            playerKits.filter { kit -> kit.value.companion.id == registeredKit && kit.key.team == it.team }.size < maxPlayersPerKit
                         }.random()
                     )
                 }
@@ -780,42 +780,22 @@ class CrumbleController : RoundedGame(
     }
 
     fun givePlayerKit(player: Player, pregame: Boolean = false) {
-        DebugUtil.info("Giving ${player.name} their kit")
-
         val kit = playerKits[player.tumblingPlayer]!!
         kit.cleanup()
         player.inventory.clear()
 
-        kit.items.forEach {
-            val item = it.clone()
-            item.itemMeta = item.itemMeta.also { meta ->
-                meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
-            }
-
-            if(isArmor(item)) {
-                if(item.type.name.contains("LEATHER")) {
-                    item.itemMeta = item.itemMeta.also { meta ->
-                        val meta = meta as LeatherArmorMeta
-                        val playerTeam = player.tumblingPlayer.team
-                        meta.setColor(Color.fromRGB(playerTeam.color.value()))
-                    }
-                }
-
-                player.inventory.setItem(item.type.equipmentSlot, item)
-            } else {
-                player.inventory.addItem(item)
-            }
-        }
+        val data = kit.companion
+        player.giveKit(data.kit)
 
         val abilityItem = AdvancedItemStack(Material.PAPER) {
-            name(Component.text("${kit.name} Ability: ${kit.abilityName}", NamedTextColor.AQUA))
+            name(Component.text("${data.name} Ability: ${data.abilityName}", NamedTextColor.AQUA))
             lore(
                 wrapComponent(
-                    Component.text(kit.abilityDescription, NamedTextColor.WHITE),
+                    Component.text(data.abilityDescription, NamedTextColor.WHITE),
                     40
                 ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
             )
-            model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/crumble/${kit.id}"))
+            model(NamespacedKey(TreeTumblers.NAMESPACE, "icon/crumble/${data.id}"))
             persistentDataContainer {
                 set(kitItemsKey, PersistentDataType.BOOLEAN, true)
             }
@@ -827,12 +807,12 @@ class CrumbleController : RoundedGame(
 
         val killItem = ItemStack(Material.PAPER).apply {
             itemMeta = itemMeta.also { meta ->
-                meta.itemName(Component.text("Kill power: ${kit.killPowerName}", NamedTextColor.YELLOW))
+                meta.itemName(Component.text("Kill power: ${data.killPowerName}", NamedTextColor.YELLOW))
                 meta.itemModel = killModel
                 meta.persistentDataContainer.set(kitItemsKey, PersistentDataType.BOOLEAN, true)
                 meta.lore(
                     wrapComponent(
-                        Component.text(kit.killPowerDescription, NamedTextColor.WHITE),
+                        Component.text(data.killPowerDescription, NamedTextColor.WHITE),
                         40
                     ).toTypedArray().map { it.decoration(TextDecoration.ITALIC, false) }
                 )
@@ -852,17 +832,17 @@ class CrumbleController : RoundedGame(
         deselectKit(player)
         require(registeredKits[id] != null) { "Kit with id $id does not exist" }
 
-        val kit = registeredKits[id]!!
-            .getDeclaredConstructor(TumblingPlayer::class.java, CrumbleController::class.java)
-            .newInstance(player, this)
-
+        val kit = registeredKits[id]!!.create(player, this)
         playerKits[player] = kit
+
         givePlayerKit(player, true)
         Bukkit.getServer().pluginManager.registerEvents(kit, TreeTumblers.plugin)
     }
 
     fun deselectKit(player: TumblingPlayer) {
         if(!playerKits.containsKey(player)) return
+
+        playerKits[player]!!.cleanup()
         HandlerList.unregisterAll(playerKits[player]!!)
         playerKits.remove(player)
     }
@@ -1085,6 +1065,11 @@ class CrumbleController : RoundedGame(
         ) {
             event.isCancelled = true
         }
+    }
+
+    @EventHandler
+    fun useScrollEvent(event: UseScrollEvent) {
+        if(!roundActive) event.isCancelled = true
     }
 
     enum class RoundResult {

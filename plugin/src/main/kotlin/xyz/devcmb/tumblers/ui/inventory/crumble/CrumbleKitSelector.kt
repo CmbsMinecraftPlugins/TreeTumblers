@@ -17,7 +17,7 @@ import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.TumblingUIException
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.ui.UserInterfaceUtility
 import xyz.devcmb.tumblers.ui.inventory.HandledInventory
 import xyz.devcmb.tumblers.util.Format
@@ -37,18 +37,20 @@ class CrumbleKitSelector : HandledInventory {
         }
         rows = 4
 
-        val onSelect: (player: Player, kit: Kit) -> Unit = onSelect@{ player, kit ->
+        val onSelect: (player: Player, kit: CrumbleKit.Companion) -> Unit = onSelect@{ player, kit ->
             val crumble = GameController.activeGame as? CrumbleController ?:
                 throw TumblingUIException("Attempted to open the crumble kit selector while crumble was not active.")
 
-            if(crumble.playerKits
-                .filter { item -> item.value.id == kit.id && item.key.team == player.tumblingPlayer.team }
-                .size >= CrumbleController.maxPlayersPerKit) {
+            if(
+                crumble.playerKits
+                    .filter { item -> item.value.companion.id == kit.id && item.key.team == player.tumblingPlayer.team }
+                    .size >= CrumbleController.maxPlayersPerKit
+            ) {
                 player.sendMessage(Format.error("This kit has too many players!"))
                 return@onSelect
             }
 
-            if(crumble.playerKits[player.tumblingPlayer]?.id == kit.id) {
+            if(crumble.playerKits[player.tumblingPlayer]?.companion?.id == kit.id) {
                 player.sendMessage(Format.error("You've already selected this kit!"))
                 return@onSelect
             }
@@ -64,7 +66,8 @@ class CrumbleKitSelector : HandledInventory {
                 throw TumblingUIException("Attempted to open the crumble kit selector while crumble was not active.")
 
             slots.forEachIndexed { index, slot ->
-                val (id, kit) = crumble.kitTemplates.toList().getOrNull(index) ?: return@forEachIndexed
+                val (id, kit) = crumble.registeredKits.toList().getOrNull(index) ?: return@forEachIndexed
+
                 val item = ItemStack.of(Material.ECHO_SHARD).apply {
                     editMeta { meta ->
                         meta.itemName(Format.mm("<white>${kit.name}</white>"))
@@ -93,7 +96,7 @@ class CrumbleKitSelector : HandledInventory {
                 repeat(CrumbleController.maxPlayersPerKit) {
                     val selectedPlayers = crumble.playerKits
                         .filter { entry ->
-                            entry.key.team == view.player.tumblingPlayer.team && entry.value.id == id
+                            entry.key.team == view.player.tumblingPlayer.team && entry.value.companion.id == id
                         }
                         .toList()
 

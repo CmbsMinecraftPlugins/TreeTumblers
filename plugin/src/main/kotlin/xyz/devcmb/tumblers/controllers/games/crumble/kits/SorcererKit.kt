@@ -13,39 +13,47 @@ import org.bukkit.potion.PotionEffectType
 import org.bukkit.scheduler.BukkitRunnable
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.configurable
 import xyz.devcmb.tumblers.util.tickSeconds
 import xyz.devcmb.tumblers.util.tumblingPlayer
+import java.util.UUID
 
 class SorcererKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController
-) : Kit {
-    val poisonDuration: Long = configurable("games.crumble.kits.sorcerer.poison_duration")
-    val healHearts: Int = configurable("games.crumble.kits.sorcerer.heal_hearts")
-    val healDuration: Long = configurable("games.crumble.kits.sorcerer.heal_duration")
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
+        val poisonDuration: Long = configurable("games.crumble.kits.sorcerer.poison_duration")
+        val healHearts: Int = configurable("games.crumble.kits.sorcerer.heal_hearts")
+        val healDuration: Long = configurable("games.crumble.kits.sorcerer.heal_duration")
 
-    override val id: String = "sorcerer"
-    override val name: String = "Sorcerer"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.STONE_SWORD),
-        ItemStack(Material.STONE_PICKAXE),
-        ItemStack(Material.LEATHER_BOOTS),
-    )
+        override val id: String = "sorcerer"
+        override val name: String = "Sorcerer"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD)),
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_PICKAXE)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
+            )
+            override val uuid: UUID = UUID.randomUUID()
+        }
 
-    override val abilityName: String = "Poison Haze"
-    override val abilityDescription: String = "Turns your sword into a nail of poison. Hitting anyone will give them the poison effect for ${poisonDuration.tickSeconds}s"
-    override val killPowerName: String = "Kill With Kindness"
-    override val killPowerDescription: String = "Heals you $healHearts hearts over ${healDuration.tickSeconds}s"
+        override val abilityName: String = "Poison Haze"
+        override val abilityDescription: String = "Turns your sword into a nail of poison. Hitting anyone will give them the poison effect for ${poisonDuration.tickSeconds}s"
+        override val killPowerName: String = "Kill With Kindness"
+        override val killPowerDescription: String = "Heals you $healHearts hearts over ${healDuration.tickSeconds}s"
 
-    override val kitDisplayTextLength: Double = 59.75
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = SorcererKit(this, player, crumble)
+    }
 
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         object : BukkitRunnable() {
             var heals: Int = 0
             override fun run() {
@@ -61,10 +69,7 @@ class SorcererKit(
 
     var abilityActive = false
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
-        val sword = player.bukkitPlayer!!.inventory.first { it.type == items[0].type }
+        val sword = player.bukkitPlayer!!.inventory.first { it.type == WarriorKit.kit.items.first().getStack(WarriorKit.kit, player.bukkitPlayer!!).type }
         sword.itemMeta = sword.itemMeta.also {
             it.setEnchantmentGlintOverride(true)
             it.lore(arrayListOf(Component.text("Poison Haze", NamedTextColor.GREEN).decoration(TextDecoration.ITALIC, false)))
@@ -84,13 +89,14 @@ class SorcererKit(
         if(
             damager !is Player
             || damaged !is Player
-            || damager != player?.bukkitPlayer
+            || damager != player.bukkitPlayer
             || damager.tumblingPlayer.team == player.team
             || !abilityActive
         ) return
 
         val sword = damager.inventory.itemInMainHand
-        if(sword.type != items[0].type) return
+        if(sword.type != WarriorKit.kit.items.first().getStack(WarriorKit.kit, player.bukkitPlayer!!).type) return
+
         sword.itemMeta = sword.itemMeta.also {
             it.setEnchantmentGlintOverride(null)
             it.lore(arrayListOf())

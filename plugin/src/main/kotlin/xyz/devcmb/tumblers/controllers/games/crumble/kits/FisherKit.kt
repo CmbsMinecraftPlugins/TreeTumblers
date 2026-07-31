@@ -13,9 +13,11 @@ import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.player.PlayerItemConsumeEvent
 import org.bukkit.inventory.EquipmentSlotGroup
 import org.bukkit.inventory.ItemStack
+import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.configurable
@@ -23,65 +25,71 @@ import xyz.devcmb.tumblers.util.intToRoman
 import java.util.UUID
 
 class FisherKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController
-) : Kit {
-    val tridentLoyaltyLevel: Int = configurable("games.crumble.kits.fisher.trident_loyalty_level")
-    val tridentDamage: Double = configurable("games.crumble.kits.fisher.trident_damage")
-    val tridentAttackSpeed: Double = configurable("games.crumble.kits.fisher.trident_attack_speed")
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
+        val tridentLoyaltyLevel: Int = configurable("games.crumble.kits.fisher.trident_loyalty_level")
+        val tridentDamage: Double = configurable("games.crumble.kits.fisher.trident_damage")
+        val tridentAttackSpeed: Double = configurable("games.crumble.kits.fisher.trident_attack_speed")
 
-    override val id: String = "fisher"
-    override val name: String = "Fisher"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack.of(Material.TRIDENT).apply {
-            addEnchantment(Enchantment.LOYALTY, tridentLoyaltyLevel)
-            itemMeta = itemMeta.also { meta ->
-                meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE)
-                meta.addAttributeModifier(
-                    Attribute.ATTACK_DAMAGE,
-                    AttributeModifier(
-                        NamespacedKey.fromString(UUID.randomUUID().toString())!!,
-                        tridentDamage - 1,  // remove hand damage
-                        AttributeModifier.Operation.ADD_NUMBER,
-                        EquipmentSlotGroup.HAND
-                    )
-                )
-                meta.removeAttributeModifier(Attribute.ATTACK_SPEED)
-                meta.addAttributeModifier(
-                    Attribute.ATTACK_SPEED, AttributeModifier(
-                        NamespacedKey.fromString(UUID.randomUUID().toString())!!,
-                        tridentAttackSpeed - 4.0,  // hand default is 4
-                        AttributeModifier.Operation.ADD_NUMBER,
-                        EquipmentSlotGroup.HAND
-                    )
-                )
-            }
-        },
-        ItemStack.of(Material.COD).apply {
-            itemMeta = itemMeta.also { meta ->
-                meta.itemName(Component.text("Knockback Fish"))
-            }
+        override val id: String = "fisher"
+        override val name: String = "Fisher"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack.of(Material.TRIDENT).apply {
+                    addEnchantment(Enchantment.LOYALTY, tridentLoyaltyLevel)
+                    editMeta { meta ->
+                        meta.removeAttributeModifier(Attribute.ATTACK_DAMAGE)
+                        meta.addAttributeModifier(
+                            Attribute.ATTACK_DAMAGE,
+                            AttributeModifier(
+                                NamespacedKey(TreeTumblers.NAMESPACE, "attack_damage_nerf"),
+                                tridentDamage - 1,  // remove hand damage
+                                AttributeModifier.Operation.ADD_NUMBER,
+                            )
+                        )
+                        meta.removeAttributeModifier(Attribute.ATTACK_SPEED)
+                        meta.addAttributeModifier(
+                            Attribute.ATTACK_SPEED, AttributeModifier(
+                                NamespacedKey(TreeTumblers.NAMESPACE, "attack_speed_nerf"),
+                                tridentAttackSpeed - 4.0,  // hand default is 4
+                                AttributeModifier.Operation.ADD_NUMBER,
+                                EquipmentSlotGroup.HAND
+                            )
+                        )
+                    }
+                }),
+                Kit.KitItem.StandardItem(ItemStack.of(Material.COD).apply {
+                    editMeta { meta ->
+                        meta.itemName(Component.text("Knockback Fish"))
+                    }
 
-            addUnsafeEnchantment(Enchantment.KNOCKBACK, 1)
-        },
-        ItemStack(Material.STONE_PICKAXE),
-        ItemStack(Material.LEATHER_HELMET),
-        ItemStack(Material.LEATHER_BOOTS),
-        ItemStack(Material.LEATHER_LEGGINGS)
-    )
+                    addUnsafeEnchantment(Enchantment.KNOCKBACK, 1)
+                }),
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_PICKAXE)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_HELMET)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_LEGGINGS))
+            )
 
-    override val abilityName: String = "Wrath of Clownfish"
-    override val abilityDescription: String = "Gives your trident the power of zeus, striking anyone it hits with a bolt of lightning"
-    override val killPowerName: String = "Fishy Fish"
-    override val killPowerDescription: String = "Increases your knockback fish's knockback level by 1"
+            override val uuid: UUID = UUID.randomUUID()
+        }
 
-    override val kitDisplayTextLength: Double = 45.5
+        override val abilityName: String = "Wrath of Clownfish"
+        override val abilityDescription: String = "Gives your trident the power of zeus, striking anyone it hits with a bolt of lightning"
+        override val killPowerName: String = "Fishy Fish"
+        override val killPowerDescription: String = "Increases your knockback fish's knockback level by 1"
+
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = FisherKit(this, player, crumble)
+    }
 
     var knockbackLevel: Int = 1
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         val fish = player.bukkitPlayer!!.inventory.first { it.type == Material.COD }
         if(fish == null) {
             DebugUtil.severe("Player ${player.name} lacks a knockback fish!")
@@ -96,9 +104,6 @@ class FisherKit(
 
     var abilityActive: Boolean = false
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         abilityActive = true
     }
 
@@ -115,7 +120,7 @@ class FisherKit(
         val player = trident.shooter
         if (
             player !is Player
-            || player != this.player?.bukkitPlayer
+            || player != this.player.bukkitPlayer
             || !abilityActive
         ) return
 
@@ -127,7 +132,7 @@ class FisherKit(
     @EventHandler
     fun onItemConsume(event: PlayerItemConsumeEvent) {
         val item = event.item
-        if (item.type != items[1].type) return
+        if (item.type != Material.COD) return
         event.isCancelled = true
     }
 }

@@ -12,35 +12,44 @@ import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.inventory.meta.FireworkMeta
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
+import java.util.UUID
 
 class HunterKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController,
-) : Kit {
-    override val id: String = "hunter"
-    override val name: String = "Hunter"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.WOODEN_SWORD).apply {
-            addEnchantment(Enchantment.KNOCKBACK, 1)
-        },
-        ItemStack(Material.STONE_PICKAXE),
-        ItemStack(Material.CROSSBOW),
-        ItemStack(Material.ARROW, 4),
-        ItemStack(Material.LEATHER_BOOTS),
-    )
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
+        override val id: String = "hunter"
+        override val name: String = "Hunter"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.WOODEN_SWORD).apply {
+                    addEnchantment(Enchantment.KNOCKBACK, 1)
+                }),
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_PICKAXE)),
+                Kit.KitItem.StandardItem(ItemStack(Material.CROSSBOW)),
+                Kit.KitItem.StandardItem(ItemStack(Material.ARROW, 4)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS)),
+            )
+            override val uuid: UUID = UUID.randomUUID()
+        }
 
-    override val abilityName: String = "Multishot"
-    override val abilityDescription: String = "Split your bow in three with multishot on your bow for one shot"
-    override val killPowerName: String = "Blast Off"
-    override val killPowerDescription: String = "Gives you a firework to charge your crossbow with"
+        override val abilityName: String = "Multishot"
+        override val abilityDescription: String = "Split your bow in three with multishot on your bow for one shot"
+        override val killPowerName: String = "Blast Off"
+        override val killPowerDescription: String = "Gives you a firework to charge your crossbow with"
 
-    override val kitDisplayTextLength: Double = 46.5
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = HunterKit(this, player, crumble)
+    }
+
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         player.bukkitPlayer!!.inventory.addItem(ItemStack(Material.FIREWORK_ROCKET).apply {
             itemMeta = (itemMeta as FireworkMeta).also { meta ->
                 meta.addEffect(
@@ -56,7 +65,6 @@ class HunterKit(
 
     var abilityActive = false
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
         val bow = player.bukkitPlayer!!.inventory.first { it.type == Material.CROSSBOW }!!
         bow.addEnchantment(Enchantment.MULTISHOT, 1)
         bow.itemMeta = (bow.itemMeta as CrossbowMeta).apply {
@@ -80,7 +88,7 @@ class HunterKit(
         val shooter = entity.shooter
         if(
             shooter !is Player
-            || player?.bukkitPlayer != shooter
+            || player.bukkitPlayer != shooter
             || !abilityActive
         ) return
 

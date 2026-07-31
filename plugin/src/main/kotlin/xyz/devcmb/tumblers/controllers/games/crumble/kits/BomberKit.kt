@@ -16,66 +16,68 @@ import org.bukkit.persistence.PersistentDataType
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleBadge
 import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleController
-import xyz.devcmb.tumblers.controllers.games.crumble.Kit
+import xyz.devcmb.tumblers.controllers.games.crumble.CrumbleKit
 import xyz.devcmb.tumblers.data.TumblingPlayer
+import xyz.devcmb.tumblers.item.Kit
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.configurable
 import java.util.UUID
 
 class BomberKit(
-    override val player: TumblingPlayer?,
+    override val companion: CrumbleKit.Companion,
+    override val player: TumblingPlayer,
     override val crumble: CrumbleController,
-) : Kit {
-    val nukePower: Float = configurable("games.crumble.kits.bomber.nuke_radius")
-    val nukeDamage: Int = configurable("games.crumble.kits.bomber.nuke_damage")
-    val blastProtectionLevel: Int = configurable("games.crumble.kits.bomber.blast_protection_level")
-
-    override val id: String = "bomber"
-    override val name: String = "Bomber"
-    override val items: ArrayList<ItemStack> = arrayListOf(
-        ItemStack(Material.STONE_SWORD),
-        ItemStack(Material.STONE_PICKAXE),
-        ItemStack(Material.TNT, 2),
-        ItemStack(Material.LEATHER_HELMET).apply {
-            addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
-        },
-        ItemStack(Material.LEATHER_CHESTPLATE).apply {
-            addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
-        },
-        ItemStack(Material.LEATHER_LEGGINGS).apply {
-            addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
-        },
-        ItemStack(Material.LEATHER_BOOTS).apply {
-            addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
-        }
-    )
-
-    override val abilityName: String = "Nuke"
-    override val abilityDescription: String = "Gives a large-radius explosive that deals ${(nukeDamage / 2.0)} hearts and explodes instantly!"
-    override val killPowerName: String = "Aw Man"
-    override val killPowerDescription: String = "Gives you a creeper spawn egg"
-
-    override val kitDisplayTextLength: Double = 48.5
-
-    companion object {
+) : CrumbleKit {
+    companion object : CrumbleKit.Companion {
         val nukeExplosionTicks: Int = configurable("games.crumble.kits.bomber.nuke_explosion_ticks")
 
         val nukeKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke")
         val nukeIdKey = NamespacedKey(TreeTumblers.NAMESPACE, "nuke_id")
+
+        val nukePower: Float = configurable("games.crumble.kits.bomber.nuke_radius")
+        val nukeDamage: Int = configurable("games.crumble.kits.bomber.nuke_damage")
+        val blastProtectionLevel: Int = configurable("games.crumble.kits.bomber.blast_protection_level")
+
+        override val id: String = "bomber"
+        override val name: String = "Bomber"
+        override val kit: Kit.KitDefinition = object : Kit.KitDefinition {
+            override val items: ArrayList<Kit.KitItem> = arrayListOf(
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_SWORD)),
+                Kit.KitItem.StandardItem(ItemStack(Material.STONE_PICKAXE)),
+                Kit.KitItem.StandardItem(ItemStack(Material.TNT, 2)),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_HELMET).apply {
+                    addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
+                }),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_CHESTPLATE).apply {
+                    addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
+                }),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_LEGGINGS).apply {
+                    addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
+                }),
+                Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS).apply {
+                    addUnsafeEnchantment(Enchantment.BLAST_PROTECTION, blastProtectionLevel)
+                })
+            )
+            override val uuid: UUID = UUID.randomUUID()
+        }
+
+        override val abilityName: String = "Nuke"
+        override val abilityDescription: String = "Gives a large-radius explosive that deals ${(nukeDamage / 2.0)} hearts and explodes instantly!"
+        override val killPowerName: String = "Aw Man"
+        override val killPowerDescription: String = "Gives you a creeper spawn egg"
+
+        override fun create(
+            player: TumblingPlayer,
+            crumble: CrumbleController
+        ): CrumbleKit = BomberKit(this, player, crumble)
     }
 
     override fun onKill(killed: Player) {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         player.bukkitPlayer!!.inventory.addItem(ItemStack(Material.CREEPER_SPAWN_EGG))
     }
 
     var nukeId: UUID? = null
     override fun onAbility() {
-        require(player != null) { "Cannot invoke methods on the kit template" }
-        require(player.isOnline) { "Player must be online to invoke methods on the kit" }
-
         val item = ItemStack.of(Material.TNT).apply {
             itemMeta = itemMeta.also {
                 it.itemName(Component.text("Nuke", NamedTextColor.RED))
@@ -143,10 +145,10 @@ class BomberKit(
             hitPlayers.putIfAbsent(tnt.uniqueId, arrayListOf())
             hitPlayers[tnt.uniqueId]!!.add(player)
 
-            if(player.health - event.damage <= 0 && player != this.player?.bukkitPlayer) {
+            if(player.health - event.damage <= 0 && player != this.player.bukkitPlayer) {
                 nukeKills++
                 if(nukeKills >= 2) {
-                    crumble.grantBadge(this.player!!, CrumbleBadge.DOUBLE_BOOM)
+                    crumble.grantBadge(this.player, CrumbleBadge.DOUBLE_BOOM)
                 }
             }
         }
