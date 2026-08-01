@@ -1,5 +1,6 @@
 package xyz.devcmb.tumblers.controllers.games.breach
 
+import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
@@ -17,7 +18,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
         object : Kit.KitDefinition {
             override val items: ArrayList<Kit.KitItem> = arrayListOf(
                 Kit.KitItem.StandardItem(ItemStack(Material.BOW).apply {
-                    itemMeta = itemMeta.also {
+                    editMeta {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
@@ -37,7 +38,7 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
         object : Kit.KitDefinition {
             override val items: ArrayList<Kit.KitItem> = arrayListOf(
                 Kit.KitItem.StandardItem(ItemStack(Material.CROSSBOW).apply {
-                    itemMeta = itemMeta.also {
+                    editMeta {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.INFINITY, 1, true)
                     }
@@ -57,10 +58,13 @@ enum class BreachKit(val label: Component, val description: List<Component>, val
         object : Kit.KitDefinition {
             override val items: ArrayList<Kit.KitItem> = arrayListOf(
                 Kit.KitItem.StandardItem(ItemStack(Material.TRIDENT).apply {
-                    itemMeta = itemMeta.also {
+                    editMeta {
                         it.isUnbreakable = true
                         it.addEnchant(Enchantment.LOYALTY, 1, true)
                     }
+
+                    @Suppress("UnstableApiUsage")
+                    setData(DataComponentTypes.MINIMUM_ATTACK_CHARGE, 1f)
                 }),
                 Kit.KitItem.ArmorItem(ItemStack(Material.LEATHER_BOOTS))
             )
