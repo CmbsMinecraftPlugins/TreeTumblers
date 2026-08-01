@@ -102,24 +102,6 @@ object ChatController : IController {
                     Placeholder.component("message", message)
                 )
             }
-        },
-        // maybe add some protection so you're not wc-ing the announcement channel
-        ANNOUNCEMENT("Announcement", NamedTextColor.GOLD) {
-            override fun canSee(sender: Player?, receiver: Player): Boolean {
-                return true
-            }
-
-            override fun canSend(player: Player): Boolean {
-                return player.hasPermission("tumbling.dev") || player.hasPermission("tumbling.organizer")
-            }
-
-            override fun format(sender: Player, message: Component): Component {
-                return Format.mm(
-                    "<green><line:30></green><br><br><br><sender>: <message><br><br><br><green><line:30></green>",
-                    Placeholder.component("sender", sender.formattedName),
-                    Placeholder.component("message", message)
-                )
-            }
         };
 
         abstract fun canSee(sender: Player?, receiver: Player): Boolean
