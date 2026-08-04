@@ -1,14 +1,11 @@
 package xyz.devcmb.tumblers.commands.organizer
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.launch
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
-import org.bukkit.command.CommandSender
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.EventController
@@ -17,38 +14,42 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 
-@Command(name = "score")
+@Suppress("unused")
 @Permission("tumbling.organizer")
 class ScoreCommand {
-    @Execute(name = "player view")
-    fun playerView(@Context sender: CommandSender, @Arg("player") player: TumblingPlayer) {
+    @Command("score player view <player>")
+    fun playerView(source: CommandSourceStack, player: TumblingPlayer) {
+        val sender = source.sender
         sender.sendMessage(Format.info(Format.mm(
             "<player> has <gold>${player.score}</gold> score.",
             Placeholder.component("player", player.formattedName)
         )))
     }
 
-    @Execute(name = "player set")
-    fun playerSet(@Context sender: CommandSender, @Arg("player") player: TumblingPlayer, @Arg("score") score: Int) {
+    @Command("score player set <player> <score>")
+    fun playerSet(source: CommandSourceStack, player: TumblingPlayer, score: Int) {
         player.score = score
+        val sender = source.sender
         sender.sendMessage(Format.success(Format.mm(
             "<player> now has <gold>$score</gold> score!",
             Placeholder.component("player", player.formattedName)
         )))
     }
 
-    @Execute(name = "team view")
-    fun teamView(@Context sender: CommandSender, @Arg("team") team: Team) {
+    @Command("score team view <team>")
+    fun teamView(source: CommandSourceStack, team: Team) {
+        val sender = source.sender
         sender.sendMessage(Format.info(Format.mm(
             "The <team:${team.name}:name> have <gold>${team.score}</gold> score.",
         )))
     }
 
-    @Execute(name = "team set")
-    fun teamSet(@Context sender: CommandSender, @Arg("team") team: Team, @Arg("score") score: Int, @Flag("--distribute") distribute: Boolean) {
+    @Command("score team set <team> <score>")
+    fun teamSet(source: CommandSourceStack, team: Team, score: Int, @Flag("distribute") distribute: Boolean) {
         val currentScore = team.score
         team.score = score
 
+        val sender = source.sender
         sender.sendMessage(Format.success(Format.mm(
             "The <team:${team.name}:name> now have <gold>${score}</gold> score!"
         )))
@@ -76,8 +77,9 @@ class ScoreCommand {
         }
     }
 
-    @Execute(name = "nuke")
-    fun nukeScores(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+    @Command("score nuke")
+    fun nukeScores(source: CommandSourceStack, @Flag("confirm") confirm: Boolean) {
+        val sender = source.sender
         if(!confirm) {
             sender.sendMessage(Format.warning("This action is destructive! Re-run with the --confirm flag to execute."))
             return
@@ -98,8 +100,9 @@ class ScoreCommand {
         sender.sendMessage(Format.success("Scores have been nuked successfully!"))
     }
 
-    @Execute(name = "randomize")
-    fun randomizeScores(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+    @Command("score randomize")
+    fun randomizeScores(source: CommandSourceStack, @Flag("confirm") confirm: Boolean) {
+        val sender = source.sender
         if(!confirm) {
             sender.sendMessage(Format.warning("This action is destructive! Re-run with the --confirm flag to execute."))
             return
@@ -118,20 +121,23 @@ class ScoreCommand {
         sender.sendMessage(Format.success("Scores have been randomized successfully!"))
     }
 
-    @Execute(name = "hide")
-    fun hideScores(@Context sender: CommandSender) {
+    @Command("score hide")
+    fun hideScores(source: CommandSourceStack) {
+        val sender = source.sender
         EventController.scoresHidden = true
         sender.sendMessage(Format.success("Scores have been hidden successfully!"))
     }
 
-    @Execute(name = "show")
-    fun showScores(@Context sender: CommandSender) {
+    @Command("score show")
+    fun showScores(source: CommandSourceStack) {
+        val sender = source.sender
         EventController.scoresHidden = false
         sender.sendMessage(Format.success("Scores have been shown successfully!"))
     }
 
-    @Execute(name = "replicate")
-    fun replicateScores(@Context sender: CommandSender) {
+    @Command("score replicate")
+    fun replicateScores(source: CommandSourceStack) {
+        val sender = source.sender
         sender.sendMessage(Format.info("Starting replication job..."))
         TreeTumblers.pluginScope.launch {
             DatabaseController.replicateTeamData(EventController.teamScores)

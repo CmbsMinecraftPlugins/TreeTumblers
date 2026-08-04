@@ -1,6 +1,6 @@
 [versions]
 ktor = "3.4.3"
-litecommands = "3.11.0"
+cloud = "2.0.0"
 
 [plugins]
 shadow = { id = "com.gradleup.shadow", version = "8.3.0" }
@@ -23,8 +23,9 @@ interfaces = { group = "com.noxcrew.interfaces", name = "interfaces", version = 
 reflections = { group = "org.reflections", name = "reflections", version = "0.10.2" }
 commonsio = { group = "commons-io", name = "commons-io", version = "2.14.0" }
 
-litecommands-bukkit = { group = "dev.rollczi", name = "litecommands-bukkit", version.ref = "litecommands" }
-litecommands-adventure = { group = "dev.rollczi", name = "litecommands-adventure", version.ref = "litecommands" }
+cloud-paper = { group = "org.incendo", name = "cloud-paper", version.ref = "cloud" }
+cloud-annotations = { group = "org.incendo", name = "cloud-annotations", version.ref = "cloud" }
+cloud-kotlin-annotations = { group = "org.incendo", name = "cloud-kotlin-coroutines-annotations", version.ref = "cloud" }
 
 fui = { group = "com.github.29cmb", name = "f-UI", version = "1.0.1" }
 
@@ -42,11 +43,12 @@ libraries = [
     "kotlinx-coroutines",
     "interfaces",
     "reflections",
-    "litecommands-bukkit",
-    "litecommands-adventure",
     "commonsio",
     "ktor-client-core",
     "ktor-client-cio",
     "ktor-client-content-negotiation",
-    "ktor-serialization-kotlinx-json"
+    "ktor-serialization-kotlinx-json",
+    "cloud-paper",
+    "cloud-annotations",
+    "cloud-kotlin-annotations"
 ]

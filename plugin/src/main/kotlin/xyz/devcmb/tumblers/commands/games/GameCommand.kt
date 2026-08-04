@@ -1,40 +1,41 @@
 package xyz.devcmb.tumblers.commands.games
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import dev.rollczi.litecommands.annotations.join.Join
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.text.Component
-import org.bukkit.command.CommandSender
 import org.bukkit.entity.Interaction
-import org.bukkit.entity.Player
 import org.bukkit.persistence.PersistentDataType
+import org.incendo.cloud.annotation.specifier.Greedy
+import org.incendo.cloud.annotations.Argument
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
+import org.incendo.cloud.annotations.suggestion.Suggestions
+import org.incendo.cloud.context.CommandContext
+import org.incendo.cloud.context.CommandInput
 import xyz.devcmb.tumblers.GameOperatorException
+import xyz.devcmb.tumblers.commands.requirePlayer
+import xyz.devcmb.tumblers.commands.validateGame
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.engine.DebugToolkit
 import xyz.devcmb.tumblers.engine.base.AbstractGame
-import xyz.devcmb.tumblers.engine.map.SpawnLocation
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.toCenterXZLocation
-import java.util.Optional
-import kotlin.jvm.optionals.getOrNull
 
-@Command(name = "game")
-@Permission("tumbling.games")
+@Suppress("unused")
+@Permission("tumbling.dev")
 class GameCommand {
-    @Execute(name = "start")
-    fun executeGame(@Context sender: CommandSender, @Arg("game") game: GameController.RegisteredGame) {
+    @Command("game start <game>")
+    fun executeGame(source: CommandSourceStack, game: String) {
+        val sender = source.sender
         if(GameController.activeGame != null) {
             sender.sendMessage(Format.error("A game is already active!"))
             return
         }
 
+        val registeredGame = game.validateGame(sender) ?: return
+
         try {
-            GameController.startGameAsync(game.data.id)
+            GameController.startGameAsync(registeredGame.data.id)
             sender.sendMessage(Format.success("Started game successfully!"))
         } catch(e: GameOperatorException) {
             sender.sendMessage(Format.error("An error occurred while trying to start the game."))
@@ -42,8 +43,9 @@ class GameCommand {
         }
     }
 
-    @Execute(name = "end")
-    fun executeEnd(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean) {
+    @Command("game end")
+    fun executeEnd(source: CommandSourceStack, @Flag("confirm") confirm: Boolean) {
+        val sender = source.sender
         if(!confirm) {
             sender.sendMessage(Format.warning("This action is destructive! Re-run with --confirm to execute."))
             return
@@ -63,8 +65,10 @@ class GameCommand {
         sender.sendMessage(Format.success("Sent signal for game end!"))
     }
 
-    @Execute(name = "event")
-    fun executeGameEvent(@Context sender: CommandSender, @Arg("event") event: DebugToolkit.DebuggingEvent) {
+    @Command("game event <event>")
+    fun executeGameEvent(source: CommandSourceStack, event: String) {
+        val sender = source.sender
+
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Events can only be executed when a game is active!"))
@@ -77,8 +81,14 @@ class GameCommand {
             return
         }
 
+        val event = debugToolkit.events[event]
+        if(event == null) {
+            sender.sendMessage(Format.error("An event with the provided name was not found!"))
+            return
+        }
+
         try {
-            debugToolkit.events[event.name]!!(sender)
+            event.invoke(sender)
             sender.sendMessage(Format.success("Event successfully executed!"))
         } catch(e: Exception) {
             sender.sendMessage(Format.error("An error occurred while trying to execute this event! Check the console for trace"))
@@ -86,8 +96,9 @@ class GameCommand {
         }
     }
 
-    @Execute(name = "timer")
-    fun executeGameTimer(@Context sender: CommandSender, @Arg("value") value: Optional<Int>) {
+    @Command("game timer <value>")
+    fun executeGameTimer(source: CommandSourceStack, value: Int) {
+        val sender = source.sender
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Timers can only be retrieved or set when a game is active!"))
@@ -99,19 +110,13 @@ class GameCommand {
             return
         }
 
-        val value = value.getOrNull()
-        if(value == null) {
-            sender.sendMessage(Format.info("The current game timer is ${activeGame.countdownTime}"))
-            return
-        }
-
-
         activeGame.currentTimer!!.currentTime = value
         sender.sendMessage(Format.success("Timer set successfully!"))
     }
 
-    @Execute(name = "message")
-    fun executeMessage(@Context sender: CommandSender, @Join("message") msg: String) {
+    @Command("game message")
+    fun executeMessage(source: CommandSourceStack, @Greedy msg: String) {
+        val sender = source.sender
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("Game messages can only be sent if a game is active!"))
@@ -122,18 +127,38 @@ class GameCommand {
         sender.sendMessage(Format.success("Game message sent successfully!"))
     }
 
-    @Execute(name = "spawn summon")
-    fun executeSpawnSummon(@Context player: Player, @Arg("game") game: GameController.RegisteredGame, @Arg("spawn location") location: SpawnLocation) {
-        val playerLocation = player.location.toCenterXZLocation()
-        playerLocation.world.spawn(playerLocation, Interaction::class.java) {
-            it.persistentDataContainer.set(AbstractGame.spawnKey, PersistentDataType.STRING, location.name.lowercase())
+    @Command("game spawn summon <gameId> <location>")
+    fun executeSpawnSummon(
+        source: CommandSourceStack,
+        @Argument(suggestions = "registered_games") gameId: String,
+        @Argument(suggestions = "spawn_locations") location: String
+    ) {
+        val sender = source.sender
+        val player = source.sender.requirePlayer() ?: return
+        val game = gameId.validateGame(sender) ?: return
+
+        if(game.data.spawns == null) {
+            sender.sendMessage(Format.error("This game has no spawn locations!"))
+            return
         }
 
-        player.sendMessage(Format.success(Format.mm("Summoned spawn <white>${location.name}</white> successfully!")))
+        val spawn = game.data.spawns.find { it.name.equals(location, true) }
+        if(spawn == null) {
+            sender.sendMessage(Format.warning("A spawn location with the provided ID does not exist!"))
+            return
+        }
+
+        val playerLocation = player.location.toCenterXZLocation()
+        playerLocation.world.spawn(playerLocation, Interaction::class.java) {
+            it.persistentDataContainer.set(AbstractGame.spawnKey, PersistentDataType.STRING, spawn.name.lowercase())
+        }
+
+        player.sendMessage(Format.success(Format.mm("Summoned spawn <white>${spawn.name}</white> successfully!")))
     }
 
-    @Execute(name = "playercheck skip")
-    fun playerCheckSkip(@Context sender: CommandSender) {
+    @Command("game playercheck skip")
+    fun playerCheckSkip(source: CommandSourceStack) {
+        val sender = source.sender
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("No game is currently active!"))
@@ -149,8 +174,9 @@ class GameCommand {
         sender.sendMessage(Format.success("Skipped the player check successfully!"))
     }
 
-    @Execute(name = "playercheck permaskip")
-    fun playerCheckPermaSkip(@Context sender: CommandSender) {
+    @Command("game playercheck permaskip")
+    fun playerCheckPermaSkip(source: CommandSourceStack) {
+        val sender = source.sender
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("No game is currently active!"))
@@ -161,8 +187,9 @@ class GameCommand {
         sender.sendMessage(Format.success("Persistently skipped the player check successfully!"))
     }
 
-    @Execute(name = "playercheck unpermaskip")
-    fun playerCheckUnPermaSkip(@Context sender: CommandSender) {
+    @Command("game playercheck unpermaskip")
+    fun playerCheckUnPermaSkip(source: CommandSourceStack) {
+        val sender = source.sender
         val activeGame = GameController.activeGame
         if(activeGame == null) {
             sender.sendMessage(Format.error("No game is currently active!"))
@@ -171,5 +198,13 @@ class GameCommand {
 
         activeGame.playerCheckPersistentSkipped = false
         sender.sendMessage(Format.success("Un-persistently skipped the player check successfully!"))
+    }
+
+    @Suggestions("spawn_locations")
+    fun suggestSpawnLocations(context: CommandContext<CommandSourceStack>, input: CommandInput): List<String> {
+        val gameId = context.get<String>("gameId")
+        val registeredGame = gameId.validateGame(null) ?: return emptyList()
+
+        return registeredGame.data.spawns?.map { it.name } ?: emptyList()
     }
 }

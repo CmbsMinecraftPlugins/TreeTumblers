@@ -26,7 +26,7 @@ import kotlin.reflect.KClass
  * @param spawns An optional [List] of [SpawnLocation]s that a map of the game can use
  * @param listed If the game appears in the badge collection
  * @param spectateInventory The inventory ID of the spectate menu this game will use
- * @param builderCommand A LiteCommands definition for the builder tools of this game
+ * @property builderCommand A LiteCommands definition for the builder tools of this game
  */
 open class GameData(
     val id: String,
@@ -42,9 +42,9 @@ open class GameData(
     val listed: Boolean = true,
     val spectateInventory: String = "spectateInventory",
 
-    val builderCommand: Any? = null,
-
     val icon: Component = Format.mm("<glyph:game/${id}_icon>"),
     val logo: Component = Format.mm("<glyph:game/${id}_logo>"),
     val tabLogo: Component = Format.mm("<glyph:game/${id}_logo_14a_45h>").shadowColor(ShadowColor.shadowColor(0))
-)
+) {
+    open val builderCommand: Any? = null
+}

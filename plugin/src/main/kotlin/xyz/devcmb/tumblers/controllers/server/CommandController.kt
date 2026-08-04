@@ -1,92 +1,67 @@
 package xyz.devcmb.tumblers.controllers.server
 
-import dev.rollczi.litecommands.LiteCommands
-import dev.rollczi.litecommands.adventure.LiteAdventureExtension
-import dev.rollczi.litecommands.bukkit.LiteBukkitFactory
-import dev.rollczi.litecommands.bukkit.LiteBukkitMessages
-import org.bukkit.command.CommandSender
+import io.leangen.geantyref.TypeToken
+import io.papermc.paper.command.brigadier.CommandSourceStack
+import org.incendo.cloud.annotations.AnnotationParser
+import org.incendo.cloud.execution.ExecutionCoordinator
+import org.incendo.cloud.paper.PaperCommandManager
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.annotations.Controller
-import xyz.devcmb.tumblers.commands.InvalidUsageHandler
-import xyz.devcmb.tumblers.commands.arguments.*
-import xyz.devcmb.tumblers.commands.dev.*
-import xyz.devcmb.tumblers.commands.event.*
-import xyz.devcmb.tumblers.commands.games.*
-import xyz.devcmb.tumblers.commands.misc.*
-import xyz.devcmb.tumblers.commands.organizer.*
+import xyz.devcmb.tumblers.commands.dev.DebugCommand
+import xyz.devcmb.tumblers.commands.dev.ItemCommand
+import xyz.devcmb.tumblers.commands.dev.NametagCommand
+import xyz.devcmb.tumblers.commands.dev.PackCommand
+import xyz.devcmb.tumblers.commands.dev.QibCommand
+import xyz.devcmb.tumblers.commands.dev.SpectateCommand
+import xyz.devcmb.tumblers.commands.dev.TimerCommand
+import xyz.devcmb.tumblers.commands.dev.WorldCommand
+import xyz.devcmb.tumblers.commands.event.EventCommand
+import xyz.devcmb.tumblers.commands.games.BadgeCommand
+import xyz.devcmb.tumblers.commands.games.GameCommand
+import xyz.devcmb.tumblers.commands.misc.ChatCommand
+import xyz.devcmb.tumblers.commands.organizer.ScoreCommand
+import xyz.devcmb.tumblers.commands.organizer.TeamCommand
+import xyz.devcmb.tumblers.commands.organizer.WhitelistCommand
+import xyz.devcmb.tumblers.commands.parsers.TumblingPlayerArgumentParser
 import xyz.devcmb.tumblers.controllers.IController
-import xyz.devcmb.tumblers.controllers.DatabaseController
-import xyz.devcmb.tumblers.controllers.event.BadgeController
 import xyz.devcmb.tumblers.controllers.games.GameController
-import xyz.devcmb.tumblers.controllers.games.party.PartyController
-import xyz.devcmb.tumblers.controllers.player.ChatController
-import xyz.devcmb.tumblers.controllers.player.NoxesiumController
-import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
-import xyz.devcmb.tumblers.engine.DebugToolkit
-import xyz.devcmb.tumblers.engine.Timer
-import xyz.devcmb.tumblers.engine.map.Map
-import xyz.devcmb.tumblers.engine.map.SpawnLocation
-import xyz.devcmb.tumblers.item.custom.ItemRegistry
-import xyz.devcmb.tumblers.util.DebugUtil
-import xyz.devcmb.tumblers.util.Format
 
 @Controller(Controller.Priority.LOWEST)
 object CommandController : IController {
-    lateinit var liteCommands: LiteCommands<CommandSender>
-    override fun init() {
-        val commands = arrayListOf(
-            DebugCommand(),
-            WhitelistCommand(),
-            TeamCommand(),
-            GameCommand(),
-            WorldCommand(),
-            ScoreCommand(),
-            TimerCommand(),
-            EventCommand(),
-            SpectateCommand(),
-            ChatCommand(),
-            NametagCommand(),
-            QibCommand(),
-            BadgeCommand(),
-            ItemCommand(),
-            PackCommand()
-        )
+    lateinit var commandManager: PaperCommandManager<CommandSourceStack>
+    lateinit var annotationParser: AnnotationParser<CommandSourceStack>
 
-        GameController.games.forEach {
-            it.data.builderCommand?.let { command ->
-                commands.add(command)
-            }
+    override fun init() {
+        commandManager = PaperCommandManager.builder()
+            .executionCoordinator(ExecutionCoordinator.simpleCoordinator())
+            .buildOnEnable(TreeTumblers.plugin)
+
+        commandManager.parserRegistry().registerParserSupplier(TypeToken.get(TumblingPlayer::class.java)) {
+            TumblingPlayerArgumentParser()
         }
 
-        liteCommands = LiteBukkitFactory.builder(TreeTumblers.NAMESPACE, TreeTumblers.plugin)
-            .commands(commands)
-            .argument(DebugUtil.DebugLogLevel::class.java, DebugLogLevelArgument())
-            .argument(Team::class.java, TeamArgument())
-            .argument(GameController.RegisteredGame::class.java, GameArgument())
-            .argument(WorldController.LoadableTemplate::class.java, TemplateWorldArgument())
-            .argument(DebugToolkit.DebuggingEvent::class.java, DebuggingEventArgument())
-            .argument(Timer::class.java, TimerArgument())
-            .argument(PartyController.PartyGameIdentifier::class.java, PartyGameArgument())
-            .argument(PartyController.PartyGameSchematic::class.java, PartyGameSchematicArgument())
-            .argument(ChatController.ChatChannel::class.java, ChatChannelArgument())
-            .argument(TumblingPlayer::class.java, TumblingPlayerArgument())
-            .argument(NoxesiumController.QibType::class.java, QibTypeArgument())
-            .argument(DatabaseController.EventRecoveryState::class.java, RecoveryStateArgument())
-            .argument(BadgeController.Badge::class.java, BadgeArgument())
-            .argument(SpawnLocation::class.java, SpawnLocationArgument())
-            .argument(ItemRegistry.CustomItemDefinition::class.java, CustomItemArgument())
-            .argument(Map::class.java, GameMapArgument())
-            .extension(LiteAdventureExtension()) { config ->
-                config.serializer(Format.miniMessage)
-            }
-            .invalidUsage(InvalidUsageHandler())
-            .message(LiteBukkitMessages.MISSING_PERMISSIONS, Format.error("You do not have permission to use this command!"))
-            .message(LiteBukkitMessages.PLAYER_ONLY, Format.error("Only players can execute this command!"))
-            .message(LiteBukkitMessages.CONSOLE_ONLY, Format.error("Only the console can execute this command!"))
-            .message(LiteBukkitMessages.WORLD_NOT_EXIST, Format.error("Specified world does not exist!"))
-            .message(LiteBukkitMessages.LOCATION_INVALID_FORMAT, Format.error("Location is not formatted correctly!"))
-            .message(LiteBukkitMessages.PLAYER_NOT_FOUND, Format.error("Player was not found!"))
-            .build()
+        annotationParser = AnnotationParser(commandManager, CommandSourceStack::class.java)
+        annotationParser.parse(
+            DebugCommand(),
+            ItemCommand(),
+            NametagCommand(),
+            PackCommand(),
+            QibCommand(),
+            SpectateCommand(),
+            TimerCommand(),
+            WorldCommand(),
+            EventCommand(),
+            BadgeCommand(),
+            GameCommand(),
+            ChatCommand(),
+            ScoreCommand(),
+            TeamCommand(),
+            WhitelistCommand()
+        )
+
+        GameController.games.forEach { game ->
+            game.data.builderCommand?.let { annotationParser.parse(it) }
+        }
     }
 }

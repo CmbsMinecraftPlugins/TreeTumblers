@@ -102,5 +102,6 @@ object TowerAscentData : GameData(
     ),
     scoreboard = TowerAscentScoreboard::class,
     spawns = TowerAscentSpawn.entries,
-    builderCommand = TowerAscentBuilderCommand
-)
+) {
+    override val builderCommand = TowerAscentBuilderCommand
+}

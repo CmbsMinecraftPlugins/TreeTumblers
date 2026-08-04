@@ -1,27 +1,29 @@
 package xyz.devcmb.tumblers.commands.dev
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import org.bukkit.Location
 import org.bukkit.entity.Player
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.controllers.player.NoxesiumController
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.toCenterXZLocation
-import java.util.Optional
-import kotlin.jvm.optionals.getOrNull
 
-@Command(name = "qib")
+@Suppress("unused")
 @Permission("tumbling.dev")
 class QibCommand {
 
-    @Execute(name = "spawn")
-    fun spawnQib(@Context player: Player, @Arg type: NoxesiumController.QibType, @Arg location: Optional<Location>) {
-        val location = location.getOrNull() ?: player.location.clone().add(0.0,-1.0,0.0)
+    @Command("qib spawn <type> [location]")
+    fun spawnQib(source: CommandSourceStack, type: NoxesiumController.QibType, location: Location?) {
+        val sender = source.sender
+        if(location == null && sender !is Player) {
+            sender.sendMessage(Format.error("Only players can use this command if the location argument is not provided!"))
+            return
+        }
+
+        val location = location ?: (sender as Player).location.clone().add(0.0,-1.0,0.0)
         type.spawn(location.toCenterXZLocation())
-        player.sendMessage(Format.success("Spawned a QIB of type ${type.name.lowercase()} successfully!"))
+        sender.sendMessage(Format.success("Spawned a QIB of type ${type.name.lowercase()} successfully!"))
     }
 
 }

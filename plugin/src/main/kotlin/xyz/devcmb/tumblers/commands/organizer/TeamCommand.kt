@@ -1,29 +1,27 @@
 package xyz.devcmb.tumblers.commands.organizer
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.bukkit.command.CommandSender
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.controllers.games.GameController
 import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.Format
 
-@Command(name = "team")
+@Suppress("unused")
 @Permission("tumbling.organizer")
 class TeamCommand {
-    @Execute(name = "set")
+    @Command("team set <player> <team>")
     fun executeTeamSet(
-        @Context executor: CommandSender,
-        @Arg("player") player: TumblingPlayer,
-        @Arg("team") team: Team,
-        @Flag("--confirm") confirm: Boolean
+        source: CommandSourceStack,
+        player: TumblingPlayer,
+        team: Team,
+        @Flag("confirm") confirm: Boolean
     ) {
+        val executor = source.sender
         if(GameController.activeGame != null) {
             executor.sendMessage(Format.error("You cannot change teams while a game is active!"))
             return
@@ -42,8 +40,9 @@ class TeamCommand {
         player.bukkitPlayer?.kick(Format.mm("You've been changed to the <color:${team.color.asHexString()}>${team.name.lowercase()}</color> team and need to rejoin."))
     }
 
-    @Execute(name = "list")
-    fun executeList(@Context sender: CommandSender) {
+    @Command("team list")
+    fun executeList(source: CommandSourceStack) {
+        val sender = source.sender
         var teams = Component.empty()
         Team.entries.forEach {
             teams = teams.appendNewline().append(it.formattedName)

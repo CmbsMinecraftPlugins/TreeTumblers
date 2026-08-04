@@ -1,13 +1,10 @@
 package xyz.devcmb.tumblers.commands.event
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.launch
-import org.bukkit.command.CommandSender
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.event.EventController
@@ -15,11 +12,17 @@ import xyz.devcmb.tumblers.data.Team
 import xyz.devcmb.tumblers.util.Format
 import java.text.SimpleDateFormat
 
-@Command(name = "event")
+@Suppress("unused")
 @Permission("tumbling.event")
 class EventCommand {
-    @Execute(name = "start")
-    fun executeEvent(@Context sender: CommandSender, @Flag("--confirm") confirm: Boolean, @Flag("--finale") finale: Boolean, @Flag("--skip-intro") skipIntro: Boolean) {
+    @Command("event start")
+    fun executeEvent(
+        source: CommandSourceStack,
+        @Flag("confirm") confirm: Boolean,
+        @Flag("finale") finale: Boolean,
+        @Flag("skip-intro") skipIntro: Boolean
+    ) {
+        val sender = source.sender
         if(EventController.state != EventController.State.EVENT_INACTIVE) {
             sender.sendMessage(Format.error("The event is already active!"))
             return
@@ -44,17 +47,19 @@ class EventCommand {
         sender.sendMessage(Format.success("Start signal sent successfully!"))
     }
 
-    @Execute(name = "readycheck")
-    fun executeReadyCheck(@Context sender: CommandSender) {
+    @Command("event readycheck")
+    fun executeReadyCheck(source: CommandSourceStack) {
+        val sender = source.sender
         TreeTumblers.pluginScope.launch {
             sender.sendMessage(Format.success("Ready check sent successfully!"))
             val success = EventController.readyCheck()
-            sender.sendMessage(Format.success(Format.mm("Ready check ended with status <b>${if(success) "<green>Success</green>" else "<red>Failure</red>"}</b>")))
+            sender.sendMessage(Format.mm("<yellow>Ready check ended with status <b>${if(success) "<green>Success</green>" else "<red>Failure</red>"}</b></yellow>"))
         }
     }
 
-    @Execute(name = "timer pause")
-    fun executeTimerPause(@Context sender: CommandSender) {
+    @Command("event timer pause")
+    fun executeTimerPause(source: CommandSourceStack) {
+        val sender = source.sender
         if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
@@ -64,8 +69,9 @@ class EventCommand {
         sender.sendMessage(Format.success("Event timer paused successfully!"))
     }
 
-    @Execute(name = "timer unpause")
-    fun executeTimerUnpause(@Context sender: CommandSender) {
+    @Command("event timer unpause")
+    fun executeTimerUnpause(source: CommandSourceStack) {
+        val sender = source.sender
         if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
@@ -75,8 +81,9 @@ class EventCommand {
         sender.sendMessage(Format.success("Event timer unpaused successfully!"))
     }
 
-    @Execute(name = "timer set")
-    fun executeTimerSet(@Context sender: CommandSender, @Arg time: Int) {
+    @Command("event timer set <time>")
+    fun executeTimerSet(source: CommandSourceStack, time: Int) {
+        val sender = source.sender
         if(EventController.eventTimer == null) {
             sender.sendMessage(Format.warning("There is no active event timer!"))
             return
@@ -86,14 +93,17 @@ class EventCommand {
         sender.sendMessage(Format.success("Event timer set successfully!"))
     }
 
-    @Execute(name = "podiums refresh")
-    fun executePodiumsRefresh(@Context sender: CommandSender) {
+    @Command("event podiums refresh")
+    fun executePodiumsRefresh(source: CommandSourceStack) {
+        val sender = source.sender
+
         EventController.refreshLeaderboards()
         sender.sendMessage(Format.success("Podiums refreshed successfully!"))
     }
 
-    @Execute(name = "recovery list")
-    fun executeRecover(@Context sender: CommandSender) {
+    @Command("event recovery list")
+    fun executeRecover(source: CommandSourceStack) {
+        val sender = source.sender
         var component = Format.mm("<green>Here's a list of recovery states for the event:</green>")
         DatabaseController.recoveryStates.forEachIndexed { index, state ->
             component = component.append(Format.mm(
@@ -107,8 +117,15 @@ class EventCommand {
         sender.sendMessage(component)
     }
 
-    @Execute(name = "recovery state")
-    fun executeRecoveryState(@Context sender: CommandSender, @Arg state: DatabaseController.EventRecoveryState) {
+    @Command("event recovery state <stateId>")
+    fun executeRecoveryState(source: CommandSourceStack, stateId: String) {
+        val sender = source.sender
+        val state = DatabaseController.recoveryStates.find { it.id == stateId }
+        if(state == null) {
+            sender.sendMessage(Format.mm("Recovery state with provided ID could not be found!"))
+            return
+        }
+
         val eventState = state.eventState
         sender.sendMessage(Format.mm(
             "<white><green>Recovery state <yellow>${state.id}</yellow></green><br>" +
@@ -123,8 +140,19 @@ class EventCommand {
         ))
     }
 
-    @Execute(name = "recovery restore")
-    fun executeRecoveryRestore(@Context sender: CommandSender, @Arg state: DatabaseController.EventRecoveryState, @Flag("--confirm", "-c") confirm: Boolean) {
+    @Command("event recovery restore <stateId>")
+    fun executeRecoveryRestore(
+        source: CommandSourceStack,
+        stateId: String,
+        @Flag("confirm") confirm: Boolean
+    ) {
+        val sender = source.sender
+        val state = DatabaseController.recoveryStates.find { it.id == stateId }
+        if(state == null) {
+            sender.sendMessage(Format.mm("Recovery state with provided ID could not be found!"))
+            return
+        }
+
         if(!confirm) {
             sender.sendMessage(Format.warning("This action is destructive! Re-run with the --confirm flag to execute."))
             return

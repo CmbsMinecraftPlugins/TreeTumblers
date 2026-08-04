@@ -9,19 +9,20 @@ import com.sk89q.worldedit.function.operation.Operations
 import com.sk89q.worldedit.math.BlockVector3
 import com.sk89q.worldedit.session.ClipboardHolder
 import com.sk89q.worldedit.world.block.BlockTypes
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
-import org.bukkit.entity.Player
+import org.incendo.cloud.annotation.specifier.Quoted
+import org.incendo.cloud.annotations.Argument
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Permission
+import org.incendo.cloud.annotations.suggestion.Suggestions
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.commands.requirePlayer
 import xyz.devcmb.tumblers.controllers.games.party.PartyController.PartyScoreSource
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
@@ -94,16 +95,23 @@ object PartyData : GameData(
         Flag.DISABLE_NATURAL_REGENERATION
     ),
     scoreboard = PartyScoreboard::class,
-    builderCommand =
-        @Command(name = "btools party")
+) {
+    override val builderCommand =
+        @Suppress("unused")
         @Permission("tumbling.dev")
         object {
-            @Execute(name = "save_room")
+            @Command("btools party save_room <partyGameId> <mapId>")
             fun saveRoom(
-                @Context player: Player,
-                @Arg("party game") partyGame: PartyController.PartyGameIdentifier,
-                @Arg("identifier") identifier: String
+                source: CommandSourceStack,
+                @Argument(suggestions = "party_game_ids") partyGameId: String,
+                mapId: String
             ) {
+                val player = source.sender.requirePlayer() ?: return
+                if(partyGameId !in PartyController.gameIds) {
+                    player.sendMessage(Format.error("A party game with the provided ID was not found"))
+                    return
+                }
+
                 val clipboard = player.clipboard
                 if(clipboard == null) {
                     player.sendMessage(Format.error("Worldedit clipboard is empty!"))
@@ -133,10 +141,10 @@ object PartyData : GameData(
                 DebugUtil.info("Started party template save job")
                 player.sendMessage(Format.info("Started party template save job..."))
 
-                val saveFile = File(Path(PartyController.partyGamesDirectory, partyGame.id, "$identifier.schem").toString())
+                val saveFile = File(Path(PartyController.partyGamesDirectory, partyGameId, "$mapId.schem").toString())
                 val parent = saveFile.parentFile
                 if(!parent.exists() && !parent.mkdirs()) {
-                    DebugUtil.severe("Failed to create directory for party template save job. game id: ${partyGame.id}, mapName: $identifier")
+                    DebugUtil.severe("Failed to create directory for party template save job. game id: $partyGameId, mapName: $mapId")
                     player.sendMessage(Format.error("Directory creation failed!"))
                     return
                 }
@@ -155,35 +163,43 @@ object PartyData : GameData(
                 }
             }
 
-            @Execute(name = "load_room")
+            @Command("btools party load_room <schematic>")
             fun loadRoom(
-                @Context executor: Player,
-                @Arg("schematic") schematic: PartyController.PartyGameSchematic
+                source: CommandSourceStack,
+                @Quoted @Argument(suggestions = "party_game_schematics") schematic: String
             ) {
-                val format = ClipboardFormats.findByFile(schematic.file)
+                val player = source.sender.requirePlayer() ?: return
 
-                if(format == null) {
-                    executor.sendMessage(Format.error("That is not a valid schematic file!"))
+                val schematicFile = File(PartyController.partyGamesDirectory, schematic)
+                if(!schematicFile.exists()) {
+                    player.sendMessage(Format.error("Provided schematic path does not exist!"))
                     return
                 }
 
-                DebugUtil.info("Started the load process for ${schematic.file.parentFile.name}/${schematic.file.name}")
-                executor.sendMessage(Format.info("Started template load job..."))
+                val format = ClipboardFormats.findByFile(schematicFile)
+
+                if(format == null) {
+                    player.sendMessage(Format.error("Provided file was not detected to be a schematic!"))
+                    return
+                }
+
+                DebugUtil.info("Started the load process for ${schematicFile.parentFile.name}/${schematicFile.name}")
+                player.sendMessage(Format.info("Started template load job..."))
 
                 val clipboard: Clipboard
-                format.getReader(schematic.file.inputStream()).use { reader ->
+                format.getReader(schematicFile.inputStream()).use { reader ->
                     clipboard = reader.read()
                 }
 
                 val editSession = WorldEdit.getInstance()
                     .newEditSessionBuilder()
-                    .world(BukkitAdapter.adapt(executor.world))
+                    .world(BukkitAdapter.adapt(player.world))
                     .fastMode(true)
                     .build()
 
                 val operation = ClipboardHolder(clipboard)
                     .createPaste(editSession)
-                    .to(BukkitAdapter.adapt(executor.location).toBlockPoint())
+                    .to(BukkitAdapter.adapt(player.location).toBlockPoint())
                     .ignoreAirBlocks(false)
                     .build()
 
@@ -191,8 +207,35 @@ object PartyData : GameData(
                 editSession.flushQueue()
                 editSession.close()
 
-                DebugUtil.success("Party game schematic ${schematic.file.parentFile.name}/${schematic.file.name} loaded successfully")
-                executor.sendMessage(Format.success("Party schematic loaded successfully!"))
+                DebugUtil.success("Party game schematic ${schematicFile.parentFile.name}/${schematicFile.name} loaded successfully")
+                player.sendMessage(Format.success("Party schematic loaded successfully!"))
+            }
+
+            private fun getPaths(): ArrayList<String> {
+                val suggestions: ArrayList<String> = ArrayList()
+                val searchDir = File(PartyController.partyGamesDirectory)
+
+                searchDir.listFiles()!!.forEach { parent ->
+                    if(parent.isDirectory) {
+                        parent.listFiles()!!.forEach {
+                            if(!it.isDirectory) {
+                                suggestions.add("${parent.name}/${it.name}")
+                            }
+                        }
+                    }
+                }
+
+                return suggestions
+            }
+
+            @Suggestions("party_game_schematics")
+            fun suggestPartyGameSchematics(): List<String> {
+                return getPaths().map { "\"$it\"" }
+            }
+
+            @Suggestions("party_game_ids")
+            fun suggestPartyGameIDs(): List<String> {
+                return PartyController.gameIds
             }
         }
-)
+}

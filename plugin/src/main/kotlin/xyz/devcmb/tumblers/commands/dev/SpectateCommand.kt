@@ -1,39 +1,48 @@
 package xyz.devcmb.tumblers.commands.dev
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import org.bukkit.entity.Player
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.controllers.player.SpectatorController
 import xyz.devcmb.tumblers.util.Format
-import java.util.Optional
 
-@Command(name = "spectate")
+@Suppress("unused")
 @Permission("tumbling.dev")
 class SpectateCommand {
-    @Execute(name = "enable")
-    fun enableSpectate(@Context player: Player, @Arg target: Optional<Player>) {
-        val target = target.orElse(player) as Player
+    @Command("spectate enable [target]")
+    fun enableSpectate(source: CommandSourceStack, target: Player?) {
+        val sender = source.sender
+        if(target == null && sender !is Player) {
+            sender.sendMessage(Format.error("Only players can use this command if the target argument is not provided!"))
+            return
+        }
+
+        val target = target ?: (sender as Player)
         if(SpectatorController.spectators.contains(target)) {
-            player.sendMessage(Format.warning("Nothing changed, player is already a spectator"))
+            sender.sendMessage(Format.warning("Nothing changed, player is already a spectator"))
             return
         }
 
         SpectatorController.makeSpectator(target)
-        player.sendMessage(Format.success("Made player spectate successfully!"))
+        sender.sendMessage(Format.success("Made player spectate successfully!"))
     }
 
-    @Execute(name = "disable")
-    fun disableSpectate(@Context player: Player, @Arg target: Optional<Player>) {
-        val target = target.orElse(player) as Player
+    @Command("spectate disable [target]")
+    fun disableSpectate(source: CommandSourceStack, target: Player?) {
+        val sender = source.sender
+        if(target == null && sender !is Player) {
+            sender.sendMessage(Format.error("Only players can use this command if the target argument is not provided!"))
+            return
+        }
+
+        val target = target ?: (sender as Player)
         if(!SpectatorController.spectators.contains(target)) {
-            player.sendMessage(Format.warning("Nothing changed, player is not a spectator"))
+            sender.sendMessage(Format.warning("Nothing changed, player is not a spectator"))
             return
         }
 
         SpectatorController.unSpectate(target)
-        player.sendMessage(Format.success("Took a player out of spectate successfully!"))
+        sender.sendMessage(Format.success("Took a player out of spectate successfully!"))
     }
 }

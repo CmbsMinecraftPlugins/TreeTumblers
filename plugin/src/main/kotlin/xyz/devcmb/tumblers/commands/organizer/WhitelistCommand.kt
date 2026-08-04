@@ -1,14 +1,11 @@
 package xyz.devcmb.tumblers.commands.organizer
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.flag.Flag
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.launch
 import org.bukkit.Bukkit
-import org.bukkit.command.CommandSender
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.TreeTumblers
 import xyz.devcmb.tumblers.controllers.DatabaseController
 import xyz.devcmb.tumblers.controllers.games.GameController
@@ -17,11 +14,12 @@ import xyz.devcmb.tumblers.data.TumblingPlayer
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 
-@Command(name = "whitelist")
+@Suppress("unused")
 @Permission("tumbling.organizer")
 class WhitelistCommand {
-    @Execute(name = "add")
-    fun executeWhitelistAdd(@Context executor: CommandSender, @Arg("name") name: String, @Arg("team") team: Team, @Flag("--confirm") confirm: Boolean) {
+    @Command("whitelist add <name> <team>")
+    fun executeWhitelistAdd(source: CommandSourceStack, name: String, team: Team, @Flag("confirm") confirm: Boolean) {
+        val executor = source.sender
         if(GameController.activeGame != null) {
             executor.sendMessage(Format.error("Cannot add to whitelist while a game is active."))
             return
@@ -57,8 +55,9 @@ class WhitelistCommand {
         }
     }
 
-    @Execute(name = "remove")
-    fun executeWhitelistRemove(@Context executor: CommandSender, @Arg whitelistedPlayer: TumblingPlayer) {
+    @Command("whitelist remove <player>")
+    fun executeWhitelistRemove(source: CommandSourceStack, player: TumblingPlayer) {
+        val executor = source.sender
         if(GameController.activeGame != null) {
             executor.sendMessage(Format.error("Cannot remove from whitelist while a game is active."))
             return
@@ -66,16 +65,16 @@ class WhitelistCommand {
 
         TreeTumblers.pluginScope.launch {
             try {
-                if(!DatabaseController.isWhitelisted(whitelistedPlayer.uuid.toString())) {
+                if(!DatabaseController.isWhitelisted(player.uuid.toString())) {
                     executor.sendMessage(Format.warning("Nothing changed. Player is not whitelisted."))
                     return@launch
                 }
 
-                DatabaseController.unwhitelistPlayer(whitelistedPlayer)
-                executor.sendMessage(Format.success("Unwhitelisted ${whitelistedPlayer.name} successfully!"))
+                DatabaseController.unwhitelistPlayer(player)
+                executor.sendMessage(Format.success("Unwhitelisted ${player.name} successfully!"))
             } catch (e: Exception) {
                 executor.sendMessage(Format.error("An error occurred while attempting to un-whitelist!"))
-                DebugUtil.severe("Failed to un-whitelist ${whitelistedPlayer.name}: ${e.message ?: "Unknown Error"}")
+                DebugUtil.severe("Failed to un-whitelist ${player.name}: ${e.message ?: "Unknown Error"}")
             }
         }
     }

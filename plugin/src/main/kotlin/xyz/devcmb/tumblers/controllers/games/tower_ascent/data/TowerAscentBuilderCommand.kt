@@ -2,18 +2,18 @@ package xyz.devcmb.tumblers.controllers.games.tower_ascent.data
 
 import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
 import com.sk89q.worldedit.world.block.BlockTypes
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.bukkit.entity.Player
+import org.incendo.cloud.annotations.Argument
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Flag
+import org.incendo.cloud.annotations.Permission
+import org.incendo.cloud.annotations.suggestion.Suggestions
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.commands.requirePlayer
 import xyz.devcmb.tumblers.controllers.games.tower_ascent.feature.TowerGenerator
-import xyz.devcmb.tumblers.engine.map.Map
 import xyz.devcmb.tumblers.util.DebugUtil
 import xyz.devcmb.tumblers.util.Format
 import xyz.devcmb.tumblers.util.clipboard
@@ -22,16 +22,23 @@ import java.io.File
 import java.io.FileOutputStream
 import kotlin.io.path.Path
 
-@Command(name = "btools tower_ascent")
+@Suppress("unused")
 @Permission("tumbling.dev")
 object TowerAscentBuilderCommand {
-    @Execute(name = "save_room")
+    @Command("btools tower_ascent save_room <mapId> <name>")
     fun saveRoom(
-        @Context player: Player,
-        @Arg map: Map,
-        @Arg("name") name: String,
-        @dev.rollczi.litecommands.annotations.flag.Flag("--confirm") confirm: Boolean,
+        source: CommandSourceStack,
+        @Argument(suggestions = "tower_ascent_maps") mapId: String,
+        name: String,
+        @Flag("confirm") confirm: Boolean,
     ) {
+        val player = source.sender.requirePlayer() ?: return
+        val map = TowerAscentData.maps.find { it.id == mapId }
+        if(map == null) {
+            player.sendMessage(Format.error("Map with the provided ID was not found!"))
+            return
+        }
+
         val clipboard = player.clipboard
         if(clipboard == null) {
             player.sendMessage(Format.error("Worldedit clipboard is empty!"))
@@ -85,6 +92,11 @@ object TowerAscentBuilderCommand {
                 player.sendMessage(Format.success("Tower ascent template saved successfully!"))
             }
         }
+    }
+
+    @Suggestions("tower_ascent_maps")
+    fun suggestMaps(): List<String> {
+        return TowerAscentData.maps.map { it.id }
     }
 
     // TODO: Add load command

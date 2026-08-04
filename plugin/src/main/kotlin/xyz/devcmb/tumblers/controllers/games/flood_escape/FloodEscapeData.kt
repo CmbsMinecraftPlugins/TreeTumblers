@@ -2,11 +2,7 @@ package xyz.devcmb.tumblers.controllers.games.flood_escape
 
 import com.sk89q.worldedit.extent.clipboard.io.BuiltInClipboardFormat
 import com.sk89q.worldedit.world.block.BlockTypes
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
+import io.papermc.paper.command.brigadier.CommandSourceStack
 import io.papermc.paper.util.Tick
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -17,9 +13,11 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder
 import net.kyori.adventure.title.Title
-import org.bukkit.entity.Player
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Permission
 import xyz.devcmb.tumblers.GameControllerException
 import xyz.devcmb.tumblers.TreeTumblers
+import xyz.devcmb.tumblers.commands.requirePlayer
 import xyz.devcmb.tumblers.controllers.games.flood_escape.FloodEscapeController.MovementDirection
 import xyz.devcmb.tumblers.engine.Flag
 import xyz.devcmb.tumblers.engine.GameData
@@ -144,19 +142,27 @@ object FloodEscapeData : GameData(
     ),
     scoreboard = FloodEscapeScoreboard::class,
     spawns = FloodEscapeSpawn.entries,
-    builderCommand =
-        @Command(name = "btools flood_escape")
+) {
+    override val builderCommand =
+        @Suppress("unused")
         @Permission("tumbling.dev")
         object {
-            @Execute(name = "save_obstacle")
+            @Command("btools flood_escape save_obstacle <mapId> <difficulty> <type> <name>")
             fun saveObstacle(
-                @Context player: Player,
-                @Arg map: Map,
-                @Arg difficulty: FloodEscapeController.ObstacleDifficulty,
-                @Arg type: FloodEscapeController.ObstacleType,
-                @Arg("name") name: String,
-                @dev.rollczi.litecommands.annotations.flag.Flag("--confirm") confirm: Boolean,
+                source: CommandSourceStack,
+                mapId: String,
+                difficulty: FloodEscapeController.ObstacleDifficulty,
+                type: FloodEscapeController.ObstacleType,
+                name: String,
+                @org.incendo.cloud.annotations.Flag("confirm") confirm: Boolean,
             ) {
+                val player = source.sender.requirePlayer() ?: return
+                val map = maps.find { it.id == mapId }
+                if(map == null) {
+                    player.sendMessage(Format.error("Map with the provided ID was not found!"))
+                    return
+                }
+
                 val clipboard = player.clipboard
                 if(clipboard == null) {
                     player.sendMessage(Format.error("Worldedit clipboard is empty!"))
@@ -219,4 +225,4 @@ object FloodEscapeData : GameData(
 
             // TODO: Add load command
         }
-)
+}

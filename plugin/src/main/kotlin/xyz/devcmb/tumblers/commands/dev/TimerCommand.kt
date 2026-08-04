@@ -1,33 +1,55 @@
 package xyz.devcmb.tumblers.commands.dev
 
-import dev.rollczi.litecommands.annotations.argument.Arg
-import dev.rollczi.litecommands.annotations.command.Command
-import dev.rollczi.litecommands.annotations.context.Context
-import dev.rollczi.litecommands.annotations.execute.Execute
-import dev.rollczi.litecommands.annotations.permission.Permission
-import org.bukkit.command.CommandSender
-import xyz.devcmb.tumblers.engine.Timer
+import io.papermc.paper.command.brigadier.CommandSourceStack
+import org.incendo.cloud.annotations.Argument
+import org.incendo.cloud.annotations.Command
+import org.incendo.cloud.annotations.Permission
+import org.incendo.cloud.annotations.suggestion.Suggestions
+import xyz.devcmb.tumblers.controllers.misc.TimerController
 import xyz.devcmb.tumblers.util.Format
 
-@Command(name = "timer")
+@Suppress("unused")
 @Permission("tumbling.dev")
 class TimerCommand {
 
-    @Execute(name = "set")
-    fun executeSet(@Context sender: CommandSender, @Arg timer: Timer, @Arg time: Int) {
+    @Command("timer set <timerID> <time>")
+    fun executeSet(source: CommandSourceStack, @Argument(suggestions = "timer_id") timerID: String, time: Int) {
+        val timer = TimerController.timers[timerID]
+        if(timer == null) {
+            source.sender.sendMessage(Format.error("A timer with this ID does not exist!"))
+            return
+        }
+
         timer.currentTime = time
-        sender.sendMessage(Format.success("Time set successfully!"))
+        source.sender.sendMessage(Format.success("Time set successfully!"))
     }
 
-    @Execute(name = "pause")
-    fun executePause(@Context sender: CommandSender, @Arg timer: Timer) {
+    @Command("timer pause <timerID>")
+    fun executePause(source: CommandSourceStack, @Argument(suggestions = "timer_id") timerID: String) {
+        val timer = TimerController.timers[timerID]
+        if(timer == null) {
+            source.sender.sendMessage(Format.error("A timer with this ID does not exist!"))
+            return
+        }
+
         timer.paused = true
-        sender.sendMessage(Format.success("Timer paused successfully!"))
+        source.sender.sendMessage(Format.success("Timer paused successfully!"))
     }
 
-    @Execute(name = "unpause")
-    fun executeUnpause(@Context sender: CommandSender, @Arg timer: Timer) {
+    @Command("timer unpause <timerID>")
+    fun executeUnpause(source: CommandSourceStack, @Argument(suggestions = "timer_id") timerID: String) {
+        val timer = TimerController.timers[timerID]
+        if(timer == null) {
+            source.sender.sendMessage(Format.error("A timer with this ID does not exist!"))
+            return
+        }
+
         timer.paused = false
-        sender.sendMessage(Format.success("Timer unpaused successfully!"))
+        source.sender.sendMessage(Format.success("Timer unpaused successfully!"))
+    }
+
+    @Suggestions("timer_id")
+    fun timerIdSuggestions(): List<String> {
+        return TimerController.timers.keys.toList()
     }
 }
