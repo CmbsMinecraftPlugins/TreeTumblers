@@ -5,7 +5,7 @@ v1.1 update video: https://www.youtube.com/watch?v=3YfonhaBqHg
 
 # Tree Tumblers
 
-Tree Tumblers is a mcc-styled event plugin for 1.21.11 paper servers that allow teams to face in head-to-head games to determine the best among them.
+Tree Tumblers is a mcc-styled event plugin for 26.1.2 paper servers that allow teams to face in head-to-head games to determine the best among them.
 
 The plugin adds a variety of games and an event system for playing these games in a loop. This system allows for players to play through all of the event games that are currently apart of the plugin (maximum of 8, depends on how many games are implemented in the version you have installed)
 
